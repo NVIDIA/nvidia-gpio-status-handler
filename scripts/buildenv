@@ -1,0 +1,220 @@
+#!/usr/bin/env bash
+
+##
+# Copyright (c) 2021, NVIDIA CORPORATION.  All rights reserved.
+#
+# NVIDIA CORPORATION and its licensors retain all intellectual property
+# and proprietary rights in and to this software, related documentation
+# and any modifications thereto.  Any use, reproduction, disclosure or
+# distribution of this software and related documentation without an express
+# license agreement from NVIDIA CORPORATION is strictly prohibited.
+##
+
+
+APPNAME=buildenv
+APPVER=0.1
+
+HELP_MSG="
+A Tool for Building Environment, ver=${APPVER}
+<usage>
+  ./${APPNAME} [options] <cmd>
+options:
+  -h        - This help.
+
+cmds:
+\`get_cmd_list\`
+
+NOTE: *docker is needed!
+
+"
+
+dkr_image=
+dkr_container=
+dkr_file=
+
+
+show_help()
+{
+	local fl # 1st line flag
+	echo "$HELP_MSG" | while read -r; do
+		local line=$REPLY
+		if [ -z "$line$fl" ]; then
+			fl="no"
+			continue
+		fi
+		fl="no"
+		if [ "${line:0:1}" = "\`" ]; then
+			${line//\`/}
+			continue
+		fi
+		echo "$line"
+	done
+}
+
+cmd_prefix="env_"
+get_cmd_list() # ()
+{
+	grep -E "^${cmd_prefix}*()" $0 | while read line; do
+		local name=${line%%\(*}; name=`echo ${name:${#cmd_prefix}}`; name=${name//_/-}
+		local params=`echo $line | cut -d'#' -f2 | tr -d '()'`; params=`echo $params`
+		local desc=${line##*#}; desc=`echo $desc`
+
+		local cmd="$name"
+		if [ "${params:0:1}" = "<" ] || [ "${params:0:1}" = "[" ]; then
+			cmd="$name $params"
+		fi
+		printf "  %-20s - %s\n" "$cmd" "$desc"
+	done
+}
+
+check_cmd() # (cmd)
+{
+	local cmd=$1;shift
+	cmd=${cmd_prefix}${cmd//-/_}
+	grep -E "^$cmd()" $0 &>/dev/null || return 1
+	echo $cmd
+	return 0
+}
+
+load_dkrinfo()
+{
+	local df_path=". $scrpt_path"
+	local df_name="Dockerfile"
+	for df in $df_path; do
+		if [ -f "$df/$df_name" ]; then
+			dkr_file="$df/$df_name"
+			dkr_image=`grep "LABEL ImageName=" "$dkr_file" | cut -d'"' -f2 2>/dev/null`
+			[ -z "$dkr_image" ] && return 1
+			dkr_container=${dkr_image//:/_}
+
+			return 0
+		fi
+	done
+	echo "[E]Can't find [$df_name] in path list [$df_path]!"
+	return 1
+}
+
+check_dkimg() # (tag)
+{
+	local tag=$1;shift # Todo: support different tag
+	local img_id=`docker image ls -q ${dkr_image}${tag} 2>/dev/null`
+	[ -n "$img_id" ]
+}
+
+get_mount_src() # (tag, des)
+{
+	local tag=$1;shift
+	local dst=$1;shift
+
+	local src=`docker container inspect -f "{{ range .Mounts }}{{ if eq .Destination \"$dst\" }} {{ .Source }}{{ end }}{{ end }}" $tag 2>/dev/null`
+	[ $? -ne 0 ] && return 1
+	echo $src
+	return 0
+}
+
+env_create() # (tag) # Create the build environment.
+{
+	local tag=$1;shift # Todo: support different tag
+
+	if check_dkimg; then
+		echo "[W]Docker image ($dkr_image) exists. Use 'start' cmd to lunch it."
+		return 0
+	fi
+
+	local df_path=". $scrpt_path"
+	local df_name="Dockerfile"
+	for df in $df_path; do
+		if [ -f "$df/$df_name" ]; then
+			docker build -f "$df/$df_name" -t "$dkr_image" .
+			return $?
+		fi
+	done
+
+	echo "[E]Can't find [$df_name] in path list [$df_path]!"
+	return 1
+}
+
+env_start() # ([src_dir]) # Start the build environment.
+{
+	local src_dir=$1;shift
+
+	[ "${src_dir:0:1}" = "/" ] || src_dir=`pwd`/$src_dir
+	[ -z "$src_dir" ] && src_dir=`pwd`
+	src_dir=`readlink -f "$src_dir"`
+
+	if ! check_dkimg; then
+		echo "[W]Docker image ($dkr_image) not exists. 'create' it first!"
+		return 0
+	fi
+
+	local bldenv_mntpoint=/workspce
+
+	local org_src_dir=`get_mount_src $dkr_container $bldenv_mntpoint`
+	[ $? -ne 0 ] && org_src_dir=""
+	org_src_dir=`readlink -f "$org_src_dir"`
+
+	if [ "$org_src_dir" != "$src_dir" ]; then
+		echo "[W]Container [$dkr_container] has already mounted [$org_src_dir] on [$bldenv_mntpoint]."
+		echo "[W]Remounting [$src_dir] will cause all below changes LOST in container!"
+		echo "-------------"
+		docker container diff $dkr_container 2>/dev/null
+		echo "-------------"
+		local ans;read -n1 -s -p "Continue? (y/N)" ans;echo
+		if [ "$ans" != "y" ]; then
+			echo "Nothing done."
+			return 2
+		fi
+
+		echo "Restarting container [$dkr_container]..."
+		docker container stop $dkr_container &>/dev/null
+		docker rm $dkr_container &>/dev/null
+	fi
+
+	echo "Local [$src_dir] => [$bldenv_mntpoint] in container [$dkr_container]..."
+
+	if docker container start $dkr_container &>/dev/null; then
+		docker container attach $dkr_container
+	else
+		docker run --name $dkr_container -v ${src_dir}:$bldenv_mntpoint -w "$bldenv_mntpoint" -it $dkr_image
+	fi
+}
+
+env_clean() # Clean the build environment.
+{
+	docker rm --force $dkr_container &>/dev/null
+	return 0
+}
+
+env_remove() # Destroy the build environment.
+{
+	local ans;read -n1 -s -p "Are you sure to delete ($dkr_image)? (y/N)" ans;echo
+	if [ "$ans" != "y" ]; then
+		echo "Nothing done."
+		return 0
+	fi
+	docker rmi --force $dkr_image &>/dev/null
+}
+
+# ============= MAIN ==============
+load_dkrinfo || return 1
+
+[ $# -ne 0 ] && if grep "^$1()" `which $0` &> /dev/null; then FUNC=$1;shift;$FUNC "$@";exit $?; fi
+
+if ! which docker &>/dev/null; then
+	echo "[E]docker is needed!"
+	exit 1
+fi
+
+scrpt_path=`readlink -f $0`; scrpt_path=${scrpt_path%/*}
+[ "$1" = "-h" ] && show_help && exit 0
+
+cmd=$1;shift
+[ -z "$cmd" ] && cmd="start"
+cmd=`check_cmd $cmd`
+if [ $? -ne 0 ]; then
+	echo "[E]Invalid cmd!"
+	show_help
+	exit 1
+fi
+
+$cmd $*
