@@ -5,26 +5,28 @@
 
 #pragma once
 
+#include <string>
+
 namespace event_handler
 {
 
 enum class Status : int
 {
-    succ,
-    error,
-    timeout,
+  succ,
+  error,
+  timeout,
 };
 
 class EventHandler
 {
   private:
-    std::string[] longDescription;
+    std::string longDescription;
+
   public:
     EventHandler();
     ~EventHandler();
 
-    Status getLongDescription(std::string[]& longDescr);
+    Status getLongDescription(std::string &longDescription);
 };
 
 } // namespace event_handler
-

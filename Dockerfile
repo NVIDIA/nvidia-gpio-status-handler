@@ -6,5 +6,6 @@ LABEL ImageName="bldenv:module"
 ARG execdir=/usr/bin
 ARG scrpt=setup_bldenv
 ADD scripts/$scrpt $execdir
+SHELL ["/bin/bash", "-c"]
 RUN chmod +x $execdir/$scrpt
 RUN $execdir/$scrpt

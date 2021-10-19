@@ -16,10 +16,9 @@ EventDetection::~EventDetection()
 {
 }
 
-Status EventDetection::getLongDescription(std::string[]& longDescr)
+Status EventDetection::getLongDescription(std::string &longDescription)
 {
-    return rcSucc;
+    return Status::succ;
 }
 
 } // namespace event_detection
-

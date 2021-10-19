@@ -16,10 +16,9 @@ OobamlApi::~OobamlApi()
 {
 }
 
-Status OobamlApi::getLongDescription(std::string[]& longDescr)
+Status OobamlApi::getLongDescription(std::string &longDescription)
 {
-    return rcSucc;
+    return Status::succ;
 }
 
 } // namespace oobaml_api
-
