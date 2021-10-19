@@ -192,12 +192,10 @@ unknown_setup()
 ### OS Detection
 get_os_name()
 {
-	local VAL=`uname -a`
-
+	local VAL=`cat /proc/version`
 	echo "$VAL" | grep -i "ubuntu" &>/dev/null && echo "ubuntu" && return 0
 	echo "$VAL" | grep -i "raspberrypi" &>/dev/null && echo "ubuntu" && return 0
 	echo "$VAL" | grep -i "cygwin" &>/dev/null && echo "cygwin" && return 0
-
 	echo "unknown"
 }
 
@@ -215,7 +213,6 @@ if [ "$OSTYPE" != "cygwin" ]; then
 		exit 1
 	fi
 fi
-
 ${OSTYPE}_presetup || exit $?
 for OS in common $OSTYPE; do
 	${OS}_setup || exit $?

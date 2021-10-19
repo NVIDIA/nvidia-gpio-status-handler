@@ -16,10 +16,9 @@ DATTraverse::~DATTraverse()
 {
 }
 
-Status DATTraverse::getLongDescription(std::string[]& longDescr)
+Status DATTraverse::getLongDescription(std::string &longDescription)
 {
-    return rcSucc;
+    return Status::succ;
 }
 
 } // namespace dat_traverse
-

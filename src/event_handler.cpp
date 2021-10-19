@@ -16,10 +16,9 @@ EventHandler::~EventHandler()
 {
 }
 
-Status EventHandler::getLongDescription(std::string[]& longDescr)
+Status EventHandler::getLongDescription(std::string &longDescription)
 {
-    return rcSucc;
+    return Status::succ;
 }
 
 } // namespace event_handler
-

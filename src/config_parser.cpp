@@ -16,10 +16,9 @@ ConfigParser::~ConfigParser()
 {
 }
 
-Status ConfigParser::getLongDescription(std::string[]& longDescr)
+Status ConfigParser::getLongDescription(std::string &longDescription)
 {
-    return rcSucc;
+    return Status::succ;
 }
 
 } // namespace config_parser
-

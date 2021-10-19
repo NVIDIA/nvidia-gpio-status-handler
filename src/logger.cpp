@@ -16,10 +16,9 @@ Logger::~Logger()
 {
 }
 
-Status Logger::getLongDescription(std::string[]& longDescr)
+Status Logger::getLongDescription(std::string &longDescription)
 {
-    return rcSucc;
+    return Status::succ;
 }
 
 } // namespace logger
-
