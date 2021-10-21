@@ -128,7 +128,7 @@ env_create() # (tag) # Create the build environment.
 			docker build -f "$df/$df_name" -t "$dkr_image" .
 			return $?
 		fi
-	donesett
+	done
 
 	echo "[E]Can't find [$df_name] in path list [$df_path]!"
 	return 1
