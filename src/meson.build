@@ -12,5 +12,6 @@ amllib = shared_library('nvidia-oobaml',
                         aml_sources,
                         include_directories : inc,
                         dependencies : aml_dependencies,
+                        version : '0.0.0',
                         install : true,
                         install_dir : get_option('libdir'))

@@ -140,22 +140,23 @@ common_setup()
 	common_get_sdk
 }
 
-prereqst="wget vim git build-essential libsdl1.2-dev texinfo gawk chrpath diffstat python2.7 python3"
+prereqst="wget vim git build-essential libsdl1.2-dev texinfo gawk chrpath diffstat python2.7 python3 python3-pip"
 bld_pkg="git g++ autoconf autoconf-archive pkg-config libtool-bin doxygen meson"
+pip_pkg="meson ninja"
 
 ### Ubuntu
 ubuntu_get_build_tool()
 {
 	echo "Setup build tools for Ubuntu..."
-	$RUN apt --assume-yes install $bld_pkg
+	$RUN apt-get --assume-yes install $bld_pkg
 	echo "Installing/Upgrading Python packages..."
-	$RUN pip3 install -r scripts/python_requirements.txt --upgrade
+	$RUN pip3 install $pip_pkg --upgrade
 }
 
 ubuntu_presetup()
 {
-	$RUN apt update
-	$RUN apt --assume-yes install $prereqst
+	$RUN apt-get update
+	$RUN apt-get --assume-yes install $prereqst
 }
 
 ubuntu_setup()
