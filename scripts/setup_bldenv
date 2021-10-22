@@ -141,13 +141,15 @@ common_setup()
 }
 
 prereqst="wget vim git build-essential libsdl1.2-dev texinfo gawk chrpath diffstat python2.7 python3"
-bld_pkg="git g++ autoconf autoconf-archive pkg-config libtool-bin doxygen"
+bld_pkg="git g++ autoconf autoconf-archive pkg-config libtool-bin doxygen meson"
 
 ### Ubuntu
 ubuntu_get_build_tool()
 {
 	echo "Setup build tools for Ubuntu..."
 	$RUN apt --assume-yes install $bld_pkg
+	echo "Installing/Upgrading Python packages..."
+	$RUN pip3 install -r scripts/python_requirements.txt --upgrade
 }
 
 ubuntu_presetup()
