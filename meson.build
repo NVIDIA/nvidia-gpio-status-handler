@@ -62,6 +62,6 @@ subdir('src')
 pkg_mod = import('pkgconfig')
 pkg_mod.generate(libraries : amllib,
                  version : '0.1',
-                 name : 'nvidia-oobaml',
-                 filebase : 'nvidia-oobaml',
+                 name : 'oobaml',
+                 filebase : 'oobaml',
                  description : 'nvidia-oobaml')

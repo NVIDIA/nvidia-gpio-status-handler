@@ -8,7 +8,7 @@ aml_sources = ['config_parser.cpp',
                 'message_dispatcher.cpp',
                 'oobaml_api.cpp']
 
-amllib = shared_library('nvidia-oobaml',
+amllib = shared_library('oobaml',
                         aml_sources,
                         include_directories : inc,
                         dependencies : aml_dependencies,
