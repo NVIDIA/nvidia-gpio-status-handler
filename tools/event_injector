@@ -1,0 +1,289 @@
+#!/usr/bin/env bash
+
+set -o pipefail
+
+################################################################################
+# App Constants
+#
+APPNAME=event_injector
+APPVER=0.1
+
+################################################################################
+# Definitions
+#
+DEFUSR=nobody
+DEFGRP=nogroup
+
+get_realuser()
+{
+    local rusr;rusr=`logname 2>/dev/null`
+    [ $? -ne 0 ] || [ -z "$rusr" ] && rusr=${LOGNAME}
+    [ -z "$rusr" ] && rusr=${USER}
+    [ -z "$rusr" ] && rusr=${DEFUSR}
+    echo $rusr
+}
+
+get_realgroup() # (user)
+{
+    local usr=$1
+    [ -z "$usr" ] && usr=${DEFUSR}
+    if [ "${DEFUSR}" = "$usr" ]; then
+        echo "${DEFGRP}"
+        return 0
+    fi
+    local grp;grp=`groups "$usr" 2>/dev/null | cut -d' ' -f3`
+    [ $? -ne 0 ] || [ -z "$grp" ] && grp=${DEFGRP}
+    echo $grp
+}
+
+REALUSER=`get_realuser`
+REALGROUP=`get_realgroup "${REALUSER}"`
+LOGPATH=/tmp/${REALUSER}_${APPNAME}_$$
+LOGTMP=tmp.log
+LOGAPP=app.log
+APPTMP=${LOGPATH}/${LOGTMP}
+APPLOG=${LOGPATH}/${LOGAPP}
+
+################################################################################
+# Constants
+#
+
+
+################################################################################
+# Functions
+#
+show_help()
+{
+    echo "A Tool in OpenBMC to Inject Device Event Log to D-Bus, Ver=${APPVER}"
+    echo "<usage>"
+    echo "  ${APPNAME} <profile>"
+    echo "options:"
+    echo "  profile    - the file of the list of necessary event information."
+    echo
+}
+
+### Logging Module
+initlog()
+{
+    [ -d "${LOGPATH}" ] || mkdir -p "${LOGPATH}"
+}
+
+log() # (string...)
+{
+    local opt
+    if [ "$1" = "-n" ]; then
+        opt="-n"
+        shift
+    else
+        opt=""
+    fi
+    local msg="`date '+[%Y-%m-%d %H:%M:%S]'` $*"
+    #echo $opt $msg
+    echo $opt $msg >> ${APPLOG}
+}
+
+echo_log() # (string...)
+{
+    local msg=$*
+    echo $msg
+    log $msg
+}
+
+cleanup()
+{
+    [ -d "${LOGPATH}" ] || return
+    log "Cleanup log files..."
+    rm -rf "${LOGPATH}"
+    set +o pipefail
+}
+
+### Installation Module
+DEF_INST_PATH=/usr/bin
+APPFLNM=$0
+APPBSNM=${APPFLNM##*/}
+
+get_version() # (file)
+{
+    local ver;ver=`grep -E "^APPVER=" "$1" 2>/dev/null`
+    [ $? -ne 0 ] || [ -z "$ver" ] && return 1
+    ver=${ver#*=}
+    echo $ver
+    return 0
+}
+
+setup_replace() # (file, var_name, var_new_value)
+{
+    local fil=$1;shift
+    local var_name=$1;shift
+    local new_value=$1;shift
+
+    sed -i "s,^${var_name}=.*,${var_name}=${new_value},g" $fil
+}
+
+install() # (install_path)
+{
+    local tgt_dir=$1
+    [ -n "$tgt_dir" ] || tgt_dir=$DEF_INST_PATH
+    [ -d "$tgt_dir" ] || mkdir -p $tgt_dir
+
+    local rc=0
+
+    local tgt_filename=$tgt_dir/$APPBSNM
+
+    if [ -f "$tgt_filename" ]; then
+        local cur_ver=`get_version "$tgt_filename"`
+        [ -z "$cur_ver" ] && cur_ver="Unknown"
+        local opt
+        read -n 1 -p "[$tgt_filename] Exists!
+Current Version: $cur_ver
+New Version    : $APPVER
+Continue? (Y/n)" opt
+        echo
+        [ ! "$opt" = "n" ] && opt="y"
+        if [ "$opt" = "n" ]; then
+            echo "Installation Cancelled."
+            return 1
+        fi
+    fi
+
+    echo -n "Copying [$APPFLNM] to [$tgt_dir]..."
+    cp -f $APPFLNM $tgt_dir &>/dev/null; rc=$?
+    [ "$rc" -ne 0 ] && echo "Failed ($rc)!" && return $rc
+    echo "Done."
+
+    echo -n "Setting up installation information..."
+    setup_replace "$tgt_filename" DEF_INST_PATH "$tgt_dir" &>/dev/null; rc=$?
+    [ "$rc" -ne 0 ] && echo "Failed ($rc)!" && return $rc
+    echo "Done."
+
+    echo "Installation Successfully."
+    return 0
+}
+
+uninstall()
+{
+    local rc=0
+    local tgt_dir=$DEF_INST_PATH
+
+    local opt
+    read -n 1 -p "Uninstall [$APPFLNM], version $APPVER? (y/N)" opt
+    echo
+    [ ! "$opt" = "y" ] && opt="n"
+    if [ "$opt" = "n" ]; then
+        echo "Uninstallaction Cancelled."
+        return 1
+    fi
+
+    echo -n "Removing [$APPBSNM] from [$tgt_dir]..."
+    rm -f $DEF_INST_PATH/$APPBSNM; rc=$?
+    [ "$rc" -ne 0 ] && echo "Failed ($rc)!" && return $rc
+    echo "Done."
+
+    echo "Uninstallation Successfully."
+    return 0
+}
+
+### Event Injection
+openbmc_log_severity() # $1: svr_str
+{
+    [ "$#" -ne 1 ] && echo "[E] need params!" && return 1
+
+    local svr_str=`echo $1 | tr "[:upper:]" "[:lower:]"`
+    case $svr_str in
+        "ok") echo "xyz.openbmc_project.Logging.Entry.Level.Notice" ;;
+        "warning") echo "xyz.openbmc_project.Logging.Entry.Level.Warning" ;;
+        "critical") echo "xyz.openbmc_project.Logging.Entry.Level.Critical" ;;
+        *) return 2;;
+    esac
+
+    return 0
+}
+
+devp2list() # $1: dev pattern
+{
+    local devp=$1;shift
+
+    devp=${devp//[][-]/ }
+
+    local dev=${devp%% *}
+    local ids=${devp#* };ids=${ids% }
+    local min=${ids%% *}
+    local max=${ids##* }
+
+    local i
+    for ((i=${min}; i<=${max}; i++)); do printf "${dev}%d " $i; done
+    return 0
+}
+
+### Main Module
+main() # $*: all args
+{
+    local prf=$1;shift
+
+    if [ -z "$prf" ]; then
+        echo "[E] No profile provided!"
+        return 1
+    fi
+    if [ ! -f "$prf" ]; then
+        echo "[E] [$prf] doesn't exist!"
+        return 2
+    fi
+
+    local logger_svc="xyz.openbmc_project.Logging"
+    local logger_obj="/xyz/openbmc_project/logging"
+    local logger_add_entry="xyz.openbmc_project.Logging.Create Create ssa{ss}"
+
+    local rc=0
+    local devp_cache
+    local line
+    while IFS= read -r line; do
+        [ -z "$line" ] && continue
+        [ "${line:0:1}" = "#" ] && continue
+
+        local devp=`echo "$line" | cut -f1`
+        [ "$devp" = "Device" ] && continue # skip the caption
+        [ -z "$devp" ] && devp=${devp_cache} || devp_cache=$devp
+        printf "=%.0s" {0..40};echo
+        #echo [line:$line]
+
+        local event=`echo "$line" | cut -f2`
+        local msg_id=`echo "$line" | cut -f3`
+        local msg_svr=`echo "$line" | cut -f4`
+        local msg_res=`echo "$line" | cut -f5`
+        local msg_origcond=`echo "$line" | cut -f6`
+        local msg_args=`echo "$line" | cut -f7`
+
+        for dev in `devp2list "$devp"`; do
+            [ -z "$event" ] && continue
+            local msg="\"$dev $event\""
+
+            local dbus_log_svr;dbus_log_svr=`openbmc_log_severity "$msg_svr" 2>/dev/null`;rc=$?
+            [ "$rc" -ne 0 ] && echo "[E] Unknown severity label [$msg_svr], rc=$rc!" && return $rc
+
+            msg="$msg $dbus_log_svr"
+            msg="$msg 8" # 4 key-value pairs
+            msg="$msg \"REDFISH_MESSAGE_ID\" \"${msg_id}\""
+            msg="$msg \"REDFISH_MESSAGE_ARGS\" \"${msg_args}\""
+            msg="$msg \"REDFISH_MESSAGE_RESOLUTION\" \"${msg_res}\"" # TBD
+            msg="$msg \"REDFISH_MESSAGE_ORIGCOND\" \"${msg_origcond}\"" # TBD
+
+            local cmd="busctl call ${logger_svc} ${logger_obj} ${logger_add_entry} ${msg}"
+
+            echo $cmd
+        done
+    done < "$prf"
+}
+
+################################################################################
+# MAIN
+#
+[ $# -ne 0 ] && if grep "^$1()" `which $0` &> /dev/null; then func=$1;shift;$func "$@";exit $?; fi
+
+trap cleanup EXIT
+initlog
+
+main $*;rc=$?
+[ "$rc" -ne 0 ] && show_help
+
+exit $rc
+cleanup
