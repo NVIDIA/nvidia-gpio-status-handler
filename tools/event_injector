@@ -188,7 +188,7 @@ openbmc_log_severity() # $1: svr_str
 {
     [ "$#" -ne 1 ] && echo "[E] need params!" && return 1
 
-    local svr_str=`echo $1 | tr "[:upper:]" "[:lower:]"`
+    local svr_str=${1,,}
     case $svr_str in
         "ok") echo "xyz.openbmc_project.Logging.Entry.Level.Notice" ;;
         "warning") echo "xyz.openbmc_project.Logging.Entry.Level.Warning" ;;
@@ -215,8 +215,7 @@ devp2list() # $1: dev pattern
     return 0
 }
 
-### Main Module
-main() # $*: all args
+evtdoc2cmdline() # $1: profile
 {
     local prf=$1;shift
 
@@ -244,7 +243,6 @@ main() # $*: all args
         [ "$devp" = "Device" ] && continue # skip the caption
         [ -z "$devp" ] && devp=${devp_cache} || devp_cache=$devp
         printf "=%.0s" {0..40};echo
-        #echo [line:$line]
 
         local event=`echo "$line" | cut -f2`
         local msg_id=`echo "$line" | cut -f3`
@@ -254,14 +252,25 @@ main() # $*: all args
         local msg_args=`echo "$line" | cut -f7`
 
         for dev in `devp2list "$devp"`; do
+
+            # Filter out invalid event
             [ -z "$event" ] && continue
+            [ "${event,,}" = "wip" ] && continue
+            [ "${event,,}" = "tbd" ] && continue
+
+            # Replace any place holders in the payload
+            local DeviceID=$dev # DON'T change [DeviceID] here
+            msg_args=`eval echo "${msg_args//\"/\\\\\"}"`
+            msg_origcond=`eval echo "${msg_origcond}"`
+
+            # Generating the injection cmdline
             local msg="\"$dev $event\""
 
             local dbus_log_svr;dbus_log_svr=`openbmc_log_severity "$msg_svr" 2>/dev/null`;rc=$?
             [ "$rc" -ne 0 ] && echo "[E] Unknown severity label [$msg_svr], rc=$rc!" && return $rc
 
             msg="$msg $dbus_log_svr"
-            msg="$msg 8" # 4 key-value pairs
+            msg="$msg 4" # 4 key-value pairs
             msg="$msg \"REDFISH_MESSAGE_ID\" \"${msg_id}\""
             msg="$msg \"REDFISH_MESSAGE_ARGS\" \"${msg_args}\""
             msg="$msg \"REDFISH_MESSAGE_RESOLUTION\" \"${msg_res}\"" # TBD
@@ -272,6 +281,25 @@ main() # $*: all args
             echo $cmd
         done
     done < "$prf"
+}
+
+### Main Module
+main() # $*: all args
+{
+    local prf=$1;shift
+
+    if [ -z "$prf" ]; then
+        echo "[E] No profile provided!"
+        return 1
+    fi
+    if [ ! -f "$prf" ]; then
+        echo "[E] [$prf] doesn't exist!"
+        return 2
+    fi
+
+    evtdoc2cmdline "$prf"
+
+    return 0
 }
 
 ################################################################################
