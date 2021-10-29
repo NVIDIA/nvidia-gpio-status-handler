@@ -261,22 +261,27 @@ evtdoc2cmdline() # $1: profile
         printf "=%.0s" {0..40};echo
 
         local event=`echo "$line" | cut -f2`
+        local subevent=`echo "$line" | cut -f3`
         # Filter out invalid event
-        [ -z "$event" ] && continue
+        [ -z "$event" ] && [ -z "$subevent" ] && continue
         [ "${event,,}" = "wip" ] && continue
         [ "${event,,}" = "tbd" ] && continue
         event=${event:3} # remove the "(x)" prefix
+        subevent=${subevent:3}
+
+        # replace event with subevent if exists.
+        [ -n "$subevent" ] && event=$subevent
 
         local dev
         echo "`devp2list "$devp"`" | while IFS= read -r dev; do
             # Replace any place holders in the payload
             local DeviceID=$dev # DON'T change [DeviceID] here
             local line_fmt=`eval echo "\"${line//\"/\\\\\"}\""`
-            local msg_id=`echo "$line_fmt" | cut -f3`
-            local msg_svr=`echo "$line_fmt" | cut -f4`
-            local msg_res=`echo "$line_fmt" | cut -f5`
-            local msg_origcond=`echo "$line_fmt" | cut -f6`
-            local msg_args=`echo "$line_fmt" | cut -f7`
+            local msg_id=`echo "$line_fmt" | cut -f4`
+            local msg_svr=`echo "$line_fmt" | cut -f5`
+            local msg_res=`echo "$line_fmt" | cut -f6`
+            local msg_origcond=`echo "$line_fmt" | cut -f7`
+            local msg_args=`echo "$line_fmt" | cut -f8`
 
             # Generating the injection cmdline
             local msg="\"$dev $event\""
