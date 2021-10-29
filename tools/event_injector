@@ -253,6 +253,7 @@ evtdoc2cmdline() # $1: profile
             [ -z "$event" ] && continue
             [ "${event,,}" = "wip" ] && continue
             [ "${event,,}" = "tbd" ] && continue
+            event=${event:3} # remove the "(x)" prefix
 
             # Replace any place holders in the payload
             local DeviceID=$dev # DON'T change [DeviceID] here
