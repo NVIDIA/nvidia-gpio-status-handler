@@ -205,15 +205,29 @@ devp2list() # $1: dev pattern
 {
     local devp=$1;shift
 
-    devp=${devp//[][-]/ }
+    local pref=${devp%%[*}
+    local sufx=${devp##*]}
+    local mid=${devp##*[}; mid=${mid%]*}
 
-    local dev=${devp%% *}
-    local ids=${devp#* };ids=${ids% }
-    local min=${ids%% *}
-    local max=${ids##* }
+    if [[ $devp =~ .*\[[0-9]+\-[0-9]\].* ]]; then
+        local min=${mid%%-*}
+        local max=${mid##*-}
 
-    local i
-    for ((i=${min}; i<=${max}; i++)); do printf "${dev}%d " $i; done
+        local i
+        for ((i=${min}; i<=${max}; i++)); do printf "${pref}%d${sufx}\n" $i; done
+        return $?
+    fi
+
+    if [[ $devp =~ .*\[.+(,.+)*\].* ]]; then
+        for i in ${mid//,/ }; do
+            [ -n "$pref" ] && printf "${pref}_" | tr -s '_'
+            printf "%s" $i
+            [ -n "$sufx" ] && printf "_${sufx}\n" | tr -s '_' || printf "\n"
+        done
+        return $?
+    fi
+
+    echo "${devp}"
     return 0
 }
 
@@ -247,14 +261,14 @@ evtdoc2cmdline() # $1: profile
         printf "=%.0s" {0..40};echo
 
         local event=`echo "$line" | cut -f2`
+        # Filter out invalid event
+        [ -z "$event" ] && continue
+        [ "${event,,}" = "wip" ] && continue
+        [ "${event,,}" = "tbd" ] && continue
+        event=${event:3} # remove the "(x)" prefix
 
-        for dev in `devp2list "$devp"`; do
-            # Filter out invalid event
-            [ -z "$event" ] && continue
-            [ "${event,,}" = "wip" ] && continue
-            [ "${event,,}" = "tbd" ] && continue
-            event=${event:3} # remove the "(x)" prefix
-
+        local dev
+        echo "`devp2list "$devp"`" | while IFS= read -r dev; do
             # Replace any place holders in the payload
             local DeviceID=$dev # DON'T change [DeviceID] here
             local line_fmt=`eval echo "\"${line//\"/\\\\\"}\""`
@@ -267,7 +281,7 @@ evtdoc2cmdline() # $1: profile
             # Generating the injection cmdline
             local msg="\"$dev $event\""
 
-            local dbus_log_svr;dbus_log_svr="`openbmc_log_severity "$msg_svr" 2>/dev/null`";rc=$?
+            local dbus_log_svr;dbus_log_svr=`openbmc_log_severity "$msg_svr" 2>/dev/null`;rc=$?
             [ "$rc" -ne 0 ] && echo "[E] Unknown severity label [$msg_svr], rc=$rc!" && return $rc
 
             msg="$msg $dbus_log_svr"
