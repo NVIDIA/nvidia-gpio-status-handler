@@ -257,6 +257,7 @@ evtdoc2cmdline() # $1: profile
 
         local devp=`echo "$line" | cut -f1`
         [ "$devp" = "Device" ] && continue # skip the caption
+        [ "$devp" = "Non-Interrupt Events" ] && break # FIXME: stop here for now.
         [ -z "$devp" ] && devp=${devp_cache} || devp_cache=$devp
         printf "=%.0s" {0..40};echo
 
