@@ -188,11 +188,13 @@ openbmc_log_severity() # $1: svr_str
 {
     [ "$#" -ne 1 ] && echo "[E] need params!" && return 1
 
+    local svr_prefix="xyz.openbmc_project.Logging.Entry.Level"
+
     local svr_str=${1,,}
     case $svr_str in
-        "ok") echo "xyz.openbmc_project.Logging.Entry.Level.Notice" ;;
-        "warning") echo "xyz.openbmc_project.Logging.Entry.Level.Warning" ;;
-        "critical") echo "xyz.openbmc_project.Logging.Entry.Level.Critical" ;;
+        "ok") echo "${svr_prefix}.Notice" ;;
+        "warning") echo "${svr_prefix}.Warning" ;;
+        "critical") echo "${svr_prefix}.Critical" ;;
         *) return 2;;
     esac
 
@@ -245,14 +247,8 @@ evtdoc2cmdline() # $1: profile
         printf "=%.0s" {0..40};echo
 
         local event=`echo "$line" | cut -f2`
-        local msg_id=`echo "$line" | cut -f3`
-        local msg_svr=`echo "$line" | cut -f4`
-        local msg_res=`echo "$line" | cut -f5`
-        local msg_origcond=`echo "$line" | cut -f6`
-        local msg_args=`echo "$line" | cut -f7`
 
         for dev in `devp2list "$devp"`; do
-
             # Filter out invalid event
             [ -z "$event" ] && continue
             [ "${event,,}" = "wip" ] && continue
@@ -260,13 +256,17 @@ evtdoc2cmdline() # $1: profile
 
             # Replace any place holders in the payload
             local DeviceID=$dev # DON'T change [DeviceID] here
-            msg_args=`eval echo "${msg_args//\"/\\\\\"}"`
-            msg_origcond=`eval echo "${msg_origcond}"`
+            local line_fmt=`eval echo "\"${line//\"/\\\\\"}\""`
+            local msg_id=`echo "$line_fmt" | cut -f3`
+            local msg_svr=`echo "$line_fmt" | cut -f4`
+            local msg_res=`echo "$line_fmt" | cut -f5`
+            local msg_origcond=`echo "$line_fmt" | cut -f6`
+            local msg_args=`echo "$line_fmt" | cut -f7`
 
             # Generating the injection cmdline
             local msg="\"$dev $event\""
 
-            local dbus_log_svr;dbus_log_svr=`openbmc_log_severity "$msg_svr" 2>/dev/null`;rc=$?
+            local dbus_log_svr;dbus_log_svr="`openbmc_log_severity "$msg_svr" 2>/dev/null`";rc=$?
             [ "$rc" -ne 0 ] && echo "[E] Unknown severity label [$msg_svr], rc=$rc!" && return $rc
 
             msg="$msg $dbus_log_svr"
