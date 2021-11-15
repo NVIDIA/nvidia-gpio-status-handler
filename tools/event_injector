@@ -256,6 +256,9 @@ evtdoc2cmdline() # $1: profile
     
     local key_res="xyz.openbmc_project.Logging.Entry.Resolution"
 
+    TEMPFILE=/tmp/$$.tmp
+    echo 0 > $TEMPFILE
+
     local rc=0
     local devp_cache
     local line
@@ -291,7 +294,7 @@ evtdoc2cmdline() # $1: profile
             local msg_res=`echo "$line_fmt" | cut -f6`
             #local msg_origcond=`echo "$line_fmt" | cut -f7` # Out of scope for QEMU R5 
             local msg_args=`echo "$line_fmt" | cut -f8`
-
+            msg_args=`sed 's/"//g' <<<"$msg_args"`
             # Generating the injection cmdline
             local msg="\"$dev $event\""
 
@@ -299,7 +302,7 @@ evtdoc2cmdline() # $1: profile
             [ "$rc" -ne 0 ] && echo "[E] Unknown severity label [$msg_svr], rc=$rc!" && return $rc
 
             msg="$msg $dbus_log_svr"
-            msg="$msg 2" # 4 key-value pairs
+            msg="$msg 3" # 4 key-value pairs
             msg="$msg \"REDFISH_MESSAGE_ID\" \"${msg_id}\""
             msg="$msg \"REDFISH_MESSAGE_ARGS\" \"${msg_args}\""
             msg="$msg ${key_res} \"${msg_res}\"" # TBD
@@ -313,12 +316,29 @@ evtdoc2cmdline() # $1: profile
             echo $cmd
 
             if [ ! -z "$inject" ] && [ "$inject" = "true" ]; then
-                echo "Injecting Device Event Log ($event) to D-Bus"
-                eval $cmd
+
+                eval $cmd 
+                
+                rc=$?
+                echo -n "Injecting Device Event Log ($event) to D-Bus: "
+                if [ $rc -ne 0 ]; then 
+                    echo "Failed"
+                else
+                    echo "Passed"
+                    # Fetch the value and increase it
+                    COUNTER=$[$(cat $TEMPFILE) + 1]
+
+                    # Store the new value
+                    echo $COUNTER > $TEMPFILE
+                fi
             fi
 
         done
     done < "$prf"
+
+    injections=$(cat $TEMPFILE)
+    echo "Successful Injections: $injections"
+    unlink $TEMPFILE
 }
 
 ### Main Module

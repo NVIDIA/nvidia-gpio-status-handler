@@ -31,7 +31,6 @@ SysVR	(B)Power Rail Change	(B)5V Power Abnormal Change	ResourceEvent.1.0.Resourc
 LLC_[AB,CD]_MPS	(B)Power Abnormal Change		ResourceEvent.1.0.ResourceErrorDetected	Critical	Contact NVIDIA Support	/redfish/v1/Chassis/Baseboard	["${DeviceID}", "power supply status error"]
 			ResourceEvent.1.0.ResourceErrorDetected		Contact NVIDIA Support	/redfish/v1/Chassis/Baseboard	["${DeviceID}", "power supply status error"]
 FPGA	(B)Thermal Alert		OpenBMC.0.2.SensorThresholdWarningHighGoingHigh  	Warning	Contact NVIDIA Support	/redfish/v1/Chassis/Baseboard/Sensors/${DeviceID}_Temp 	["${DeviceID}_Temp", 90, 87]				
-NVIDIA PCB Temp alert					Contact NVIDIA Support	/redfish/v1/Chassis/Baseboard	
 PCB[0-3]	(B)alert		OpenBMC.0.2.SensorThresholdWarningHighGoingHigh  	Warning	Contact NVIDIA Support	/redfish/v1/Chassis/Baseboard/Sensors/${DeviceID}_Temp	["${DeviceID}_Temp", 90, 87]
 			OpenBMC.0.2.SensorThresholdWarningHighGoingHigh  	Warning	Contact NVIDIA Support	/redfish/v1/Chassis/Baseboard/Sensors/${DeviceID}_Temp	["${DeviceID}_Temp", 90, 87]
 			OpenBMC.0.2.SensorThresholdCriticalHighGoingLow 	Critical	Contact NVIDIA Support	/redfish/v1/Chassis/Baseboard/Sensors/${DeviceID}_Temp	["${DeviceID}_Temp", 97, 95]
@@ -39,76 +38,11 @@ Inlet[0-3]	(B)alert		ResourceEvent.1.0.ResourceErrorsCorrected	OK		/redfish/v1/C
 			OpenBMC.0.2.SensorThresholdWarningHighGoingHigh  	Warning	Contact NVIDIA Support	/redfish/v1/Chassis/Baseboard/Sensors/${DeviceID}_Temp	["${DeviceID}_Temp", 90, 87]
 			OpenBMC.0.2.SensorThresholdCriticalHighGoingLow 	Critical	Contact NVIDIA Support	/redfish/v1/Chassis/Baseboard/Sensors/${DeviceID}_Temp	["${DeviceID}_Temp", 97, 95]
 Alt Sensor	(B)Sensor Ready Change		ResourceEvent.1.0.ResourceErrorDetected	Critical	Contact NVIDIA Support	/redfish/v1/Chassis/Baseboard	["${DeviceID}", "sensor ready change"]
-Non-Interrupt Events							
-GPU[0-7]	(G)XID messages		ResourceEvent.1.0.ResourceErrorDetected	Warning?	Contact NVIDIA Support	/redfish/v1/Chassis/${DeviceID}	["GPU1 (<device ID>) driver event message", "(Xid: <Xid errno>) <information about the Xid>"]
-	(G)GPU SRAM ECC correctable error count		ResourceErrorThresholdExceeded	Warning	Contact NVIDIA Support	/redfish/v1/Chassis/${DeviceID}	["increments of GPU1 SRAM correctable ECC errors", <leaking-bucket-threshold>]
-	(G)GPU SRAM ECC uncorrectable error count		ResourceErrorDetected	Critical	Contact NVIDIA Support	/redfish/v1/Chassis/${DeviceID}	["${DeviceID} SRAM", "uncorrectable ECC errors"]
-	(G)GPU DRAM ECC correctable error count
-		ResourceErrorThresholdExceeded	Warning			["increments of GPU1 DRAM correctable ECC errors", <leaking-bucket-threshold>]
-	(G)GPU DRAM ECC uncorrectable error count
-		ResourceErrorThresholdExceeded	Warning			["increments of GPU1 DRAM uncorrectable ECC errors", <leaking-bucket-threshold>]
-	(G)GPU total ECC correctable error count		ResourceErrorThresholdExceeded	Warning			["the increments of GPU1 total correctable ECC errors", <leaking-bucket-threshold>]
-	(G)GPU total ECC uncorrectable error count		ResourceErrorThresholdExceeded	Warning			["the increments of GPU1 total uncorrectable ECC errors", <threshold>]
-	(G)Correctable row-remapping count		ResourceErrorThresholdExceeded	Warning			["GPU1 correctable row-remapping count", <leaking-bucket-threshold>]
-	(G)Uncorrectable row-remapping count		ResourceErrorThresholdExceeded	Warning			["GPU1 uncorrectable row-remapping count", <leaking-bucket-threshold>]
-	(G) Clock throttle due to  User Defined Clocks		ResourceErrorDetected ResourceErrorsCorrected		New GPU V05.1		["GPU1 clock throttle", "User Defined Clock"]
-	(G) Clock throttle due to  Application Clock Setting		ResourceErrorDetected ResourceErrorsCorrected		New GPU V05.1		["GPU1 clock throttle", "Application Clock Setting"]
-	(G) Clock throttle due to  SW Power Cap		ResourceErrorDetected ResourceErrorsCorrected		New GPU V05.1		["GPU1 clock throttle", "SW Power Cap"]
-	(G) Clock throttle due to HW Slowdown		ResourceErrorDetected ResourceErrorsCorrected		New GPU V05.1		["GPU1 clock throttle", "HW Slowdown"]
-	(G) Clock throttle due to HW Thermal Slowdown		ResourceErrorDetected ResourceErrorsCorrected		New GPU V05.1		["GPU1 clock throttle", "Thermal Slowdown"]
-	(G) Clock throttle due to HW Power Brake Slowdown		ResourceErrorDetected ResourceErrorsCorrected		New GPU V05.1		["GPU1 clock throttle", "HW Power Brake Slowdown"]
-	(G) Clock throttle due to Sync Boost		ResourceErrorDetected ResourceErrorsCorrected		New GPU V05.1		["GPU1 clock throttle", "Sync Boost"]
-	(G) Clock throttle due to SW Thermal Slowdown Tavg		ResourceErrorDetected ResourceErrorsCorrected		New GPU V05.1		["GPU1 clock throttle", "Thermal Slowdown Tavg"]
-	(G) Clock throttle due to SW Thermal Slowdown Tlimit		ResourceErrorDetected ResourceErrorsCorrected		New GPU V05.1		["GPU1 clock throttle", "SW Thermal Slowdown Tlimit"]
-	(G) Clock throttle due to Display Clock Setting		ResourceErrorDetected ResourceErrorsCorrected		New GPU V05.1		["GPU1 clock throttle", "Display Clock Setting"]
-	(G) GPU excluded state  Driver has prevented GPU from running with inband tools		ResourceErrorDetected ResourceErrorsCorrected		New GPU V05.1		["GPU1 driver", "Prevented GPU from running with inband tool"]
-	(G)GPU reset required state		ResetRequired	Critical	"GPU reset is required"	/redfish/v1/Chassis/${DeviceID}	["GPU1", "reset required"]  ["/redfish/v1/Systems/1/Processors/GPU1", "GracefulRestart"]
-	(G)GPU drain/reset recommended state		ResourceErrorDetected ResourceErrorsCorrected  ResetRequired	Warning	"GPU drain/reset is recommended."	/redfish/v1/Chassis/${DeviceID}	["GPU1", "drain and reset recommended"]  ["/redfish/v1/Systems/1/Processors/GPU1", "GracefulRestart"]
-	(G) Pending ECC state after reset 		ResourceErrorDetected ResourceErrorsCorrected  ResetRequired	Warning	"GPU reset is required"		["GPU1", "pending ECC state"]
-	(G) MIG state change pending after reset 		ResourceErrorDetected ResourceErrorsCorrected  ResetRequired	Warning	"GPU reset is required"		["GPU1", "pending MIG state"]  ["/redfish/v1/Systems/1/Processors/GPU1", "GracefulRestart]
-	(G) GPU row-remapping pending flag 		ResourceErrorDetected ResourceErrorsCorrected  ResetRequired	Warning	"GPU reset is required"		["GPU1", "pending row-remapping state"]  ["/redfish/v1/Systems/1/Processors/GPU1", "GracefulRestart]
+GPU[0-7]	(G)(G)GPU SRAM ECC uncorrectable error count		ResourceErrorDetected	Critical	Contact NVIDIA Support	/redfish/v1/Chassis/${DeviceID}	["${DeviceID} SRAM", "uncorrectable ECC errors"]
 	(G)GPU row-remapping failure		ResourceErrorDetected ResourceErrorsCorrected	Critical	"Contact NVIDIA support"	/redfish/v1/Chassis/{DeviceID}	["{DeviceID} memory", "row-remapping failure"]
-NVSwitch	(N)XID messages		ResourceErrorDetected	Warning?			["NVSwitch1 (<device ID>) driver event message", "(SXid: <SXid errno>) <information about the SXid>"]
-	(N)NVSwitch ECC correctable error count		ResourceErrorThresholdExceeded	Warning			["{DeviceID} ECC correctable", <leaking-bucket-threshold>]
-	(N)NVSwitch ECC uncorrectable error count		ResourceErrorThresholdExceeded	Warning (<2) Critical (>=2)	"Contact NVIDIA support"	/redfish/v1/Chassis/${DeviceID}	["${DeviceID} ECC uncorrectable errors", 2]
-	(N)NVSwitch driver not running		ResourceErrorDetected ResourceErrorsCorrected	Info			["NVSwitch1", "driver not running"]
-	(N)NVSwitch manager not running		ResourceErrorDetected ResourceErrorsCorrected	Info			["NVSwitch1", "manager not running"]
+NVSwitch	(N)NVSwitch ECC uncorrectable error count		ResourceErrorThresholdExceeded	Warning (<2) Critical (>=2)	"Contact NVIDIA support"	/redfish/v1/Chassis/${DeviceID}	["${DeviceID} ECC uncorrectable errors", 2]
 	(N)NVSwitch manager timeout without graceful shutdown		ResourceEvent.1.0.ResourceErrorDetected	Critical	"Contact NVIDIA support"	/redfish/v1/Managers/NVSwitchFabricManager	["Fabric Manager", "timeout without graceful shutdown"]
 	(N)NVSwitch manager error		ResourceErrorDetected	Critical	"Contact NVIDIA support"	/redfish/v1/Managers/NVSwitchFabricManager	["Fabric Manager", "manager error"]
 	(N)NVSwitch disabled due to access or trunk link error detected in local device		ResourceErrorDetected	Critical	"Contact NVIDIA support"	/redfish/v1/Fabrics/{FabricId}/Switches/{SwitchId}	["${DeviceID}", "access or trunk link error in local device"]
 	(N)NVSwitch disabled due to access or trunk link error detected in peer device		ResourceErrorDetected ResourceErrorsCorrected	Critical	"Contact NVIDIA support"	/redfish/v1/Fabrics/{FabricId}/Switches/{SwitchId}	["${DeviceID}", "access or trunk link error in peer device"]
-GPU NVSwitch (PCIe)	(G)(N)PCIe correctable error count		ResourceErrorThresholdExceeded	Warning	Need clarification - key flags		["GPU1 PCIe correctable error count", <leaking-bucket-threshold>]
-	(G)(N)PCIe non-fatal error count		ResourceErrorThresholdExceeded	Warning	"Contact NVIDIA support"		["${DeviceID} PCIe non-fatal error count", "1"]
-	(G)(N)PCIe fatal error count		ResourceErrorThresholdExceeded	Critical	"Contact NVIDIA support"		["${DeviceID} PCIe fatal error count", "1"]
-	(G)(N)PCIe L0 to recovery count		ResourceErrorThresholdExceeded	Warning			["GPU1 PCIe L0 to recovery count", <leaking-bucket-threshold>]
-	(G)(N)PCIe replay count		ResourceErrorThresholdExceeded	Warning			["GPU1 PCIe replay count", <leaking-bucket-threshold>]
-	(G)(N)PCIe replay rollover count		ResourceErrorThresholdExceeded	Warning			["GPU1 PCIe replay rollover count", <leaking-bucket-threshold>]
-	(G)(N)PCIe NAKs received error count		ResourceErrorThresholdExceeded	Warning			["GPU1 PCIe NAKs received error count", <leaking-bucket-threshold>]
-	(G)(N)PCIe NAKs sent error count		ResourceErrorThresholdExceeded	Warning			["GPU1 PCIe NAKs sent error count", <leaking-bucket-threshold>]
-GPU NVSwitch (NVLink)	(G)(N)NVLink replay error count		ResourceErrorThresholdExceeded	Warning	Need clarification - key flags	/redfish/v1/Chassis/${DeviceID}	["GPU1 NVLink1 replay error count", <leaking-bucket-threshold>]
-	(G)(N)NVLink recovery error count		ResourceErrorThresholdExceeded	Warning			["GPU1 NVLink1 recover error count", <leaking-bucket-threshold>]
-	(G)(N)NVLink flit CRC error count		ResourceErrorThresholdExceeded	Warning			["GPU1 NVLink1 flit CRC error count", <leaking-bucket-threshold>]
-	(G)(N)NVLink data CRC error count		ResourceErrorThresholdExceeded	Warning			["GPU1 NVLink1 data CRC error count", <leaking-bucket-threshold>]
-	(B)NVLink reference clock output buffer disabled		ResourceErrorDetected ResourceErrorsCorrected	Warning or Critical?			["GPU1", "NVLink reference clock output buffer disabled"]
-	(G)(N)NVLink fatal error		ResourceErrorDetected ResourceErrorsCorrected	Critical		/redfish/v1/Chassis/${DeviceID}	["GPU1", "NVLink fatal error"]
-	(G) NVLink L1 low power state		ResourceErrorDetected ResourceErrorsCorrected				["GPU1", "NVLink1 L1 low power state"]
-	(G) NVLink disabled state		ResourceErrorDetected ResourceErrorsCorrected				["GPU1", "NVLink1 L1 disabled"]
-	(G)(N) NVLink training error status		ResourceErrorDetected ResourceErrorsCorrected				["GPU1", "NVLink1 training error"]
-	(G)(N) NVLink training error count		ResourceErrorThresholdExceeded				["GPU1 NVLink1 training error count", <leaking-bucket-threshold>]
-	(G)(N) NVLink runtime error status		ResourceErrorDetected ResourceErrorsCorrected				["GPU1", "NVLink1 runtime error"]
-	(G)(N) NVLink runtime error count		ResourceErrorThresholdExceeded				["GPU1 NVLink1 runtime error count", <leaking-bucket-threshold>]
-GPU NVSwitch PCIeSwitch	(G)(N)(B)PCIe fundamental asserted		ResourceErrorDetected ResourceErrorsCorrected	Warning?		/redfish/v1/Chassis/${DeviceID}	["GPU1", "PCIe fundamental asserted"]
-	(B)PCIe reference clock output buffer disabled		ResourceErrorDetected ResourceErrorsCorrected	Warning?			["GPU1", "PCIe reference clok output buffer disabled"]
-Software Events							
-Firmware boot status	(E)Firmware boot complete						
-	(E)Firmware authentication failure						
-	(E)Firmware boot failure						
-							
-Legend							
-Prefix	(G) - Defined in GPU SMBPBI spec						
-	(N) - Defined in NVSwitch SMBPBI spec						
-	(B) - Defined in Baseboard SMBPBI spec						
-	(E) - Get from ERoTs						
-Color	Black - Normal						
-	Red - Data must be alerted to HostBMC						
-	Blue - Redfish Info						
+GPU NVSwitch (PCIe)	(G)(N)PCIe fatal error count		ResourceErrorThresholdExceeded	Critical	"Contact NVIDIA support"		["${DeviceID} PCIe fatal error count", "1"]
