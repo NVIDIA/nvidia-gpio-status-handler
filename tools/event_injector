@@ -295,6 +295,7 @@ evtdoc2cmdline() # $1: profile
             #local msg_origcond=`echo "$line_fmt" | cut -f7` # Out of scope for QEMU R5 
             local msg_args=`echo "$line_fmt" | cut -f8`
             msg_args=`sed 's/"//g' <<<"$msg_args"`
+            msg_args=`sed 's/[][]//g' <<<"$msg_args"`
             # Generating the injection cmdline
             local msg="\"$dev $event\""
 

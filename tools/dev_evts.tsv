@@ -34,7 +34,7 @@ FPGA	(B)Thermal Alert		OpenBMC.0.2.SensorThresholdWarningHighGoingHigh  	Warning
 PCB[0-3]	(B)alert		OpenBMC.0.2.SensorThresholdWarningHighGoingHigh  	Warning	Contact NVIDIA Support	/redfish/v1/Chassis/Baseboard/Sensors/${DeviceID}_Temp	["${DeviceID}_Temp", 90, 87]
 			OpenBMC.0.2.SensorThresholdWarningHighGoingHigh  	Warning	Contact NVIDIA Support	/redfish/v1/Chassis/Baseboard/Sensors/${DeviceID}_Temp	["${DeviceID}_Temp", 90, 87]
 			OpenBMC.0.2.SensorThresholdCriticalHighGoingLow 	Critical	Contact NVIDIA Support	/redfish/v1/Chassis/Baseboard/Sensors/${DeviceID}_Temp	["${DeviceID}_Temp", 97, 95]
-Inlet[0-3]	(B)alert		ResourceEvent.1.0.ResourceErrorsCorrected	OK		/redfish/v1/Chassis/Baseboard/Sensors/${DeviceID}_Temp	["${DeviceID}_Temp", 54, 87]
+Inlet[0-3]	(B)alert		ResourceEvent.1.0.ResourceErrorsCorrected	OK	Contact NVIDIA Support	/redfish/v1/Chassis/Baseboard/Sensors/${DeviceID}_Temp	["${DeviceID}_Temp", 54, 87]
 			OpenBMC.0.2.SensorThresholdWarningHighGoingHigh  	Warning	Contact NVIDIA Support	/redfish/v1/Chassis/Baseboard/Sensors/${DeviceID}_Temp	["${DeviceID}_Temp", 90, 87]
 			OpenBMC.0.2.SensorThresholdCriticalHighGoingLow 	Critical	Contact NVIDIA Support	/redfish/v1/Chassis/Baseboard/Sensors/${DeviceID}_Temp	["${DeviceID}_Temp", 97, 95]
 Alt Sensor	(B)Sensor Ready Change		ResourceEvent.1.0.ResourceErrorDetected	Critical	Contact NVIDIA Support	/redfish/v1/Chassis/Baseboard	["${DeviceID}", "sensor ready change"]

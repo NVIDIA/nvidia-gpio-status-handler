@@ -289,14 +289,16 @@ class InjectTest:
                 # Split the busctl command and cache all the necessary fields/values
                 try:
                     event_split = split(str(event))
-                    event_id = event_split[BUSCTL_MSG_IDX]
-                    self.events_injected[event_id] = dict()
+                    #event_id = event_split[BUSCTL_MSG_IDX]
+                    msg_args = ''.join(event_split[BUSCTL_MSGARGS_IDX].split(","))
+                    msg_args = msg_args.replace(" ", "")
+                    self.events_injected[msg_args] = dict()
 
                     # Create a temp dictionary to fill in the info
                     temp_dict = dict()
                     temp_dict["msg_id"] = event_split[BUSCTL_MSGID_IDX]
                     temp_dict["severity"] = event_split[BUSCTL_SEVERITY_IDX]
-                    temp_dict["msg_args"] = event_split[BUSCTL_MSGARGS_IDX]
+                    #temp_dict["msg_args"] = event_split[BUSCTL_MSGARGS_IDX].split(",")
                     temp_dict["resolution"] = event_split[BUSCTL_RES_IDX]
 
                     """
@@ -309,7 +311,7 @@ class InjectTest:
                         "resolution": "Contact NVIDIA Support"
                     },
                     """
-                    self.events_injected[event_id] = temp_dict.copy()
+                    self.events_injected[msg_args] = temp_dict.copy()
 
                 except Exception as e:
                     print(f"Unable to get field from busctl command {event} {str(e)}")
@@ -349,25 +351,25 @@ class InjectTest:
         # Iterate over all the log entries
         for member in self.log_cache.get('Members', []):
             try:
-
                 # Check if log entry number is greater than the initial logs count before injection
                 if self.initial_log_count < int(member['Id']) <= self.initial_log_count + self.events_injected_count:
-                    
+                    msg_args = ''.join(member["MessageArgs"])
+                    msg_args = msg_args.replace(" ", "")
+
                     # Get event information for the log using the message
-                    temp_dict = self.events_injected[member["Message"]]
+                    temp_dict = self.events_injected[msg_args]
 
                     # Compare all the fields
                     if temp_dict["msg_id"] != member["MessageId"] or \
-                        member["Severity"] not in temp_dict["severity"] or \
-                            temp_dict["msg_args"] != member["Message_Args"] or \
+                                member["Severity"] not in temp_dict["severity"] or \
                                 temp_dict["resolution"] != member["Resolution"]:
                                 continue
-                    
+
                     # Remove the entry from the dictionary if all the fields are matched
                     # This confirms that a log is generated for an injected event
-                    del self.events_injected[member["Message"]]
+                    del self.events_injected[msg_args]
             except Exception as e:
-                out = f"{out}Exception occurred while matching keys for event {member['Message']}: {str(e)}\n"
+                out = f"{out}Exception occurred while matching keys for event {member['MessageArgs']}: {str(e)}\n"
                 pass
 
         # If the dictionary still have some info,
