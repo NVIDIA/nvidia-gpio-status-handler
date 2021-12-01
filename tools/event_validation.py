@@ -46,6 +46,19 @@ BUSCTL_MSGID_IDX=11     # "ResourceEvent.1.0.ResourceErrorsDetected"
 BUSCTL_MSGARGS_IDX=13   # "["GPU0 PWR_GOOD status", "interrupt asserted"]"
 BUSCTL_RES_IDX=15       # "Contact NVIDIA Support"
 
+SEVERITYDBUSTOREDFISH = {
+                            'critical'  : [
+                                        "xyz.openbmc_project.Logging.Entry.Level.Alert",
+                                        "xyz.openbmc_project.Logging.Entry.Level.Critical",
+                                        "xyz.openbmc_project.Logging.Entry.Level.Emergency",
+                                        "xyz.openbmc_project.Logging.Entry.Level.Error"],
+                            'ok'        : [
+                                            "xyz.openbmc_project.Logging.Entry.Level.Debug",
+                                            "xyz.openbmc_project.Logging.Entry.Level.Informational",
+                                            "xyz.openbmc_project.Logging.Entry.Level.Notice"],
+                            'warning'   : ["xyz.openbmc_project.Logging.Entry.Level.Warning"]
+                        }
+
 available_options = [
     {
         'args': [ '-p', '--passwd'],
@@ -139,6 +152,11 @@ def parse_arguments():
     if not args.dry_run:
         EVENT_INJ_SCRIPT_ARGS = f"{EVENT_INJ_SCRIPT_ARGS} -r"
 
+def lists_are_equal(list1, list2):
+    if len(list1) != len(list2):
+        return False
+    
+    return sorted(list1) == sorted(list2)
 
 class InjectTest:
     """
@@ -188,12 +206,12 @@ class InjectTest:
         except Exception as e:
             raise Exception(f"Exception occurred while converting response to json: {str(e)}\n Response: {response.text}")
         
-        key_count = "Members@odata.count"
+        key_members = "Members"
 
         # Get the 'Members@odata.count' key to read the log count
-        log_count = response_json.get(key_count, None)
-        if log_count is None:
-            raise Exception(f"Exception occurred while reading key: '{key_count}'")
+        members = response_json.get(key_members, None)
+        if members is None:
+            raise Exception(f"Exception occurred while reading key: '{members}'")
 
         # Cache the API response if argument is set to True
         if cache:
@@ -202,6 +220,11 @@ class InjectTest:
             except Exception as e:
                 raise Exception(f"Exception occurred while copying API response json: {str(e)}")
         
+        log_count = 0
+
+        for member in members:
+            log_count = max(log_count, int(member['Id']))
+
         return log_count
 
 
@@ -226,6 +249,8 @@ class InjectTest:
             cache useful data in dictionaries
         """
         print("...\nInjecting new events....")
+
+        current_log_number = self.initial_log_count
 
         try:
             # Create the SSH client
@@ -282,23 +307,21 @@ class InjectTest:
                 # Proceed only if it is a busctl command
                 if "busctl" not in event:
                     continue
-                
-                # Increment total number of events
-                self.total_events+=1
 
                 # Split the busctl command and cache all the necessary fields/values
                 try:
                     event_split = split(str(event))
-                    #event_id = event_split[BUSCTL_MSG_IDX]
-                    msg_args = ''.join(event_split[BUSCTL_MSGARGS_IDX].split(","))
-                    msg_args = msg_args.replace(" ", "")
-                    self.events_injected[msg_args] = dict()
+                    current_log_number+=1
+                    if current_log_number in self.events_injected:
+                        print(f"Duplicate event: {current_log_number}")
+                    else:
+                        self.events_injected[current_log_number] = list()
 
                     # Create a temp dictionary to fill in the info
                     temp_dict = dict()
                     temp_dict["msg_id"] = event_split[BUSCTL_MSGID_IDX]
                     temp_dict["severity"] = event_split[BUSCTL_SEVERITY_IDX]
-                    #temp_dict["msg_args"] = event_split[BUSCTL_MSGARGS_IDX].split(",")
+                    temp_dict["msg_args"] = [x.strip() for x in event_split[BUSCTL_MSGARGS_IDX].split(",")]
                     temp_dict["resolution"] = event_split[BUSCTL_RES_IDX]
 
                     """
@@ -311,8 +334,10 @@ class InjectTest:
                         "resolution": "Contact NVIDIA Support"
                     },
                     """
-                    self.events_injected[msg_args] = temp_dict.copy()
-
+                    # Increment total number of events
+                    self.total_events+=1
+                    temp_temp_dict = temp_dict.copy()
+                    self.events_injected[current_log_number] = temp_temp_dict
                 except Exception as e:
                     print(f"Unable to get field from busctl command {event} {str(e)}")
                     pass
@@ -347,27 +372,26 @@ class InjectTest:
             self.final_log_count = self.current_log_count(cache=True)
         except Exception as e:
             raise e
-
         # Iterate over all the log entries
         for member in self.log_cache.get('Members', []):
             try:
                 # Check if log entry number is greater than the initial logs count before injection
-                if self.initial_log_count < int(member['Id']) <= self.initial_log_count + self.events_injected_count:
-                    msg_args = ''.join(member["MessageArgs"])
-                    msg_args = msg_args.replace(" ", "")
+                if int(member['Id']) in self.events_injected:
+                    
+                    log_id = int(member['Id'])
+
+                    temp_dict = self.events_injected[log_id]
 
                     # Get event information for the log using the message
-                    temp_dict = self.events_injected[msg_args]
-
                     # Compare all the fields
                     if temp_dict["msg_id"] != member["MessageId"] or \
-                                member["Severity"] not in temp_dict["severity"] or \
-                                temp_dict["resolution"] != member["Resolution"]:
+                                temp_dict["severity"] not in SEVERITYDBUSTOREDFISH[member["Severity"].lower()] or \
+                                temp_dict["resolution"] != member["Resolution"] or \
+                                not lists_are_equal(temp_dict["msg_args"], member["MessageArgs"]):
                                 continue
-
                     # Remove the entry from the dictionary if all the fields are matched
                     # This confirms that a log is generated for an injected event
-                    del self.events_injected[msg_args]
+                    del self.events_injected[log_id]
             except Exception as e:
                 out = f"{out}Exception occurred while matching keys for event {member['MessageArgs']}: {str(e)}\n"
                 pass
@@ -379,7 +403,8 @@ class InjectTest:
             # Append the info in the output string and raise exception
             out = f"{out}\nUnable to verify log generation for following events:\n"
             for key in self.events_injected:
-                out = f"{out}\t* {key}\n"
+                if len(self.events_injected[key]) > 0:
+                    out = f"{out}\t* {key}\n"
             
             raise Exception(f"Exception occurred: {out}")
         
@@ -401,7 +426,7 @@ class InjectTest:
         
         color = 'red' if self.events_injected_count < self.total_events else 'green'
         print(f"\tEvents injected: ", colored(f"{self.events_injected_count}", color))
-        
+
         color = 'red' if len(self.events_injected) else 'green'
         print("\tUnverified events: ", colored(f"{len(self.events_injected)}", color))
 
