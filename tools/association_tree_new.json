@@ -1,0 +1,10 @@
+{
+    "GPU0": ["PWR_GB_HSC0", "FabricManager", "PWR_GB_HSC10"],
+    "GPU1": ["PWR_GB_HSC1", "FabricManager", "PWR_GB_HSC10"],
+    "GPU2": ["PWR_GB_HSC2", "FabricManager", "PWR_GB_HSC10"],
+    "GPU3": ["PWR_GB_HSC3", "FabricManager", "PWR_GB_HSC10"],
+    "GPU4": ["PWR_GB_HSC4", "FabricManager", "PWR_GB_HSC10"],
+    "GPU5": ["PWR_GB_HSC5", "FabricManager", "PWR_GB_HSC10"],
+    "GPU6": ["PWR_GB_HSC6", "FabricManager", "PWR_GB_HSC10"],
+    "GPU7": ["PWR_GB_HSC7", "FabricManager", "PWR_GB_HSC10"]
+}

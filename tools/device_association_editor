@@ -1,0 +1,390 @@
+#!/usr/bin/env bash
+
+################################################################################
+# Definitions
+#
+set -o pipefail
+DEFUSR=nobody
+DEFGRP=nogroup
+
+get_realuser()
+{
+    local rusr;rusr=`logname 2>/dev/null`
+    [ $? -ne 0 ] || [ -z "$rusr" ] && rusr=${LOGNAME}
+    [ -z "$rusr" ] && rusr=${USER}
+    [ -z "$rusr" ] && rusr=${DEFUSR}
+    echo $rusr
+}
+
+get_realgroup() # (user)
+{
+    local usr=$1
+    [ -z "$usr" ] && usr=${DEFUSR}
+    if [ "${DEFUSR}" = "$usr" ]; then
+        echo "${DEFGRP}"
+        return 0
+    fi
+    local grp;grp=`groups "$usr" 2>/dev/null | cut -d' ' -f3`
+    [ $? -ne 0 ] || [ -z "$grp" ] && grp=${DEFGRP}
+    echo $grp
+}
+
+REALUSER=`get_realuser`
+REALGROUP=`get_realgroup "${REALUSER}"`
+LOGPATH=/tmp/${REALUSER}_${APPNAME}_$$
+LOGTMP=tmp.log
+LOGAPP=app.log
+APPTMP=${LOGPATH}/${LOGTMP}
+APPLOG=${LOGPATH}/${LOGAPP}
+APPNAME=device_association_editor
+APPVER=0.1
+
+################################################################################
+# Functions
+#
+show_help()
+{
+    echo "A Tool in OpenBMC to to allow users to modify the D-Bus object association and health based on the Device Association Tree, Ver=${APPVER}"
+    echo "<usage>"
+    echo -e "\t${APPNAME} -t \"GPU0\" -a \"Fabric Manager\" -f association_tree.yaml [options]"
+    echo "syntax:"
+    echo -e "\tscriptTemplate [-p|f|t|a|d]"
+    echo "options:"
+    echo -e "\t-p, --print-devices"
+    echo -e "\t\tprint all the available D-Bus devices and exit."
+    echo -e ""
+    echo -e "\t-d, --dry-run"
+    echo -e "\t\tprint the BUSCTL command for the device without running it."
+    echo -e ""
+    echo -e "\t-f, --association-tree FILE-LOCATION"
+    echo -e "\t\tthe .yaml file containing device association tree profile."
+    echo -e ""
+    echo -e "\t-t, --target-device DEVICE-NAME"
+    echo -e "\t\tthe taget device"
+    echo -e ""
+    echo -e "\t-a, --associated-device DEVICE-NAME"
+    echo -e "\t\tthe associated device."
+    echo -e ""
+    echo -e "\t-h, --health HEALTH"
+    echo -e "\t\tthe health state for the device."
+    echo -e ""
+    echo -e "\t-r, --run-all"
+    echo -e "\t\tRun the commands for all device associations."
+    echo
+}
+
+### Logging Module
+initlog()
+{
+    [ -d "${LOGPATH}" ] || mkdir -p "${LOGPATH}"
+}
+
+log() # (string...)
+{
+    local opt
+    if [ "$1" = "-n" ]; then
+        opt="-n"
+        shift
+    else
+        opt=""
+    fi
+    local msg="`date '+[%Y-%m-%d %H:%M:%S]'` $*"
+    #echo $opt $msg
+    echo $opt $msg >> ${APPLOG}
+}
+
+echo_log() # (string...)
+{
+    local msg=$*
+    echo $msg
+    log $msg
+}
+
+cleanup()
+{
+    [ -d "${LOGPATH}" ] || return
+    log "Cleanup log files..."
+    rm -rf "${LOGPATH}"
+    set +o pipefail
+}
+
+declare -A DEVICE_TARGET_MAP=( ["GPU"]="/xyz/openbmc_project/inventory/system/chassis/"\
+                         ["NVSwitch"]="xyz/openbmc_project/inventory/system/chassis/"\
+                         ["FabricManager"]="/xyz/openbmc_project/inventory/system/managers/"\
+                         ["HSC"]="/xyz/openbmc_project/sensors/power/"\
+                         ["PWR_GB_GPU"]="/xyz/openbmc_project/sensors/power/")
+
+find_target()
+{
+    local device=$1
+
+    for dev in "${!DEVICE_TARGET_MAP[@]}"
+    do
+        if grep -q "$dev" <<< "$device"
+        then
+            echo "${DEVICE_TARGET_MAP[$dev]}${device}"
+            return 0
+        fi
+    done
+
+    return 1
+
+}
+
+update_health()
+{
+    local parent_device=$1
+    local child_device=$2
+    local health=$3
+    local dry_run=$4
+    local child_target
+    local parent_target
+
+    echo "${child_device} ---> ${parent_device}"
+
+    child_target=$(find_target "${child_device}")
+    rc=$?
+    if [ $rc -eq 1 ]
+    then
+        echo "No target found for child device: ${child_device}"
+        return 3
+    fi
+    parent_target=$(find_target "${parent_device}")
+    rc=$?
+    if [ $rc -eq 1 ]
+    then
+        echo "No target found for parent device: ${parent_device}"
+        return 3
+    fi
+    # child_target="/xyz/openbmc_project/inventory/system/chassis/Retimer0"
+    # parent_target="/xyz/openbmc_project/inventory/system/chassis/GPU0"
+
+    association=$(busctl get-property xyz.openbmc_project.GpuMgr ${parent_target} xyz.openbmc_project.Association.Definitions Associations)
+    rc=$?
+    if [ $rc -ne 0 ]
+    then
+        echo "Unable to get Association for ${parent_target}"
+        return 5
+    fi
+    #a(sss) 6 "all_processors" "parent_chassis" "/xyz/openbmc_project/inventory/system/processors/GPU0" "all_memory" "parent_chassis" "/xyz/openbmc_project/inventory/system/memory/GPUDRAM0" "all_sensors" "chassis" "/xyz/openbmc_project/sensors/temperature/TEMP_GB_GPU0" "all_sensors" "chassis" "/xyz/openbmc_project/sensors/temperature/TEMP_GB_GPU0_M" "all_sensors" "chassis" "/xyz/openbmc_project/sensors/power/PWR_GB_GPU0" "all_sensors" "chassis" "/xyz/openbmc_project/sensors/energy/EG_GB_GPU0"
+    association_array=($association)
+
+    associated_sensors=${association_array[1]}
+
+    if grep -q "$child_target" <<< "$association"
+    then
+        local element=0
+        local found=0
+        for i in "${association_array[@]}"
+        do
+            if grep -q "$child_target" <<< "$i"
+            then
+            found=1
+                break
+            fi
+            (( element += 1 ))
+        done
+        if [ $found -eq 0 ]
+        then
+            echo "Child target ${child_target} not found in Associations property for device ${parent_target}"
+            return 6
+        fi
+        (( element -= 1 ))
+        association_array[$element]="\"$health\""
+    else
+        (( associated_sensors += 1 ))
+        association_array+=("\"all_sensors\"")
+        association_array+=("\"${health}\"")
+        association_array+=("\"${child_target}\"")
+    fi
+    association_array[0]="\"${association_array[0]}\""
+    association_array[1]=${associated_sensors}
+
+    local cmd="busctl set-property xyz.openbmc_project.GpuMgr ${parent_target} xyz.openbmc_project.Association.Definitions Associations"
+
+    for i in "${association_array[@]}"
+    do
+        cmd="$cmd $i"
+    done
+    
+    echo $cmd
+
+    if [ $dry_run = true ]
+    then
+        return 0
+    fi
+
+    eval $cmd
+    rc=$?
+    if [ $rc -eq 0 ]
+    then
+        return 0
+    else
+        echo "Failed to run command!"
+        return 4
+    fi
+
+
+}
+
+depth_first_search()
+{
+    local tree_location=$1
+    local current_device=$2
+    local final_device=$3
+    local health=$4
+    local dry_run=$5
+    local run_all=$6
+
+    if [ "$current_device" = "$final_device" ]
+    then
+        # We found the device
+        return 0
+    fi
+    # is_target_device_present=$(jq has\(\"${current_device}\"\) ${tree_location})
+    $(grep -q "\"${current_device}\":" ${tree_location})
+    rc=$?
+    if [ $rc -ne 0 ]
+    then
+        return 2
+    fi
+    local line
+    while IFS= read -r line; do
+        [ "$line" = "" ] && continue
+        [ "$line" = "null" ] && continue
+        #line=$(sed 's/.$//' <<< $line)
+        line=$(tr -d '"' <<< $line)
+        line=$(awk '{$1=$1};1' <<< $line)
+        eval depth_first_search "$tree_location" "$line" "$final_device" "$health" "$dry_run" "$run_all"
+        rc=$?
+        if [ $rc -eq 0 ]; then
+            update_health "$current_device" "$line" "$health" "$dry_run"
+            status=$?
+            if [ "$run_all" = true ] && [ "$status" -eq 0 ] 
+            then
+                return 7
+            fi
+            return $status
+        fi
+        if [ $rc -eq 3 ] || [ $rc -eq 4 ] || [ $rc -eq 7 ]; then
+            return $rc
+        fi
+    # done < <(eval "jq '.[\"${current_device}\"]' ${tree_location}" | tr -d "[]")
+    done < <(eval "grep -o '\"${current_device}\": \[.*]' ${tree_location}" | sed 's/.*://' | tr -d "[]" | tr , '\n')
+    
+    return 1
+}
+
+parse_association_tree()
+{
+    local tree_location=$1
+    local target_device=$2
+    local associated_device=$3
+    local health=$4
+    local dry_run=$5
+    local run_all=$6
+
+    depth_first_search "${tree_location}" "$target_device" "$associated_device" "$health" "$dry_run"  "$run_all"
+    rc=$?
+    if [ $rc -eq 0 ] || [ $rc -eq 7 ]
+    then
+        echo "Success!"
+        return 0
+    fi
+    if [ $rc -eq 1 ]
+    then
+        echo "Associated device not found!"
+    fi
+    if [ $rc -eq 2 ]
+    then
+        echo "Target device not found!"
+    fi
+    return $rc
+}
+
+
+### Main Module
+main() # $*: all args
+{
+    local tree_location=''
+    local target_device=''
+    local associated_device=''
+    local health=''
+    local dry_run=false
+    local print_devices=''
+    local run_all=''
+
+    PARSED_ARGUMENTS=$(getopt -n device_association_editor -o pf:t:a:h:dr --long print-devices,association-tree:,target-device:,associated-device:,health:,dry-run,run-all -- "$@")
+    VALID_ARGUMENTS=$?
+    if [ "$VALID_ARGUMENTS" != "0" ]; then
+        echo "[E] Invalid argument provided!"
+        return 1
+    fi
+
+    eval set -- "$PARSED_ARGUMENTS"
+    while :
+    do
+        case "$1" in
+            -f | --association-tree)   tree_location="$2"      ; shift 2  ;;
+            -t | --target-device)    target_device="$2"       ; shift 2 ;;
+            -a | --associated-device) associated_device="$2" ; shift 2 ;;
+            -d | --dry-run)   dry_run=true   ; shift ;;
+            -r | --run-all)   run_all=true   ; shift ;;
+            -p | --print-devices)   print_devices='true'   ; shift ;;
+            -h | --health)  health=$(tr '[:upper:]' '[:lower:]' <<< $2) ; shift 2 ;;
+            # -- means the end of the arguments; drop this, and break out of the while loop
+            --) shift; break ;;
+            # If invalid options were passed, then getopt should have reported an error,
+            # which we checked as VALID_ARGUMENTS when getopt was called...
+            *) echo "Unexpected option: $1"
+            show_help ;;
+        esac
+    done
+    #if [ ! -z "$print_devices" ] && [ "$print_devices" = "true" ]; then
+#
+    #fi
+
+    if [ -z "$tree_location" ]; then
+        echo "[E] No Association Tree provided!"
+        return 1
+    fi
+
+    if [ -z "$target_device" ] || [ -z "$associated_device" ]; then
+        echo "[E] Device argument missing!"
+        return 1
+    fi
+
+    if [ ! -f "$tree_location" ]; then
+        echo "[E] [$tree_location] doesn't exist!"
+        return 2
+    fi
+    
+    if [ -z "$health" ]; then
+        echo "[E] No Health provided!"
+        return 2
+    fi
+
+    if [ "$health" != "critical" ] && [ "$health" != "ok" ] && [ "$health" != "warning" ]; then
+        echo "[E] Invalid health $health provided!"
+        return 2
+    fi
+
+    parse_association_tree "$tree_location" "$target_device" "$associated_device" "$health" "$dry_run" "$print_devices" "$run_all"
+    rc=$?
+
+    return $rc
+}
+
+################################################################################
+# MAIN
+#
+[ $# -ne 0 ] && if grep "^$1()" `which $0` &> /dev/null; then func=$1;shift;$func "$@";exit $?; fi
+
+trap cleanup EXIT
+initlog
+
+main $*;rc=$?
+[ "$rc" -ne 0 ] && show_help
+
+exit $rc
+cleanup
