@@ -2,8 +2,32 @@ project('c++ nvidia-oobaml', 'cpp',
   version : '0.1',
   license : 'MIT',
   default_options: [
-            'cpp_std=c++11'])
+            'cpp_std=c++20'])
 
+systemd_dep = dependency('systemd')
+
+sdbusplus_dep = dependency('sdbusplus', required: false)
+sdbusplus_proj = dependency('', required: false)
+if not sdbusplus_dep.found() or sdbusplus_dep.type_name() == 'internal'
+    sdbusplus_proj = subproject('sdbusplus')
+endif
+if not sdbusplus_dep.found()
+    sdbusplus_dep = sdbusplus_proj.get_variable('sdbusplus_dep')
+endif
+
+if sdbusplus_proj.found()
+    sdbusplusplus_prog = sdbusplus_proj.get_variable('sdbusplusplus_prog')
+    sdbuspp_gen_meson_prog = sdbusplus_proj.get_variable(
+        'sdbuspp_gen_meson_prog')
+else
+    sdbusplusplus_prog = find_program('sdbus++', native: true)
+    sdbuspp_gen_meson_prog = find_program('sdbus++-gen-meson', native: true)
+endif
+
+sdeventplus_dep = dependency(
+    'sdeventplus',
+    fallback: ['sdeventplus', 'sdeventplus_dep' ],
+)
 
 # Project related links
 
@@ -20,8 +44,8 @@ cxx = meson.get_compiler(lang)
 add_global_arguments('-DSOME_TOKEN=value', language : lang)
 
 # Validate the c++ Standard
-if get_option('cpp_std') != 'c++11'
-    error('This project requires c++11 support'+ get_option('cpp_std'))
+if get_option('cpp_std') != 'c++20'
+    error('This project requires c++20 support'+ get_option('cpp_std'))
 endif
 
 ## Fetch all the project options and set the project arguments
@@ -36,19 +60,12 @@ endif
 # Add all the dependencies
 aml_dependencies = []
 
-aml_dependencies += dependency('glib-2.0')
+#aml_dependencies += dependency('glib-2.0')
 aml_dependencies += dependency('threads')
 
 if cxx.has_header('nlohmann/json.hpp')
     aml_dependencies += declare_dependency()
 endif
-
-librtdep = dependency('librt', required: false)
-if not librtdep.found()
-    librtdep = cxx.find_library('rt')
-endif
-
-aml_dependencies += librtdep
 
 # Add Include Directory
 inc = include_directories('include')

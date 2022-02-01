@@ -19,13 +19,11 @@ enum class Status : int
 class Logger
 {
   private:
-    std::string longDescription;
 
   public:
     Logger();
     ~Logger();
 
-    Status getLongDescription(std::string &longDescription);
 };
 
 } // namespace logger

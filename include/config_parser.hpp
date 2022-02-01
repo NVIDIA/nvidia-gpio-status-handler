@@ -20,13 +20,11 @@ enum class Status : int
 class ConfigParser
   {
   private:
-    std::string longDescription;
 
   public:
     ConfigParser();
     ~ConfigParser();
 
-    Status getLongDescription(std::string &longDescription);
 };
 
 } // namespace config_parser

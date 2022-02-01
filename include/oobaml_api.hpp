@@ -20,13 +20,11 @@ enum class Status : int
 class OobamlApi
 {
   private:
-    std::string longDescription;
 
   public:
     OobamlApi();
     ~OobamlApi();
 
-    Status getLongDescription(std::string &longDescription);
 };
 
 } // namespace oobaml_api

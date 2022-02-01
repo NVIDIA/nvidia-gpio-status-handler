@@ -20,13 +20,11 @@ enum class Status : int
 class DATTraverse
   {
   private:
-    std::string longDescription;
 
   public:
     DATTraverse();
     ~DATTraverse();
 
-    Status getLongDescription(std::string &longDescription);
 };
 
 } // namespace dat_traverse

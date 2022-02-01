@@ -16,9 +16,4 @@ MessageComposer::~MessageComposer()
 {
 }
 
-Status MessageComposer::getLongDescription(std::string &longDescription)
-{
-    return Status::succ;
-}
-
 } // namespace message_composer

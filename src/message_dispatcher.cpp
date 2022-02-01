@@ -16,9 +16,4 @@ MessageDispatcher::~MessageDispatcher()
 {
 }
 
-Status MessageDispatcher::getLongDescription(std::string &longDescription)
-{
-    return Status::succ;
-}
-
 } // namespace message_dispatcher

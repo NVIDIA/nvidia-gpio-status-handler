@@ -16,9 +16,4 @@ DataAccessor::~DataAccessor()
 {
 }
 
-Status DataAccessor::getLongDescription(std::string &longDescription)
-{
-    return Status::succ;
-}
-
 } // namespace data_accessor

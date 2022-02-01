@@ -20,13 +20,11 @@ enum class Status : int
 class DataAccessor
 {
   private:
-    std::string longDescription;
 
   public:
     DataAccessor();
     ~DataAccessor();
 
-  Status getLongDescription(std::string &longDescription);
 };
 
 } // namespace data_accessor

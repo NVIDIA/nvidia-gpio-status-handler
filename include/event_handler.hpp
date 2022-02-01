@@ -20,13 +20,11 @@ enum class Status : int
 class EventHandler
 {
   private:
-    std::string longDescription;
 
   public:
     EventHandler();
     ~EventHandler();
 
-    Status getLongDescription(std::string &longDescription);
 };
 
 } // namespace event_handler

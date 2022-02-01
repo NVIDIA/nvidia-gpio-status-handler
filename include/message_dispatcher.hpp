@@ -19,13 +19,11 @@ enum class Status : int
 class MessageDispatcher
 {
   private:
-    std::string longDescription;
 
   public:
     MessageDispatcher();
     ~MessageDispatcher();
 
-    Status getLongDescription(std::string &longDescription);
 };
 
 } // namespace message_dispatcher

@@ -1,0 +1,209 @@
+{
+    "GPU0": {
+        "association": ["HSC0", "GPU0-ERoT", "Retimer0"],
+        "power_rail": [],
+        "erot_control": [],
+        "pin_status": [],
+        "interface_status": [],
+        "protocol_status": [],
+        "firmware_status": []
+    },
+    "GPU1": {
+        "association": ["HSC1", "GPU1-ERoT", "Retimer1"],
+        "power_rail": [],
+        "erot_control": [],
+        "pin_status": [],
+        "interface_status": [],
+        "protocol_status": [],
+        "firmware_status": []
+    },
+    "GPU2": {
+        "association": ["HSC2", "GPU2-ERoT", "Retimer2"],
+        "power_rail": [],
+        "erot_control": [],
+        "pin_status": [],
+        "interface_status": [],
+        "protocol_status": [],
+        "firmware_status": []
+    },
+    "GPU3": {
+        "association": ["HSC3", "GPU3-ERoT", "Retimer3"],
+        "power_rail": [],
+        "erot_control": [],
+        "pin_status": [],
+        "interface_status": [],
+        "protocol_status": [],
+        "firmware_status": []
+    },
+    "GPU4": {
+        "association": ["HSC4", "GPU4-ERoT", "Retimer4"],
+        "power_rail": [],
+        "erot_control": [],
+        "pin_status": [],
+        "interface_status": [],
+        "protocol_status": [],
+        "firmware_status": []
+    },
+    "GPU5": {
+        "association": ["HSC5", "GPU5-ERoT", "Retimer5"],
+        "power_rail": [],
+        "erot_control": [],
+        "pin_status": [],
+        "interface_status": [],
+        "protocol_status": [],
+        "firmware_status": []
+    },
+    "GPU6": {
+        "association": ["HSC6", "GPU6-ERoT", "Retimer6"],
+        "power_rail": [],
+        "erot_control": [],
+        "pin_status": [],
+        "interface_status": [],
+        "protocol_status": [],
+        "firmware_status": []
+    },
+    "GPU7": {
+        "association": ["HSC7", "GPU7-ERoT", "Retimer7"],
+        "power_rail": [],
+        "erot_control": [],
+        "pin_status": [],
+        "interface_status": [],
+        "protocol_status": [],
+        "firmware_status": []
+    },
+    "NVSwitch0": {
+        "association": ["VR", "HSC8", "NVSwitch0-ERoT", "PCIeSwitch"],
+        "power_rail": [],
+        "erot_control": [],
+        "pin_status": [],
+        "interface_status": [],
+        "protocol_status": [],
+        "firmware_status": []
+    },
+    "NVSwitch1": {
+        "association": ["VR", "HSC8", "NVSwitch1-ERoT", "PCIeSwitch"],
+        "power_rail": [],
+        "erot_control": [],
+        "pin_status": [],
+        "interface_status": [],
+        "protocol_status": [],
+        "firmware_status": []
+    },
+    "NVSwitch2": {
+        "association": ["VR", "HSC9", "NVSwitch2-ERoT", "PCIeSwitch"],
+        "power_rail": [],
+        "erot_control": [],
+        "pin_status": [],
+        "interface_status": [],
+        "protocol_status": [],
+        "firmware_status": []
+    },
+    "NVSwitch3": {
+        "association": ["VR", "HSC9", "NVSwitch3-ERoT", "PCIeSwitch"],
+        "power_rail": [],
+        "erot_control": [],
+        "pin_status": [],
+        "interface_status": [],
+        "protocol_status": [],
+        "firmware_status": []
+    },
+    "Retimer0": {
+        "association": ["HSC8"],
+        "power_rail": [],
+        "erot_control": [],
+        "pin_status": [],
+        "interface_status": [],
+        "protocol_status": [],
+        "firmware_status": []
+    },
+    "Retimer1": {
+        "association": ["HSC8"],
+        "power_rail": [],
+        "erot_control": [],
+        "pin_status": [],
+        "interface_status": [],
+        "protocol_status": [],
+        "firmware_status": []
+    },
+    "Retimer2": {
+        "association": ["HSC8"],
+        "power_rail": [],
+        "erot_control": [],
+        "pin_status": [],
+        "interface_status": [],
+        "protocol_status": [],
+        "firmware_status": []
+    },
+    "Retimer3": {
+        "association": ["HSC8"],
+        "power_rail": [],
+        "erot_control": [],
+        "pin_status": [],
+        "interface_status": [],
+        "protocol_status": [],
+        "firmware_status": []
+    },
+    "Retimer4": {
+        "association": ["HSC9"],
+        "power_rail": [],
+        "erot_control": [],
+        "pin_status": [],
+        "interface_status": [],
+        "protocol_status": [],
+        "firmware_status": []
+    },
+    "Retimer5": {
+        "association": ["HSC9"],
+        "power_rail": [],
+        "erot_control": [],
+        "pin_status": [],
+        "interface_status": [],
+        "protocol_status": [],
+        "firmware_status": []
+    },
+    "Retimer6": {
+        "association": ["HSC9"],
+        "power_rail": [],
+        "erot_control": [],
+        "pin_status": [],
+        "interface_status": [],
+        "protocol_status": [],
+        "firmware_status": []
+    },
+    "Retimer7": {
+        "association": ["HSC9"],
+        "power_rail": [],
+        "erot_control": [],
+        "pin_status": [],
+        "interface_status": [],
+        "protocol_status": [],
+        "firmware_status": []
+    },
+    "PCIeSwitch": {
+        "association": ["HSC_STBY", "PCIeSwitch-ERoT"],
+        "power_rail": [],
+        "erot_control": [],
+        "pin_status": [],
+        "interface_status": [],
+        "protocol_status": [],
+        "firmware_status": []
+    },
+    "FPGA": {
+        "association": ["HSC_STBY", "FPGA-ERoT", "HMC"],
+        "power_rail": [],
+        "erot_control": [],
+        "pin_status": [],
+        "interface_status": [],
+        "protocol_status": [],
+        "firmware_status": []
+    },
+    "HMC": {
+        "association": ["HSC_STBY", "HMC-ERoT"],
+        "power_rail": [],
+        "erot_control": [],
+        "pin_status": [],
+        "interface_status": [],
+        "protocol_status": [],
+        "firmware_status": []
+    }
+}

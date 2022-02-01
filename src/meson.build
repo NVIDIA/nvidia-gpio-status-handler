@@ -1,4 +1,4 @@
-aml_sources = ['config_parser.cpp',
+amllib_sources = ['config_parser.cpp',
                 'dat_traverse.cpp',
                 'data_accessor.cpp',
                 'event_detection.cpp',
@@ -9,9 +9,25 @@ aml_sources = ['config_parser.cpp',
                 'oobaml_api.cpp']
 
 amllib = shared_library('oobaml',
-                        aml_sources,
+                        amllib_sources,
                         include_directories : inc,
                         dependencies : aml_dependencies,
                         version : '0.0.0',
                         install : true,
                         install_dir : get_option('libdir'))
+
+
+oobamld_sources = ['aml_main.cpp']
+oobamld_deps = declare_dependency(link_with : amllib,
+  include_directories : inc)
+
+oobamld = executable('oobamld',
+    oobamld_sources,
+    include_directories: inc,
+    dependencies: [
+        oobamld_deps,
+        sdbusplus_dep,
+        sdeventplus_dep,
+    ],
+    install: true,
+)

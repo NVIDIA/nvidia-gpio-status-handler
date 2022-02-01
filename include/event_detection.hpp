@@ -20,13 +20,11 @@ enum class Status : int
 class EventDetection
 {
   private:
-    std::string longDescription;
 
   public:
     EventDetection();
     ~EventDetection();
 
-    Status getLongDescription(std::string &longDescription);
 };
 
 } // namespace event_detection

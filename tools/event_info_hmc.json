@@ -1,0 +1,399 @@
+{
+    "GPU": [
+     {
+        "event" : "OverT",
+        "device_type": "GPU",
+        "event_trigger": "",
+        "accessor": "",
+        "severity": "Critical",
+        "resolution": "Contact NVIDIA Support",
+        "trigger_count": "",
+        "event_counter_reset": {
+            "type": "",
+            "metadata": ""
+        },
+        "redfish": {
+            "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+        },
+        "telemetries": []
+     },
+     {
+        "event": "Abnormal Presence State Change",
+        "device_type": "GPU",
+        "event_trigger": "",
+        "accessor": "",
+        "severity": "Critical",
+        "resolution": "Contact NVIDIA Support",
+        "trigger_count": "",
+        "event_counter_reset": {
+            "type": "",
+            "metadata": ""
+        },
+        "redfish": {
+            "message_id": "ResourceEvent.1.1.ResourceStateChanged"
+        },
+        "telemetries": []
+     },
+     {
+        "event": "Abnormal PWR_GOOD State Change",
+        "device_type": "GPU",
+        "event_trigger": "",
+        "accessor": "",
+        "severity": "Critical",
+        "resolution": "Contact NVIDIA Support",
+        "trigger_count": "",
+        "event_counter_reset": {
+            "type": "",
+            "metadata": ""
+        },
+        "redfish": {
+            "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+        },
+        "telemetries": []
+     },
+     {
+        "event": "XID messages",
+        "device_type": "GPU",
+        "event_trigger": "",
+        "accessor": "",
+        "severity": "Warning",
+        "resolution": "Contact NVIDIA Support",
+        "trigger_count": "",
+        "event_counter_reset": {
+            "type": "",
+            "metadata": ""
+        },
+        "redfish": {
+            "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+        },
+        "telemetries": []
+     },
+     {
+        "event": "GPU SRAM ECC correctable error count",
+        "device_type": "GPU",
+        "event_trigger": "",
+        "accessor": "",
+        "severity": "Warning",
+        "resolution": "Contact NVIDIA Support",
+        "trigger_count": "",
+        "event_counter_reset": {
+            "type": "",
+            "metadata": ""
+        },
+        "redfish": {
+            "message_id": "ResourceErrorThresholdExceeded"
+        },
+        "telemetries": []
+     },
+     {
+        "event": "GPU SRAM ECC uncorrectable error count",
+        "device_type": "GPU",
+        "event_trigger": "",
+        "accessor": "",
+        "severity": "Critical",
+        "resolution": "Contact NVIDIA Support",
+        "trigger_count": "",
+        "event_counter_reset": {
+            "type": "",
+            "metadata": ""
+        },
+        "redfish": {
+            "message_id": "ResourceErrorDetected"
+        },
+        "telemetries": []
+     },
+     {
+        "event": "GPU reset required state",
+        "device_type": "GPU",
+        "event_trigger": "",
+        "accessor": "",
+        "severity": "Critical",
+        "resolution": "GPU reset is required",
+        "trigger_count": "",
+        "event_counter_reset": {
+            "type": "",
+            "metadata": ""
+        },
+        "redfish": {
+            "message_id": "ResetRequired"
+        },
+        "telemetries": []
+     },
+     {
+        "event": "GPU drain/reset recommended state",
+        "device_type": "GPU",
+        "event_trigger": "",
+        "accessor": "",
+        "severity": "Warning",
+        "resolution": "GPU drain/reset is recommended",
+        "trigger_count": "",
+        "event_counter_reset": {
+            "type": "",
+            "metadata": ""
+        },
+        "redfish": {
+            "message_id": "ResourceErrorDetected"
+        },
+        "telemetries": []
+     },
+     {
+        "event": "Pending ECC state after reset",
+        "device_type": "GPU",
+        "event_trigger": "",
+        "accessor": "",
+        "severity": "Warning",
+        "resolution": "GPU reset is required",
+        "trigger_count": "",
+        "event_counter_reset": {
+            "type": "",
+            "metadata": ""
+        },
+        "redfish": {
+            "message_id": "ResourceErrorDetected"
+        },
+        "telemetries": []
+     },
+     {
+        "event": "MIG state change pending after reset",
+        "device_type": "GPU",
+        "event_trigger": "",
+        "accessor": "",
+        "severity": "Warning",
+        "resolution": "GPU reset is required",
+        "trigger_count": "",
+        "event_counter_reset": {
+            "type": "",
+            "metadata": ""
+        },
+        "redfish": {
+            "message_id": "ResourceErrorDetected"
+        },
+        "telemetries": []
+     },
+     {
+        "event": "GPU row-remapping pending flag",
+        "device_type": "GPU",
+        "event_trigger": "",
+        "accessor": "",
+        "severity": "Warning",
+        "resolution": "GPU reset is required",
+        "trigger_count": "",
+        "event_counter_reset": {
+            "type": "",
+            "metadata": ""
+        },
+        "redfish": {
+            "message_id": "ResourceErrorDetected"
+        },
+        "telemetries": []
+     },
+     {
+        "event": "GPU row-remapping failure",
+        "device_type": "GPU",
+        "event_trigger": "",
+        "accessor": "",
+        "severity": "Critical",
+        "resolution": "Contact NVIDIA Support",
+        "trigger_count": "",
+        "event_counter_reset": {
+            "type": "",
+            "metadata": ""
+        },
+        "redfish": {
+            "message_id": "ResourceErrorDetected"
+        },
+        "telemetries": []
+     }
+    ],
+    "NVSwitch": [
+     {
+        "event": "OverT",
+        "device_type": "NVSwitch",
+        "event_trigger": "",
+        "accessor": "",
+        "severity": "Critical",
+        "resolution": "Contact NVIDIA Support",
+        "trigger_count": "",
+        "event_counter_reset": {
+            "type": "",
+            "metadata": ""
+        },
+        "redfish": {
+            "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+        },
+        "telemetries": []
+     },
+     {
+        "event": "Thermal Alert",
+        "device_type": "NVSwitch",
+        "event_trigger": "",
+        "accessor": "",
+        "severity": "Critical",
+        "resolution": "Contact NVIDIA Support",
+        "trigger_count": "",
+        "event_counter_reset": {
+            "type": "",
+            "metadata": ""
+        },
+        "redfish": {
+            "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+        },
+        "telemetries": []
+     },
+     {
+        "event": "Power Rail Change",
+        "device_type": "NVSwitch",
+        "event_trigger": "",
+        "accessor": "",
+        "severity": "Critical",
+        "resolution": "Contact NVIDIA Support",
+        "trigger_count": "",
+        "event_counter_reset": {
+            "type": "",
+            "metadata": ""
+        },
+        "redfish": {
+            "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+        },
+        "telemetries": []
+     },
+     {
+        "event": "1V8 Abnormal Change",
+        "device_type": "NVSwitch",
+        "event_trigger": "",
+        "accessor": "",
+        "severity": "Critical",
+        "resolution": "Contact NVIDIA Support",
+        "trigger_count": "",
+        "event_counter_reset": {
+            "type": "",
+            "metadata": ""
+        },
+        "redfish": {
+            "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+        },
+        "telemetries": []
+     },
+     {
+        "event": "NVSwitch manager timeout without graceful shutdown",
+        "device_type": "NVSwitch",
+        "event_trigger": "",
+        "accessor": "",
+        "severity": "Critical",
+        "resolution": "Contact NVIDIA Support",
+        "trigger_count": "",
+        "event_counter_reset": {
+            "type": "",
+            "metadata": ""
+        },
+        "redfish": {
+            "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+        },
+        "telemetries": []
+     },
+     {
+        "event": "NVSwitch manager error",
+        "device_type": "NVSwitch",
+        "event_trigger": "",
+        "accessor": "",
+        "severity": "Critical",
+        "resolution": "Contact NVIDIA Support",
+        "trigger_count": "",
+        "event_counter_reset": {
+            "type": "",
+            "metadata": ""
+        },
+        "redfish": {
+            "message_id": "ResourceErrorDetected"
+        },
+        "telemetries": []
+     },
+     {
+        "event": "NVSwitch disabled due to access or trunk link error detected in local device",
+        "device_type": "NVSwitch",
+        "event_trigger": "",
+        "accessor": "",
+        "severity": "Critical",
+        "resolution": "Contact NVIDIA Support",
+        "trigger_count": "",
+        "event_counter_reset": {
+            "type": "",
+            "metadata": ""
+        },
+        "redfish": {
+            "message_id": "ResourceErrorDetected"
+        },
+        "telemetries": []
+     },
+     {
+        "event": "NVSwitch disabled due to access or trunk link error detected in peer device",
+        "device_type": "NVSwitch",
+        "event_trigger": "",
+        "accessor": "",
+        "severity": "Critical",
+        "resolution": "Contact NVIDIA Support",
+        "trigger_count": "",
+        "event_counter_reset": {
+            "type": "",
+            "metadata": ""
+        },
+        "redfish": {
+            "message_id": "ResourceErrorDetected"
+        },
+        "telemetries": []
+     }
+    ],
+    "HSC": [
+     {
+        "event": "alert",
+        "device_type": "HSC[left, right]",
+        "event_trigger": "",
+        "accessor": "",
+        "severity": "Critical",
+        "resolution": "Contact NVIDIA Support",
+        "trigger_count": "",
+        "event_counter_reset": {
+            "type": "",
+            "metadata": ""
+        },
+        "redfish": {
+            "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+        },
+        "telemetries": []
+     },
+     {
+        "event": "Power Abnormal Change",
+        "device_type": "HSC[standby, output]",
+        "event_trigger": "",
+        "accessor": "",
+        "severity": "Critical",
+        "resolution": "Contact NVIDIA Support",
+        "trigger_count": "",
+        "event_counter_reset": {
+            "type": "",
+            "metadata": ""
+        },
+        "redfish": {
+            "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+        },
+        "telemetries": []
+     },
+     {
+        "event": "Power Rail Change",
+        "device_type": "HSC[0-9]",
+        "event_trigger": "",
+        "accessor": "",
+        "severity": "Critical",
+        "resolution": "Contact NVIDIA Support",
+        "trigger_count": "",
+        "event_counter_reset": {
+            "type": "",
+            "metadata": ""
+        },
+        "redfish": {
+            "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+        },
+        "telemetries": []
+     }
+    ]
+}
