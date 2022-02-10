@@ -167,7 +167,7 @@ class CmdLine
 {
   public:
     CmdLine(int argc, char* argv[], CmdLineArgs& cmdLineArgs) :
-        argc(argc), cmdLineArgs(cmdLineArgs)
+        argc(argc), curPos(0), cmdLineArgs(cmdLineArgs)
     {
         for (int i = 0; i < argc; i++)
         {
