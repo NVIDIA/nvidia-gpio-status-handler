@@ -4,6 +4,7 @@
 
 #include "event_info.hpp"
 #include <iostream>
+#include <fstream>
 #include <map>
 #include <nlohmann/json.hpp>
 #include <string>
@@ -13,9 +14,14 @@ using json = nlohmann::json;
 
 namespace event_info {
 
-void EventNode::populateMap(
-    std::map<std::string, std::vector<event_info::EventNode>> &eventMap,
-    const json& j) {
+void loadFromFile(
+    EventMap& eventMap,
+    const std::string& file) {
+
+  std::ifstream i(file);
+  json j;
+  i >> j;
+
   for (const auto &el : j.items()) {
     auto deviceType = el.key();
     std::vector<event_info::EventNode> v;
@@ -29,8 +35,8 @@ void EventNode::populateMap(
   }
 }
 
-void EventNode::printMap(
-    const std::map<std::string, std::vector<event_info::EventNode>>& eventMap) {
+void printMap(
+    const EventMap&& eventMap) {
   for (const auto &dev : eventMap) {
     std::cerr << dev.first << " events:\n";
 
@@ -42,7 +48,7 @@ void EventNode::printMap(
   }
 }
 
-EventNode::EventNode(const json& j) {
+void EventNode::loadFrom(const json& j) {
   this->event = j["event"];
   this->deviceType = j["device_type"];
   this->triggerCount = j["trigger_count"].get<int>();

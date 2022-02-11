@@ -5,26 +5,42 @@
 
 #pragma once
 
+#include "aml.hpp"
+#include "event_info.hpp"
+#include "event_handler.hpp"
+
 #include <string>
 
-namespace message_composer
+namespace event_handler
 {
 
-enum class Status : int
+/**
+ * @brief A class for composing event log entry and create it in
+ * phosphor-logging.
+ *
+ */
+class MessageComposer : public event_handler::EventHandler
 {
-  succ,
-  error,
-  timeout,
-};
-
-class MessageComposer
-{
-  private:
-
   public:
-    MessageComposer();
+    MessageComposer(const std::string& name = __PRETTY_FUNCTION__) :
+        event_handler::EventHandler(name)
+    {}
     ~MessageComposer();
 
+  public:
+    /**
+     * @brief Turn event into phosphor-logging Entry format and create the log
+     * based on device namespace.
+     *
+     * @param event
+     * @return aml::RcCode
+     */
+    aml::RcCode process([[maybe_unused]] event_info::EventNode& event) override
+    {
+        return aml::RcCode::succ;
+    }
+
+  private:
 };
 
-} // namespace message_composer
+} // namespace event_handler

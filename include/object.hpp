@@ -11,15 +11,18 @@ namespace object
 
 /**
  * @brief Base class for all in AML
+ *
  */
 class Object
 {
   public:
-    Object();
-    ~Object();
+    Object(const std::string& name = "") : _name(name)
+    {}
+    virtual ~Object()
+    {}
 
   public:
-    std::string& getName(void)
+    std::string getName(void)
     {
         return _name;
     }
@@ -32,6 +35,7 @@ class Object
   private:
     /**
      * @brief Obejct name.
+     *
      */
     std::string _name;
 };

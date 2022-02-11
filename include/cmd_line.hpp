@@ -68,8 +68,7 @@ class CmdLineArg
         optCount = calcOptCount(optFlag, optFmt);
     }
     ~CmdLineArg()
-    {
-    }
+    {}
 
     bool needOpt() const
     {

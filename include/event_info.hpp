@@ -4,9 +4,12 @@
 
 #pragma once
 
-#include "dat_traverse.hpp"
-#include <map>
+#include "object.hpp"
+#include "data_accessor.hpp"
+
 #include <nlohmann/json.hpp>
+
+#include <map>
 #include <string>
 #include <vector>
 
@@ -31,7 +34,10 @@ struct redfish {
 };
 
 
-class EventNode {
+class EventNode : public object::Object {
+
+public:
+    EventNode(const std::string& name) : object::Object(name){}
 public:
 
   /* name of event */
@@ -44,7 +50,7 @@ public:
   std::string eventTrigger;
 
   /* accessor info */
-  dat_traverse::accessor *accessorStruct;
+  data_accessor::DataAccessor* accessorStruct;
 
   /* count that will trigger event */
   int triggerCount;
@@ -61,16 +67,18 @@ public:
   /* action hmc should take */
   std::string action;
 
-  /* populates memory structure with json profile contents */
-  static void populateMap(
-      std::map<std::string, std::vector<event_info::EventNode>> &eventMap,
-      const json& j);
-
-  /* prints out memory structure to verify population went as expected */
-  static void
-  printMap(const std::map<std::string, std::vector<event_info::EventNode>>& eventMap);
-
-  EventNode(const json& j);
+  void loadFrom(const json& j);
 };
+
+using EventMap = std::map<std::string, std::vector<event_info::EventNode>>;
+
+/* populates memory structure with json profile file */
+void loadFromFile(
+      EventMap& eventMap,
+      const std::string& file);
+
+/* prints out memory structure to verify population went as expected */
+void printMap(const EventMap& eventMap);
+
 
 } // namespace event_info

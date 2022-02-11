@@ -83,7 +83,7 @@ class Log
 #define getLogControl(logFlag) ((logFlag)&0xFF00)
   public:
     Log(const std::string& file = "", CtrlType level = DEF_DBG_LEVEL) :
-        logFile(file), initLevel(level), logCtrlName(DBG_LOG_CTRL), seq(0)
+        logFile(file), logCtrlName(DBG_LOG_CTRL), initLevel(level), seq(0)
     {
         openLogFile();
         smInit();
@@ -193,7 +193,7 @@ class Log
 
             // Raw data
             ss << "(" << size << ") ";
-            for (int i = 0; i < size; i++)
+            for (size_t i = 0; i < size; i++)
             {
                 ss << std::setfill('0') << std::setw(2) << std::hex
                    << int(array[i]) << " ";
@@ -227,7 +227,7 @@ class Log
 
             // Raw data
             ss << "(" << size << ") ";
-            for (int i = 0; i < size; i++)
+            for (size_t i = 0; i < size; i++)
             {
                 ss << std::setfill('0') << std::setw(8) << std::hex
                    << int(array[i]) << " ";
@@ -396,7 +396,7 @@ class Log
         rc = close(smfd);
         if (-1 == rc)
         {
-            throw std::runtime_error ("close(smfd) failed!");
+            throw std::runtime_error("close(smfd) failed!");
         }
 
         return 0;

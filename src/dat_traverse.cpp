@@ -18,9 +18,6 @@ using json = nlohmann::json;
 namespace dat_traverse {
 
 /* test */
-DATTraverse::DATTraverse() {}
-
-DATTraverse::~DATTraverse() {}
 
 Device::~Device() {}
 

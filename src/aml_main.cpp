@@ -8,6 +8,9 @@
  * license agreement from NVIDIA CORPORATION is strictly prohibited.
  */
 
+
+#include "aml.hpp"
+#include "event_handler.hpp"
 #include "aml_main.hpp"
 #include "cmd_line.hpp"
 #include "dat_traverse.hpp"
@@ -34,7 +37,7 @@ const auto APPVER = "0.1";
 namespace aml {
 namespace profile {
 
-std::map<std::string, std::vector<event_info::EventNode>> eventMap;
+event_info::EventMap eventMap;
 std::map<std::string, dat_traverse::Device> datMap;
 
 } // namespace profile
@@ -84,14 +87,6 @@ int loadEvents(cmd_line::ArgFuncParamType params) {
   }
 
   configuration.event = params[0];
-
-  std::ifstream i(configuration.event);
-  json j;
-  i >> j;
-
-  event_info::EventNode::populateMap(profile::eventMap, j);
-
-  //event_info::EventNode::printMap(profile::eventMap);
 
   return 0;
 }
@@ -147,6 +142,16 @@ int main(int argc, char* argv[])
         return rc;
     }
 
+    // Initialization
+    event_info::loadFromFile(aml::profile::eventMap, aml::configuration.event);
+    //event_info::EventNode::printMap(aml::profile::eventMap);
+
+
+    // Register event handlers
+    event_handler::EventHandlerManager eventHdlrMgr("EventHandlerManager");
+    //eventHdlr.RegisterHandler(dat_traverse::DATTraverse& instance);
+    //eventHdlr.RegisterHandler(message_composer& instance);
+
     cout << "Creating " << oob_aml::SERVICE_BUSNAME << "\n";
 
     rc = sd_bus_default_system(&aml::bus);
@@ -163,12 +168,12 @@ int main(int argc, char* argv[])
     sdbusp->request_name(oob_aml::SERVICE_BUSNAME);
     auto server = sdbusplus::asio::object_server(sdbusp);
     auto iface = server.add_interface(oob_aml::TOP_OBJPATH, oob_aml::SERVICE_IFCNAME);
-    
+
 
     auto eventDetection = event_detection::EventDetection::startEventDetection(sdbusp, iface);
 
     iface->initialize();
-        
+
     try
     {
     }

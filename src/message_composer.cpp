@@ -8,12 +8,5 @@
 namespace message_composer
 {
 
-MessageComposer::MessageComposer()
-{
-}
-
-MessageComposer::~MessageComposer()
-{
-}
 
 } // namespace message_composer

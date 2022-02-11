@@ -10,13 +10,6 @@
 namespace config_parser
 {
 
-enum class Status : int
-{
-  succ,
-  error,
-  timeout,
-};
-
 class ConfigParser
   {
   private:
