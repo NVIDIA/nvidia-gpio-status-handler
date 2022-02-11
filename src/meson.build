@@ -3,6 +3,7 @@ amllib_sources = ['config_parser.cpp',
                 'data_accessor.cpp',
                 'event_detection.cpp',
                 'event_handler.cpp',
+		            'event_info.cpp',
                 'message_composer.cpp',
                 'message_dispatcher.cpp',
                 'oobaml_api.cpp']

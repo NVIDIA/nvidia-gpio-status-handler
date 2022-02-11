@@ -4,3 +4,5 @@ option('api_stubs', type : 'feature', value: 'auto',
         description : 'Manager API stubs enablement')
 option('sandbox_mode', type : 'feature', value : 'auto',
         description : 'Sandbox mode enablement')
+option ('tests', type : 'feature', value : 'enabled', 
+        description : 'Enable Unit tests for oobaml')

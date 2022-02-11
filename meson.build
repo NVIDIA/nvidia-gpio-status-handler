@@ -83,3 +83,48 @@ pkg_mod.generate(libraries : amllib,
                  name : 'oobaml',
                  filebase : 'oobaml',
                  description : 'nvidia-oobaml')
+
+if get_option('tests').enabled()
+  gtest = dependency('gtest', main: true,disabler: true, required : false)
+  gmock = dependency('gmock', required : false)
+  if not gtest.found() and get_option('tests').enabled()
+    gtest_proj = subproject('gtest', required: true)
+    gtest = gtest_proj.get_variable('gtest_main_dep')
+    gmock = gtest_proj.get_variable('gmock_dep')
+  endif
+  gtest = gtest.as_system('system')
+  gmock = gmock.as_system('system')
+endif
+
+srcfiles_unittest = ['test/dat_test.cpp']
+
+amllib_sources = [
+                'src/config_parser.cpp',
+                'src/dat_traverse.cpp',
+                'src/data_accessor.cpp',
+                'src/event_detection.cpp',
+                'src/event_handler.cpp',
+		        'src/event_info.cpp',
+                'src/message_composer.cpp',
+                'src/message_dispatcher.cpp',
+                'src/oobaml_api.cpp']
+
+bindir = get_option('prefix') + '/' + get_option('bindir')
+
+if(get_option('tests').enabled())
+    # generate the test executable
+    ut_bin = executable(
+      'oobaml_unit_test',
+      srcfiles_unittest + amllib_sources,
+      include_directories : inc,
+      install_dir: bindir,
+      dependencies: aml_dependencies + [
+        gtest,
+        gmock,
+      ]
+    )
+    test('oobaml_unit_test', ut_bin)
+endif
+
+
+

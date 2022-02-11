@@ -5,6 +5,7 @@ install_headers ('oobaml_api.hpp')
 #                'data_accessor.hpp',
 #                'event_detection.hpp',
 #                'event_handler.hpp',
+#                'event_info.hpp',
 #                'log.hpp',
 #                'message_composer.hpp',
 #                'message_dispatcher.hpp',

@@ -14,6 +14,7 @@ AC_PROG_MAKE_SET
 
 # Checks for libraries.
 AX_PTHREAD
+PKG_CHECK_MODULES([PHOSPHOR_LOGGING], [phosphor-logging])
 AC_CHECK_LIB(rt, shm_open, [],
     [AC_MSG_ERROR([Could not find librt])]
     )
