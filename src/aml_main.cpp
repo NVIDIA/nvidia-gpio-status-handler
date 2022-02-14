@@ -19,6 +19,9 @@
 #include <phosphor-logging/log.hpp>
 #include <queue>
 #include <sdbusplus/asio/object_server.hpp>
+#include "cmd_line.hpp"
+#include "aml_main.hpp"
+#include "event_detection.hpp"
 #include <string>
 #include <vector>
 
@@ -122,47 +125,60 @@ sd_bus *bus = nullptr;
 
 } // namespace aml
 
+
+
 ////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief Service Entry Point
  */
-int main(int argc, char *argv[]) {
-  int rc = 0;
+int main(int argc, char* argv[])
+{
+    int rc = 0;
+    try
+    {
+        cmd_line::CmdLine cmdLine(argc, argv, aml::cmdLineArgs);
+        rc = cmdLine.parse();
+        rc = cmdLine.process();
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "[E]" << e.what() << "\n";
+        aml::show_help({});
+        return rc;
+    }
 
-  try {
-    cmd_line::CmdLine cmdLine(argc, argv, aml::cmdLineArgs);
-    rc = cmdLine.parse();
-    rc = cmdLine.process();
-  } catch (const std::exception &e) {
-    std::cerr << "[E]" << e.what() << "\n";
-    aml::show_help({});
-    return rc;
-  }
+    cout << "Creating " << oob_aml::SERVICE_BUSNAME << "\n";
 
-  cout << "Creating " << oob_aml::SERVICE_BUSNAME << "\n";
+    rc = sd_bus_default_system(&aml::bus);
+    if (rc < 0)
+    {
+        cout << "Failed to connect to system bus"
+             << "\n";
+    }
 
-  rc = sd_bus_default_system(&aml::bus);
-  if (rc < 0) {
-    cout << "Failed to connect to system bus"
-         << "\n";
-  }
+    auto io = std::make_shared<boost::asio::io_context>();
+    auto sdbusp =
+        std::make_shared<sdbusplus::asio::connection>(*io, aml::bus);
 
-  auto io = std::make_shared<boost::asio::io_context>();
-  auto sdbusp = std::make_shared<sdbusplus::asio::connection>(*io, aml::bus);
+    sdbusp->request_name(oob_aml::SERVICE_BUSNAME);
+    auto server = sdbusplus::asio::object_server(sdbusp);
+    auto iface = server.add_interface(oob_aml::TOP_OBJPATH, oob_aml::SERVICE_IFCNAME);
+    
 
-  sdbusp->request_name(oob_aml::SERVICE_BUSNAME);
-  auto server = sdbusplus::asio::object_server(sdbusp);
-  auto iface =
-      server.add_interface(oob_aml::TOP_OBJPATH, oob_aml::SERVICE_IFCNAME);
-  iface->initialize();
+    auto eventDetection = event_detection::EventDetection::startEventDetection(sdbusp, iface);
 
-  try {
-  } catch (const std::exception &e) {
-    std::cerr << "[E]" << e.what() << "\n";
-    return rc;
-  }
+    iface->initialize();
+        
+    try
+    {
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "[E]" << e.what() << "\n";
+        return rc;
+    }
 
-  io->run();
+    io->run();
 
-  return 0;
+    return 0;
 }

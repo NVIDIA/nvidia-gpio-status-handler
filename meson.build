@@ -61,6 +61,8 @@ sdeventplus_dep = dependency(
 # Add all the dependencies
 aml_dependencies = []
 
+aml_dependencies+=sdbusplus_dep
+
 #aml_dependencies += dependency('glib-2.0')
 aml_dependencies += dependency('threads')
 
