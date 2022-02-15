@@ -53,7 +53,8 @@ class EventHandlerManager : public object::Object
     void RegisterHandler(EventHandler* hdlr)
     {
         _handlers.emplace_back(hdlr);
-        log_dbg("handlers(%s) registered.\n", hdlr->getName().c_str());
+        // causing compilation errors: look into this
+        // log_dbg("handlers(%s) registered.\n", hdlr->getName().c_str());
     }
 
     /**

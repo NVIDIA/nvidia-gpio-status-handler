@@ -11,7 +11,7 @@
 
 #include <string>
 
-namespace event_handler
+namespace message_composer
 {
 
 /**
@@ -37,10 +37,23 @@ class MessageComposer : public event_handler::EventHandler
      */
     aml::RcCode process([[maybe_unused]] event_info::EventNode& event) override
     {
-        return aml::RcCode::succ;
+        bool success = createLog(event);
+        if (success)
+        {
+            return aml::RcCode::succ;
+        }
+        return aml::RcCode::error;
     }
 
   private:
+    /**
+     * @brief Establishes D-Bus connection and creates log with eventNode
+     * data in phosphor-logging
+     *
+     * @param event
+     * @return boolean for whether or not it was a success
+     */
+    bool createLog(event_info::EventNode& event);
 };
 
-} // namespace event_handler
+} // namespace message_composer

@@ -31,7 +31,11 @@ void loadFromFile(EventMap& eventMap, const std::string& file)
 
         for (const auto& event : el.value())
         {
-            event_info::EventNode eventNode(event);
+
+            event_info::EventNode eventNode(event["event"]);
+
+            eventNode.loadFrom(event);
+
             v.push_back(eventNode);
         }
         eventMap.insert(
@@ -40,7 +44,7 @@ void loadFromFile(EventMap& eventMap, const std::string& file)
     }
 }
 
-void printMap(const EventMap&& eventMap)
+void printMap(const EventMap& eventMap)
 {
     for (const auto& dev : eventMap)
     {
@@ -68,14 +72,14 @@ void EventNode::loadFrom(const json& j)
         j["event_counter_reset"]["type"].get<std::string>(),
         j["event_counter_reset"]["metadata"].get<std::string>()};
 
-    this->eventCounterResetStruct = &eventCounterResetStruct;
+    this->eventCounterResetStruct = eventCounterResetStruct;
 
     Message messageStruct = {j["severity"], j["resolution"]};
 
     redfish redfishStruct = {j["redfish"]["message_id"].get<std::string>(),
                              messageStruct};
 
-    this->redfishStruct = &redfishStruct;
+    this->redfishStruct = redfishStruct;
 }
 
 } // namespace event_info

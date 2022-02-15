@@ -36,6 +36,10 @@ struct redfish
     Message messageStruct;
 };
 
+/** @class EventNode
+ *  @brief Object to represent HMC events and store contents
+ *         from event_info json profile
+ */
 class EventNode : public object::Object
 {
 
@@ -44,42 +48,64 @@ class EventNode : public object::Object
     {}
 
   public:
-    /* name of event */
+    /** @brief Name of the event **/
     std::string event;
 
-    /* type of device ... i.e. gpu */
+    /** @brief Type of device **/
     std::string deviceType;
 
-    /* what triggered the event */
+    /** @brief What triggered event **/
     std::string eventTrigger;
 
-    /* accessor info */
-    data_accessor::DataAccessor* accessorStruct;
+    /** @brief Accesssor info **/
+    data_accessor::DataAccessor accessorStruct;
 
-    /* count that will trigger event */
+    /** @brief Count that will trigger event **/
     int triggerCount;
 
-    /* struct for event counter reset data */
-    eventCounterReset* eventCounterResetStruct;
+    /** @brief Struct containing type and metadata **/
+    eventCounterReset eventCounterResetStruct;
 
-    /* redfish struct to encapsulate messageid, severity, resolution */
-    redfish* redfishStruct;
+    /** @brief Redfish fields struct **/
+    redfish redfishStruct;
 
-    /* list of this event's telemetries */
+    /** @brief List of the event's telemetries **/
     std::vector<std::string> telemetries;
 
-    /* action hmc should take */
+    /** @brief Action HMC should take **/
     std::string action;
 
+    /** @brief Particular device name .. i.e. GPU0 **/
+    std::string device;
+
+    /** @brief Event count **/
+    int eventCount;
+
+    /** @brief Load class contents from JSON profile
+     *
+     * @param[in]  j  - json object
+     *
+     */
     void loadFrom(const json& j);
 };
 
 using EventMap = std::map<std::string, std::vector<event_info::EventNode>>;
 
-/* populates memory structure with json profile file */
+/** @brief Load class contents from JSON profile
+ *
+ * Wrapper method for loadFrom
+ *
+ * @param[in]  eventMap
+ * @param[in]  file
+ *
+ */
 void loadFromFile(EventMap& eventMap, const std::string& file);
 
-/* prints out memory structure to verify population went as expected */
+/** @brief Prints out memory map to verify field population
+ *
+ * @param[in]  eventMap
+ *
+ */
 void printMap(const EventMap& eventMap);
 
 } // namespace event_info

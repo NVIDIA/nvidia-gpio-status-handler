@@ -4,7 +4,10 @@
         "event" : "OverT",
         "device_type": "GPU",
         "event_trigger": "",
-        "accessor": "",
+        "accessor": {
+            "type:": "",
+            "metadata": ""
+        },
         "severity": "Critical",
         "resolution": "Contact NVIDIA Support",
         "trigger_count": 0,
@@ -22,7 +25,10 @@
         "event": "Abnormal Presence State Change",
         "device_type": "GPU",
         "event_trigger": "",
-        "accessor": "",
+        "accessor": {
+            "type:": "",
+            "metadata": ""
+        },
         "severity": "Critical",
         "resolution": "Contact NVIDIA Support",
         "trigger_count": 0,
@@ -40,7 +46,10 @@
         "event": "Abnormal PWR_GOOD State Change",
         "device_type": "GPU",
         "event_trigger": "",
-        "accessor": "",
+        "accessor": {
+            "type:": "",
+            "metadata": ""
+        },
         "severity": "Critical",
         "resolution": "Contact NVIDIA Support",
         "trigger_count": 0,
@@ -58,7 +67,10 @@
         "event": "XID messages",
         "device_type": "GPU",
         "event_trigger": "",
-        "accessor": "",
+        "accessor": {
+            "type:": "",
+            "metadata": ""
+        },
         "severity": "Warning",
         "resolution": "Contact NVIDIA Support",
         "trigger_count": 0,
@@ -76,7 +88,10 @@
         "event": "GPU SRAM ECC correctable error count",
         "device_type": "GPU",
         "event_trigger": "",
-        "accessor": "",
+        "accessor": {
+            "type:": "",
+            "metadata": ""
+        },
         "severity": "Warning",
         "resolution": "Contact NVIDIA Support",
         "trigger_count": 0,
@@ -94,7 +109,10 @@
         "event": "GPU SRAM ECC uncorrectable error count",
         "device_type": "GPU",
         "event_trigger": "",
-        "accessor": "",
+        "accessor": {
+            "type:": "",
+            "metadata": ""
+        },
         "severity": "Critical",
         "resolution": "Contact NVIDIA Support",
         "trigger_count": 0,
@@ -112,7 +130,10 @@
         "event": "GPU reset required state",
         "device_type": "GPU",
         "event_trigger": "",
-        "accessor": "",
+        "accessor": {
+            "type:": "",
+            "metadata": ""
+        },
         "severity": "Critical",
         "resolution": "GPU reset is required",
         "trigger_count": 0,
@@ -130,7 +151,10 @@
         "event": "GPU drain/reset recommended state",
         "device_type": "GPU",
         "event_trigger": "",
-        "accessor": "",
+        "accessor": {
+            "type:": "",
+            "metadata": ""
+        },
         "severity": "Warning",
         "resolution": "GPU drain/reset is recommended",
         "trigger_count": 0,
@@ -148,7 +172,10 @@
         "event": "Pending ECC state after reset",
         "device_type": "GPU",
         "event_trigger": "",
-        "accessor": "",
+        "accessor": {
+            "type:": "",
+            "metadata": ""
+        },
         "severity": "Warning",
         "resolution": "GPU reset is required",
         "trigger_count": 0,
@@ -166,7 +193,10 @@
         "event": "MIG state change pending after reset",
         "device_type": "GPU",
         "event_trigger": "",
-        "accessor": "",
+        "accessor": {
+            "type:": "",
+            "metadata": ""
+        },
         "severity": "Warning",
         "resolution": "GPU reset is required",
         "trigger_count": 0,
@@ -184,7 +214,10 @@
         "event": "GPU row-remapping pending flag",
         "device_type": "GPU",
         "event_trigger": "",
-        "accessor": "",
+        "accessor": {
+            "type:": "",
+            "metadata": ""
+        },
         "severity": "Warning",
         "resolution": "GPU reset is required",
         "trigger_count": 0,
@@ -202,7 +235,10 @@
         "event": "GPU row-remapping failure",
         "device_type": "GPU",
         "event_trigger": "",
-        "accessor": "",
+        "accessor": {
+            "type:": "",
+            "metadata": ""
+        },
         "severity": "Critical",
         "resolution": "Contact NVIDIA Support",
         "trigger_count": 0,
@@ -222,7 +258,10 @@
         "event": "OverT",
         "device_type": "NVSwitch",
         "event_trigger": "",
-        "accessor": "",
+        "accessor": {
+            "type:": "",
+            "metadata": ""
+        },
         "severity": "Critical",
         "resolution": "Contact NVIDIA Support",
         "trigger_count": 0,
@@ -240,7 +279,10 @@
         "event": "Thermal Alert",
         "device_type": "NVSwitch",
         "event_trigger": "",
-        "accessor": "",
+        "accessor": {
+            "type:": "",
+            "metadata": ""
+        },
         "severity": "Critical",
         "resolution": "Contact NVIDIA Support",
         "trigger_count": 0,
@@ -258,7 +300,10 @@
         "event": "Power Rail Change",
         "device_type": "NVSwitch",
         "event_trigger": "",
-        "accessor": "",
+        "accessor": {
+            "type:": "",
+            "metadata": ""
+        },
         "severity": "Critical",
         "resolution": "Contact NVIDIA Support",
         "trigger_count": 0,
@@ -276,7 +321,10 @@
         "event": "1V8 Abnormal Change",
         "device_type": "NVSwitch",
         "event_trigger": "",
-        "accessor": "",
+        "accessor": {
+            "type:": "",
+            "metadata": ""
+        },
         "severity": "Critical",
         "resolution": "Contact NVIDIA Support",
         "trigger_count": 0,
@@ -294,7 +342,10 @@
         "event": "NVSwitch manager timeout without graceful shutdown",
         "device_type": "NVSwitch",
         "event_trigger": "",
-        "accessor": "",
+        "accessor": {
+            "type:": "",
+            "metadata": ""
+        },
         "severity": "Critical",
         "resolution": "Contact NVIDIA Support",
         "trigger_count": 0,
@@ -312,7 +363,10 @@
         "event": "NVSwitch manager error",
         "device_type": "NVSwitch",
         "event_trigger": "",
-        "accessor": "",
+        "accessor": {
+            "type:": "",
+            "metadata": ""
+        },
         "severity": "Critical",
         "resolution": "Contact NVIDIA Support",
         "trigger_count": 0,
@@ -330,7 +384,10 @@
         "event": "NVSwitch disabled due to access or trunk link error detected in local device",
         "device_type": "NVSwitch",
         "event_trigger": "",
-        "accessor": "",
+        "accessor": {
+            "type:": "",
+            "metadata": ""
+        },
         "severity": "Critical",
         "resolution": "Contact NVIDIA Support",
         "trigger_count": 0,
@@ -348,7 +405,10 @@
         "event": "NVSwitch disabled due to access or trunk link error detected in peer device",
         "device_type": "NVSwitch",
         "event_trigger": "",
-        "accessor": "",
+        "accessor": {
+            "type:": "",
+            "metadata": ""
+        },
         "severity": "Critical",
         "resolution": "Contact NVIDIA Support",
         "trigger_count": 0,
@@ -368,7 +428,10 @@
         "event": "alert",
         "device_type": "HSC[left, right]",
         "event_trigger": "",
-        "accessor": "",
+        "accessor": {
+            "type:": "",
+            "metadata": ""
+        },
         "severity": "Critical",
         "resolution": "Contact NVIDIA Support",
         "trigger_count": 0,
@@ -386,7 +449,10 @@
         "event": "Power Abnormal Change",
         "device_type": "HSC[standby, output]",
         "event_trigger": "",
-        "accessor": "",
+        "accessor": {
+            "type:": "",
+            "metadata": ""
+        },
         "severity": "Critical",
         "resolution": "Contact NVIDIA Support",
         "trigger_count": 0,
@@ -404,7 +470,10 @@
         "event": "Power Rail Change",
         "device_type": "HSC[0-9]",
         "event_trigger": "",
-        "accessor": "",
+        "accessor": {
+            "type:": "",
+            "metadata": ""
+        },
         "severity": "Critical",
         "resolution": "Contact NVIDIA Support",
         "trigger_count": 0,

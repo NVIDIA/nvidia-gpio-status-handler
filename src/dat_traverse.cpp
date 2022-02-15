@@ -26,11 +26,13 @@ Device::~Device()
 {}
 
 void Device::populateMap(std::map<std::string, dat_traverse::Device>& m,
-                         const json& j)
+                         const std::string& file)
 {
-    // initial map population
-    // will map deviceName to device itself and fill out all children
-    // (association)
+
+    std::ifstream i(file);
+    json j;
+    i >> j;
+
     for (const auto& el : j.items())
     {
         auto deviceName = el.key();

@@ -17,6 +17,7 @@
 #include "event_detection.hpp"
 #include "event_handler.hpp"
 #include "event_info.hpp"
+#include "message_composer.hpp"
 
 #include <boost/container/flat_map.hpp>
 #include <phosphor-logging/log.hpp>
@@ -69,12 +70,6 @@ int loadDAT(cmd_line::ArgFuncParamType params)
     }
 
     configuration.dat = params[0];
-
-    std::ifstream i(configuration.dat);
-    json j;
-    i >> j;
-
-    dat_traverse::Device::populateMap(profile::datMap, j);
 
     // dat_traverse::Device::printTree(profile::datMap);
 
@@ -151,14 +146,22 @@ int main(int argc, char* argv[])
         return rc;
     }
 
+    std::cerr << "Trying to load Events from file\n";
+
     // Initialization
     event_info::loadFromFile(aml::profile::eventMap, aml::configuration.event);
-    // event_info::EventNode::printMap(aml::profile::eventMap);
+
+    event_info::printMap(aml::profile::eventMap);
+
+    dat_traverse::Device::populateMap(aml::profile::datMap,
+                                      aml::configuration.dat);
 
     // Register event handlers
     event_handler::EventHandlerManager eventHdlrMgr("EventHandlerManager");
-    // eventHdlr.RegisterHandler(dat_traverse::DATTraverse& instance);
-    // eventHdlr.RegisterHandler(message_composer& instance);
+
+    message_composer::MessageComposer msgComposer("MsgComp1");
+
+    eventHdlrMgr.RegisterHandler(&msgComposer);
 
     cout << "Creating " << oob_aml::SERVICE_BUSNAME << "\n";
 

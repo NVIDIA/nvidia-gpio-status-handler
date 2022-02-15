@@ -21,27 +21,40 @@ using json = nlohmann::json;
 namespace dat_traverse
 {
 
+/** @class Device
+ *  @brief Object to represent Device in DAT that
+ *         stores info from dat json profile
+ */
 class Device
 {
   public:
-    /* name of device */
+    /** @brief Name of the device **/
     std::string name;
 
-    /* downstream devices (children) */
+    /** @brief Downstream devices (children) **/
     std::vector<std::string> association;
 
-    /* upstream devices */
+    /** @brief Upstream devices **/
     std::vector<std::string> parents;
 
-    /* 6-layer accessor info for this device */
+    /** @brief 6-layer accessor info for this event **/
     std::map<std::string, std::vector<data_accessor::DataAccessor*>> status;
 
-    /* prints out in memory tree to verify population went as expected */
+    /** @brief Prints out DAT structure to verify population
+     *
+     * @param[in]  m  - DAT map
+     *
+     */
     static void printTree(const std::map<std::string, dat_traverse::Device>& m);
 
-    /* populates memory structure with dat json contents */
+    /** @brief Populates DAT map with JSON profile contents
+     *
+     * @param[in]  m     - DAT map
+     * @param[in]  file  - name of JSON file
+     *
+     */
     static void populateMap(std::map<std::string, dat_traverse::Device>& m,
-                            const json& j);
+                            const std::string& file);
 
     Device(const std::string& s);
     Device(const std::string& s, const json& j);
