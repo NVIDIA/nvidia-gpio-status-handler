@@ -58,10 +58,13 @@ sdeventplus_dep = dependency(
     fallback: ['sdeventplus', 'sdeventplus_dep' ],
 )
 
+phosphorlogging_dep = dependency('phosphor-logging')
+
 # Add all the dependencies
 aml_dependencies = []
 
-aml_dependencies+=sdbusplus_dep
+aml_dependencies += sdbusplus_dep
+aml_dependencies += phosphorlogging_dep
 
 #aml_dependencies += dependency('glib-2.0')
 aml_dependencies += dependency('threads')
