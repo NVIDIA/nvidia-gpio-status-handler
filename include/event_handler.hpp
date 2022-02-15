@@ -5,14 +5,14 @@
 
 #pragma once
 
+#include "aml.hpp"
+#include "event_info.hpp"
+#include "log.hpp"
+#include "object.hpp"
+
 #include <memory>
 #include <string>
 #include <vector>
-
-#include "log.hpp"
-#include "aml.hpp"
-#include "event_info.hpp"
-#include "object.hpp"
 
 namespace event_handler
 {
@@ -67,15 +67,15 @@ class EventHandlerManager : public object::Object
         for (auto& hdlr : _handlers)
         {
             log_dbg("running handler(%s) on event(%s).\n",
-                   hdlr->getName().c_str(), event.getName().c_str());
+                    hdlr->getName().c_str(), event.getName().c_str());
 
             auto rc = hdlr->process(event);
 
             if (rc != aml::RcCode::succ)
             {
                 log_err("handler(%s) on event(%s) failed, rc = %d!\n",
-                       hdlr->getName().c_str(), event.getName().c_str(),
-                       aml::to_integer(rc));
+                        hdlr->getName().c_str(), event.getName().c_str(),
+                        aml::to_integer(rc));
 
                 // return on first failure.
                 // TODO: add option for continue on failure if needed.

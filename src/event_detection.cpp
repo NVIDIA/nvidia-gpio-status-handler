@@ -2,12 +2,13 @@
 /*
  *
  */
-#include <iostream>
-
 #include "event_detection.hpp"
+
 #include <boost/container/flat_map.hpp>
-#include <sdbusplus/asio/object_server.hpp>
 #include <nlohmann/json.hpp>
+#include <sdbusplus/asio/object_server.hpp>
+
+#include <iostream>
 
 using json = nlohmann::json;
 
@@ -39,9 +40,9 @@ std::unique_ptr<sdbusplus::bus::match_t> EventDetection::startEventDetection(
             {
                 continue;
             }
-            //cout << "[G]" << *variant << ":" << event << "\n";
+            // cout << "[G]" << *variant << ":" << event << "\n";
 
-            cout << "Event: " << event << ", Variant: " << variant << "\n"; 
+            cout << "Event: " << event << ", Variant: " << variant << "\n";
         }
 
         return;
@@ -51,8 +52,8 @@ std::unique_ptr<sdbusplus::bus::match_t> EventDetection::startEventDetection(
     //     static_cast<sdbusplus::bus::bus&>(*conn),
     //     sdbusplus::bus::match::rules::type::signal() +
     //     sdbusplus::bus::match::rules::member("PropertiesChanged") +
-    //     sdbusplus::bus::match::rules::interface("org.freedesktop.DBus.Properties") +
-    //     sdbusplus::bus::match::rules::argN(0, "xyz.openbmc_project"),
+    //     sdbusplus::bus::match::rules::interface("org.freedesktop.DBus.Properties")
+    //     + sdbusplus::bus::match::rules::argN(0, "xyz.openbmc_project"),
     //     std::move(eventHandlerMatcherCallback));
 
     bool registerd = iface->register_signal<void>("PropertiesChanged");
@@ -61,14 +62,15 @@ std::unique_ptr<sdbusplus::bus::match_t> EventDetection::startEventDetection(
 
     // auto eventHandlerMatcher = std::make_unique<sdbusplus::bus::match_t>(
     //     static_cast<sdbusplus::bus::bus&>(*conn),
-    //     sdbusplus::bus::match::rules::propertiesChangedNamespace("/xyz/openbmc_project", "xyz.openbmc_project"),
-    //     std::move(eventHandlerMatcherCallback));
+    //     sdbusplus::bus::match::rules::propertiesChangedNamespace("/xyz/openbmc_project",
+    //     "xyz.openbmc_project"), std::move(eventHandlerMatcherCallback));
 
     auto eventHandlerMatcher = std::make_unique<sdbusplus::bus::match_t>(
         static_cast<sdbusplus::bus::bus&>(*conn),
         sdbusplus::bus::match::rules::type::signal() +
-        sdbusplus::bus::match::rules::member("PropertiesChanged") +
-        sdbusplus::bus::match::rules::interface("org.freedesktop.DBus.Properties"),
+            sdbusplus::bus::match::rules::member("PropertiesChanged") +
+            sdbusplus::bus::match::rules::interface(
+                "org.freedesktop.DBus.Properties"),
         std::move(eventHandlerMatcherCallback));
 
     // sdbusplus::bus::match::match eventHandlerMatcher(
@@ -77,10 +79,7 @@ std::unique_ptr<sdbusplus::bus::match_t> EventDetection::startEventDetection(
     // std::move(eventHandlerMatcherCallback));
 
     return eventHandlerMatcher;
-    
-
 }
-
 
 // void EventDetection::~EventDetection()
 // {

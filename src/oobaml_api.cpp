@@ -9,11 +9,9 @@ namespace oobaml_api
 {
 
 OobamlApi::OobamlApi()
-{
-}
+{}
 
 OobamlApi::~OobamlApi()
-{
-}
+{}
 
 } // namespace oobaml_api

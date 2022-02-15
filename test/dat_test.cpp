@@ -1,12 +1,15 @@
-#include "gmock/gmock.h"
 #include "dat_traverse.hpp"
 #include "nlohmann/json.hpp"
-#include "algorithm"
-#include <map>
-#include <vector>
-#include <string>
-#include <iostream>
+
 #include <exception>
+#include <iostream>
+#include <map>
+#include <string>
+#include <vector>
+
+#include "algorithm"
+
+#include "gmock/gmock.h"
 
 TEST(DatTest, AssociationPopulated)
 {
@@ -29,6 +32,7 @@ TEST(DatTest, MapPopulated)
     nlohmann::json j;
     j["Baseboard"]["association"] = {"GPU1", "GPU2"};
     j["GPU1"]["association"] = {"HSC1", "HSC2"};
-    std::vector<std::string> v = j["Baseboard"]["association"].get<std::vector<std::string>>();
+    std::vector<std::string> v =
+        j["Baseboard"]["association"].get<std::vector<std::string>>();
     EXPECT_EQ(std::find(v.begin(), v.end(), "GPU1") != v.end(), true);
 }
