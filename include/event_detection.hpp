@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include "event_info.hpp"
 #include <boost/container/flat_map.hpp>
 #include <sdbusplus/asio/object_server.hpp>
 
@@ -27,12 +28,21 @@ enum class Status : int
 class EventDetection
 {
 
+  private:
+    event_info::EventMap eventMap;
+    
   public:
     EventDetection();
     ~EventDetection() = default;
-    static std::unique_ptr<sdbusplus::bus::match_t> startEventDetection(
+    EventDetection(event_info::EventMap& eventMap) :
+        eventMap(eventMap)
+    {}
+    std::unique_ptr<sdbusplus::bus::match_t> startEventDetection(
         std::shared_ptr<sdbusplus::asio::connection> conn,
         std::shared_ptr<sdbusplus::asio::dbus_interface> iface);
+    void identifyEventCandidate(const std::string& objPath,
+                                const std::string& signature,
+                                const std::string& property);
     // EventDetection(std::shared_ptr<sdbusplus::asio::connection> conn);
 };
 

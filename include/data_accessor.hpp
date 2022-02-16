@@ -22,9 +22,9 @@ class DataAccessor
     DataAccessor();
     ~DataAccessor();
 
-  private:
+  public:
     ACCESSOR_TYPE accessorType;
-    std::vector<int> accessorValue;
+    std::string accessorMetaData;
 };
 
 } // namespace data_accessor

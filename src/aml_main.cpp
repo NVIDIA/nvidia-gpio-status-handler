@@ -180,8 +180,8 @@ int main(int argc, char* argv[])
     auto iface =
         server.add_interface(oob_aml::TOP_OBJPATH, oob_aml::SERVICE_IFCNAME);
 
-    auto eventDetection =
-        event_detection::EventDetection::startEventDetection(sdbusp, iface);
+    auto eventDetection = event_detection::EventDetection(aml::profile::eventMap);
+    eventDetection.startEventDetection(sdbusp, iface);
 
     iface->initialize();
 

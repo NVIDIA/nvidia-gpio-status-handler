@@ -80,6 +80,20 @@ void EventNode::loadFrom(const json& j)
                              messageStruct};
 
     this->redfishStruct = redfishStruct;
+
+    data_accessor::DataAccessor accessorStruct;
+
+    accessorStruct.accessorMetaData = j["accessor"]["metadata"].get<std::string>();
+    if (j["accessor"]["type"].get<std::string>() == "DBUS")
+    {
+        accessorStruct.accessorType = data_accessor::ACCESSOR_TYPE::DBUS;
+    }
+    else 
+    {
+        accessorStruct.accessorType = data_accessor::ACCESSOR_TYPE::OTHER;
+    }
+
+    this->accessorStruct = accessorStruct;
 }
 
 } // namespace event_info
