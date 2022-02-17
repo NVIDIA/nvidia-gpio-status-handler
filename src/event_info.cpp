@@ -67,6 +67,7 @@ void EventNode::loadFrom(const json& j)
     this->eventTrigger = j["event_trigger"];
     this->telemetries = j["telemetries"].get<std::vector<std::string>>();
     this->action = j["action"];
+    this->device = "";
 
     eventCounterReset eventCounterResetStruct = {
         j["event_counter_reset"]["type"].get<std::string>(),

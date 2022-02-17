@@ -44,11 +44,12 @@ bool MessageComposer::createLog(event_info::EventNode& event)
     auto telemetries = std::accumulate(
         event.telemetries.begin(), event.telemetries.end(), std::string(""));
 
-    method.append(std::array<std::pair<std::string, std::string>, 3>(
+    method.append(std::array<std::pair<std::string, std::string>, 4>(
         {{{"xyz.openbmc_project.Logging.Entry.Resolution",
            event.redfishStruct.messageStruct.resolution},
           {"REDFISH_MESSAGE_ID", event.redfishStruct.messageId},
-          {"DEVICE_EVENT_DATA", telemetries}}}));
+          {"DEVICE_EVENT_DATA", telemetries},
+          {"namespace", event.device}}}));
     try
     {
         auto reply = bus.call(method);
