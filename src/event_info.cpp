@@ -85,7 +85,7 @@ void EventNode::loadFrom(const json& j)
     data_accessor::DataAccessor accessorStruct;
 
     accessorStruct.accessorMetaData = j["accessor"]["metadata"].get<std::string>();
-    if (j["accessor"]["type"].get<std::string>() == "DBUS")
+    if (j["accessor"]["type"].get<std::string>() == std::string("DBUS"))
     {
         accessorStruct.accessorType = data_accessor::ACCESSOR_TYPE::DBUS;
     }

@@ -5,7 +5,7 @@
         "device_type": "GPU",
         "event_trigger": "",
         "accessor": {
-            "type:": "",
+            "type": "",
             "metadata": ""
         },
         "severity": "Critical",
@@ -26,7 +26,7 @@
         "device_type": "GPU",
         "event_trigger": "",
         "accessor": {
-            "type:": "",
+            "type": "",
             "metadata": ""
         },
         "severity": "Critical",
@@ -47,7 +47,7 @@
         "device_type": "GPU",
         "event_trigger": "",
         "accessor": {
-            "type:": "",
+            "type": "",
             "metadata": ""
         },
         "severity": "Critical",
@@ -68,7 +68,7 @@
         "device_type": "GPU",
         "event_trigger": "",
         "accessor": {
-            "type:": "",
+            "type": "",
             "metadata": ""
         },
         "severity": "Warning",
@@ -89,7 +89,7 @@
         "device_type": "GPU",
         "event_trigger": "",
         "accessor": {
-            "type:": "",
+            "type": "",
             "metadata": ""
         },
         "severity": "Warning",
@@ -110,7 +110,7 @@
         "device_type": "GPU",
         "event_trigger": "",
         "accessor": {
-            "type:": "",
+            "type": "",
             "metadata": ""
         },
         "severity": "Critical",
@@ -131,7 +131,7 @@
         "device_type": "GPU",
         "event_trigger": "",
         "accessor": {
-            "type:": "",
+            "type": "",
             "metadata": ""
         },
         "severity": "Critical",
@@ -152,7 +152,7 @@
         "device_type": "GPU",
         "event_trigger": "",
         "accessor": {
-            "type:": "",
+            "type": "",
             "metadata": ""
         },
         "severity": "Warning",
@@ -173,7 +173,7 @@
         "device_type": "GPU",
         "event_trigger": "",
         "accessor": {
-            "type:": "",
+            "type": "",
             "metadata": ""
         },
         "severity": "Warning",
@@ -194,7 +194,7 @@
         "device_type": "GPU",
         "event_trigger": "",
         "accessor": {
-            "type:": "",
+            "type": "",
             "metadata": ""
         },
         "severity": "Warning",
@@ -215,7 +215,7 @@
         "device_type": "GPU",
         "event_trigger": "",
         "accessor": {
-            "type:": "",
+            "type": "",
             "metadata": ""
         },
         "severity": "Warning",
@@ -236,7 +236,7 @@
         "device_type": "GPU",
         "event_trigger": "",
         "accessor": {
-            "type:": "",
+            "type": "",
             "metadata": ""
         },
         "severity": "Critical",
@@ -259,7 +259,7 @@
         "device_type": "NVSwitch",
         "event_trigger": "",
         "accessor": {
-            "type:": "",
+            "type": "",
             "metadata": ""
         },
         "severity": "Critical",
@@ -280,7 +280,7 @@
         "device_type": "NVSwitch",
         "event_trigger": "",
         "accessor": {
-            "type:": "",
+            "type": "",
             "metadata": ""
         },
         "severity": "Critical",
@@ -301,7 +301,7 @@
         "device_type": "NVSwitch",
         "event_trigger": "",
         "accessor": {
-            "type:": "",
+            "type": "",
             "metadata": ""
         },
         "severity": "Critical",
@@ -322,7 +322,7 @@
         "device_type": "NVSwitch",
         "event_trigger": "",
         "accessor": {
-            "type:": "",
+            "type": "",
             "metadata": ""
         },
         "severity": "Critical",
@@ -343,7 +343,7 @@
         "device_type": "NVSwitch",
         "event_trigger": "",
         "accessor": {
-            "type:": "",
+            "type": "",
             "metadata": ""
         },
         "severity": "Critical",
@@ -364,7 +364,7 @@
         "device_type": "NVSwitch",
         "event_trigger": "",
         "accessor": {
-            "type:": "",
+            "type": "",
             "metadata": ""
         },
         "severity": "Critical",
@@ -385,7 +385,7 @@
         "device_type": "NVSwitch",
         "event_trigger": "",
         "accessor": {
-            "type:": "",
+            "type": "",
             "metadata": ""
         },
         "severity": "Critical",
@@ -406,7 +406,7 @@
         "device_type": "NVSwitch",
         "event_trigger": "",
         "accessor": {
-            "type:": "",
+            "type": "",
             "metadata": ""
         },
         "severity": "Critical",
@@ -429,7 +429,7 @@
         "device_type": "HSC[left, right]",
         "event_trigger": "",
         "accessor": {
-            "type:": "",
+            "type": "",
             "metadata": ""
         },
         "severity": "Critical",
@@ -450,7 +450,7 @@
         "device_type": "HSC[standby, output]",
         "event_trigger": "",
         "accessor": {
-            "type:": "",
+            "type": "",
             "metadata": ""
         },
         "severity": "Critical",
@@ -471,7 +471,7 @@
         "device_type": "HSC[0-9]",
         "event_trigger": "",
         "accessor": {
-            "type:": "",
+            "type": "",
             "metadata": ""
         },
         "severity": "Critical",
@@ -489,4 +489,3 @@
      }
     ]
 }
-
