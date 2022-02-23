@@ -78,8 +78,8 @@ class EventNode : public object::Object
     /** @brief Particular device name .. i.e. GPU0 **/
     std::string device;
 
-    /** @brief Event count **/
-    int eventCount;
+    /** @brief Event count map: maps device name to count **/
+    std::map<std::string, int> count;
 
     /** @brief Load class contents from JSON profile
      *
