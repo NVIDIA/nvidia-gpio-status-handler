@@ -34,7 +34,7 @@ class Object
 
   private:
     /**
-     * @brief Obejct name.
+     * @brief Object name.
      *
      */
     std::string _name;

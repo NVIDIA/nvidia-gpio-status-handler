@@ -58,6 +58,17 @@ class EventNode : public object::Object
      */
     void loadFrom(const json& j);
 
+    /** @brief Dumps class content to stdout
+     *
+     * @param[in]  n  - event node object to dump
+     *
+     */
+    void print(const EventNode& n) const;
+
+    /** @brief Dumps current object class content to stdout
+     */
+    void print(void) const;
+
   public:
     /** @brief Name of the event **/
     std::string event;

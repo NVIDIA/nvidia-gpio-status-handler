@@ -28,6 +28,7 @@ oobamld = executable('oobamld',
         oobamld_deps,
         sdbusplus_dep,
         sdeventplus_dep,
+        phosphor_logging_dep,
     ],
     install: true,
 )

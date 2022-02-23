@@ -58,14 +58,16 @@ sdeventplus_dep = dependency(
     fallback: ['sdeventplus', 'sdeventplus_dep' ],
 )
 
-phosphorlogging_dep = dependency('phosphor-logging')
+phosphor_logging_dep = dependency(
+    'phosphor-logging',
+    fallback: ['phosphor-logging', 'phosphor_logging_dep'],
+)
 
 # Add all the dependencies
 aml_dependencies = []
 
 aml_dependencies += sdbusplus_dep
-aml_dependencies += phosphorlogging_dep
-
+aml_dependencies += phosphor_logging_dep
 #aml_dependencies += dependency('glib-2.0')
 aml_dependencies += dependency('threads')
 
@@ -90,18 +92,30 @@ pkg_mod.generate(libraries : amllib,
                  description : 'nvidia-oobaml')
 
 if get_option('tests').enabled()
-  gtest = dependency('gtest', main: true,disabler: true, required : false)
-  gmock = dependency('gmock', required : false)
-  if not gtest.found() and get_option('tests').enabled()
-    gtest_proj = subproject('gtest', required: true)
-    gtest = gtest_proj.get_variable('gtest_main_dep')
-    gmock = gtest_proj.get_variable('gmock_dep')
+  gtest_dep = dependency('gtest', main: true, disabler: true, required: false)
+  gmock_dep = dependency('gmock', disabler: true, required: false)
+  if not gtest_dep.found() or not gmock_dep.found()
+      gtest_proj = import('cmake').subproject('googletest', required: false)
+      if gtest_proj.found()
+          gtest_dep = declare_dependency(
+              dependencies: [
+                  dependency('threads'),
+                  gtest_proj.dependency('gtest'),
+                  gtest_proj.dependency('gtest_main'),
+              ]
+          )
+          gmock_dep = gtest_proj.dependency('gmock')
+      else
+          assert(
+              not get_option('tests').enabled(),
+              'Googletest is required if tests are enabled'
+          )
+      endif
   endif
-  gtest = gtest.as_system('system')
-  gmock = gmock.as_system('system')
 endif
 
-srcfiles_unittest = ['test/dat_test.cpp', 'test/event_test.cpp', 'test/dat_traverse_test.cpp']
+srcfiles_unittest = ['test/dat_test.cpp', 'test/event_test.cpp',
+		'test/dat_traverse_test.cpp', 'test/event_detection_test.cpp']
 
 amllib_sources = [
                 'src/config_parser.cpp',
@@ -109,7 +123,7 @@ amllib_sources = [
                 'src/data_accessor.cpp',
                 'src/event_detection.cpp',
                 'src/event_handler.cpp',
-		        'src/event_info.cpp',
+                'src/event_info.cpp',
                 'src/message_composer.cpp',
                 'src/message_dispatcher.cpp',
                 'src/oobaml_api.cpp']
@@ -124,8 +138,8 @@ if(get_option('tests').enabled())
       include_directories : inc,
       install_dir: bindir,
       dependencies: aml_dependencies + [
-        gtest,
-        gmock,
+        gtest_dep,
+        gmock_dep,
       ]
     )
     test('oobaml_unit_test', ut_bin)
