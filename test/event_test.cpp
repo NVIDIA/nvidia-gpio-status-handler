@@ -1,8 +1,9 @@
-#include "gmock/gmock.h"
-#include "event_info.hpp"
-#include "nlohmann/json.hpp"
-#include "message_composer.hpp"
 #include "aml.hpp"
+#include "event_info.hpp"
+#include "message_composer.hpp"
+#include "nlohmann/json.hpp"
+
+#include "gmock/gmock.h"
 
 TEST(EventTest, LoadJson)
 {
@@ -23,9 +24,10 @@ TEST(EventTest, LoadJson)
     event_info::EventNode event("test event");
     event.loadFrom(j);
     EXPECT_EQ(event.event, "Event0");
-    EXPECT_EQ(event.redfishStruct.messageId, "ResourceEvent.1.0.ResourceErrorsDetected");
-    EXPECT_EQ(event.eventCounterResetStruct.metadata, "metadata");
-    EXPECT_EQ(event.redfishStruct.messageStruct.severity, "Critical");
+    EXPECT_EQ(event.messageRegistry.messageId,
+              "ResourceEvent.1.0.ResourceErrorsDetected");
+    EXPECT_EQ(event.counterReset["metadata"], "metadata");
+    EXPECT_EQ(event.messageRegistry.message.severity, "Critical");
 }
 
 TEST(MsgCompTest, MakeCall)

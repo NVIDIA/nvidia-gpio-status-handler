@@ -18,7 +18,7 @@ using json = nlohmann::json;
 namespace event_info
 {
 
-struct eventCounterReset
+struct counterReset
 {
     std::string type;
     std::string metadata;
@@ -33,7 +33,7 @@ struct Message
 struct redfish
 {
     std::string messageId;
-    Message messageStruct;
+    Message message;
 };
 
 /** @class EventNode
@@ -44,8 +44,17 @@ class EventNode : public object::Object
 {
 
   public:
-    EventNode(const std::string& name) : object::Object(name)
+    EventNode(const std::string& name = __PRETTY_FUNCTION__) :
+        object::Object(name)
     {}
+
+  public:
+    /** @brief Load class contents from JSON profile
+     *
+     * @param[in]  j  - json object
+     *
+     */
+    void loadFrom(const json& j);
 
   public:
     /** @brief Name of the event **/
@@ -58,16 +67,19 @@ class EventNode : public object::Object
     std::string eventTrigger;
 
     /** @brief Accesssor info **/
-    data_accessor::DataAccessor accessorStruct;
+    data_accessor::DataAccessor accessor;
+
+    /** @brief Event count **/
+    int count;
 
     /** @brief Count that will trigger event **/
     int triggerCount;
 
     /** @brief Struct containing type and metadata **/
-    eventCounterReset eventCounterResetStruct;
+    data_accessor::DataAccessor counterReset;
 
     /** @brief Redfish fields struct **/
-    redfish redfishStruct;
+    redfish messageRegistry;
 
     /** @brief List of the event's telemetries **/
     std::vector<std::string> telemetries;
@@ -77,16 +89,6 @@ class EventNode : public object::Object
 
     /** @brief Particular device name .. i.e. GPU0 **/
     std::string device;
-
-    /** @brief Event count map: maps device name to count **/
-    std::map<std::string, int> count;
-
-    /** @brief Load class contents from JSON profile
-     *
-     * @param[in]  j  - json object
-     *
-     */
-    void loadFrom(const json& j);
 };
 
 using EventMap = std::map<std::string, std::vector<event_info::EventNode>>;

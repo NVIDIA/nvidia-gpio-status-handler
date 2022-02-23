@@ -45,7 +45,7 @@ namespace logging
  * #include "log.hpp"
  */
 #ifndef DBG_LOG_CTRL
-#define DBG_LOG_CTRL "nvgpuoob_ctrl"
+#define DBG_LOG_CTRL "nvoobaml_ctrl"
 #endif
 
 /**

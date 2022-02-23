@@ -38,7 +38,7 @@ bool MessageComposer::createLog(event_info::EventNode& event)
         "xyz.openbmc_project.Logging.Create", "Create");
     method.append(event.event);
     auto severity = std::string("xyz.openbmc_project.Logging.Entry.Level.") +
-                    event.redfishStruct.messageStruct.severity;
+                    event.messageRegistry.message.severity;
     method.append(severity);
 
     auto telemetries = std::accumulate(
@@ -46,10 +46,11 @@ bool MessageComposer::createLog(event_info::EventNode& event)
 
     method.append(std::array<std::pair<std::string, std::string>, 4>(
         {{{"xyz.openbmc_project.Logging.Entry.Resolution",
-           event.redfishStruct.messageStruct.resolution},
-          {"REDFISH_MESSAGE_ID", event.redfishStruct.messageId},
+           event.messageRegistry.message.resolution},
+          {"REDFISH_MESSAGE_ID", event.messageRegistry.messageId},
           {"DEVICE_EVENT_DATA", telemetries},
           {"namespace", event.device}}}));
+
     try
     {
         auto reply = bus.call(method);

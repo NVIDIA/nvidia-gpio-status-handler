@@ -33,6 +33,32 @@ class EventHandler : public object::Object
 };
 
 /**
+ * @brief A class for clear event handler.
+ *
+ */
+class ClearEvent : public EventHandler
+{
+  public:
+    ClearEvent(const std::string& name = __PRETTY_FUNCTION__) :
+        EventHandler(name)
+    {}
+    ~ClearEvent() = default;
+
+  public:
+    /**
+     * @brief Clear event via its accessor.
+     *
+     * @param event
+     * @return aml::RcCode
+     */
+    aml::RcCode process([[maybe_unused]] event_info::EventNode& event) override
+    {
+        // TODO: clear event
+        return aml::RcCode::error;
+    }
+};
+
+/**
  * @brief A class for managing all event handlers.
  *
  */

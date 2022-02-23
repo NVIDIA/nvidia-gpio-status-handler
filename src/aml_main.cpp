@@ -17,6 +17,7 @@
 #include "event_detection.hpp"
 #include "event_handler.hpp"
 #include "event_info.hpp"
+#include "log.hpp"
 #include "message_composer.hpp"
 
 #include <boost/container/flat_map.hpp>
@@ -35,6 +36,8 @@ using namespace phosphor::logging;
 
 const auto APPNAME = "oobamld";
 const auto APPVER = "0.1";
+
+log_init;
 
 namespace aml
 {
@@ -157,11 +160,11 @@ int main(int argc, char* argv[])
                                       aml::configuration.dat);
 
     // Register event handlers
-    event_handler::EventHandlerManager eventHdlrMgr("EventHandlerManager");
-
     message_composer::MessageComposer msgComposer("MsgComp1");
-
+    event_handler::ClearEvent clearEvent;
+    event_handler::EventHandlerManager eventHdlrMgr("EventHandlerManager");
     eventHdlrMgr.RegisterHandler(&msgComposer);
+    eventHdlrMgr.RegisterHandler(&clearEvent);
 
     cout << "Creating " << oob_aml::SERVICE_BUSNAME << "\n";
 
@@ -180,8 +183,10 @@ int main(int argc, char* argv[])
     auto iface =
         server.add_interface(oob_aml::TOP_OBJPATH, oob_aml::SERVICE_IFCNAME);
 
-    auto eventDetection = event_detection::EventDetection(aml::profile::eventMap);
-    eventDetection.startEventDetection(sdbusp, iface);
+    event_detection::EventDetection eventDetection(
+        "EventDetection1", &aml::profile::eventMap, &eventHdlrMgr);
+    auto eventMatcher = event_detection::EventDetection::startEventDetection(
+        &eventDetection, sdbusp);
 
     iface->initialize();
 

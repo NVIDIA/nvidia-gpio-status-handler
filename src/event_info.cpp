@@ -20,6 +20,7 @@ namespace event_info
 void loadFromFile(EventMap& eventMap, const std::string& file)
 {
 
+    std::cout << "loadFromFile func (" << file << ").\n";
     std::ifstream i(file);
     json j;
     i >> j;
@@ -27,15 +28,18 @@ void loadFromFile(EventMap& eventMap, const std::string& file)
     for (const auto& el : j.items())
     {
         auto deviceType = el.key();
-        std::vector<event_info::EventNode> v;
+        std::vector<event_info::EventNode> v = {};
 
         for (const auto& event : el.value())
         {
+            std::cout << "create event (" << event["event"] << ").\n";
 
             event_info::EventNode eventNode(event["event"]);
 
+            std::cout << "load event (" << event["event"] << ").\n";
             eventNode.loadFrom(event);
 
+            std::cout << "push event (" << event["event"] << ").\n";
             v.push_back(eventNode);
         }
         eventMap.insert(
@@ -69,32 +73,12 @@ void EventNode::loadFrom(const json& j)
     this->action = j["action"];
     this->device = "";
 
-    eventCounterReset eventCounterResetStruct = {
-        j["event_counter_reset"]["type"].get<std::string>(),
-        j["event_counter_reset"]["metadata"].get<std::string>()};
+    this->counterReset = j["event_counter_reset"];
 
-    this->eventCounterResetStruct = eventCounterResetStruct;
+    this->messageRegistry = {j["redfish"]["message_id"].get<std::string>(),
+                             {j["severity"], j["resolution"]}};
 
-    Message messageStruct = {j["severity"], j["resolution"]};
-
-    redfish redfishStruct = {j["redfish"]["message_id"].get<std::string>(),
-                             messageStruct};
-
-    this->redfishStruct = redfishStruct;
-
-    data_accessor::DataAccessor accessorStruct;
-
-    accessorStruct.accessorMetaData = j["accessor"]["metadata"].get<std::string>();
-    if (j["accessor"]["type"].get<std::string>() == std::string("DBUS"))
-    {
-        accessorStruct.accessorType = data_accessor::ACCESSOR_TYPE::DBUS;
-    }
-    else 
-    {
-        accessorStruct.accessorType = data_accessor::ACCESSOR_TYPE::OTHER;
-    }
-
-    this->accessorStruct = accessorStruct;
+    this->accessor = j["accessor"];
 }
 
 } // namespace event_info
