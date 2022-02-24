@@ -48,6 +48,8 @@ class EventNode : public object::Object
         object::Object(name)
     {}
 
+    EventNode(const EventNode& r) = default;
+
   public:
     /** @brief Load class contents from JSON profile
      *

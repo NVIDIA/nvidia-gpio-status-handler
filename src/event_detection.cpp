@@ -90,8 +90,12 @@ std::unique_ptr<sdbusplus::bus::match_t> EventDetection::startEventDetection(
 
                 if (evtDet->IsEvent(*candidate))
                 {
+                    event_info::EventNode event = *candidate;
+                    event.device =
+                        DetermineDeviceName(objectPath, event.deviceType);
+
                     std::cout << "Throw out a eventHdlrMgr.\n";
-                    evtDet->RunEventHandlers(*candidate);
+                    evtDet->RunEventHandlers(event);
                 }
             }
 

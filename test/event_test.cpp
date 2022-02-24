@@ -1,4 +1,5 @@
 #include "aml.hpp"
+#include "event_detection.hpp"
 #include "event_info.hpp"
 #include "message_composer.hpp"
 #include "nlohmann/json.hpp"
@@ -50,4 +51,13 @@ TEST(MsgCompTest, MakeCall)
     event.loadFrom(j);
     message_composer::MessageComposer mc("Test Msg Composer");
     EXPECT_EQ(mc.getName(), "Test Msg Composer");
+}
+
+TEST(DevNameTest, MakeCall)
+{
+    auto objPath = "/xyz/openbmc_project/inventory/system/chassis/GPU12";
+    auto devType = "GPU";
+    auto name =
+        event_detection::EventDetection::DetermineDeviceName(objPath, devType);
+    EXPECT_EQ(name, "GPU12");
 }
