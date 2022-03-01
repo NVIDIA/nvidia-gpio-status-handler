@@ -71,8 +71,8 @@ class EventNode : public object::Object
     /** @brief Accesssor info **/
     data_accessor::DataAccessor accessor;
 
-    /** @brief Event count **/
-    int count;
+    /** @brief Event count map: maps device name to count **/
+    std::map<std::string, int> count;
 
     /** @brief Count that will trigger event **/
     int triggerCount;
