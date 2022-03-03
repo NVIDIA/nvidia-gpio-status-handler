@@ -194,8 +194,17 @@ class Injector:
         self._black_list      = ["accessor"] # fields not parsed from json file
 
 
+    def __del__(self):
+        self.__remove_script_file()
+
+
     def script_file(self):
         return self._shell_file
+
+
+    def __remove_script_file(self):
+        if len(self._shell_file) > 0 and os.access(self._shell_file, os.W_OK):
+            os.unlink(self._shell_file)
 
 
     def __create_script_file(self):
@@ -239,6 +248,7 @@ class Injector:
 
     def __format_additional_data_copule(self, ad_key):
         return ' \\\n\t'  + ad_key + ' \\"' + self._additional_data[ad_key] + '\\"'
+
 
     def __create_bustcl_command(self):
         cmd  = '''busctl call xyz.openbmc_project.Logging /xyz/openbmc_project/logging '''
@@ -467,7 +477,7 @@ class InjectTest:
         try:
             try:
                 source_script = injector.script_file()
-                print(f"...\n\nCopying {source_script} to {QEMU_USER}@{BMCWEB_IP}:{EVENT_INJ_SCRIPT_PATH} using sftp")
+                print(f"...\n\nCopying {source_script} to {QEMU_USER}@{BMCWEB_IP}:{EVENT_INJ_SCRIPT_PATH} using sftp....")
                 sftp = ssh_cmd.open_sftp()
                 sftp.put(source_script, EVENT_INJ_SCRIPT_PATH)
                 sftp.close()
