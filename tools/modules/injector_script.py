@@ -90,9 +90,11 @@ class InjectorScriptBase(abc.ABC):
                subfield_str = subfield[0]
                subfield_str = subfield_str[0].upper() + subfield[1:]
                child_str = field_str + '.' + subfield_str
-               self.parse_json_sub_dict_field(child_str, value[subfield])
+               self.parse_json_sub_dict_field(child_str, value[subfield], key_prefix)
         else:
-            key_field = key_prefix + field_str
+            key_field = field_str
+            if key_prefix is not None:
+                key_field = key_prefix + field_str
             if isinstance(value, list):
                 value = ", ".join(value)
             if not isinstance(value, str):
@@ -124,7 +126,36 @@ class InjectorScriptBase(abc.ABC):
                 self.generate_busctl_command_from_json_dict(device_name, data[index])
 
 
+    '''
+    expand_range(range_string) returns a list from strings with/without range specification at end
 
+    expand a name such as:
 
+        expand_range("name[1-5]")         -> ['name1', 'name2', 'name3', 'name4', 'name5']
+        expand_range("unique")            -> ['unique']
+        expand_range("other[0, 1 , 3-5]") -> ['other0', 'other1', 'other3', 'other4', 'other5']
+        expand_range("chars[0, 1 , g-m]") -> ['chars0', 'chars1', 'charsg', 'charsh', 'charsi', 'charsj', 'charsk', 'charsl', 'charsm']
 
+    '''
+    def expand_range(self, name):
+        name_prefix = name
+        name_range = name.split('[')
+        list_names = []
+        if len(name_range) > 1:
+            name_prefix = name_range[0];
+            for item_string in name_range[1].split(','):
+                item = item_string.strip()
+                if '-' not in item:
+                    list_names.append(name_prefix + item)
+                else:
+                    values_range = item.split('-')
+                    value = values_range[0].strip()
+                    final_value = values_range[1].strip()
+                    while (value <= final_value):
+                        list_names.append(name_prefix + value)
+                        value_int = ord(value) + 1
+                        value = chr(value_int)
+        else:
+            list_names.append(name_prefix)
+        return list_names
 
