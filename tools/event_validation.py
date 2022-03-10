@@ -27,10 +27,13 @@ import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 ## add modules sub directory from
-sys.path.append(f"{os.path.dirname(__file__)}/modules")
+modules_dir = os.path.dirname(__file__)
+modules_dir_path = f"{modules_dir}/modules" if len(modules_dir) > 0 else "./modules"
+sys.path.append(modules_dir_path)
 
 
-from event_logging_script import EventLogsInjectorScript
+from event_logging_script  import EventLogsInjectorScript
+from event_accessor_script import EventAccessorInjectorScript
 
 # Global variables used to access BMCWEB
 BMCWEB_IP=""
