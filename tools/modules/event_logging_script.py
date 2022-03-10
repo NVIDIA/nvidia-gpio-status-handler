@@ -3,7 +3,7 @@ import tempfile
 import os
 
 
-from injector_script import InjectorScriptBase
+from injector_script_base import InjectorScriptBase
 
 
 class EventLogsInjectorScript(InjectorScriptBase):
