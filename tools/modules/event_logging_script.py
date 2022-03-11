@@ -4,14 +4,16 @@ Resources for 'Event Logging injection' bashh script generation
 
 from injector_script_base import InjectorScriptBase
 
-INDEX_DEVICE_NAME = 0 # index for self._busctl_info
-INDEX_SEVERITY    = 1 # index for self._busctl_info
-INDEX_EVENT       = 2 # index for self._busctl_info
-REDFISH_MESSAGE_ID = "REDFISH_MESSAGE_ID"
-REDFISH_MESSAGE_ARGS = "REDFISH_MESSAGE_ARGS"
+INDEX_DEVICE_NAME     = 0 # index for self._busctl_info
+INDEX_SEVERITY        = 1 # index for self._busctl_info
+INDEX_EVENT           = 2 # index for self._busctl_info
+REDFISH_MESSAGE_ID    = "REDFISH_MESSAGE_ID"
+REDFISH_MESSAGE_ARGS  = "REDFISH_MESSAGE_ARGS"
+LOGGING_ENTRY_STR     = "xyz.openbmc_project.Logging.Entry"
+LOGGING_ENTRY_DOT_STR = f"{LOGGING_ENTRY_STR}."
 
 def get_logging_entry_level(level):
-    full_level = f"xyz.openbmc_project.Logging.Entry.Level.{level}"
+    full_level = f"{LOGGING_ENTRY_STR}.Level.{level}"
     return full_level
 
 
@@ -118,7 +120,7 @@ class EventLogsInjectorScript(InjectorScriptBase):
                 elif value_lower == "critical":
                     self._busctl_info[INDEX_SEVERITY] = get_logging_entry_level("Critical")
             elif field == "resolution":
-                self.parse_json_sub_dict_field(field, value, "xyz.openbmc_project.Logging.Entry.")
+                self.parse_json_sub_dict_field(field, value, LOGGING_ENTRY_DOT_STR)
 
           # Other fields not used so far
           #  elif field.lower() not in self._black_list:
