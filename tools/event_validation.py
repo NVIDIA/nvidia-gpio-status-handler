@@ -226,35 +226,28 @@ class InjectTest:
         Uses key 'Member@odata.count' to get the current count.
         Cache the redfish API response if argument "cache" is set to "True"
         """
-        try:
-            # Call the API
+        try: # Call the API
             response = get(self.event_log_entries_api, verify=False,
                                     auth = HTTPBasicAuth(QEMU_USER, QEMU_PASS))
         except Exception as e:
             raise Exception(f"Exception occurred while making API({self.event_log_entries_api}) call: {str(e)}")
-
         try:
             # Convert the API response into JSON format
             response_json=response.json()
         except Exception as e:
             raise Exception(f"Exception occurred while converting response to json: {str(e)}\n Response: {response.text}")
-
-        key_members = "Members"
-
         # Get the 'Members@odata.count' key to read the log count
+        key_members = "Members"
         members = response_json.get(key_members, None)
         if members is None:
             raise Exception(f"Exception occurred while reading key: '{members}'")
-
         # Cache the API response if argument is set to True
         if cache:
             try:
                 self.log_cache=response_json.copy()
             except Exception as e:
                 raise Exception(f"Exception occurred while copying API response json: {str(e)}")
-
         log_count = 0
-
         for member in members:
             log_count = max(log_count, int(member['Id']))
 
@@ -265,13 +258,114 @@ class InjectTest:
         """
         Fetch current number of logs.
         """
-
         print("Fetching current logs....")
-
         try:
             self.initial_log_count = self.current_log_count()
         except Exception as e:
             raise e
+
+
+    def create_ssh_session(self):
+        try:
+            ssh_cmd = paramiko.SSHClient()
+            # Set missing host key policy
+            ssh_cmd.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            # Connect the SSH client to QEMU
+            ssh_cmd.connect(QEMU_IP, username=QEMU_USER, port=QEMU_PORT, password=QEMU_PASS,timeout=5)
+        except Exception as e:
+            raise Exception(f"Exception occurred while connecting to {BMCWEB_IP} {QEMU_PORT}: {str(e)}")
+        return ssh_cmd
+
+
+    def sftp_script_to_emulator(self, ssh_client, source_script):
+        try:
+            print(f"...\n\nCopying {source_script} to {QEMU_USER}@{BMCWEB_IP}:{EVENT_INJ_SCRIPT_PATH} using sftp....")
+            sftp = ssh_client.open_sftp()
+            sftp.put(source_script, EVENT_INJ_SCRIPT_PATH)
+            sftp.close()
+        except Exception as e:
+            raise Exception(f"Exception occurred while copying  {source_script} using sftp: {str(e)}")
+
+
+    def execute_remote_script_and_get_stdout(self, ssh_client):
+        event_inject_cmd = f"/bin/bash {EVENT_INJ_SCRIPT_PATH} {EVENT_INJ_SCRIPT_ARGS}"
+        print("...\n\nInjecting new events....")
+        try:
+            # Execute the command to invoke event_injector script
+            stdin, stdout, stderr = ssh_client.exec_command(event_inject_cmd, get_pty=True)
+        except Exception as e:
+            raise Exception(f"Exception occurred while running command {event_inject_cmd} over ssh: {str(e)}")
+        # Read stderr
+        try:
+            result_stderr = stderr.readline().strip()
+        except Exception as e:
+            raise Exception(f"Exception occurred while reading stderr for command {event_inject_cmd}: {str(e)}")
+        # Check stderr output to check for error
+        if result_stderr:
+            raise Exception(f"Exception occurred while running command {event_inject_cmd} over ssh: {result_stderr}")
+        # Read stdout
+        try:
+            result_stdout = stdout.readlines()
+        except Exception as e:
+            raise Exception(f"Exception occurred while reading stdout for command {event_inject_cmd}: {str(e)}")
+        # Check stdout return code
+        if stdout.channel.recv_exit_status():
+            raise Exception(f"Exception occurred while running command {event_inject_cmd} over ssh:\n{''.join(result_stdout)}")
+        # Print output from the event_injector script to the console
+        print(''.join(result_stdout))
+        return result_stdout
+
+
+    def parse_event_logging_output_get_events_injected(self, result_stdout):
+        """
+        1. reads stdout and inserts data in the dict self.events_injected
+        2. self.events_injected keys are new 'events Ids' supposed as created
+           these 'events Ids' are greater than the number of logs found before injection
+        3. sets self.total_events          -> lines rom stdout containing a 'busctl' commands
+        4. sets self.events_injected_count -> last stdout line such as 'Successful Injections: 23'
+
+        self.events_injected looks like:
+
+        "GPU0 OverT": {
+            "msg_id" : "ResourceEvent.1.0.ResourceErrorsDetected,
+            "severity": "xyz.openbmc_project.Logging.Entry.Level.Critical",
+            "msg_args": "["GPU0_Temp", "Overheat"]",
+            "resolution": "Contact NVIDIA Support"
+        },
+        """
+        current_log_number = self.initial_log_count # number of logs found before injection
+        for event in result_stdout:
+            # Proceed only if it is a busctl command
+            if "busctl" not in event:
+                continue
+            # Split the busctl command and cache all the necessary fields/values
+            try:
+                event_split = split(str(event))
+                current_log_number+=1
+                if current_log_number in self.events_injected:
+                    print(f"Duplicate event: {current_log_number}")
+                else:
+                    self.events_injected[current_log_number] = list()
+
+                # Create a temp dictionary to fill in the info
+                temp_dict = dict()
+                temp_dict["msg_id"] = event_split[BUSCTL_MSGID_IDX]
+                temp_dict["severity"] = event_split[BUSCTL_SEVERITY_IDX]
+                temp_dict["msg_args"] = [x.strip() for x in event_split[BUSCTL_MSGARGS_IDX].split(",")]
+                temp_dict["resolution"] = event_split[BUSCTL_RES_IDX]
+
+                # Increment total number of events
+                self.total_events+=1
+                temp_temp_dict = temp_dict.copy()
+                self.events_injected[current_log_number] = temp_temp_dict
+            except Exception as e:
+                print(f"Unable to get field from busctl command {event} {str(e)}")
+                pass
+        # reads the last output line which should have a 'Successful Injections' counter
+        try:
+            self.events_injected_count = int((result_stdout[-1].strip().split(':')[-1].strip()))
+        except Exception as e:
+            raise Exception(f"Exception occurred while reading successful injections count: {str(e)}")
 
 
     def inject_events(self):
@@ -281,115 +375,21 @@ class InjectTest:
         *  Read all the busctl commands injected by the script and
             cache useful data in dictionaries
         """
-
         event_logs_script = EventLogsInjectorScript(JSON_EVENTS_FILE)
         print("...\n\nParsing Json file and generating event EventLogsInjectorScript bash script....")
         event_logs_script.generate_script_from_json()
 
-        current_log_number = self.initial_log_count
-
         try:
             # Create the SSH client
-            ssh_cmd = paramiko.SSHClient()
-
+            ssh_cmd = self.create_ssh_session()
             # Set missing host key policy
             ssh_cmd.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-
             # Connect the SSH client to QEMU
             ssh_cmd.connect(QEMU_IP, username=QEMU_USER, port=QEMU_PORT, password=QEMU_PASS,timeout=5)
-        except Exception as e:
-            raise Exception(f"Exception occurred while connecting to {BMCWEB_IP} {QEMU_PORT}: {str(e)}")
-
-        try:
-            try:
-                source_script = event_logs_script.script_file()
-                print(f"...\n\nCopying {source_script} to {QEMU_USER}@{BMCWEB_IP}:{EVENT_INJ_SCRIPT_PATH} using sftp....")
-                sftp = ssh_cmd.open_sftp()
-                sftp.put(source_script, EVENT_INJ_SCRIPT_PATH)
-                sftp.close()
-            except Exception as e:
-                raise Exception(f"Exception occurred while copying  {source_script} using sftp: {str(e)}")
-
-            event_inject_cmd = f"/bin/bash {EVENT_INJ_SCRIPT_PATH} {EVENT_INJ_SCRIPT_ARGS}"
-
-            print("...\n\nInjecting new events....")
-
-            try:
-                # Execute the command to invoke event_injector script
-                stdin, stdout, stderr = ssh_cmd.exec_command(event_inject_cmd, get_pty=True)
-            except Exception as e:
-                raise Exception(f"Exception occurred while running command {event_inject_cmd} over ssh: {str(e)}")
-
-            try:
-                # Read stderr
-                result_stderr = stderr.readline().strip()
-            except Exception as e:
-                raise Exception(f"Exception occurred while reading stderr for command {event_inject_cmd}: {str(e)}")
-
-            # Check stderr output to check for error
-            if result_stderr:
-                raise Exception(f"Exception occurred while running command {event_inject_cmd} over ssh: {result_stderr}")
-
-
-            try:
-                # Read stdout
-                result_stdout = stdout.readlines()
-            except Exception as e:
-                raise Exception(f"Exception occurred while reading stdout for command {event_inject_cmd}: {str(e)}")
-
-            # Check stdout return code
-            if stdout.channel.recv_exit_status():
-                raise Exception(f"Exception occurred while running command {event_inject_cmd} over ssh:\n{''.join(result_stdout)}")
-
-            # Print output from the event_injector script to the console
-            print(''.join(result_stdout))
-
-            # Iterate over all the commands returned by event_injector script
-            for event in result_stdout:
-
-                # Proceed only if it is a busctl command
-                if "busctl" not in event:
-                    continue
-
-                # Split the busctl command and cache all the necessary fields/values
-                try:
-                    event_split = split(str(event))
-                    current_log_number+=1
-                    if current_log_number in self.events_injected:
-                        print(f"Duplicate event: {current_log_number}")
-                    else:
-                        self.events_injected[current_log_number] = list()
-
-                    # Create a temp dictionary to fill in the info
-                    temp_dict = dict()
-                    temp_dict["msg_id"] = event_split[BUSCTL_MSGID_IDX]
-                    temp_dict["severity"] = event_split[BUSCTL_SEVERITY_IDX]
-                    temp_dict["msg_args"] = [x.strip() for x in event_split[BUSCTL_MSGARGS_IDX].split(",")]
-                    temp_dict["resolution"] = event_split[BUSCTL_RES_IDX]
-
-                    """
-                    self.events_injected looks like:
-
-                    "GPU0 OverT": {
-                        "msg_id" : "ResourceEvent.1.0.ResourceErrorsDetected,
-                        "severity": "xyz.openbmc_project.Logging.Entry.Level.Critical",
-                        "msg_args": "["GPU0_Temp", "Overheat"]",
-                        "resolution": "Contact NVIDIA Support"
-                    },
-                    """
-                    # Increment total number of events
-                    self.total_events+=1
-                    temp_temp_dict = temp_dict.copy()
-                    self.events_injected[current_log_number] = temp_temp_dict
-                except Exception as e:
-                    print(f"Unable to get field from busctl command {event} {str(e)}")
-                    pass
-
-            try:
-                self.events_injected_count = int((result_stdout[-1].strip().split(':')[-1].strip()))
-            except Exception as e:
-                raise Exception(f"Exception occurred while reading successful injections count: {str(e)}")
-
+            # copy script
+            self.sftp_script_to_emulator(ssh_cmd, event_logs_script.script_file())
+            result_stdout = self.execute_remote_script_and_get_stdout(ssh_cmd)
+            self.parse_event_logging_output_get_events_injected(result_stdout)
         except Exception as e:
             raise e
         finally:
@@ -473,6 +473,8 @@ class InjectTest:
         color = 'red' if len(self.events_injected) else 'green'
         print("\tUnverified events: ", colored(f"{len(self.events_injected)}", color))
 
+        return color
+
 
 def main():
     """
@@ -488,6 +490,8 @@ def main():
 
     injectTest = InjectTest()
 
+    main_rc = os.EX_OK ;
+
     try:
         injectTest.collect_logs_before_injections()
 
@@ -499,8 +503,13 @@ def main():
 
     except Exception as e:
         print(colored(e, 'red'))
+        main_rc = -1
     finally:
-        injectTest.print_summary()
+        if main_rc == os.EX_OK and injectTest.print_summary() == 'green':
+            main_rc = os.EX_OK
+
+    return main_rc
+
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())  # OS status will have 0 status if this test runs OK and passes
