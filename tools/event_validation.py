@@ -22,6 +22,7 @@ from time import sleep
 from termcolor import colored
 import argparse
 import os
+import re
 
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -33,6 +34,7 @@ sys.path.append(modules_dir_path)
 
 
 from event_logging_script  import EventLogsInjectorScript
+from event_logging_script  import LOGGING_ENTRY_DOT_STR
 from event_accessor_script import EventAccessorInjectorScript
 
 # Global variables used to access BMCWEB
@@ -55,9 +57,14 @@ JSON_EVENTS_FILE=""
 # BUSCTL command index -> Corresponding field
 BUSCTL_MSG_IDX=7        # "GPU0 OverT"
 BUSCTL_SEVERITY_IDX=8   # "xyz.openbmc_project.Logging.Entry.Level.Critical"
-BUSCTL_MSGID_IDX=11     # "ResourceEvent.1.0.ResourceErrorsDetected"
-BUSCTL_MSGARGS_IDX=13   # "["GPU0 PWR_GOOD status", "interrupt asserted"]"
-BUSCTL_RES_IDX=15       # "Contact NVIDIA Support"
+BUSCTL_ADDITIONALDATA_IDX=10
+
+MANDATORY_EVENT_SEVERITY_KEY = 'Severity'
+MANDATORY_EVENT_KEYS = [ MANDATORY_EVENT_SEVERITY_KEY, 'Resolution', ['MessageId', 'REDFISH_MESSAGE_ID'] ]
+OPTIONAL_EVENT_KEYS  = [ ['MessageArgs', 'REDFISH_MESSAGE_ARGS'] ]
+MANDATORY_FLAG       = True
+OPTIONAL_FLAG        = False
+
 
 SEVERITYDBUSTOREDFISH = {
                             'critical'  : [
@@ -146,6 +153,64 @@ available_options = [
     },
 ]
 
+
+def is_event_mandatory_key(key):
+    if key.startswith(LOGGING_ENTRY_DOT_STR):
+        key = key[len(LOGGING_ENTRY_DOT_STR):]
+    for mandatory_key in MANDATORY_EVENT_KEYS:
+        if isinstance(mandatory_key, list):
+            if key == mandatory_key[0] or key == mandatory_key[1]:
+                return mandatory_key[0]
+        elif key == mandatory_key:
+            return mandatory_key
+    return None
+
+
+def is_event_optional_key(key):
+    if key.startswith(LOGGING_ENTRY_DOT_STR):
+        key = key[len(LOGGING_ENTRY_DOT_STR):]
+    for optional_key in OPTIONAL_EVENT_KEYS:
+        if isinstance(optional_key, list):
+            if key == optional_key[0] or key == optional_key[1]:
+                return optional_key[0]
+        elif key == optional_key:
+            return optional_key
+    return None
+
+
+def compare_event_data_and_redfish_data(key_list, mandatory_flag, injected_dict, redfish_dict):
+    ret = True
+    try:
+        for key in key_list:
+            dict_key = key[0] if isinstance(key, list) else key
+            if mandatory_flag is False:
+                exists_key_event   = True if dict_key in injected_dict else False
+                exists_key_redfish = True if dict_key in redfish_dict  else False
+                if exists_key_event == False or exists_key_redfish == False:
+                    continue
+            elif dict_key == MANDATORY_EVENT_SEVERITY_KEY: # special Severity cheking
+                sub_severity_key = redfish_dict[MANDATORY_EVENT_SEVERITY_KEY ].lower()
+                if injected_dict[MANDATORY_EVENT_SEVERITY_KEY] not in SEVERITYDBUSTOREDFISH[sub_severity_key]:
+                    ret = False
+                    break
+                else:
+                    continue  ## Severity field OK
+            ## filds comparing
+            if isinstance(redfish_dict[dict_key], list):
+                injected_list_value = re.split(',\s*', injected_dict[dict_key])
+                if lists_are_equal(redfish_dict[dict_key], injected_list_value):
+                        continue
+                else:
+                    ret = False
+                    break
+            if  injected_dict[dict_key] != redfish_dict[dict_key]:
+                ret = False
+                break
+    except Exception as exec:
+        raise exec
+    return ret
+
+
 def init_arg_parser():
     """
     Initialize argument parser
@@ -155,6 +220,7 @@ def init_arg_parser():
     for opt in available_options:
         parser.add_argument(*opt['args'], **opt['kwargs'])
     return parser
+
 
 def parse_arguments():
     """
@@ -182,6 +248,7 @@ def parse_arguments():
     # Check for dry run
     if not args.dry_run:
         EVENT_INJ_SCRIPT_ARGS = f"{EVENT_INJ_SCRIPT_ARGS} -r"
+
 
 def lists_are_equal(list1, list2):
     if len(list1) != len(list2):
@@ -346,14 +413,17 @@ class InjectTest:
                     print(f"Duplicate event: {current_log_number}")
                 else:
                     self.events_injected[current_log_number] = list()
-
                 # Create a temp dictionary to fill in the info
                 temp_dict = dict()
-                temp_dict["msg_id"] = event_split[BUSCTL_MSGID_IDX]
-                temp_dict["severity"] = event_split[BUSCTL_SEVERITY_IDX]
-                temp_dict["msg_args"] = [x.strip() for x in event_split[BUSCTL_MSGARGS_IDX].split(",")]
-                temp_dict["resolution"] = event_split[BUSCTL_RES_IDX]
-
+                temp_dict[MANDATORY_EVENT_SEVERITY_KEY]  = event_split[BUSCTL_SEVERITY_IDX]
+                additional_data_idx = BUSCTL_ADDITIONALDATA_IDX
+                while additional_data_idx < len(event_split):
+                    key = is_event_mandatory_key(event_split[additional_data_idx])
+                    if key is None:
+                        key = is_event_optional_key(event_split[additional_data_idx])
+                    if key is not None:
+                        temp_dict[key] = event_split[additional_data_idx + 1]
+                    additional_data_idx += 2
                 # Increment total number of events
                 self.total_events+=1
                 temp_temp_dict = temp_dict.copy()
@@ -391,7 +461,7 @@ class InjectTest:
             result_stdout = self.execute_remote_script_and_get_stdout(ssh_cmd)
             self.parse_event_logging_output_get_events_injected(result_stdout)
         except Exception as e:
-            raise e
+            rais
         finally:
             ssh_cmd.close()
 
@@ -409,9 +479,7 @@ class InjectTest:
         if self.events_injected_count == 0:
             raise Exception(f"No events injected, exiting!!")
 
-        try:
-
-            # Gather all the logs using BMCWeb interface
+        try: # Gather all the logs using BMCWeb interface
             self.final_log_count = self.current_log_count(cache=True)
         except Exception as e:
             raise e
@@ -422,21 +490,18 @@ class InjectTest:
                 if int(member['Id']) in self.events_injected:
 
                     log_id = int(member['Id'])
-
                     temp_dict = self.events_injected[log_id]
-
-                    # Get event information for the log using the message
                     # Compare all the fields
-                    if temp_dict["msg_id"] != member["MessageId"] or \
-                                temp_dict["severity"] not in SEVERITYDBUSTOREDFISH[member["Severity"].lower()] or \
-                                temp_dict["resolution"] != member["Resolution"] or \
-                                not lists_are_equal(temp_dict["msg_args"], member["MessageArgs"]):
-                                continue
-                    # Remove the entry from the dictionary if all the fields are matched
-                    # This confirms that a log is generated for an injected event
-                    del self.events_injected[log_id]
+                    mandatory_fields_match = compare_event_data_and_redfish_data(MANDATORY_EVENT_KEYS,
+                                                                                 MANDATORY_FLAG,
+                                                                                 temp_dict, member)
+                    optional_fields_match = compare_event_data_and_redfish_data(OPTIONAL_EVENT_KEYS,
+                                                                                OPTIONAL_FLAG,
+                                                                                temp_dict, member)
+                    if mandatory_fields_match == True and optional_fields_match == True:
+                        del self.events_injected[log_id]
             except Exception as e:
-                out = f"{out}Exception occurred while matching keys for event {member['MessageArgs']}: {str(e)}\n"
+                out = f"{out}Exception occurred while matching keys for event entry id {log_id}: {str(e)}\n"
                 pass
 
         # If the dictionary still have some info,
