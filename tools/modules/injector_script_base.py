@@ -8,40 +8,6 @@ import os
 
 import abc
 
-def expand_range(name):
-    """
-    expand_range(range_string) returns a list from strings with/without range specification at end
-
-    expand a name such as:
-
-        expand_range("name[1-5]")         -> ['name1', 'name2', 'name3', 'name4', 'name5']
-        expand_range("unique")            -> ['unique']
-        expand_range("other[0, 1 , 3-5]") -> ['other0', 'other1', 'other3', 'other4', 'other5']
-        expand_range("chars[0, 1 , g-k]") ->
-              ['chars0', 'chars1', 'charsg', 'charsh', 'charsi', 'charsj', 'charsk']
-
-    """
-    name_prefix = name
-    name_range = name.split('[')
-    list_names = []
-    if len(name_range) > 1:
-        name_prefix = name_range[0]
-        for item_string in name_range[1].split(','):
-            item = item_string.strip()
-            if '-' not in item:
-                list_names.append(name_prefix + item)
-            else:
-                values_range = item.split('-')
-                value = values_range[0].strip()
-                final_value = values_range[1].strip()
-                while value <= final_value:
-                    list_names.append(name_prefix + value)
-                    value_int = ord(value) + 1
-                    value = chr(value_int)
-    else:
-        list_names.append(name_prefix)
-    return list_names
-
 
 class InjectorScriptBase(abc.ABC):
     """
@@ -49,6 +15,9 @@ class InjectorScriptBase(abc.ABC):
     """
 
     def __init__(self, json_file):
+        """
+        Constructor
+        """
         self._json_file  = json_file
         self._shell_file = ""
         self._shell_file_fd = 0
@@ -56,11 +25,17 @@ class InjectorScriptBase(abc.ABC):
 
 
     def __del__(self):
+        """
+        Destructor
+        """
         if len(self._shell_file) > 0 and os.access(self._shell_file, os.W_OK):
             os.unlink(self._shell_file)
 
 
     def __load_json_file(self):
+        """
+        Opens the Json file and returns its json struct
+        """
         json_file_fd = 0
         data = 0
         try:
@@ -77,41 +52,63 @@ class InjectorScriptBase(abc.ABC):
 
     @abc.abstractmethod
     def create_script_file(self):
+        """
+        Abstract method, this version just creates the generated script
+        """
         self.priv_create_script_file(None)
 
 
     @abc.abstractmethod
     def close_script_file(self):
-        self.__priv_close_script_file(None)
+        """
+        Abstract method, this version just closes the generated script
+        """
+        self.priv_close_script_file(None)
 
 
     @abc.abstractmethod
     def generate_busctl_command_from_json_dict(self, device, data):
+        """
+        Abstract pure method
+        """
         pass
 
 
     def priv_create_script_file(self, header):
+        """
+        Creates the temporary script to be generated
+        the header data is optional, writes it if not None
+        """
         try:
-            fd, self._shell_file = tempfile.mkstemp()
-            os.close(fd)
+            fd_temp, self._shell_file = tempfile.mkstemp()
+            os.close(fd_temp)
             self._shell_file_fd = open(self._shell_file, 'w')
             if len(header) > 0:
                 self.write(header)
-        except Exception as e:
+        except Exception as error:
             raise Exception(f"Could not create temporary file:  {str(e)}")
 
 
-    def priv_close_script_file(self, bottom):
-        if len(bottom) > 0:
-            self.write(bottom)
+    def priv_close_script_file(self, footer):
+        """
+        Close the generated script, writes the footer data if it is not None
+        """
+        if len(footer) > 0:
+            self.write(footer)
         self._shell_file_fd.close()
 
 
     def script_file(self):
+        """
+        Returns the pathname of the temporary script
+        """
         return self._shell_file
 
 
     def write(self, data):
+        """
+        Writes data into the generated script
+        """
         try:
             self._shell_file_fd.write(data)
         except Exception as e:
@@ -157,7 +154,12 @@ class InjectorScriptBase(abc.ABC):
         if len(key_list) > 0:
             self.close_script_file()
 
+
     def generate_device_busctl_commands(self, device, data):
+        """
+        Just a conveniente function to be reused,
+           calls the abstrac method generate_busctl_command_from_json_dict()
+        """
         if isinstance(data, dict):
             self.generate_busctl_command_from_json_dict(device, data)
         else:
