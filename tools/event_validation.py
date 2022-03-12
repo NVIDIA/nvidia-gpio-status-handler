@@ -12,17 +12,17 @@
 # distribution of this software and related documentation without an express
 # license agreement from NVIDIA CORPORATION is strictly prohibited.
 import sys
+import os
 
-from requests import get
-from requests.auth import HTTPBasicAuth
-import paramiko
 from getpass import getpass
 from shlex import split
 from time import sleep
-from termcolor import colored
 import argparse
-import os
-import re
+from requests import get
+from requests.auth import HTTPBasicAuth
+import paramiko
+
+from termcolor import colored
 
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -32,10 +32,10 @@ modules_dir = os.path.dirname(__file__)
 modules_dir_path = f"{modules_dir}/modules" if len(modules_dir) > 0 else "./modules"
 sys.path.append(modules_dir_path)
 
-
 from event_logging_script  import EventLogsInjectorScript
-from event_logging_script  import LOGGING_ENTRY_DOT_STR
 from event_accessor_script import EventAccessorInjectorScript
+
+import com ## common constants and and functions
 
 # Global variables used to access BMCWEB
 BMCWEB_IP=""
@@ -54,30 +54,10 @@ EVENT_INJ_SCRIPT_PATH="/home/root/event_injector.bash"
 EVENT_INJ_SCRIPT_ARGS=""
 JSON_EVENTS_FILE=""
 
-# BUSCTL command index -> Corresponding field
-BUSCTL_MSG_IDX=7        # "GPU0 OverT"
-BUSCTL_SEVERITY_IDX=8   # "xyz.openbmc_project.Logging.Entry.Level.Critical"
-BUSCTL_ADDITIONALDATA_IDX=10
-
-MANDATORY_EVENT_SEVERITY_KEY = 'Severity'
-MANDATORY_EVENT_KEYS = [ MANDATORY_EVENT_SEVERITY_KEY, 'Resolution', ['MessageId', 'REDFISH_MESSAGE_ID'] ]
-OPTIONAL_EVENT_KEYS  = [ ['MessageArgs', 'REDFISH_MESSAGE_ARGS'] ]
-MANDATORY_FLAG       = True
-OPTIONAL_FLAG        = False
-
-
-SEVERITYDBUSTOREDFISH = {
-                            'critical'  : [
-                                        "xyz.openbmc_project.Logging.Entry.Level.Alert",
-                                        "xyz.openbmc_project.Logging.Entry.Level.Critical",
-                                        "xyz.openbmc_project.Logging.Entry.Level.Emergency",
-                                        "xyz.openbmc_project.Logging.Entry.Level.Error"],
-                            'ok'        : [
-                                            "xyz.openbmc_project.Logging.Entry.Level.Debug",
-                                            "xyz.openbmc_project.Logging.Entry.Level.Informational",
-                                            "xyz.openbmc_project.Logging.Entry.Level.Notice"],
-                            'warning'   : ["xyz.openbmc_project.Logging.Entry.Level.Warning"]
-                        }
+TEST_MODE_EVENTS_LOGGING=1
+TEST_MODE_CHANGE_DEVICE_STATUS=2
+TEST_MODE=TEST_MODE_EVENTS_LOGGING
+NOT_GENERATE_MESSAGE_ARGS = False
 
 available_options = [
      {
@@ -85,7 +65,9 @@ available_options = [
         'kwargs': {
             'type': int,
             'default': 1,
-            'help': '''Mode to perform test strategy; 1=insert event logs; 2=change device status'''
+            'help': '''Test Mode to perform; 1=insert event logs; 2=change device status
+                    (which should insert event logs)
+                    '''
         }
     },
     {
@@ -154,61 +136,6 @@ available_options = [
 ]
 
 
-def is_event_mandatory_key(key):
-    if key.startswith(LOGGING_ENTRY_DOT_STR):
-        key = key[len(LOGGING_ENTRY_DOT_STR):]
-    for mandatory_key in MANDATORY_EVENT_KEYS:
-        if isinstance(mandatory_key, list):
-            if key == mandatory_key[0] or key == mandatory_key[1]:
-                return mandatory_key[0]
-        elif key == mandatory_key:
-            return mandatory_key
-    return None
-
-
-def is_event_optional_key(key):
-    if key.startswith(LOGGING_ENTRY_DOT_STR):
-        key = key[len(LOGGING_ENTRY_DOT_STR):]
-    for optional_key in OPTIONAL_EVENT_KEYS:
-        if isinstance(optional_key, list):
-            if key == optional_key[0] or key == optional_key[1]:
-                return optional_key[0]
-        elif key == optional_key:
-            return optional_key
-    return None
-
-
-def compare_event_data_and_redfish_data(key_list, mandatory_flag, injected_dict, redfish_dict):
-    ret = True
-    try:
-        for key in key_list:
-            dict_key = key[0] if isinstance(key, list) else key
-            if mandatory_flag is False:
-                exists_key_event   = True if dict_key in injected_dict else False
-                exists_key_redfish = True if dict_key in redfish_dict  else False
-                if exists_key_event == False or exists_key_redfish == False:
-                    continue
-            elif dict_key == MANDATORY_EVENT_SEVERITY_KEY: # special Severity cheking
-                sub_severity_key = redfish_dict[MANDATORY_EVENT_SEVERITY_KEY ].lower()
-                if injected_dict[MANDATORY_EVENT_SEVERITY_KEY] not in SEVERITYDBUSTOREDFISH[sub_severity_key]:
-                    ret = False
-                    break
-                else:
-                    continue  ## Severity field OK
-            ## filds comparing
-            if isinstance(redfish_dict[dict_key], list):
-                injected_list_value = re.split(',\s*', injected_dict[dict_key])
-                if lists_are_equal(redfish_dict[dict_key], injected_list_value):
-                        continue
-                else:
-                    ret = False
-                    break
-            if  injected_dict[dict_key] != redfish_dict[dict_key]:
-                ret = False
-                break
-    except Exception as exec:
-        raise exec
-    return ret
 
 
 def init_arg_parser():
@@ -229,7 +156,7 @@ def parse_arguments():
     """
     parser = init_arg_parser()
 
-    global QEMU_USER, QEMU_PASS, QEMU_IP, QEMU_PORT, BMCWEB_IP, BMCWEB_PORT, JSON_EVENTS_FILE, EVENT_INJ_SCRIPT_ARGS
+    global QEMU_USER, QEMU_PASS, QEMU_IP, QEMU_PORT, BMCWEB_IP, BMCWEB_PORT, JSON_EVENTS_FILE, TEST_MODE, EVENT_INJ_SCRIPT_ARGS
 
     args, remaining = parser.parse_known_args()
 
@@ -244,17 +171,11 @@ def parse_arguments():
     BMCWEB_PORT=args.bmcweb_port
 
     JSON_EVENTS_FILE=args.json
+    TEST_MODE=args.mode
 
     # Check for dry run
     if not args.dry_run:
         EVENT_INJ_SCRIPT_ARGS = f"{EVENT_INJ_SCRIPT_ARGS} -r"
-
-
-def lists_are_equal(list1, list2):
-    if len(list1) != len(list2):
-        return False
-
-    return sorted(list1) == sorted(list2)
 
 
 
@@ -280,7 +201,7 @@ class InjectTest:
         self.initial_log_count=0
         self.total_events=0
         self.events_injected_count=0
-        self.events_injected=dict()
+        self.events_injected = {}
 
         self.final_log_count=0
 
@@ -389,7 +310,6 @@ class InjectTest:
         2. self.events_injected keys are new 'events Ids' supposed as created
            these 'events Ids' are greater than the number of logs found before injection
         3. sets self.total_events          -> lines rom stdout containing a 'busctl' commands
-        4. sets self.events_injected_count -> last stdout line such as 'Successful Injections: 23'
 
         self.events_injected looks like:
 
@@ -412,15 +332,15 @@ class InjectTest:
                 if current_log_number in self.events_injected:
                     print(f"Duplicate event: {current_log_number}")
                 else:
-                    self.events_injected[current_log_number] = list()
+                    self.events_injected[current_log_number] = []
                 # Create a temp dictionary to fill in the info
-                temp_dict = dict()
-                temp_dict[MANDATORY_EVENT_SEVERITY_KEY]  = event_split[BUSCTL_SEVERITY_IDX]
-                additional_data_idx = BUSCTL_ADDITIONALDATA_IDX
+                temp_dict = {}
+                temp_dict[com.KEY_SEVERITY]  = event_split[com.BUSCTL_SEVERITY_IDX]
+                additional_data_idx = com.BUSCTL_ADDITIONALDATA_IDX
                 while additional_data_idx < len(event_split):
-                    key = is_event_mandatory_key(event_split[additional_data_idx])
+                    key = com.is_event_mandatory_key(event_split[additional_data_idx])
                     if key is None:
-                        key = is_event_optional_key(event_split[additional_data_idx])
+                        key = com.is_event_optional_key(event_split[additional_data_idx])
                     if key is not None:
                         temp_dict[key] = event_split[additional_data_idx + 1]
                     additional_data_idx += 2
@@ -431,12 +351,20 @@ class InjectTest:
             except Exception as e:
                 print(f"Unable to get field from busctl command {event} {str(e)}")
                 pass
-        # reads the last output line which should have a 'Successful Injections' counter
-        try:
-            self.events_injected_count = int((result_stdout[-1].strip().split(':')[-1].strip()))
-        except Exception as e:
-            raise Exception(f"Exception occurred while reading successful injections count: {str(e)}")
 
+
+    def get_events_list_from_json_file(self, event_logs_script):
+        """
+        This function is similar to parse_event_logging_output_get_events_injected()
+        Inserts data in the dict self.events_injected, to be compared to redfish data
+        Sets self.total_events
+        """
+        current_log_number = self.initial_log_count # number of logs found before injection
+        supposed_injected_events = event_logs_script.get_accessor_dbus_expected_events_list()
+        for event_data in supposed_injected_events:
+            current_log_number += 1
+            self.events_injected[current_log_number] = event_data
+            self.total_events  += 1
 
     def inject_events(self):
         """
@@ -445,23 +373,28 @@ class InjectTest:
         *  Read all the busctl commands injected by the script and
             cache useful data in dictionaries
         """
-        event_logs_script = EventLogsInjectorScript(JSON_EVENTS_FILE)
-        print("...\n\nParsing Json file and generating event EventLogsInjectorScript bash script....")
+        event_logs_script = EventLogsInjectorScript(JSON_EVENTS_FILE, NOT_GENERATE_MESSAGE_ARGS) \
+            if TEST_MODE == TEST_MODE_EVENTS_LOGGING else \
+                EventAccessorInjectorScript(JSON_EVENTS_FILE)
+        print(f"...\n\nParsing Json file and generating event injector bash script for mode={TEST_MODE}....")
         event_logs_script.generate_script_from_json()
 
         try:
             # Create the SSH client
             ssh_cmd = self.create_ssh_session()
-            # Set missing host key policy
-            ssh_cmd.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            # Connect the SSH client to QEMU
-            ssh_cmd.connect(QEMU_IP, username=QEMU_USER, port=QEMU_PORT, password=QEMU_PASS,timeout=5)
-            # copy script
             self.sftp_script_to_emulator(ssh_cmd, event_logs_script.script_file())
             result_stdout = self.execute_remote_script_and_get_stdout(ssh_cmd)
-            self.parse_event_logging_output_get_events_injected(result_stdout)
-        except Exception as e:
-            rais
+            # reads the last output line which should have a 'Successful Injections: 23'
+            try:
+                self.events_injected_count = int((result_stdout[-1].strip().split(':')[-1].strip()))
+            except Exception as e:
+                raise Exception(f"Exception occurred while reading successful injections count: {str(e)}")
+            if TEST_MODE == TEST_MODE_EVENTS_LOGGING:
+                self.parse_event_logging_output_get_events_injected(result_stdout)
+            elif TEST_MODE == TEST_MODE_CHANGE_DEVICE_STATUS:
+                self.get_events_list_from_json_file(event_logs_script)
+        except Exception as error:
+            raise error
         finally:
             ssh_cmd.close()
 
@@ -472,8 +405,6 @@ class InjectTest:
         *  Compare the logs information with the injected_events information cached in the inject_events method
         """
         print("...\nFetching new logs....")
-
-        out = f""
 
         # If no event is injected, exit
         if self.events_injected_count == 0:
@@ -492,13 +423,9 @@ class InjectTest:
                     log_id = int(member['Id'])
                     temp_dict = self.events_injected[log_id]
                     # Compare all the fields
-                    mandatory_fields_match = compare_event_data_and_redfish_data(MANDATORY_EVENT_KEYS,
-                                                                                 MANDATORY_FLAG,
-                                                                                 temp_dict, member)
-                    optional_fields_match = compare_event_data_and_redfish_data(OPTIONAL_EVENT_KEYS,
-                                                                                OPTIONAL_FLAG,
-                                                                                temp_dict, member)
-                    if mandatory_fields_match == True and optional_fields_match == True:
+                    mandatory_fields_match = com.compare_mandatory_event_fields(temp_dict, member)
+                    optional_fields_match = com.compare_optional_event_fields(temp_dict, member)
+                    if mandatory_fields_match is True and optional_fields_match is True:
                         del self.events_injected[log_id]
             except Exception as e:
                 out = f"{out}Exception occurred while matching keys for event entry id {log_id}: {str(e)}\n"
@@ -555,7 +482,7 @@ def main():
 
     injectTest = InjectTest()
 
-    main_rc = os.EX_OK ;
+    main_rc = os.EX_OK
 
     try:
         injectTest.collect_logs_before_injections()
