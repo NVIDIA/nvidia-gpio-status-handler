@@ -1,21 +1,13 @@
 """
 Resources for 'Event Logging injection' bashh script generation
 """
+import com  ## common constants and and functions
 
 from injector_script_base import InjectorScriptBase
 
 INDEX_DEVICE_NAME     = 0 # index for self._busctl_info
 INDEX_SEVERITY        = 1 # index for self._busctl_info
 INDEX_EVENT           = 2 # index for self._busctl_info
-REDFISH_MESSAGE_ID    = "REDFISH_MESSAGE_ID"
-REDFISH_MESSAGE_ARGS  = "REDFISH_MESSAGE_ARGS"
-LOGGING_ENTRY_STR     = "xyz.openbmc_project.Logging.Entry"
-LOGGING_ENTRY_DOT_STR = f"{LOGGING_ENTRY_STR}."
-
-def get_logging_entry_level(level):
-    full_level = f"{LOGGING_ENTRY_STR}.Level.{level}"
-    return full_level
-
 
 class EventLogsInjectorScript(InjectorScriptBase):
     """
@@ -23,12 +15,12 @@ class EventLogsInjectorScript(InjectorScriptBase):
       generates 'busctl' commands for Event Logging injection
     """
 
-    def __init__(self, json_file):
+    def __init__(self, json_file, force_message_args):
         super().__init__(json_file)
         self._busctl_cmd_counter = 0
-        self._busctl_info = ["", "", ""]  # 3 items only, 0=device name, 1=severity
-
-        self._black_list      = ["accessor"] # fields not parsed from json file
+        self._busctl_info        = ["", "", ""]  # 3 items only, 0=device name, 1=severity
+        self._force_message_args  = force_message_args # True/False
+        self._black_list         = ["accessor"] # fields not parsed from json file
 
 
     def create_script_file(self):
@@ -83,12 +75,13 @@ class EventLogsInjectorScript(InjectorScriptBase):
         cmd += '\\"' + self._busctl_info[INDEX_DEVICE_NAME] + '\\" '
         cmd +=  self._busctl_info[INDEX_SEVERITY] +  ' ' + str(len(self._additional_data))
         try:
-            cmd += self.__format_additional_data_copule(REDFISH_MESSAGE_ID)
-            cmd += self.__format_additional_data_copule(REDFISH_MESSAGE_ARGS)
-            del self._additional_data[REDFISH_MESSAGE_ID]
-            del self._additional_data[REDFISH_MESSAGE_ARGS]
-        except Exception as e:
-            raise Exception(f"'REDFISH_MESSAGE_ID' information missing: {str(e)}")
+            cmd += self.__format_additional_data_copule(com.REDFISH_MESSAGE_ID)
+            del self._additional_data[com.REDFISH_MESSAGE_ID]
+            if com.REDFISH_MESSAGE_ARGS in self._additional_data:
+                cmd += self.__format_additional_data_copule(com.REDFISH_MESSAGE_ARGS)
+                del self._additional_data[com.REDFISH_MESSAGE_ARGS]
+        except Exception as error:
+            raise Exception(f"'{com.REDFISH_MESSAGE_ID}' information missing: {str(error)}")
         for ad_key in sorted(self._additional_data.keys()):
             cmd += self.__format_additional_data_copule(ad_key)
         self._busctl_cmd_counter += 1
@@ -99,11 +92,11 @@ class EventLogsInjectorScript(InjectorScriptBase):
     def __parse_dict_data(self, device_name, data_device):
         fields_device = list(data_device.keys())
         self._busctl_info[INDEX_DEVICE_NAME] = device_name
-        self._busctl_info[INDEX_SEVERITY] = get_logging_entry_level("Notice")
+        self._busctl_info[INDEX_SEVERITY] = com.get_logging_entry_level("Notice")
         self._additional_data.clear()
 
-        # REDFISH_MESSAGE_ARGS Not used so far, but it seems like necessary
-        self._additional_data[REDFISH_MESSAGE_ARGS] = device_name + "_None, Fixme"
+        if self._force_message_args:
+            self._additional_data[com.REDFISH_MESSAGE_ARGS] = device_name + "_None, Fixme"
 
         ## this is the position to put the counter of custom field_and_value
         for field in fields_device:
@@ -112,15 +105,15 @@ class EventLogsInjectorScript(InjectorScriptBase):
                 self._busctl_info[INDEX_DEVICE_NAME]= device_name  + " " + value
                 self._busctl_info[INDEX_EVENT]= value
             elif field == "redfish":
-                self._additional_data[REDFISH_MESSAGE_ID] = value["message_id"] # redfish.message_id
+                self._additional_data[com.REDFISH_MESSAGE_ID] = value["message_id"]
             elif field == "severity":
                 value_lower = value.lower()
                 if value_lower == "warning":
-                    self._busctl_info[INDEX_SEVERITY] = get_logging_entry_level("Warning")
+                    self._busctl_info[INDEX_SEVERITY] = com.get_logging_entry_level("Warning")
                 elif value_lower == "critical":
-                    self._busctl_info[INDEX_SEVERITY] = get_logging_entry_level("Critical")
+                    self._busctl_info[INDEX_SEVERITY] = com.get_logging_entry_level("Critical")
             elif field == "resolution":
-                self.parse_json_sub_dict_field(field, value, LOGGING_ENTRY_DOT_STR)
+                self.parse_json_sub_dict_field(field, value, com.LOGGING_ENTRY_DOT_STR)
 
           # Other fields not used so far
           #  elif field.lower() not in self._black_list:
