@@ -125,7 +125,7 @@ class EventAccessorInjectorScript(InjectorScriptBase):
         """
         override parent method
         """
-        super().priv_close_script_file("\n\n\necho \"Successful Injections: $gl_injections\"\n")
+        super().priv_close_script_file("\n\necho; echo \"Successful Injections: $gl_injections\"\n")
 
     def get_accessor_dbus_expected_events_list(self):
         """
