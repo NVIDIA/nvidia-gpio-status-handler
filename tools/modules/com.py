@@ -4,9 +4,20 @@ Common constants and functions
 
 import re
 
+EVENT_LOG_URI="redfish/v1/Systems/system/LogServices/EventLog/Entries"
+
+LOGGING_SERVICE = "xyz.openbmc_project.Logging"
+LOGGING_OBJECT  = "/xyz/openbmc_project/logging"
+
 # Constants used for Event Logging inserting in bustcl commands
 REDFISH_MESSAGE_ID    = "REDFISH_MESSAGE_ID"
 REDFISH_MESSAGE_ARGS  = "REDFISH_MESSAGE_ARGS"
+
+
+# Not all fields from Json files are handled, two lists below:
+JSON_MANDATORY_FIELDS  = ["redfish", "severity", "event"]
+JSON_ADDITIONAL_FIELDS = ["resolution", "accessor"]
+
 
 # Keys used in dicts
 KEY_SEVERITY = 'Severity'
@@ -16,16 +27,23 @@ KEY_ACCESSOR_OBJECT    = KEY_ACCESSOR + ".Object"
 KEY_ACCESSOR_INTERFACE = KEY_ACCESSOR + ".Interface"
 KEY_ACCESSOR_PROPERTY  = KEY_ACCESSOR + ".Property"
 
+
 # common constants
 ACCESSOR_TYPE_DBUS     = "DBUS"
 LOGGING_ENTRY_STR     = "xyz.openbmc_project.Logging.Entry"
 LOGGING_ENTRY_DOT_STR = f"{LOGGING_ENTRY_STR}."
 
 
+# index in busctl_info
+INDEX_DEVICE_NAME     = 0
+INDEX_EVENT           = 1
+
+
 # BUSCTL command index for Event Logging inserting -> Corresponding field position
 BUSCTL_MSG_IDX            = 7   # "GPU0 OverT"
 BUSCTL_SEVERITY_IDX       = 8   # "xyz.openbmc_project.Logging.Entry.Level.Critical"
 BUSCTL_ADDITIONALDATA_IDX = 10  # where additinal data starts
+
 
 # Keys used for comparing 'injected events' and 'redfish data'
 #   if an element is a list: the first element is the key and the second is an alias
@@ -136,7 +154,8 @@ def is_event_optional_key(key):
 
 def __compare_event_data_and_redfish_data(key_list, mandatory_flag, injected_dict, redfish_dict):
     """
-    Generic Private function to compare Event data between 'inject events' and events collected  from redifsh
+    Generic Private function to compare Event data between 'inject events' and
+       'events collected' from redifsh
     The key_list can be either MANDATORY_EVENT_KEYS or OPTIONAL_EVENT_KEYS
     """
     ret = True
