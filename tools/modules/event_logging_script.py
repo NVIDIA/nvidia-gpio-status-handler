@@ -5,9 +5,6 @@ import com  ## common constants and and functions
 
 from injector_script_base import InjectorScriptBase
 
-INDEX_DEVICE_NAME     = 0 # index for self._busctl_info
-INDEX_SEVERITY        = 1 # index for self._busctl_info
-INDEX_EVENT           = 2 # index for self._busctl_info
 
 class EventLogsInjectorScript(InjectorScriptBase):
     """
@@ -17,10 +14,9 @@ class EventLogsInjectorScript(InjectorScriptBase):
 
     def __init__(self, json_file, force_message_args):
         super().__init__(json_file)
-        self._busctl_cmd_counter = 0
-        self._busctl_info        = ["", "", ""]  # 3 items only, 0=device name, 1=severity
-        self._force_message_args  = force_message_args # True/False
-        self._black_list         = ["accessor"] # fields not parsed from json file
+        self._busctl_cmd_counter      = 0
+        self._force_message_args      = force_message_args # True/False
+
 
 
     def create_script_file(self):
@@ -38,7 +34,7 @@ class EventLogsInjectorScript(InjectorScriptBase):
             "{\n"
             "    cmd=\"$1\"\n"
             "    event=\"$2\"\n"
-            "    echo $cmd\n"
+            "    echo; echo $cmd\n"
             "    [ $DRY_RUN -eq 1 ] && return\n"
             "    eval \"$cmd\"\n"
             "    rc=$?\n"
@@ -61,19 +57,22 @@ class EventLogsInjectorScript(InjectorScriptBase):
         override parent method
         """
         super().priv_close_script_file("\n\ninjections=$(cat $TEMPFILE)\n"
-                                  "echo \"Successful Injections: $injections\"\n"
+                                  "echo; echo \"Successful Injections: $injections\"\n"
                                   "unlink $TEMPFILE\n\n")
 
 
-    def __format_additional_data_copule(self, ad_key):
-        return ' \\\n\t'  + ad_key + ' \\"' + self._additional_data[ad_key] + '\\"'
+    def __format_additional_data_copule(self, ad_key, prefix=None):
+        str_key = ad_key if prefix is None else f"{prefix}{ad_key}"
+        return ' \\\n\t'  + str_key + ' \\"' + self._additional_data[ad_key] + '\\"'
 
 
     def __create_bustcl_command(self):
-        cmd  = '''busctl call xyz.openbmc_project.Logging /xyz/openbmc_project/logging '''
+        cmd  = f"busctl call {com.LOGGING_SERVICE} {com.LOGGING_OBJECT} "
         cmd += "xyz.openbmc_project.Logging.Create Create ssa{ss} "
-        cmd += '\\"' + self._busctl_info[INDEX_DEVICE_NAME] + '\\" '
-        cmd +=  self._busctl_info[INDEX_SEVERITY] +  ' ' + str(len(self._additional_data))
+        cmd += '\\"' + self._busctl_info[com.INDEX_DEVICE_NAME] + '\\" '
+        cmd += self._additional_data[com.KEY_SEVERITY]
+        del self._additional_data[com.KEY_SEVERITY]
+        cmd += ' ' + str(len(self._additional_data))
         try:
             cmd += self.__format_additional_data_copule(com.REDFISH_MESSAGE_ID)
             del self._additional_data[com.REDFISH_MESSAGE_ID]
@@ -83,52 +82,35 @@ class EventLogsInjectorScript(InjectorScriptBase):
         except Exception as error:
             raise Exception(f"'{com.REDFISH_MESSAGE_ID}' information missing: {str(error)}")
         for ad_key in sorted(self._additional_data.keys()):
-            cmd += self.__format_additional_data_copule(ad_key)
+            cmd += self.__format_additional_data_copule(ad_key, com.LOGGING_ENTRY_DOT_STR)
         self._busctl_cmd_counter += 1
       #  print("\ncounter=%03d command=%s" % (self._busctl_cmd_counter, cmd))
         return cmd
 
 
-    def __parse_dict_data(self, device_name, data_device):
-        fields_device = list(data_device.keys())
-        self._busctl_info[INDEX_DEVICE_NAME] = device_name
-        self._busctl_info[INDEX_SEVERITY] = com.get_logging_entry_level("Notice")
-        self._additional_data.clear()
-
+    def parse_json_dict_data(self, device_name, data_device):
+        """
+        Redefines parent method
+        """
+        super().parse_json_dict_data(device_name, data_device)
         if self._force_message_args:
             self._additional_data[com.REDFISH_MESSAGE_ARGS] = device_name + "_None, Fixme"
 
-        ## this is the position to put the counter of custom field_and_value
-        for field in fields_device:
-            value = data_device[field]
-            if field == "event":
-                self._busctl_info[INDEX_DEVICE_NAME]= device_name  + " " + value
-                self._busctl_info[INDEX_EVENT]= value
-            elif field == "redfish":
-                self._additional_data[com.REDFISH_MESSAGE_ID] = value["message_id"]
-            elif field == "severity":
-                value_lower = value.lower()
-                if value_lower == "warning":
-                    self._busctl_info[INDEX_SEVERITY] = com.get_logging_entry_level("Warning")
-                elif value_lower == "critical":
-                    self._busctl_info[INDEX_SEVERITY] = com.get_logging_entry_level("Critical")
-            elif field == "resolution":
-                self.parse_json_sub_dict_field(field, value, com.LOGGING_ENTRY_DOT_STR)
-
-          # Other fields not used so far
-          #  elif field.lower() not in self._black_list:
-                 ## other fields will be added into self._additional_data
-          #       self.parse_json_sub_dict_field(field, value)
-
 
     def generate_busctl_command_from_json_dict(self, device, data):
-        self.__parse_dict_data(device, data)
+        """
+        Redefines parent method
+        Saves the buscl command for a single Event Logging injection
+        """
+        self.parse_json_dict_data(device, data)
+        super().remove_accessor_fields()
         cmd  =  self.__create_bustcl_command()
-        event_str = f'EVENT=\"{self._busctl_info[INDEX_EVENT]}\"\n'
+        event_str = f'EVENT=\"{self._busctl_info[com.INDEX_EVENT]}\"\n'
         cmd_str   = f'CMD=\"{cmd}\"\n'
         run_str = 'run_cmd \"$CMD\" \"$EVENT\"'
-        comments  = f"\n\n# https://127.0.0.1:2443/redfish/v1/Systems/system/LogServices/EventLog/Entries/{self._busctl_cmd_counter}\n"
-        comments += f"# busctl introspect xyz.openbmc_project.Logging /xyz/openbmc_project/logging/entry/{self._busctl_cmd_counter}\n"
+        comments  = f"\n\n# https://127.0.0.1:2443/{com.EVENT_LOG_URI}/{self._busctl_cmd_counter}\n"
+        comments += f"# busctl introspect {com.LOGGING_SERVICE} "
+        comments += f"{com.LOGGING_OBJECT}/entry/{self._busctl_cmd_counter}\n"
         super().write(comments)
         super().write(event_str)
         super().write(cmd_str)

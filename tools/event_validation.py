@@ -40,8 +40,6 @@ import com ## common constants and and functions
 # Global variables used to access BMCWEB
 BMCWEB_IP=""
 BMCWEB_PORT=None
-EVENT_LOG_URI="redfish/v1/Systems/system/LogServices/EventLog/Entries"
-
 
 # Global variables used to access QEMU
 QEMU_IP=""
@@ -153,12 +151,19 @@ def parse_arguments():
     """
     Initialize argument parser.
     Set all the Global variables based on the arguments
+    Returns True if arguments are OK
     """
     parser = init_arg_parser()
 
     global QEMU_USER, QEMU_PASS, QEMU_IP, QEMU_PORT, BMCWEB_IP, BMCWEB_PORT, JSON_EVENTS_FILE, TEST_MODE, EVENT_INJ_SCRIPT_ARGS
 
     args, remaining = parser.parse_known_args()
+
+    TEST_MODE=args.mode
+
+    if TEST_MODE < TEST_MODE_EVENTS_LOGGING or TEST_MODE > TEST_MODE_CHANGE_DEVICE_STATUS:
+         print(f"Mode option -m|--mode '{TEST_MODE}' out of range, use -h to see valid mode options")
+         return False
 
     # QEMU Access info
     QEMU_USER= args.user
@@ -171,12 +176,12 @@ def parse_arguments():
     BMCWEB_PORT=args.bmcweb_port
 
     JSON_EVENTS_FILE=args.json
-    TEST_MODE=args.mode
 
     # Check for dry run
     if not args.dry_run:
         EVENT_INJ_SCRIPT_ARGS = f"{EVENT_INJ_SCRIPT_ARGS} -r"
 
+    return True
 
 
 class InjectTest:
@@ -197,7 +202,7 @@ class InjectTest:
         self.final_log_count            -   Number of logs after event injection
         self.log_cache                  -   Cache of Log Entry API
         """
-        self.event_log_entries_api= f"https://{BMCWEB_IP}:{BMCWEB_PORT}/{EVENT_LOG_URI}"
+        self.event_log_entries_api= f"https://{BMCWEB_IP}:{BMCWEB_PORT}/{com.EVENT_LOG_URI}"
         self.initial_log_count=0
         self.total_events=0
         self.events_injected_count=0
@@ -478,20 +483,20 @@ def main():
     """
 
     # Initalize arg parser and add all the arguments
-    parse_arguments()
+    arguments_ok = parse_arguments()
 
-    injectTest = InjectTest()
 
-    main_rc = os.EX_OK
+    main_rc = os.EX_OK if arguments_ok is True else -1
 
     try:
-        injectTest.collect_logs_before_injections()
+        if main_rc == os.EX_OK:
+            injectTest = InjectTest()
+            injectTest.collect_logs_before_injections()
+            injectTest.inject_events()
 
-        injectTest.inject_events()
+            sleep(2)
 
-        sleep(2)
-
-        injectTest.collect_logs_after_injection_and_verify()
+            injectTest.collect_logs_after_injection_and_verify()
 
     except Exception as e:
         print(colored(e, 'red'))

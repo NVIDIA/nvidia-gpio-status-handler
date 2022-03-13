@@ -78,7 +78,8 @@ class EventAccessorInjectorScript(InjectorScriptBase):
             "        d)   gl_new_property_value=$[ ${gl_property_value} + 1 ];;\n"
             "    esac\n"
             "\n"
-            "    cmd=\"busctl set-property $SERVICE $@ $gl_property_type \'$gl_new_property_value\'\"\n"
+            "    cmd=\"busctl set-property $SERVICE $@ $gl_property_type"
+            " \'$gl_new_property_value\'\"\n"
             "    echo \"property_set(): $cmd\"\n"
             "    eval $cmd\n"
             "    gl_rc=$?\n"
@@ -107,10 +108,12 @@ class EventAccessorInjectorScript(InjectorScriptBase):
             "        local expected_logging_entry=$[ $current_logging_entries + 1 ]\n"
             "        if [ $new_logging_entries -gt $current_logging_entries ]; then\n"
             "            echo \"property_change(): Passed, value changed from "
-            " '$gl_old_property_value' to '$gl_property_value', EventLog Id = $new_logging_entries\"\n"
+            " '$gl_old_property_value' to '$gl_property_value',"
+            " EventLog Id = $new_logging_entries\"\n"
             "            gl_injections=$[ $gl_injections + 1 ]\n"
             "        else\n"
-            "            echo \"property_change(): Failed, value changed from '$gl_old_property_value'"
+            "            echo \"property_change(): Failed, value changed from"
+            " '$gl_old_property_value'"
             " to '$gl_property_value', But Logging was not created,"
             " expected EventLog Id $expected_logging_entry\"\n"
             "            gl_script_rc=1\n"
@@ -127,6 +130,7 @@ class EventAccessorInjectorScript(InjectorScriptBase):
         """
         super().priv_close_script_file("\n\necho; echo \"Successful Injections: $gl_injections\"\n")
 
+
     def get_accessor_dbus_expected_events_list(self):
         """
         Returns a list of event data which has accessor.type = DBUS
@@ -134,20 +138,11 @@ class EventAccessorInjectorScript(InjectorScriptBase):
         return self._accessor_dbus_expected_events_list
 
 
-    def __parse_dict_data(self, device_name, data_device):
-        self._additional_data.clear()
-        fields_device = list(data_device.keys())
+    def __get_accessor_type(self):
+        """
+        Returns None or com.ACCESSOR_TYPE_DBUS
+        """
         ret = "none"
-        for field in fields_device:
-            value = data_device[field]
-            if field == "redfish":
-                self._additional_data[com.REDFISH_MESSAGE_ID] = value["message_id"]
-            elif field == "severity":
-                self._additional_data[com.KEY_SEVERITY] = com.get_logging_entry_level(value)
-            elif field == "resolution":
-                super().parse_json_sub_dict_field(field, value, com.LOGGING_ENTRY_DOT_STR)
-            elif field.lower() == com.KEY_ACCESSOR.lower():
-                super().parse_json_sub_dict_field(field, value, None)
         if com.KEY_ACCESSOR_TYPE in self._additional_data:
             accessor_type = self._additional_data[com.KEY_ACCESSOR_TYPE]
             if accessor_type.upper() == com.ACCESSOR_TYPE_DBUS:
@@ -157,27 +152,39 @@ class EventAccessorInjectorScript(InjectorScriptBase):
                         len(self._additional_data[com.KEY_ACCESSOR_PROPERTY])   > 0:
                         ret = com.ACCESSOR_TYPE_DBUS
                 except Exception as exc:
-                    raise Exception(f"No information {com.KEY_ACCESSOR} in {device_name}") from exc
+                    raise Exception(f"No information {com.KEY_ACCESSOR}") from exc
         return ret
 
 
     def __generate_busctl_command_from_json_accessor_dbus(self, device):
+        """
+        Saves bustcl commands in the script
+        """
         cmd =  f"\nproperty_change {device} "
         cmd += f"{self._additional_data[com.KEY_ACCESSOR_INTERFACE]} "
         cmd += f"{self._additional_data[com.KEY_ACCESSOR_PROPERTY]}\n"
         super().write(cmd)
 
 
+    def parse_json_dict_data(self, device, data):
+        """
+        Redefines parent method
+        """
+        super().parse_json_dict_data(device, data)
+
+
     def generate_busctl_command_from_json_dict(self, device, data):
+        """
+        Redefines parent method
+        Generates commands in the script if the accessor_type is not empty and is handled
+        """
         counter = 0
-        if self.__parse_dict_data(device, data) == com.ACCESSOR_TYPE_DBUS:
+        super().parse_json_dict_data(device, data)
+        if self.__get_accessor_type() == com.ACCESSOR_TYPE_DBUS:
             for device_item in com.expand_range(self._additional_data[com.KEY_ACCESSOR_OBJECT]):
                 self.__generate_busctl_command_from_json_accessor_dbus(device_item)
                 counter += 1
-            del self._additional_data[com.KEY_ACCESSOR_TYPE]
-            del self._additional_data[com.KEY_ACCESSOR_OBJECT]
-            del self._additional_data[com.KEY_ACCESSOR_INTERFACE]
-            del self._additional_data[com.KEY_ACCESSOR_PROPERTY]
+            super().remove_accessor_fields()
             while counter > 0:
                 self._accessor_dbus_expected_events_list.append(self._additional_data.copy())
                 counter -= 1

@@ -8,6 +8,8 @@ import os
 
 import abc
 
+import com ## common constants and and functions
+
 
 class InjectorScriptBase(abc.ABC):
     """
@@ -22,6 +24,7 @@ class InjectorScriptBase(abc.ABC):
         self._shell_file = ""
         self._shell_file_fd = 0
         self._additional_data = {}
+        self._busctl_info             = ["", ""]  # 2 items only, 0=device name, 1=event
 
 
     def __del__(self):
@@ -115,7 +118,37 @@ class InjectorScriptBase(abc.ABC):
             raise Exception(f"Could not write data into file: {self._json_file} : {str(e)}")
 
 
-    def parse_json_sub_dict_field(self, field_str, value, key_prefix):
+    def __parse_json_mandatory_fields(self, field, value):
+        """
+        Stores mandatory values into self._busctl_info and self._additional_data
+        """
+        if field == "event":
+            self._busctl_info[com.INDEX_DEVICE_NAME] +=  " " + value
+            self._busctl_info[com.INDEX_EVENT]= value
+        elif field == "redfish":
+            self._additional_data[com.REDFISH_MESSAGE_ID] = value["message_id"]
+        elif field == "severity":
+            self._additional_data[com.KEY_SEVERITY] = com.get_logging_entry_level(value)
+
+
+    @abc.abstractmethod
+    def parse_json_dict_data(self, device_name, data_device):
+        """
+        Parses one Json element, values are stored into self._busctl_info and self._additional_data
+        """
+        self._busctl_info[com.INDEX_DEVICE_NAME] = device_name
+        keys = data_device.keys()
+        fields_device = list(keys)
+        ## this is the position to put the counter of custom field_and_value
+        for field in fields_device:
+            value = data_device[field]
+            if field in com.JSON_MANDATORY_FIELDS:
+                self.__parse_json_mandatory_fields(field, value)
+            elif field in com.JSON_ADDITIONAL_FIELDS:
+                self.parse_json_sub_dict_field(field, value)
+
+
+    def parse_json_sub_dict_field(self, field_str, value):
         """
         parse dict fiels recursively, keys as 'key_field'  are expanded to Parent.Child
         """
@@ -127,16 +160,13 @@ class InjectorScriptBase(abc.ABC):
                 subfield_str = subfield[0]
                 subfield_str = subfield_str[0].upper() + subfield[1:]
                 child_str = field_str + '.' + subfield_str
-                self.parse_json_sub_dict_field(child_str, value[subfield], key_prefix)
+                self.parse_json_sub_dict_field(child_str, value[subfield])
         else:
-            key_field = field_str
-            if key_prefix is not None:
-                key_field = key_prefix + field_str
             if isinstance(value, list):
                 value = ", ".join(value)
             if not isinstance(value, str):
                 value = str(value)
-            self._additional_data[key_field] = value
+            self._additional_data[field_str] = value
 
 
     def generate_script_from_json(self):
@@ -153,6 +183,18 @@ class InjectorScriptBase(abc.ABC):
             self.generate_device_busctl_commands(device, data_dict)
         if len(key_list) > 0:
             self.close_script_file()
+
+
+    def remove_accessor_fields(self):
+        """
+        Just remove these fields to use the entire content of self._additional_data
+        """
+        accessor_key = f"{com.KEY_ACCESSOR}."
+        for key in list(self._additional_data.keys()):
+            if key.startswith(accessor_key):
+                    del self._additional_data[key]
+        if com.KEY_ACCESSOR_TYPE in self._additional_data:
+            del self._additional_data[com.KEY_ACCESSOR_TYPE]
 
 
     def generate_device_busctl_commands(self, device, data):
