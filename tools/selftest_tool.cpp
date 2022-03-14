@@ -9,8 +9,8 @@
  */
 
 #include "aml.hpp"
-#include "log.hpp"
 #include "cmd_line.hpp"
+#include "log.hpp"
 #include "selftest.hpp"
 
 #include <fstream>
@@ -102,8 +102,7 @@ cmd_line::CmdLineArgs cmdLineArgs = {
 
 int show_help([[maybe_unused]] cmd_line::ArgFuncParamType params)
 {
-    cout << "NVIDIA Selftest Tool, ver = " << APPVER
-         << "\n";
+    cout << "NVIDIA Selftest Tool, ver = " << APPVER << "\n";
     cout << "<usage>\n";
     cout << "  ./" << APPNAME << " [options]\n";
     cout << "\n";

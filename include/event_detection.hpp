@@ -13,6 +13,7 @@
 #include <boost/container/flat_map.hpp>
 #include <sdbusplus/asio/object_server.hpp>
 
+#include <iostream>
 #include <string>
 #include <thread>
 
@@ -60,14 +61,16 @@ class EventDetection : public object::Object
     event_info::EventNode*
         LookupEventFrom(const data_accessor::DataAccessor& acc)
     {
-        for (auto& devType : *this->_eventMap)
+        for (auto& eventPerDevType : *this->_eventMap)
         {
-            for (auto& event : devType.second)
+            for (auto& event : eventPerDevType.second)
             {
                 // event.accessor["object"] =
                 // "xyz/openbmc_project/sensors/temperature/TEMP_GB_GPU[0-7]"
                 // acc["object"]
 
+                std::cout << "event.accessor: " << event.accessor
+                          << ", acc: " << acc << "\n";
                 if (event.accessor == acc)
                 {
                     return &event;
@@ -96,11 +99,13 @@ class EventDetection : public object::Object
      */
     void RunEventHandlers(event_info::EventNode& event)
     {
-        auto thread = new std::thread(
-            [this](event_info::EventNode _event) {
-                this->_hdlrMgr->RunAllHandlers(_event);
-            },
-            std::ref(event));
+        std::cout << "Create thread to process event.\n";
+        auto thread = new std::thread([this, event]() mutable {
+            std::cout << "calling hdlrMgr: " << this->_hdlrMgr->getName()
+                      << "\n";
+            auto hdlrMgr = *this->_hdlrMgr;
+            hdlrMgr.RunAllHandlers(event);
+        });
 
         if (thread == nullptr)
         {

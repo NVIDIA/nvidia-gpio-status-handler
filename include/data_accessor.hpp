@@ -7,6 +7,7 @@
 
 #include <nlohmann/json.hpp>
 
+#include <iostream>
 #include <map>
 #include <regex>
 #include <string>
@@ -33,7 +34,9 @@ class DataAccessor
     {}
 
     DataAccessor(const nlohmann::json& acc) : _acc(acc)
-    {}
+    {
+        std::cout << "Const.: _acc: " << _acc << "\n";
+    }
 
     ~DataAccessor() = default;
 
@@ -48,6 +51,7 @@ class DataAccessor
     {
         if (!isValid(acc))
         {
+            std::cout << "not valid: acc = " << acc << "\n";
             return _acc;
         }
 
@@ -64,6 +68,8 @@ class DataAccessor
      */
     bool operator==(const DataAccessor& other)
     {
+        std::cout << "This: " << this->_acc << ", Other: " << other._acc
+                  << "\n";
         if (!isValid(other._acc))
         {
             return false;
@@ -74,6 +80,7 @@ class DataAccessor
         }
         for (auto& [key, val] : _acc.items())
         {
+            std::cout << "key: " << key << ", val: " << val << "\n";
             if (key == typeKey)
             {
                 continue;
@@ -83,6 +90,7 @@ class DataAccessor
                 if (other._acc.count(key) == 0)
                 {
                     // the key is not in 'other'
+                    std::cout << "Other has no key. False.\n";
                     return false;
                 }
 
@@ -102,6 +110,19 @@ class DataAccessor
     auto operator[](const std::string& key)
     {
         return _acc[key];
+    }
+
+    /**
+     * @brief Output the accessor details
+     *
+     * @param os
+     * @param acc
+     * @return std::ostream&
+     */
+    friend std::ostream& operator<<(std::ostream& os, const DataAccessor& acc)
+    {
+        os << acc._acc;
+        return os;
     }
 
     /**

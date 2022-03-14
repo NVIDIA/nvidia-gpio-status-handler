@@ -38,6 +38,7 @@ std::unique_ptr<sdbusplus::bus::match_t> EventDetection::startEventDetection(
 
             std::cout << "objectPath:" << objectPath << "\n";
             std::cout << "signalSignature:" << signalSignature << "\n";
+            std::cout << "msgInterface:" << msgInterface << "\n";
 
             if (propertiesChanged.empty())
             {

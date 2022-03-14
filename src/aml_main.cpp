@@ -136,6 +136,17 @@ sd_bus* bus = nullptr;
 int main(int argc, char* argv[])
 {
     int rc = 0;
+#if 0
+    message_composer::MessageComposer mc("MsgComp1");
+    event_info::EventNode ev("OverT");
+    ev.device = "GPU0";
+    ev.messageRegistry.messageId = "ResourceEvent.1.0.ResourceErrorsDetected";
+    ev.messageRegistry.message.severity = "Critical";
+    ev.messageRegistry.message.resolution = "ask me";
+    mc.process(ev);
+
+    return 0;
+#endif
     try
     {
         cmd_line::CmdLine cmdLine(argc, argv, aml::cmdLineArgs);
@@ -154,7 +165,7 @@ int main(int argc, char* argv[])
     // Initialization
     event_info::loadFromFile(aml::profile::eventMap, aml::configuration.event);
 
-    event_info::printMap(aml::profile::eventMap);
+    // event_info::printMap(aml::profile::eventMap);
 
     dat_traverse::Device::populateMap(aml::profile::datMap,
                                       aml::configuration.dat);

@@ -54,14 +54,7 @@ bool MessageComposer::createLog(event_info::EventNode& event)
     try
     {
         auto reply = bus.call(method);
-        std::vector<
-            std::tuple<uint32_t, std::string, sdbusplus::message::object_path>>
-            users;
-        reply.read(users);
-        for (auto& user : users)
-        {
-            std::cerr << std::get<std::string>(user) << "\n";
-        }
+
         return true;
     }
     catch (const sdbusplus::exception::SdBusError& e)

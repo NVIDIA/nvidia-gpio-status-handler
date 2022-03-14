@@ -79,6 +79,7 @@ void EventNode::loadFrom(const json& j)
                              {j["severity"], j["resolution"]}};
 
     this->accessor = j["accessor"];
+    std::cout << "Loaded accessor: " << this->accessor << ", j: " << j << "\n";
 }
 
 } // namespace event_info

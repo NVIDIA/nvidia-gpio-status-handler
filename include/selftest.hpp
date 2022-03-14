@@ -5,11 +5,13 @@
 
 #pragma once
 
-#include <ostream>
-#include <string>
-#include <nlohmann/json.hpp>
 #include "aml.hpp"
 #include "object.hpp"
+
+#include <nlohmann/json.hpp>
+
+#include <ostream>
+#include <string>
 
 namespace selftest
 {
