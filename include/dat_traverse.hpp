@@ -12,6 +12,7 @@
 
 #include <nlohmann/json.hpp>
 
+#include <list>
 #include <map>
 #include <string>
 #include <vector>
@@ -20,6 +21,17 @@ using json = nlohmann::json;
 
 namespace dat_traverse
 {
+
+struct TestPoint
+{
+    data_accessor::DataAccessor accessor;
+    std::string expectedValue;
+};
+
+struct TestLayer
+{
+    std::map<std::string, TestPoint> testPoints;
+};
 
 /** @class Device
  *  @brief Object to represent Device in DAT that
@@ -39,6 +51,9 @@ class Device
 
     /** @brief 6-layer accessor info for this event **/
     std::map<std::string, std::vector<data_accessor::DataAccessor*>> status;
+
+    /** @brief Map of test layers  for device **/
+    std::map<std::string, TestLayer> test;
 
     /** @brief Prints out DAT structure to verify population
      *

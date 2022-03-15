@@ -9,6 +9,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <list>
 #include <map>
 #include <ostream>
 #include <queue>
@@ -89,10 +90,31 @@ Device::Device(const std::string& name, const json& j)
     this->name = name;
     this->association = j["association"].get<std::vector<std::string>>();
 
-    /* TODO: populate eventInfo map with 6 layer info for each device once
-     * information collected in JSON */
-    // this->eventInfo.insert(std::pair<std::string,
-    // std::vector<accessor>>("power_rail", )    )
+    std::list<std::string> layers = {"power_rail",      "erot_control",
+                                     "pin_status",      "interface_status",
+                                     "protocol_status", "firmware_status"};
+
+    std::map<std::string, dat_traverse::TestLayer> test;
+
+    for (const auto& layer : layers)
+    {
+        std::map<std::string, dat_traverse::TestPoint> testPoints;
+        for (const auto& point : j[layer])
+        {
+            dat_traverse::TestPoint tp;
+            tp.accessor = point["accessor"];
+            tp.expectedValue = point["expected_value"].get<std::string>();
+            std::string name = point["name"].get<std::string>();
+            testPoints.insert(
+                std::pair<std::string, dat_traverse::TestPoint>(name, tp));
+        }
+
+        dat_traverse::TestLayer testLayer;
+        testLayer.testPoints = testPoints;
+        test.insert(
+            std::pair<std::string, dat_traverse::TestLayer>(layer, testLayer));
+    }
+    this->test = test;
 }
 
 } // namespace dat_traverse

@@ -14,12 +14,78 @@
       "NVSwitch2",
       "NVSwitch3"
     ],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ]
   },
   "GPU0": {
     "association": [
@@ -27,12 +93,138 @@
       "GPU0-ERoT",
       "Retimer0"
     ],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "PGOOD",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "OK"
+      },
+      {
+        "name": "VR",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "GOOD"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "PGOOD",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "OK"
+      },
+      {
+        "name": "VR",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "GOOD"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "PGOOD",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "OK"
+      },
+      {
+        "name": "VR",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "GOOD"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "PGOOD",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "OK"
+      },
+      {
+        "name": "VR",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "GOOD"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "PGOOD",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "OK"
+      },
+      {
+        "name": "VR",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "GOOD"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "PGOOD",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "OK"
+      },
+      {
+        "name": "VR",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "GOOD"
+      }
+    ]
   },
   "GPU1": {
     "association": [
@@ -40,12 +232,138 @@
       "GPU1-ERoT",
       "Retimer1"
     ],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "PGOOD",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "OK"
+      },
+      {
+        "name": "VR",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "GOOD"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "PGOOD",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "OK"
+      },
+      {
+        "name": "VR",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "GOOD"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "PGOOD",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "OK"
+      },
+      {
+        "name": "VR",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "GOOD"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "PGOOD",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "OK"
+      },
+      {
+        "name": "VR",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "GOOD"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "PGOOD",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "OK"
+      },
+      {
+        "name": "VR",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "GOOD"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "PGOOD",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "OK"
+      },
+      {
+        "name": "VR",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "GOOD"
+      }
+    ]
   },
   "GPU2": {
     "association": [
@@ -53,12 +371,138 @@
       "GPU2-ERoT",
       "Retimer2"
     ],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "PGOOD",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "OK"
+      },
+      {
+        "name": "VR",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "GOOD"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "PGOOD",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "OK"
+      },
+      {
+        "name": "VR",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "GOOD"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "PGOOD",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "OK"
+      },
+      {
+        "name": "VR",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "GOOD"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "PGOOD",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "OK"
+      },
+      {
+        "name": "VR",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "GOOD"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "PGOOD",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "OK"
+      },
+      {
+        "name": "VR",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "GOOD"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "PGOOD",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "OK"
+      },
+      {
+        "name": "VR",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "GOOD"
+      }
+    ]
   },
   "GPU3": {
     "association": [
@@ -66,12 +510,138 @@
       "GPU3-ERoT",
       "Retimer3"
     ],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "PGOOD",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "OK"
+      },
+      {
+        "name": "VR",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "GOOD"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "PGOOD",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "OK"
+      },
+      {
+        "name": "VR",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "GOOD"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "PGOOD",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "OK"
+      },
+      {
+        "name": "VR",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "GOOD"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "PGOOD",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "OK"
+      },
+      {
+        "name": "VR",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "GOOD"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "PGOOD",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "OK"
+      },
+      {
+        "name": "VR",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "GOOD"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "PGOOD",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "OK"
+      },
+      {
+        "name": "VR",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "GOOD"
+      }
+    ]
   },
   "GPU4": {
     "association": [
@@ -79,12 +649,138 @@
       "GPU4-ERoT",
       "Retimer4"
     ],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "PGOOD",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "OK"
+      },
+      {
+        "name": "VR",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "GOOD"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "PGOOD",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "OK"
+      },
+      {
+        "name": "VR",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "GOOD"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "PGOOD",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "OK"
+      },
+      {
+        "name": "VR",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "GOOD"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "PGOOD",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "OK"
+      },
+      {
+        "name": "VR",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "GOOD"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "PGOOD",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "OK"
+      },
+      {
+        "name": "VR",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "GOOD"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "PGOOD",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "OK"
+      },
+      {
+        "name": "VR",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "GOOD"
+      }
+    ]
   },
   "GPU5": {
     "association": [
@@ -92,12 +788,138 @@
       "GPU5-ERoT",
       "Retimer5"
     ],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "PGOOD",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "OK"
+      },
+      {
+        "name": "VR",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "GOOD"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "PGOOD",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "OK"
+      },
+      {
+        "name": "VR",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "GOOD"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "PGOOD",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "OK"
+      },
+      {
+        "name": "VR",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "GOOD"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "PGOOD",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "OK"
+      },
+      {
+        "name": "VR",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "GOOD"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "PGOOD",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "OK"
+      },
+      {
+        "name": "VR",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "GOOD"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "PGOOD",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "OK"
+      },
+      {
+        "name": "VR",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "GOOD"
+      }
+    ]
   },
   "GPU6": {
     "association": [
@@ -105,12 +927,138 @@
       "GPU6-ERoT",
       "Retimer6"
     ],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "PGOOD",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "OK"
+      },
+      {
+        "name": "VR",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "GOOD"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "PGOOD",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "OK"
+      },
+      {
+        "name": "VR",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "GOOD"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "PGOOD",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "OK"
+      },
+      {
+        "name": "VR",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "GOOD"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "PGOOD",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "OK"
+      },
+      {
+        "name": "VR",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "GOOD"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "PGOOD",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "OK"
+      },
+      {
+        "name": "VR",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "GOOD"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "PGOOD",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "OK"
+      },
+      {
+        "name": "VR",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "GOOD"
+      }
+    ]
   },
   "GPU7": {
     "association": [
@@ -118,12 +1066,138 @@
       "GPU7-ERoT",
       "Retimer7"
     ],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "PGOOD",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "OK"
+      },
+      {
+        "name": "VR",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "GOOD"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "PGOOD",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "OK"
+      },
+      {
+        "name": "VR",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "GOOD"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "PGOOD",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "OK"
+      },
+      {
+        "name": "VR",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "GOOD"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "PGOOD",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "OK"
+      },
+      {
+        "name": "VR",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "GOOD"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "PGOOD",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "OK"
+      },
+      {
+        "name": "VR",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "GOOD"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "PGOOD",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "OK"
+      },
+      {
+        "name": "VR",
+        "accessor": {
+            "type:": "DBUS",
+            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+            "property": "Depth"
+        },
+        "expected_value": "GOOD"
+      }
+    ]
   },
   "NVSwitch0": {
     "association": [
@@ -132,12 +1206,78 @@
       "NVSwitch0-ERoT",
       "PCIeSwitch"
     ],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ]
   },
   "NVSwitch1": {
     "association": [
@@ -146,12 +1286,76 @@
       "NVSwitch1-ERoT",
       "PCIeSwitch"
     ],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [{
+      "name": "test point name",
+      "accessor": {
+          "type:": "accessor type",
+          "object": "object path",
+          "interface": "interface path",
+          "property": "property name"
+      },
+      "expected_value": "OK"
+    }],
+    "erot_control": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ]
   },
   "NVSwitch2": {
     "association": [
@@ -160,12 +1364,78 @@
       "NVSwitch2-ERoT",
       "PCIeSwitch"
     ],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ]
   },
   "NVSwitch3": {
     "association": [
@@ -174,112 +1444,772 @@
       "NVSwitch3-ERoT",
       "PCIeSwitch"
     ],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ]
   },
   "Retimer0": {
     "association": [
       "HSC8"
     ],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ]
   },
   "Retimer1": {
     "association": [
       "HSC8"
     ],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ]
   },
   "Retimer2": {
     "association": [
       "HSC8"
     ],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ]
   },
   "Retimer3": {
     "association": [
       "HSC8"
     ],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ]
   },
   "Retimer4": {
     "association": [
       "HSC9"
     ],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ]
   },
   "Retimer5": {
     "association": [
       "HSC9"
     ],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ]
   },
   "Retimer6": {
     "association": [
       "HSC9"
     ],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ]
   },
   "Retimer7": {
     "association": [
       "HSC9"
     ],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ]
   },
   "PCIeSwitch": {
     "association": [
       "HSC_STBY",
       "PCIeSwitch-ERoT"
     ],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ]
   },
   "FPGA": {
     "association": [
@@ -287,266 +2217,2180 @@
       "FPGA-ERoT",
       "HMC"
     ],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ]
   },
   "HMC": {
     "association": [
       "HSC_STBY",
       "HMC-ERoT"
     ],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ]
   },
   "GPU0-ERoT": {
     "association": [],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ]
   },
   "GPU1-ERoT": {
     "association": [],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ]
   },
   "GPU2-ERoT": {
     "association": [],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ]
   },
   "GPU3-ERoT": {
     "association": [],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ]
   },
   "GPU4-ERoT": {
     "association": [],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ]
   },
   "GPU5-ERoT": {
     "association": [],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ]
   },
   "GPU6-ERoT": {
     "association": [],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ]
   },
   "GPU7-ERoT": {
     "association": [],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ]
   },
   "HSC0": {
     "association": [],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ]
   },
   "HSC1": {
     "association": [],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ]
   },
   "HSC2": {
     "association": [],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ]
   },
   "HSC3": {
     "association": [],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ]
   },
   "HSC4": {
     "association": [],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ]
   },
   "HSC5": {
     "association": [],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ]
   },
   "HSC6": {
     "association": [],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ]
   },
   "HSC7": {
     "association": [],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ]
   },
   "HSC8": {
     "association": [],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ]
   },
   "HSC9": {
     "association": [],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ]
   },
   "NVSwitch0-ERoT": {
     "association": [],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ]
   },
   "NVSwitch1-ERoT": {
     "association": [],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ]
   },
   "NVSwitch2-ERoT": {
     "association": [],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ]
   },
   "NVSwitch3-ERoT": {
     "association": [],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ]
   },
   "PCIeSwitch-ERoT": {
     "association": [],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ]
   },
   "FPGA-ERoT": {
     "association": [],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ]
   },
   "HMC-ERoT": {
     "association": [],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ]
   },
   "HSC_STBY": {
     "association": [],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ]
   },
   "VR": {
     "association": [],
-    "power_rail": [],
-    "erot_control": [],
-    "pin_status": [],
-    "interface_status": [],
-    "protocol_status": [],
-    "firmware_status": []
+    "power_rail": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type:": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ]
   }
 }
