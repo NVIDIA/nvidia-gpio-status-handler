@@ -129,6 +129,8 @@ class InjectorScriptBase(abc.ABC):
             self._additional_data[com.REDFISH_MESSAGE_ID] = value["message_id"]
         elif field == "severity":
             self._additional_data[com.KEY_SEVERITY] = com.get_logging_entry_level(value)
+        else:
+            self.parse_json_sub_dict_field(field, value) # common field storing
 
 
     @abc.abstractmethod
