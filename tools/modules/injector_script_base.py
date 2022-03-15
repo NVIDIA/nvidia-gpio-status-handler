@@ -85,7 +85,7 @@ class InjectorScriptBase(abc.ABC):
         try:
             fd_temp, self._shell_file = tempfile.mkstemp()
             os.close(fd_temp)
-            self._shell_file_fd = open(self._shell_file, 'w')
+            self._shell_file_fd = open(self._shell_file, 'w', encoding="utf-8")
             if len(header) > 0:
                 self.write(header)
         except Exception as error:
