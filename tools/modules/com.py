@@ -20,6 +20,7 @@ JSON_ADDITIONAL_FIELDS = ["resolution", "accessor"]
 
 
 # Keys used in dicts
+KEY_MESSAGE_ID = "MessageId"
 KEY_SEVERITY = 'Severity'
 KEY_ACCESSOR = "Accessor"
 KEY_ACCESSOR_TYPE      = KEY_ACCESSOR + ".Type"
@@ -47,7 +48,7 @@ BUSCTL_ADDITIONALDATA_IDX = 10  # where additinal data starts
 
 # Keys used for comparing 'injected events' and 'redfish data'
 #   if an element is a list: the first element is the key and the second is an alias
-MANDATORY_EVENT_KEYS = [ KEY_SEVERITY, 'Resolution', ['MessageId', REDFISH_MESSAGE_ID] ]
+MANDATORY_EVENT_KEYS = [ KEY_SEVERITY, 'Resolution', [KEY_MESSAGE_ID, REDFISH_MESSAGE_ID] ]
 OPTIONAL_EVENT_KEYS  = [ ['MessageArgs', REDFISH_MESSAGE_ARGS] ]
 
 # Flags used for comparing 'injected events' and 'redfish data'
@@ -161,25 +162,32 @@ def __compare_event_data_and_redfish_data(key_list, mandatory_flag, injected_dic
     ret = True
     try:
         for key in key_list:
-            dict_key = key[0] if isinstance(key, list) else key
-            if mandatory_flag is False:
-                exist_both_keys = dict_key in injected_dict and dict_key in redfish_dict
-                if not exist_both_keys:
-                    continue
-            elif dict_key == KEY_SEVERITY: # special Severity cheking
-                sub_severity_key = redfish_dict[KEY_SEVERITY ].lower()
-                if injected_dict[KEY_SEVERITY] not in SEVERITYDBUSTOREDFISH[sub_severity_key]:
+            # injected_dict can use the alias key in MANDATORY_EVENT_KEYS or OPTIONAL_EVENT_KEYS
+            injected_key = key
+            if isinstance(key, list):
+                # injected_dict is using the alias key
+                injected_key = key[1] if key[1] in injected_dict else key[0]
+                key = key[0]
+            exist_both_keys = injected_key in injected_dict and key in redfish_dict
+            if exist_both_keys is False:
+                if mandatory_flag is True:
+                    return False  # both dicts must have the key value
+                continue          # ok if the key information misses in one or both dicts
+            # performs the comparing
+            if key == KEY_SEVERITY: # special Severity cheking
+                sub_severity_key = redfish_dict[key].lower()
+                if injected_dict[injected_key] not in SEVERITYDBUSTOREDFISH[sub_severity_key]:
                     ret = False
                     break
                 continue  ## Severity field OK
             ## filds comparing
-            if isinstance(redfish_dict[dict_key], list):
-                injected_list_value = re.split(',\s*', injected_dict[dict_key])
-                if lists_are_equal(redfish_dict[dict_key], injected_list_value):
+            if isinstance(redfish_dict[key], list):
+                injected_list_value = re.split(',\s*', injected_dict[injected_key])
+                if lists_are_equal(redfish_dict[key], injected_list_value):
                     continue
                 ret = False
                 break
-            if  injected_dict[dict_key] != redfish_dict[dict_key]:
+            if  injected_dict[injected_key] != redfish_dict[key]:
                 ret = False
                 break
     except Exception as error:
