@@ -101,7 +101,7 @@ if get_option('tests').enabled()
   gmock = gmock.as_system('system')
 endif
 
-srcfiles_unittest = ['test/dat_test.cpp', 'test/event_test.cpp']
+srcfiles_unittest = ['test/dat_test.cpp', 'test/event_test.cpp', 'test/dat_traverse_test.cpp']
 
 amllib_sources = [
                 'src/config_parser.cpp',

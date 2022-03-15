@@ -12,6 +12,7 @@
 
 #include <nlohmann/json.hpp>
 
+#include <functional>
 #include <list>
 #include <map>
 #include <string>
@@ -21,6 +22,14 @@ using json = nlohmann::json;
 
 namespace dat_traverse
 {
+
+struct Status
+{
+    std::string health;
+    std::string healthRollup;
+    std::string originOfCondition;
+    std::string triState;
+};
 
 struct TestPoint
 {
@@ -52,6 +61,9 @@ class Device
     /** @brief 6-layer accessor info for this event **/
     std::map<std::string, std::vector<data_accessor::DataAccessor*>> status;
 
+    /** @brief Struct containing health properties of device **/
+    Status healthStatus;
+
     /** @brief Map of test layers  for device **/
     std::map<std::string, TestLayer> test;
 
@@ -74,6 +86,8 @@ class Device
     Device(const std::string& s);
     Device(const std::string& s, const json& j);
     ~Device();
+
+  private:
 };
 
 } // namespace dat_traverse
@@ -104,10 +118,121 @@ class DATTraverse : public event_handler::EventHandler
      */
     aml::RcCode process([[maybe_unused]] event_info::EventNode& event) override
     {
+        std::string problemDevice = event.device;
+        if (problemDevice.length() == 0)
+        {
+            return aml::RcCode::error;
+        }
+
+        std::vector<std::function<void(dat_traverse::Device & device,
+                                       const dat_traverse::Status& status)>>
+            parentCallbacks;
+        parentCallbacks.push_back(setHealthProperties);
+        parentCallbacks.push_back(setOriginOfCondition);
+
+        parentTraverse(this->dat, problemDevice, hasParents, parentCallbacks);
+
         return aml::RcCode::succ;
     }
 
-  private:
+    /**
+     * @brief Print health/healthrollup/OOC/state of branch specified in vector
+     * @param dat
+     * @param devices
+     */
+    void printBranch(const std::map<std::string, dat_traverse::Device>& dat,
+                     const std::vector<std::string>& devices);
+
+    /**
+     * @brief Provide DAT structure so we can traverse it
+     * @param dat
+     */
+    void setDAT(const std::map<std::string, dat_traverse::Device>& dat);
+
+    //  private:
+    /**
+     * @brief Fully traverses a device and stops if comparator
+     *        detects an issue in which case action function
+     *        will update originOfCondition
+     *
+     * @param dat
+     * @param device
+     * @param comparator
+     * @param action
+     *
+     * @return vector of devices which we saw an issue with
+     */
+    std::vector<std::string> childTraverse(
+        std::map<std::string, dat_traverse::Device>& dat,
+        const std::string& device,
+        const std::function<bool(const dat_traverse::Device& device)>
+            comparator,
+        const std::vector<
+            std::function<void(std::map<std::string, dat_traverse::Device>& dat,
+                               const dat_traverse::Device& device)>>
+            action);
+
+    /**
+     * @brief Fully traverses a device in reverse direction
+              (from child to parent) and stops if comparator
+     *        detects an issue in which case action function
+     *        will update originOfCondition, health,
+     *        healthrollup, etc,
+     *
+     * @param dat
+     * @param device
+     * @param comparator
+     * @param action
+     *
+     */
+    void parentTraverse(
+        std::map<std::string, dat_traverse::Device>& dat,
+        const std::string& device,
+        const std::function<bool(const dat_traverse::Device& device)>
+            comparator,
+        const std::vector<std::function<void(
+            dat_traverse::Device& device, const dat_traverse::Status& status)>>
+            action);
+
+    /**
+     * @brief Checks to see if the device has parents
+     *
+     * @param device
+     * @return boolean for whether or not parent(s) were found
+     */
+    static bool hasParents(const dat_traverse::Device& device);
+
+    /**
+     * @brief Checks the health of the device
+     *
+     * @param device
+     * @return boolean for whether or not device is healthy
+     */
+    static bool checkHealth(const dat_traverse::Device& device);
+
+    /**
+     * @brief Sets origion of condition to all upstream devices
+     *
+     * @param device
+     * @param dat
+     *
+     */
+    static void setOriginOfCondition(dat_traverse::Device& targetDevice,
+                                     const dat_traverse::Status& status);
+
+    /**
+     * @brief Sets health/healthrollup/state/originOfConidtion properties
+     *
+     * @param device
+     * @param dat
+     *
+     */
+    static void setHealthProperties(dat_traverse::Device& targetDevice,
+                                    const dat_traverse::Status& status);
+
+    /** @brief Data structure for the DAT to traverse **/
+    std::map<std::string, dat_traverse::Device> dat;
+
     // TODO: define Device Association Tree pointer here
 };
 

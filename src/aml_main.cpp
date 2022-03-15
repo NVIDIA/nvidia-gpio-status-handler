@@ -129,6 +129,7 @@ sd_bus* bus = nullptr;
 
 } // namespace aml
 
+
 ////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief Service Entry Point
@@ -172,8 +173,13 @@ int main(int argc, char* argv[])
 
     // Register event handlers
     message_composer::MessageComposer msgComposer("MsgComp1");
+    event_handler::DATTraverse datTraverser("DatTraverser1");
+    datTraverser.setDAT(aml::profile::datMap);
+
     event_handler::ClearEvent clearEvent;
     event_handler::EventHandlerManager eventHdlrMgr("EventHandlerManager");
+
+    eventHdlrMgr.RegisterHandler(&datTraverser);
     eventHdlrMgr.RegisterHandler(&msgComposer);
     eventHdlrMgr.RegisterHandler(&clearEvent);
 

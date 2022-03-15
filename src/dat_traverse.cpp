@@ -89,6 +89,10 @@ Device::Device(const std::string& name, const json& j)
 
     this->name = name;
     this->association = j["association"].get<std::vector<std::string>>();
+    this->healthStatus.health = "OK";
+    this->healthStatus.healthRollup = "OK";
+    this->healthStatus.originOfCondition = "";
+    this->healthStatus.triState = "Active";
 
     std::list<std::string> layers = {"power_rail",      "erot_control",
                                      "pin_status",      "interface_status",
@@ -118,3 +122,96 @@ Device::Device(const std::string& name, const json& j)
 }
 
 } // namespace dat_traverse
+
+namespace event_handler
+{
+
+DATTraverse::~DATTraverse()
+{}
+
+void DATTraverse::printBranch(
+    const std::map<std::string, dat_traverse::Device>& dat,
+    const std::vector<std::string>& devices)
+{
+    for (const auto& dev : devices)
+    {
+        std::cerr << dev << ":\n";
+        auto device = dat.at(dev);
+        std::cerr << "Health: " << device.healthStatus.health << "\n";
+        std::cerr << "Healthrollup: " << device.healthStatus.healthRollup
+                  << "\n";
+        std::cerr << "OOC: " << device.healthStatus.originOfCondition << "\n";
+        std::cerr << "State: " << device.healthStatus.triState << "\n\n";
+    }
+}
+
+void DATTraverse::setDAT(const std::map<std::string, dat_traverse::Device>& dat)
+{
+    this->dat = dat;
+}
+
+bool DATTraverse::hasParents(const dat_traverse::Device& device)
+{
+    return device.parents.size() > 0;
+}
+
+bool DATTraverse::checkHealth(const dat_traverse::Device& device)
+{
+    return device.healthStatus.health == std::string("OK");
+}
+
+void DATTraverse::setHealthProperties(dat_traverse::Device& targetDevice,
+                                      const dat_traverse::Status& status)
+{
+    targetDevice.healthStatus.healthRollup = status.healthRollup;
+    targetDevice.healthStatus.triState = status.triState;
+}
+
+void DATTraverse::setOriginOfCondition(dat_traverse::Device& targetDevice,
+                                       const dat_traverse::Status& status)
+{
+    targetDevice.healthStatus.originOfCondition = status.originOfCondition;
+}
+
+void DATTraverse::parentTraverse(
+    std::map<std::string, dat_traverse::Device>& dat, const std::string& device,
+    const std::function<bool(const dat_traverse::Device& device)> comparator,
+    const std::vector<std::function<void(dat_traverse::Device& device,
+                                         const dat_traverse::Status& status)>>
+        action)
+{
+
+    dat_traverse::Device& node = dat.at(device);
+
+    dat_traverse::Status status;
+    status.health = node.healthStatus.health;
+    status.healthRollup = node.healthStatus.health;
+    status.originOfCondition = device;
+    status.triState = node.healthStatus.triState;
+
+    std::queue<std::string> fringe;
+    fringe.push(device);
+
+    while (!fringe.empty())
+    {
+        std::string deviceName = fringe.front();
+        fringe.pop();
+
+        dat_traverse::Device& node = dat.at(deviceName);
+
+        for (const auto& callback : action)
+        {
+            callback(node, status);
+        }
+
+        if (comparator(node))
+        {
+            for (const auto& parent : node.parents)
+            {
+                fringe.push(parent);
+            }
+        }
+    }
+}
+
+} // namespace event_handler
