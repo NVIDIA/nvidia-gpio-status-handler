@@ -282,7 +282,7 @@ class InjectTest:
 
     def execute_remote_script_and_get_stdout(self, ssh_client):
         event_inject_cmd = f"/bin/bash {EVENT_INJ_SCRIPT_PATH} {EVENT_INJ_SCRIPT_ARGS}"
-        print("...\n\nInjecting new events....")
+        print("...\n\nInjecting new events....\n...")
         try:
             # Execute the command to invoke event_injector script
             stdin, stdout, stderr = ssh_client.exec_command(event_inject_cmd, get_pty=True)
@@ -381,7 +381,7 @@ class InjectTest:
         event_logs_script = EventLogsInjectorScript(JSON_EVENTS_FILE, NOT_GENERATE_MESSAGE_ARGS) \
             if TEST_MODE == TEST_MODE_EVENTS_LOGGING else \
                 EventAccessorInjectorScript(JSON_EVENTS_FILE)
-        print(f"...\n\nParsing Json file and generating event injector bash script for mode={TEST_MODE}....")
+        print(f"...\n\nParsing Json file {JSON_EVENTS_FILE} and generating event injector bash script for mode={TEST_MODE}....")
         event_logs_script.generate_script_from_json()
 
         try:
@@ -409,7 +409,7 @@ class InjectTest:
         *  Gather all the logs generated after event injection
         *  Compare the logs information with the injected_events information cached in the inject_events method
         """
-        print("...\nFetching new logs....")
+        print("Fetching new logs....\n...")
 
         # If no event is injected, exit
         if self.events_injected_count == 0:
@@ -419,12 +419,13 @@ class InjectTest:
             self.final_log_count = self.current_log_count(cache=True)
         except Exception as e:
             raise e
+
+        out = ""
         # Iterate over all the log entries
         for member in self.log_cache.get('Members', []):
             try:
                 # Check if log entry number is greater than the initial logs count before injection
                 if int(member['Id']) in self.events_injected:
-
                     log_id = int(member['Id'])
                     temp_dict = self.events_injected[log_id]
                     # Compare all the fields
@@ -433,13 +434,12 @@ class InjectTest:
                     if mandatory_fields_match is True and optional_fields_match is True:
                         del self.events_injected[log_id]
             except Exception as e:
-                out = f"{out}Exception occurred while matching keys for event entry id {log_id}: {str(e)}\n"
+                out = f"Exception occurred while matching keys for event entry id {log_id}: {str(e)}\n"
                 pass
 
         # If the dictionary still have some info,
         # that means we did not find logs for some events
         if len(self.events_injected) > 0:
-
             # Append the info in the output string and raise exception
             out = f"{out}\nUnable to verify log generation for following events:\n"
             for key in self.events_injected:
