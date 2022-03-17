@@ -97,7 +97,7 @@ class EventDetection : public object::Object
     void RunEventHandlers(event_info::EventNode& event)
     {
         auto thread = new std::thread(
-            [this](event_info::EventNode& _event) {
+            [this](event_info::EventNode _event) {
                 this->_hdlrMgr->RunAllHandlers(_event);
             },
             std::ref(event));
@@ -106,6 +106,28 @@ class EventDetection : public object::Object
         {
             std::cout << "Create thread to process event failed!\n";
         }
+    }
+
+    /**
+     * @brief Determine device name from DBus object path.
+     *
+     * @param objPath
+     * @param devType
+     * @return std::string
+     */
+    static std::string DetermineDeviceName(const std::string& objPath,
+                                           const std::string& devType)
+    {
+        const std::regex r{".*(" + devType + "[0-9]+).*"}; // TODO: fixme
+        std::smatch m;
+
+        if (std::regex_search(objPath.begin(), objPath.end(), m, r))
+        {
+            auto name = m[1]; // the 2nd field is the matched substring.
+            std::cout << "Devname: " << name << "\n.";
+            return name;
+        }
+        return "";
     }
 
   private:
