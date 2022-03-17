@@ -42,14 +42,12 @@ class InjectorScriptBase(abc.ABC):
         json_file_fd = 0
         data = 0
         try:
-            json_file_fd = open(self._json_file)
-        except Exception as e:
-            raise Exception(f"Json events input file not found:  {self._json_file} : {str(e)}")
-        try:
-            data = json.load(json_file_fd)
-            json_file_fd.close()
-        except Exception as e:
-            raise Exception(f"Json file not in a good format:  {self._json_file} : {str(e)}")
+            with open(self._json_file, "r", encoding="utf-8") as json_file_fd:
+                data = json.load(json_file_fd)
+                json_file_fd.close()
+        except Exception as error:
+            raise Exception(f"Json file not in a good format: {self._json_file} : {str(error)}") \
+                from error
         return data
 
 
@@ -72,9 +70,8 @@ class InjectorScriptBase(abc.ABC):
     @abc.abstractmethod
     def generate_busctl_command_from_json_dict(self, device, data):
         """
-        Abstract pure method
+        Abstract pure method (Empty)
         """
-        pass
 
 
     def priv_create_script_file(self, header):
@@ -89,7 +86,7 @@ class InjectorScriptBase(abc.ABC):
             if len(header) > 0:
                 self.write(header)
         except Exception as error:
-            raise Exception(f"Could not create temporary file:  {str(e)}")
+            raise Exception(f"Could not create temporary file: {str(error)}") from error
 
 
     def priv_close_script_file(self, footer):
@@ -114,8 +111,9 @@ class InjectorScriptBase(abc.ABC):
         """
         try:
             self._shell_file_fd.write(data)
-        except Exception as e:
-            raise Exception(f"Could not write data into file: {self._json_file} : {str(e)}")
+        except Exception as error:
+            raise Exception(\
+                f"Could not write data into file: {self._json_file} : {str(error)}") from error
 
 
     def __parse_json_mandatory_fields(self, field, value):
@@ -133,7 +131,6 @@ class InjectorScriptBase(abc.ABC):
             self.parse_json_sub_dict_field(field, value) # common field storing
 
 
-    @abc.abstractmethod
     def parse_json_dict_data(self, device_name, data_device):
         """
         Parses one Json element, values are stored into self._busctl_info and self._additional_data
@@ -194,7 +191,7 @@ class InjectorScriptBase(abc.ABC):
         accessor_key = f"{com.KEY_ACCESSOR}."
         for key in list(self._additional_data.keys()):
             if key.startswith(accessor_key):
-                    del self._additional_data[key]
+                del self._additional_data[key]
         if com.KEY_ACCESSOR_TYPE in self._additional_data:
             del self._additional_data[com.KEY_ACCESSOR_TYPE]
 
@@ -202,11 +199,11 @@ class InjectorScriptBase(abc.ABC):
     def generate_device_busctl_commands(self, device, data):
         """
         Just a conveniente function to be reused,
-           calls the abstrac method generate_busctl_command_from_json_dict()
+           calls the abstract method generate_busctl_command_from_json_dict()
         """
         if isinstance(data, dict):
             self.generate_busctl_command_from_json_dict(device, data)
         else:
-            for index in  range(len(data)):
+            for index, device_data in enumerate(data):
                 device_name = device+str(index)
-                self.generate_busctl_command_from_json_dict(device_name, data[index])
+                self.generate_busctl_command_from_json_dict(device_name, device_data)

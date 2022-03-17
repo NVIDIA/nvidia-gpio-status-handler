@@ -80,7 +80,8 @@ class EventLogsInjectorScript(InjectorScriptBase):
                 cmd += self.__format_additional_data_copule(com.REDFISH_MESSAGE_ARGS)
                 del self._additional_data[com.REDFISH_MESSAGE_ARGS]
         except Exception as error:
-            raise Exception(f"'{com.REDFISH_MESSAGE_ID}' information missing: {str(error)}")
+            raise Exception(\
+                f"'{com.REDFISH_MESSAGE_ID}' information missing: {str(error)}") from error
         for ad_key in sorted(self._additional_data.keys()):
             cmd += self.__format_additional_data_copule(ad_key, com.LOGGING_ENTRY_DOT_STR)
         self._busctl_cmd_counter += 1

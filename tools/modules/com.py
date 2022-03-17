@@ -182,7 +182,7 @@ def __compare_event_data_and_redfish_data(key_list, mandatory_flag, injected_dic
                 continue  ## Severity field OK
             ## filds comparing
             if isinstance(redfish_dict[key], list):
-                injected_list_value = re.split(',\s*', injected_dict[injected_key])
+                injected_list_value = re.split(r',\s*', injected_dict[injected_key])
                 if lists_are_equal(redfish_dict[key], injected_list_value):
                     continue
                 ret = False
