@@ -171,7 +171,7 @@ def parse_arguments():
            JSON_EVENTS_FILE, TEST_MODE, EVENT_INJ_SCRIPT_ARGS
 
     args, remaining = parser.parse_known_args()
-    avoid_unused_variable(stdin)
+    avoid_unused_variable(remaining)
 
     TEST_MODE=args.mode
 
@@ -209,7 +209,6 @@ class InjectTest:
 
     def __init__(self):
         """
-        self.event_log_entries_api      -   API endpoint used to gather the logs
         self.initial_log_count          -   Number of logs before event injection
         self.total_events               -   Total number of events
         self.events_injected_count      -   Number of events injected
@@ -217,12 +216,10 @@ class InjectTest:
         self.final_log_count            -   Number of logs after event injection
         self.log_cache                  -   Cache of Log Entry API
         """
-        self.event_log_entries_api= f"https://{BMCWEB_IP}:{BMCWEB_PORT}/{com.EVENT_LOG_URI}"
         self.initial_log_count=0
         self.total_events=0
         self.events_injected_count=0
         self.events_injected = {}
-
         self.final_log_count=0
         self._ssh_cmd = None
         self.log_cache=None
@@ -234,11 +231,12 @@ class InjectTest:
         Uses key 'Member@odata.count' to get the current count.
         Cache the redfish API response if argument "cache" is set to "True"
         """
+        event_log_entries_api= f"https://{BMCWEB_IP}:{BMCWEB_PORT}/{com.EVENT_LOG_URI}"
         try: # Call the API
-            response = get(self.event_log_entries_api, verify=False,
+            response = get(event_log_entries_api, verify=False,
                                     auth = HTTPBasicAuth(QEMU_USER, QEMU_PASS))
         except Exception as error:
-            msg = f"Exception occurred while making API({self.event_log_entries_api})"
+            msg = f"Exception occurred while making API({event_log_entries_api})"
             raise Exception(f"{msg} call: {str(error)}") from error
         try:
             # Convert the API response into JSON format
@@ -394,7 +392,8 @@ class InjectTest:
                 temp_temp_dict = temp_dict.copy()
                 self.events_injected[current_log_number] = temp_temp_dict
             except Exception as error:
-                print(f"Unable to get field from busctl command {event} {str(error)}")
+                msg = f"Unable to get field from busctl command {event}"
+                raise Exception(f"{msg}:  {str(error)}") from error
 
 
     def get_events_list_from_json_file(self, event_logs_script):
@@ -486,7 +485,8 @@ class InjectTest:
         if len(self.events_injected) > 0:
             # Append the info in the output string and raise exception
             out = f"{out}\nUnable to verify log generation for following events:\n"
-            for key in self.events_injected:
+            event_key_list = list(self.events_injected)
+            for key in event_key_list:
                 if len(self.events_injected[key]) > 0:
                     out = f"{out}\t* {key}\n"
             raise Exception(f"Exception occurred: {out}")
@@ -540,6 +540,7 @@ def main():
     except Exception as error:
         print(colored(error, 'red'))
         main_rc = -1
+        raise error
     finally:
         if main_rc == os.EX_OK and inject_test.print_summary() == 'green':
             main_rc = os.EX_OK
