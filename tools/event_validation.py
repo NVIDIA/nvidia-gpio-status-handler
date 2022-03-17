@@ -1,5 +1,9 @@
 #!/usr/bin/python3
 
+"""
+Event Inject tests
+"""
+
 # --------------------------------------------------------------------------
 # This script injects events using event_injector script and verify
 # log creation by BMCWeb
@@ -31,11 +35,11 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 modules_dir = os.path.dirname(__file__)
 modules_dir_path = f"{modules_dir}/modules" if len(modules_dir) > 0 else "./modules"
 sys.path.append(modules_dir_path)
-
+import com ## common constants and and functions
 from event_logging_script  import EventLogsInjectorScript
 from event_accessor_script import EventAccessorInjectorScript
 
-import com ## common constants and and functions
+
 
 # Global variables used to access BMCWEB
 BMCWEB_IP=""
@@ -134,14 +138,22 @@ available_options = [
 ]
 
 
+def avoid_unused_variable(variable):
+    """
+    It is used just to avoid pyling messages 'unused-variable', it does nothing
+    """
+    local_var = variable
+    variable  = local_var
 
 
 def init_arg_parser():
     """
     Initialize argument parser
     """
-    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-            description='Event Injection Test Automation: mode=1 by \'inserting event logs\';  mode=2 by \'changing devices status (test for complete flow)\'')
+    msg  = "Event Injection Test Automation: mode=1 by \'inserting event logs\' "
+    msg += ";  mode=2 by \'changing devices status (test for complete flow)\'"
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,\
+                                    description=msg)
     for opt in available_options:
         parser.add_argument(*opt['args'], **opt['kwargs'])
     return parser
@@ -155,15 +167,17 @@ def parse_arguments():
     """
     parser = init_arg_parser()
 
-    global QEMU_USER, QEMU_PASS, QEMU_IP, QEMU_PORT, BMCWEB_IP, BMCWEB_PORT, JSON_EVENTS_FILE, TEST_MODE, EVENT_INJ_SCRIPT_ARGS
+    global QEMU_USER, QEMU_PASS, QEMU_IP, QEMU_PORT, BMCWEB_IP, BMCWEB_PORT, \
+           JSON_EVENTS_FILE, TEST_MODE, EVENT_INJ_SCRIPT_ARGS
 
     args, remaining = parser.parse_known_args()
+    avoid_unused_variable(stdin)
 
     TEST_MODE=args.mode
 
     if TEST_MODE < TEST_MODE_EVENTS_LOGGING or TEST_MODE > TEST_MODE_CHANGE_DEVICE_STATUS:
-         print(f"Mode option -m|--mode '{TEST_MODE}' out of range, use -h to see valid mode options")
-         return False
+        print(f"Mode option -m|--mode {TEST_MODE} out of range, use -h to see valid mode options")
+        return False
 
     # QEMU Access info
     QEMU_USER= args.user
@@ -189,7 +203,8 @@ class InjectTest:
     This class is used to:
         1.  Get all the logs already present using BMCWeb redfish interface, using API call.
         2.  Inject events into D-Bus using "event_injector" script.
-        3.  Get all the logs generated after Step 2 and verify all the logs with corresponding events.
+        3.  Get all the logs generated after Step 2 and
+              verify all the logs with corresponding events.
     """
 
     def __init__(self):
@@ -209,7 +224,7 @@ class InjectTest:
         self.events_injected = {}
 
         self.final_log_count=0
-
+        self._ssh_cmd = None
         self.log_cache=None
 
 
@@ -222,13 +237,15 @@ class InjectTest:
         try: # Call the API
             response = get(self.event_log_entries_api, verify=False,
                                     auth = HTTPBasicAuth(QEMU_USER, QEMU_PASS))
-        except Exception as e:
-            raise Exception(f"Exception occurred while making API({self.event_log_entries_api}) call: {str(e)}")
+        except Exception as error:
+            msg = f"Exception occurred while making API({self.event_log_entries_api})"
+            raise Exception(f"{msg} call: {str(error)}") from error
         try:
             # Convert the API response into JSON format
             response_json=response.json()
-        except Exception as e:
-            raise Exception(f"Exception occurred while converting response to json: {str(e)}\n Response: {response.text}")
+        except Exception as error:
+            msg = f"Exception occurred while converting response to json: {str(error)}"
+            raise Exception(f"{msg}\n Response: {response.text}") from error
         # Get the 'Members@odata.count' key to read the log count
         key_members = "Members"
         members = response_json.get(key_members, None)
@@ -238,8 +255,9 @@ class InjectTest:
         if cache:
             try:
                 self.log_cache=response_json.copy()
-            except Exception as e:
-                raise Exception(f"Exception occurred while copying API response json: {str(e)}")
+            except Exception as error:
+                msg = f"Exception occurred while copying API response json: {str(error)}"
+                raise Exception(msg) from error
         log_count = 0
         for member in members:
             log_count = max(log_count, int(member['Id']))
@@ -254,56 +272,78 @@ class InjectTest:
         print("Fetching current logs....")
         try:
             self.initial_log_count = self.current_log_count()
-        except Exception as e:
-            raise e
+        except Exception as error:
+            raise error
 
 
     def create_ssh_session(self):
+        """
+        Creates a ssh session
+        """
         try:
-            ssh_cmd = paramiko.SSHClient()
+            self._ssh_cmd = paramiko.SSHClient()
             # Set missing host key policy
-            ssh_cmd.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            self._ssh_cmd.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             # Connect the SSH client to QEMU
-            ssh_cmd.connect(QEMU_IP, username=QEMU_USER, port=QEMU_PORT, password=QEMU_PASS,timeout=5)
-        except Exception as e:
-            raise Exception(f"Exception occurred while connecting to {BMCWEB_IP} {QEMU_PORT}: {str(e)}")
-        return ssh_cmd
+            self._ssh_cmd.connect(QEMU_IP, username=QEMU_USER, port=QEMU_PORT, \
+                              password=QEMU_PASS, timeout=5)
+        except Exception as error:
+            msg = f"Exception occurred while connecting to {BMCWEB_IP} {QEMU_PORT}"
+            raise Exception(f"{msg}: {str(error)}") from error
 
 
-    def sftp_script_to_emulator(self, ssh_client, source_script):
+    def sftp_script_to_emulator(self, source_script):
+        """
+        Just copies the script to emulator
+        """
         try:
-            print(f"...\n\nCopying {source_script} to {QEMU_USER}@{BMCWEB_IP}:{EVENT_INJ_SCRIPT_PATH} using sftp....")
-            sftp = ssh_client.open_sftp()
+            msg = f"Copying {source_script} to {QEMU_USER}@{BMCWEB_IP}:{EVENT_INJ_SCRIPT_PATH}"
+            print(f"...\n\n{msg} using sftp....")
+            sftp =  self._ssh_cmd.open_sftp()
             sftp.put(source_script, EVENT_INJ_SCRIPT_PATH)
             sftp.close()
-        except Exception as e:
-            raise Exception(f"Exception occurred while copying  {source_script} using sftp: {str(e)}")
+        except Exception as error:
+            msg = f"Exception occurred while copying {source_script} using sftp"
+            raise Exception(f"{msg}: {str(error)}") from error
 
 
-    def execute_remote_script_and_get_stdout(self, ssh_client):
+    def execute_remote_script_and_get_stdout(self):
+        """
+        Runs the remote script and gets its output
+        Returns its output
+        """
         event_inject_cmd = f"/bin/bash {EVENT_INJ_SCRIPT_PATH} {EVENT_INJ_SCRIPT_ARGS}"
         print("...\n\nInjecting new events....\n...")
         try:
             # Execute the command to invoke event_injector script
-            stdin, stdout, stderr = ssh_client.exec_command(event_inject_cmd, get_pty=True)
-        except Exception as e:
-            raise Exception(f"Exception occurred while running command {event_inject_cmd} over ssh: {str(e)}")
+            stdin, stdout, stderr =  self._ssh_cmd.exec_command(event_inject_cmd, get_pty=True)
+            # two lines above just to avoid pylint
+            avoid_unused_variable(stdin)
+        except Exception as error:
+            msg = f"Exception occurred while running command {event_inject_cmd}"
+            raise Exception(f"{msg} over ssh: {str(error)}") from error
         # Read stderr
         try:
             result_stderr = stderr.readline().strip()
-        except Exception as e:
-            raise Exception(f"Exception occurred while reading stderr for command {event_inject_cmd}: {str(e)}")
+        except Exception as error:
+            msg  = f"Exception occurred while reading stderr for command {event_inject_cmd}"
+            raise Exception(f"{msg}: {str(error)}") from error
         # Check stderr output to check for error
         if result_stderr:
-            raise Exception(f"Exception occurred while running command {event_inject_cmd} over ssh: {result_stderr}")
+            msg  = f"Exception occurred while running command {event_inject_cmd} "
+            msg += f" over ssh: {result_stderr}"
+            raise Exception(msg)
         # Read stdout
         try:
             result_stdout = stdout.readlines()
-        except Exception as e:
-            raise Exception(f"Exception occurred while reading stdout for command {event_inject_cmd}: {str(e)}")
+        except Exception as error:
+            msg = f"Exception occurred while reading stdout for command {event_inject_cmd}"
+            raise Exception(f"{msg}: {str(error)}") from error
         # Check stdout return code
         if stdout.channel.recv_exit_status():
-            raise Exception(f"Exception occurred while running command {event_inject_cmd} over ssh:\n{''.join(result_stdout)}")
+            msg  = f"Exception occurred while running command {event_inject_cmd} over ssh:"
+            msg += f"\n{''.join(result_stdout)}"
+            raise Exception(msg)
         # Print output from the event_injector script to the console
         print(''.join(result_stdout))
         return result_stdout
@@ -353,9 +393,8 @@ class InjectTest:
                 self.total_events+=1
                 temp_temp_dict = temp_dict.copy()
                 self.events_injected[current_log_number] = temp_temp_dict
-            except Exception as e:
-                print(f"Unable to get field from busctl command {event} {str(e)}")
-                pass
+            except Exception as error:
+                print(f"Unable to get field from busctl command {event} {str(error)}")
 
 
     def get_events_list_from_json_file(self, event_logs_script):
@@ -381,19 +420,22 @@ class InjectTest:
         event_logs_script = EventLogsInjectorScript(JSON_EVENTS_FILE, NOT_GENERATE_MESSAGE_ARGS) \
             if TEST_MODE == TEST_MODE_EVENTS_LOGGING else \
                 EventAccessorInjectorScript(JSON_EVENTS_FILE)
-        print(f"...\n\nParsing Json file {JSON_EVENTS_FILE} and generating event injector bash script for mode={TEST_MODE}....")
+        msg  = f"Parsing Json file {JSON_EVENTS_FILE} and generating event injector "
+        msg += f"bash script for mode={TEST_MODE}...."
+        print(f"...\n\n{msg}")
         event_logs_script.generate_script_from_json()
 
         try:
             # Create the SSH client
-            ssh_cmd = self.create_ssh_session()
-            self.sftp_script_to_emulator(ssh_cmd, event_logs_script.script_file())
-            result_stdout = self.execute_remote_script_and_get_stdout(ssh_cmd)
+            self.create_ssh_session()
+            self.sftp_script_to_emulator(event_logs_script.script_file())
+            result_stdout = self.execute_remote_script_and_get_stdout()
             # reads the last output line which should have a 'Successful Injections: 23'
             try:
                 self.events_injected_count = int((result_stdout[-1].strip().split(':')[-1].strip()))
-            except Exception as e:
-                raise Exception(f"Exception occurred while reading successful injections count: {str(e)}")
+            except Exception as error:
+                msg=f"Exception occurred while reading successful injections count: {str(error)}"
+                raise Exception(msg) from error
             if TEST_MODE == TEST_MODE_EVENTS_LOGGING:
                 self.parse_event_logging_output_get_events_injected(result_stdout)
             elif TEST_MODE == TEST_MODE_CHANGE_DEVICE_STATUS:
@@ -401,24 +443,25 @@ class InjectTest:
         except Exception as error:
             raise error
         finally:
-            ssh_cmd.close()
+            self._ssh_cmd.close()
 
 
     def collect_logs_after_injection_and_verify(self):
         """
         *  Gather all the logs generated after event injection
-        *  Compare the logs information with the injected_events information cached in the inject_events method
+        *  Compare the logs information with the injected_events information
+             cached in the inject_events() method
         """
         print("Fetching new logs....\n...")
 
         # If no event is injected, exit
         if self.events_injected_count == 0:
-            raise Exception(f"No events injected, exiting!!")
+            raise Exception("No events injected, exiting!!")
 
         try: # Gather all the logs using BMCWeb interface
             self.final_log_count = self.current_log_count(cache=True)
-        except Exception as e:
-            raise e
+        except Exception as error:
+            raise error
 
         out = ""
         # Iterate over all the log entries
@@ -433,9 +476,9 @@ class InjectTest:
                     optional_fields_match = com.compare_optional_event_fields(temp_dict, member)
                     if mandatory_fields_match is True and optional_fields_match is True:
                         del self.events_injected[log_id]
-            except Exception as e:
-                out = f"Exception occurred while matching keys for event entry id {log_id}: {str(e)}\n"
-                pass
+            except Exception as error:
+                message = "Exception occurred while matching keys for event id"
+                out = f"{message} :{log_id}: {str(error)}\n"
 
         # If the dictionary still have some info,
         # that means we did not find logs for some events
@@ -445,7 +488,6 @@ class InjectTest:
             for key in self.events_injected:
                 if len(self.events_injected[key]) > 0:
                     out = f"{out}\t* {key}\n"
-
             raise Exception(f"Exception occurred: {out}")
 
 
@@ -465,7 +507,7 @@ class InjectTest:
         print(f"\tTotal events: {self.total_events}")
 
         color = 'red' if self.events_injected_count < self.total_events else 'green'
-        print(f"\tEvents injected: ", colored(f"{self.events_injected_count}", color))
+        print("\tEvents injected: ", colored(f"{self.events_injected_count}", color))
 
         color = 'red' if len(self.events_injected) else 'green'
         print("\tUnverified events: ", colored(f"{len(self.events_injected)}", color))
@@ -485,24 +527,20 @@ def main():
     # Initalize arg parser and add all the arguments
     arguments_ok = parse_arguments()
 
-
     main_rc = os.EX_OK if arguments_ok is True else -1
 
     try:
         if main_rc == os.EX_OK:
-            injectTest = InjectTest()
-            injectTest.collect_logs_before_injections()
-            injectTest.inject_events()
-
+            inject_test = InjectTest()
+            inject_test.collect_logs_before_injections()
+            inject_test.inject_events()
             sleep(2)
-
-            injectTest.collect_logs_after_injection_and_verify()
-
-    except Exception as e:
-        print(colored(e, 'red'))
+            inject_test.collect_logs_after_injection_and_verify()
+    except Exception as error:
+        print(colored(error, 'red'))
         main_rc = -1
     finally:
-        if main_rc == os.EX_OK and injectTest.print_summary() == 'green':
+        if main_rc == os.EX_OK and inject_test.print_summary() == 'green':
             main_rc = os.EX_OK
 
     return main_rc
