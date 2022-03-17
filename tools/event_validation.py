@@ -479,6 +479,7 @@ class InjectTest:
             except Exception as error:
                 message = "Exception occurred while matching keys for event id"
                 out = f"{message} :{log_id}: {str(error)}\n"
+                raise error
 
         # If the dictionary still have some info,
         # that means we did not find logs for some events
