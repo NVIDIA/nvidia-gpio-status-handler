@@ -125,6 +125,8 @@ $ tools/log_cmd 3
 >**NOTE: log_cmd could be installed into the target firmware filesystem.**
 
 ### Docker Image for Building & Debugging
+:warning: **Not maintained!** May need extensive work to work as described. 
+
 A docker image is used for code building and debugging. It needs to be created for the first time by,
 ``` shell
 $ ./buildenv create
