@@ -20,8 +20,16 @@
         "redfish": {
             "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
         },
-        "telemetries": [],
-        "action": ""
+        "telemetries": [
+            {
+                "name": "temperature",
+                "type": "DBUS",
+                "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+                "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
+                "property": "Depth"
+            }
+        ],
+        "action": "SelfTest"
      },
      {
         "event": "Abnormal Presence State Change",

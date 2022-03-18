@@ -16,6 +16,7 @@
 namespace data_accessor
 {
 constexpr auto typeKey = "type";
+constexpr auto nameKey = "name";
 
 static std::map<std::string, std::vector<std::string>> accessorTypeKeys = {
     {"DBUS", {"object", "interface", "property"}},
@@ -167,7 +168,7 @@ class DataAccessor
 
   private:
     /**
-     * @brief Check if a acc json has a "type" field.
+     * @brief Check if a acc json has the "type" field.
      *
      * @param acc
      * @return true

@@ -95,7 +95,7 @@ class EventNode : public object::Object
     redfish messageRegistry;
 
     /** @brief List of the event's telemetries **/
-    std::vector<std::string> telemetries;
+    std::vector<data_accessor::DataAccessor> telemetries;
 
     /** @brief Action HMC should take **/
     std::string action;

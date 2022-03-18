@@ -89,9 +89,11 @@ class EventDetection : public object::Object
      */
     bool IsEvent(event_info::EventNode& candidate)
     {
-        auto countDiff = candidate.triggerCount - (candidate.count[candidate.device] + 1); 
+        auto countDiff =
+            candidate.triggerCount - (candidate.count[candidate.device] + 1);
 
-        if (countDiff <= 0){
+        if (countDiff <= 0)
+        {
             candidate.count[candidate.device] = candidate.triggerCount;
             return true;
         }

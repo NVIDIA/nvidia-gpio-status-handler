@@ -41,8 +41,8 @@ bool MessageComposer::createLog(event_info::EventNode& event)
                     event.messageRegistry.message.severity;
     method.append(severity);
 
-    auto telemetries = std::accumulate(
-        event.telemetries.begin(), event.telemetries.end(), std::string(""));
+    auto telemetries = collectDiagData(event);
+    // TODO: auto telemetries = Compression(telemetries);
 
     method.append(std::array<std::pair<std::string, std::string>, 4>(
         {{{"xyz.openbmc_project.Logging.Entry.Resolution",

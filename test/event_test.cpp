@@ -61,3 +61,36 @@ TEST(DevNameTest, MakeCall)
         event_detection::EventDetection::DetermineDeviceName(objPath, devType);
     EXPECT_EQ(name, "GPU12");
 }
+
+TEST(EventTelemtries, MakeCall)
+{
+    nlohmann::json j;
+    j["event"] = "Event0";
+    j["device_type"] = "GPU";
+    j["severity"] = "Critical";
+    j["resolution"] = "Contact NVIDIA Support";
+    j["redfish"]["message_id"] = "ResourceEvent.1.0.ResourceErrorsDetected";
+    j["telemetries"] = {
+        {{"name", "temperature"},
+         {"type", "DBUS"},
+         {"object", "xyz.openbmc_project.Inventory.Decorator.Dimension"},
+         {"interface", "Depth"}},
+        {{"name", "power"},
+         {"type", "DBUS"},
+         {"object", "xyz.openbmc_project.Inventory.Decorator.Dimension"},
+         {"interface", "Depth"}}};
+    j["trigger_count"] = 0;
+    j["event_trigger"] = "trigger";
+    j["action"] = "do something";
+    j["event_counter_reset"]["type"] = "type";
+    j["event_counter_reset"]["metadata"] = "metadata";
+    j["accessor"]["metadata"] = "metadata";
+    j["accessor"]["type"] = "DBUS";
+    event_info::EventNode event("test event");
+    event.loadFrom(j);
+
+    auto expected = "{\"power\":\"123\",\"temperature\":\"123\"}";
+    auto telemetries =
+        message_composer::MessageComposer::collectDiagData(event);
+    EXPECT_EQ(telemetries, expected);
+}

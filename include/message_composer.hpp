@@ -6,8 +6,11 @@
 #pragma once
 
 #include "aml.hpp"
+#include "data_accessor.hpp"
 #include "event_handler.hpp"
 #include "event_info.hpp"
+
+#include <nlohmann/json.hpp>
 
 #include <string>
 
@@ -43,6 +46,24 @@ class MessageComposer : public event_handler::EventHandler
             return aml::RcCode::succ;
         }
         return aml::RcCode::error;
+    }
+
+    /**
+     * @brief Collect event related telemetries values as diag data.
+     *
+     * @param event
+     * @return std::string&
+     */
+    static std::string collectDiagData(const event_info::EventNode& event)
+    {
+        nlohmann::json output;
+        for (auto telemetry : event.telemetries)
+        {
+            std::string telemetryName = telemetry[data_accessor::nameKey];
+            std::string telemetryValue = telemetry.read();
+            output[telemetryName] = telemetryValue;
+        }
+        return output.dump();
     }
 
   private:

@@ -71,7 +71,12 @@ void EventNode::loadFrom(const json& j)
     this->deviceType = j["device_type"];
     this->triggerCount = j["trigger_count"].get<int>();
     this->eventTrigger = j["event_trigger"];
-    this->telemetries = j["telemetries"].get<std::vector<std::string>>();
+
+    for (auto& entry : j["telemetries"])
+    {
+        this->telemetries.push_back(entry);
+    }
+    // this->telemetries = j["telemetries"].get<std::vector<std::string>>();
     this->action = j["action"];
     this->device = "";
 
@@ -84,7 +89,9 @@ void EventNode::loadFrom(const json& j)
     std::cout << "Loaded accessor: " << this->accessor << ", j: " << j << "\n";
 }
 
-static void print_accessor([[maybe_unused]] const data_accessor::DataAccessor& acc) {
+static void
+    print_accessor([[maybe_unused]] const data_accessor::DataAccessor& acc)
+{
     /* todo */
     return;
 }
@@ -95,23 +102,29 @@ static void print_node(const EventNode& n)
 
     std::cout << "\t\tdeviceType      " << n.deviceType << "\n";
     std::cout << "\t\teventTrigger    " << n.eventTrigger << "\n";
-    std::cout << "\t\taccessor        " << "todo" << "\n";
+    std::cout << "\t\taccessor        "
+              << "todo"
+              << "\n";
     print_accessor(n.accessor);
     std::cout << "\t\tcount(map)      " << n.count.size() << "\n";
-    for(auto& p : n.count){
+    for (auto& p : n.count)
+    {
         std::cout << "\t\t\t[" << p.first << "] = " << p.second << "\n";
     }
 
     std::cout << "\t\ttriggerCount    " << n.triggerCount << "\n";
-    std::cout << "\t\tcounterReset    " << "todo" << "\n";
+    std::cout << "\t\tcounterReset    "
+              << "todo"
+              << "\n";
     print_accessor(n.counterReset);
 
     std::cout << "\t\tmessageRegistry " << n.messageRegistry.messageId << "\n";
     std::cout << "\t\t\t" << n.messageRegistry.message.severity << "\n";
     std::cout << "\t\t\t" << n.messageRegistry.message.resolution << "\n";
 
-    std::cout << "\t\ttelemetries     " << n.telemetries.size() <<"\n";
-    for(auto& v : n.telemetries){
+    std::cout << "\t\ttelemetries     " << n.telemetries.size() << "\n";
+    for (auto& v : n.telemetries)
+    {
         std::cout << "\t\t\t" << v << "\n";
     }
 
