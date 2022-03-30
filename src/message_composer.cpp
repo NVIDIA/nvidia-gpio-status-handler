@@ -41,15 +41,17 @@ bool MessageComposer::createLog(event_info::EventNode& event)
                     event.messageRegistry.message.severity;
     method.append(severity);
 
+    auto messageArgs = createMessageArgs(event);
     auto telemetries = collectDiagData(event);
     // TODO: auto telemetries = Compression(telemetries);
 
-    method.append(std::array<std::pair<std::string, std::string>, 4>(
+    method.append(std::array<std::pair<std::string, std::string>, 5>(
         {{{"xyz.openbmc_project.Logging.Entry.Resolution",
            event.messageRegistry.message.resolution},
           {"REDFISH_MESSAGE_ID", event.messageRegistry.messageId},
           {"DEVICE_EVENT_DATA", telemetries},
-          {"namespace", event.device}}}));
+          {"namespace", event.device},
+          {"REDFISH_MESSAGE_ARGS", messageArgs}}}));
 
     try
     {
