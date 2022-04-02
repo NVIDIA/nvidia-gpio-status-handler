@@ -311,41 +311,29 @@ class InjectTest:
         Returns its output
         """
         event_inject_cmd = f"/bin/bash {EVENT_INJ_SCRIPT_PATH} {EVENT_INJ_SCRIPT_ARGS}"
+        result_stdout=""
         print("...\n\nInjecting new events....\n...")
         try:
             # Execute the command to invoke event_injector script
-            stdin, stdout, stderr =  self._ssh_cmd.exec_command(event_inject_cmd, get_pty=True)
-            # two lines above just to avoid pylint
-            avoid_unused_variable(stdin)
+            channel = self._ssh_cmd.get_transport().open_session()
+            channel.exec_command(event_inject_cmd)
+            channel.set_combine_stderr(True)
+            while True:
+                if channel.exit_status_ready():
+                    break
+                out = channel.recv(256).decode("utf-8")
+                print (out, end='')
+                result_stdout += out
         except Exception as error:
             msg = f"Exception occurred while running command {event_inject_cmd}"
             raise Exception(f"{msg} over ssh: {str(error)}") from error
-        # Read stderr
-        try:
-            result_stderr = stderr.readline().strip()
-        except Exception as error:
-            msg  = f"Exception occurred while reading stderr for command {event_inject_cmd}"
-            raise Exception(f"{msg}: {str(error)}") from error
-        # Check stderr output to check for error
-        if result_stderr:
-            msg  = f"Exception occurred while running command {event_inject_cmd} "
-            msg += f" over ssh: {result_stderr}"
-            raise Exception(msg)
-        # Read stdout
-        try:
-            result_stdout = stdout.readlines()
-        except Exception as error:
-            msg = f"Exception occurred while reading stdout for command {event_inject_cmd}"
-            raise Exception(f"{msg}: {str(error)}") from error
+
         # Check stdout return code
-        if stdout.channel.recv_exit_status():
+        if channel.recv_exit_status():
             msg  = f"Exception occurred while running command {event_inject_cmd} over ssh:"
             msg += f"\n{''.join(result_stdout)}"
             raise Exception(msg)
-        # Print output from the event_injector script to the console
-        print(''.join(result_stdout))
-        return result_stdout
-
+        return result_stdout.split('\n')
 
     def parse_event_logging_output_get_events_injected(self, result_stdout):
         """
@@ -431,7 +419,12 @@ class InjectTest:
             result_stdout = self.execute_remote_script_and_get_stdout()
             # reads the last output line which should have a 'Successful Injections: 23'
             try:
-                self.events_injected_count = int((result_stdout[-1].strip().split(':')[-1].strip()))
+                index=-1
+                while index > -4:  # try a couple on lines at bottom
+                    if ':' in result_stdout[index]:
+                        self.events_injected_count = int((result_stdout[index].strip().split(':')[-1].strip()))
+                        break
+                    index += -1
             except Exception as error:
                 msg=f"Exception occurred while reading successful injections count: {str(error)}"
                 raise Exception(msg) from error
@@ -550,3 +543,4 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())  # OS status will have 0 status if this test runs OK and passes
+

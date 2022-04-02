@@ -1,502 +1,1514 @@
 {
-    "GPU": [
-     {
-        "event" : "OverT",
-        "device_type": "GPU",
-        "event_trigger": "",
-        "accessor": {
-            "type": "DBUS",
-            "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
-            "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
-            "property": "Depth"
-        },
-        "severity": "Critical",
-        "resolution": "Contact NVIDIA Support",
-        "trigger_count": 0,
-        "event_counter_reset": {
-            "type": "",
-            "metadata": ""
-        },
-        "redfish": {
-            "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-        },
-        "telemetries": [
-            {
-                "name": "temperature",
-                "type": "DBUS",
-                "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
-                "interface": "xyz.openbmc_project.Inventory.Decorator.Dimension",
-                "property": "Depth"
-            }
-        ],
-        "action": "SelfTest"
-     },
-     {
-        "event": "Abnormal Presence State Change",
-        "device_type": "GPU",
-        "event_trigger": "",
-        "accessor": {
-            "type": "I2C",
-            "bus": "3",
-            "saddr": "0x3B"
-        },
-        "severity": "Critical",
-        "resolution": "Contact NVIDIA Support",
-        "trigger_count": 0,
-        "event_counter_reset": {
-            "type": "",
-            "metadata": ""
-        },
-        "redfish": {
-            "message_id": "ResourceEvent.1.1.ResourceStateChanged"
-        },
-        "telemetries": [],
-        "action": ""
-     },
-     {
-        "event": "Abnormal PWR_GOOD State Change",
-        "device_type": "GPU",
-        "event_trigger": "",
-        "accessor": {
-            "type": "",
-            "metadata": ""
-        },
-        "severity": "Critical",
-        "resolution": "Contact NVIDIA Support",
-        "trigger_count": 0,
-        "event_counter_reset": {
-            "type": "",
-            "metadata": ""
-        },
-        "redfish": {
-            "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-        },
-        "telemetries": [],
-        "action": ""
-     },
-     {
-        "event": "XID messages",
-        "device_type": "GPU",
-        "event_trigger": "",
-        "accessor": {
-            "type": "",
-            "metadata": ""
-        },
-        "severity": "Warning",
-        "resolution": "Contact NVIDIA Support",
-        "trigger_count": 0,
-        "event_counter_reset": {
-            "type": "",
-            "metadata": ""
-        },
-        "redfish": {
-            "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-        },
-        "telemetries": [],
-        "action": ""
-     },
-     {
-        "event": "GPU SRAM ECC correctable error count",
-        "device_type": "GPU",
-        "event_trigger": "",
-        "accessor": {
-            "type": "",
-            "metadata": ""
-        },
-        "severity": "Warning",
-        "resolution": "Contact NVIDIA Support",
-        "trigger_count": 0,
-        "event_counter_reset": {
-            "type": "",
-            "metadata": ""
-        },
-        "redfish": {
-            "message_id": "ResourceErrorThresholdExceeded"
-        },
-        "telemetries": [],
-        "action": ""
-     },
-     {
-        "event": "GPU SRAM ECC uncorrectable error count",
-        "device_type": "GPU",
-        "event_trigger": "",
-        "accessor": {
-            "type": "",
-            "metadata": ""
-        },
-        "severity": "Critical",
-        "resolution": "Contact NVIDIA Support",
-        "trigger_count": 0,
-        "event_counter_reset": {
-            "type": "",
-            "metadata": ""
-        },
-        "redfish": {
-            "message_id": "ResourceErrorDetected"
-        },
-        "telemetries": [],
-        "action": ""
-     },
-     {
-        "event": "GPU reset required state",
-        "device_type": "GPU",
-        "event_trigger": "",
-        "accessor": {
-            "type": "",
-            "metadata": ""
-        },
-        "severity": "Critical",
-        "resolution": "GPU reset is required",
-        "trigger_count": 0,
-        "event_counter_reset": {
-            "type": "",
-            "metadata": ""
-        },
-        "redfish": {
-            "message_id": "ResetRequired"
-        },
-        "telemetries": [],
-        "action": ""
-     },
-     {
-        "event": "GPU drain/reset recommended state",
-        "device_type": "GPU",
-        "event_trigger": "",
-        "accessor": {
-            "type": "",
-            "metadata": ""
-        },
-        "severity": "Warning",
-        "resolution": "GPU drain/reset is recommended",
-        "trigger_count": 0,
-        "event_counter_reset": {
-            "type": "",
-            "metadata": ""
-        },
-        "redfish": {
-            "message_id": "ResourceErrorDetected"
-        },
-        "telemetries": [],
-        "action": ""
-     },
-     {
-        "event": "Pending ECC state after reset",
-        "device_type": "GPU",
-        "event_trigger": "",
-        "accessor": {
-            "type": "",
-            "metadata": ""
-        },
-        "severity": "Warning",
-        "resolution": "GPU reset is required",
-        "trigger_count": 0,
-        "event_counter_reset": {
-            "type": "",
-            "metadata": ""
-        },
-        "redfish": {
-            "message_id": "ResourceErrorDetected"
-        },
-        "telemetries": [],
-        "action": ""
-     },
-     {
-        "event": "MIG state change pending after reset",
-        "device_type": "GPU",
-        "event_trigger": "",
-        "accessor": {
-            "type": "",
-            "metadata": ""
-        },
-        "severity": "Warning",
-        "resolution": "GPU reset is required",
-        "trigger_count": 0,
-        "event_counter_reset": {
-            "type": "",
-            "metadata": ""
-        },
-        "redfish": {
-            "message_id": "ResourceErrorDetected"
-        },
-        "telemetries": [],
-        "action": ""
-     },
-     {
-        "event": "GPU row-remapping pending flag",
-        "device_type": "GPU",
-        "event_trigger": "",
-        "accessor": {
-            "type": "",
-            "metadata": ""
-        },
-        "severity": "Warning",
-        "resolution": "GPU reset is required",
-        "trigger_count": 0,
-        "event_counter_reset": {
-            "type": "",
-            "metadata": ""
-        },
-        "redfish": {
-            "message_id": "ResourceErrorDetected"
-        },
-        "telemetries": [],
-        "action": ""
-     },
-     {
-        "event": "GPU row-remapping failure",
-        "device_type": "GPU",
-        "event_trigger": "",
-        "accessor": {
-            "type": "",
-            "metadata": ""
-        },
-        "severity": "Critical",
-        "resolution": "Contact NVIDIA Support",
-        "trigger_count": 0,
-        "event_counter_reset": {
-            "type": "",
-            "metadata": ""
-        },
-        "redfish": {
-            "message_id": "ResourceErrorDetected"
-        },
-        "telemetries": [],
-        "action": ""
-     }
-    ],
-    "NVSwitch": [
-     {
-        "event": "OverT",
-        "device_type": "NVSwitch",
-        "event_trigger": "",
-        "accessor": {
-            "type": "",
-            "metadata": ""
-        },
-        "severity": "Critical",
-        "resolution": "Contact NVIDIA Support",
-        "trigger_count": 0,
-        "event_counter_reset": {
-            "type": "",
-            "metadata": ""
-        },
-        "redfish": {
-            "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-        },
-        "telemetries": [],
-        "action": ""
-     },
-     {
-        "event": "Thermal Alert",
-        "device_type": "NVSwitch",
-        "event_trigger": "",
-        "accessor": {
-            "type": "",
-            "metadata": ""
-        },
-        "severity": "Critical",
-        "resolution": "Contact NVIDIA Support",
-        "trigger_count": 0,
-        "event_counter_reset": {
-            "type": "",
-            "metadata": ""
-        },
-        "redfish": {
-            "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-        },
-        "telemetries": [],
-        "action": ""
-     },
-     {
-        "event": "Power Rail Change",
-        "device_type": "NVSwitch",
-        "event_trigger": "",
-        "accessor": {
-            "type": "",
-            "metadata": ""
-        },
-        "severity": "Critical",
-        "resolution": "Contact NVIDIA Support",
-        "trigger_count": 0,
-        "event_counter_reset": {
-            "type": "",
-            "metadata": ""
-        },
-        "redfish": {
-            "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-        },
-        "telemetries": [],
-        "action": ""
-     },
-     {
-        "event": "1V8 Abnormal Change",
-        "device_type": "NVSwitch",
-        "event_trigger": "",
-        "accessor": {
-            "type": "",
-            "metadata": ""
-        },
-        "severity": "Critical",
-        "resolution": "Contact NVIDIA Support",
-        "trigger_count": 0,
-        "event_counter_reset": {
-            "type": "",
-            "metadata": ""
-        },
-        "redfish": {
-            "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-        },
-        "telemetries": [],
-        "action": ""
-     },
-     {
-        "event": "NVSwitch manager timeout without graceful shutdown",
-        "device_type": "NVSwitch",
-        "event_trigger": "",
-        "accessor": {
-            "type": "",
-            "metadata": ""
-        },
-        "severity": "Critical",
-        "resolution": "Contact NVIDIA Support",
-        "trigger_count": 0,
-        "event_counter_reset": {
-            "type": "",
-            "metadata": ""
-        },
-        "redfish": {
-            "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-        },
-        "telemetries": [],
-        "action": ""
-     },
-     {
-        "event": "NVSwitch manager error",
-        "device_type": "NVSwitch",
-        "event_trigger": "",
-        "accessor": {
-            "type": "",
-            "metadata": ""
-        },
-        "severity": "Critical",
-        "resolution": "Contact NVIDIA Support",
-        "trigger_count": 0,
-        "event_counter_reset": {
-            "type": "",
-            "metadata": ""
-        },
-        "redfish": {
-            "message_id": "ResourceErrorDetected"
-        },
-        "telemetries": [],
-        "action": ""
-     },
-     {
-        "event": "NVSwitch disabled due to access or trunk link error detected in local device",
-        "device_type": "NVSwitch",
-        "event_trigger": "",
-        "accessor": {
-            "type": "",
-            "metadata": ""
-        },
-        "severity": "Critical",
-        "resolution": "Contact NVIDIA Support",
-        "trigger_count": 0,
-        "event_counter_reset": {
-            "type": "",
-            "metadata": ""
-        },
-        "redfish": {
-            "message_id": "ResourceErrorDetected"
-        },
-        "telemetries": [],
-        "action": ""
-     },
-     {
-        "event": "NVSwitch disabled due to access or trunk link error detected in peer device",
-        "device_type": "NVSwitch",
-        "event_trigger": "",
-        "accessor": {
-            "type": "",
-            "metadata": ""
-        },
-        "severity": "Critical",
-        "resolution": "Contact NVIDIA Support",
-        "trigger_count": 0,
-        "event_counter_reset": {
-            "type": "",
-            "metadata": ""
-        },
-        "redfish": {
-            "message_id": "ResourceErrorDetected"
-        },
-        "telemetries": [],
-        "action": ""
-     }
-    ],
-    "HSC":[
-     {
-        "event": "alert",
-        "device_type": "HSC[left, right]",
-        "event_trigger": "",
-        "accessor": {
-            "type": "",
-            "metadata": ""
-        },
-        "severity": "Critical",
-        "resolution": "Contact NVIDIA Support",
-        "trigger_count": 0,
-        "event_counter_reset": {
-            "type": "",
-            "metadata": ""
-        },
-        "redfish": {
-            "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-        },
-        "telemetries": [],
-        "action": ""
-     },
-     {
-        "event": "Power Abnormal Change",
-        "device_type": "HSC[standby, output]",
-        "event_trigger": "",
-        "accessor": {
-            "type": "",
-            "metadata": ""
-        },
-        "severity": "Critical",
-        "resolution": "Contact NVIDIA Support",
-        "trigger_count": 0,
-        "event_counter_reset": {
-            "type": "",
-            "metadata": ""
-        },
-        "redfish": {
-            "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-        },
-        "telemetries": [],
-        "action": ""
-     },
-     {
-        "event": "Power Rail Change",
-        "device_type": "HSC[0-9]",
-        "event_trigger": "",
-        "accessor": {
-            "type": "",
-            "metadata": ""
-        },
-        "severity": "Critical",
-        "resolution": "Contact NVIDIA Support",
-        "trigger_count": 0,
-        "event_counter_reset": {
-            "type": "",
-            "metadata": ""
-        },
-        "redfish": {
-            "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-        },
-        "telemetries": [],
-        "action": ""
-     }
-    ]
+  "GPU": [
+    {
+      "event": "OverTemp",
+      "device_type": "GPU",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "gpu.thermal.temperature.overTemperatureInfo"
+      },
+      "severity": "Critical",
+      "resolution": "Run field diags and evaluate for RMA",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [
+        {
+          "name": "temperature",
+          "type": "DBUS call",
+          "property": "gpu.thermal.temperature.overTemperatureInfo"
+        }
+      ],
+      "action": "SelfTest"
+    },
+    {
+      "event": "Thermal Warning",
+      "device_type": "GPU",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "gpu.thermal.alert"
+      },
+      "severity": "Warning",
+      "resolution": "Increase system FAN speed",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "SRAM ECC uncorrectable error count",
+      "device_type": "GPU",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/inventory/system/processors/GPU[0-7]",
+        "interface": "xyz.openbmc_project.Memory.MemoryECC",
+        "property": "ueCount"
+      },
+      "severity": "Critical",
+      "resolution": "Reset the GPU.  If the GPU continues to exhibit the problem run field diagnostics and evaluate for RMA.",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "DRAM Contained ECC Error",
+      "device_type": "GPU",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/inventory/system/memory/GPUDRAM[0-7]",
+        "interface": "xyz.openbmc_project.Memory.MemoryECC",
+        "property": "ceCount"
+      },
+      "severity": "Warning",
+      "resolution": "Restart the affected application.",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "DRAM Uncontained ECC Error",
+      "device_type": "GPU",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/inventory/system/memory/GPUDRAM[0-7]",
+        "interface": "xyz.openbmc_project.Memory.MemoryECC",
+        "property": "ueCount"
+      },
+      "severity": "Critical",
+      "resolution": "Reset the GPU and restart affected applications.",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "Physically Missing",
+      "device_type": "GPU",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "gpu.interrupt.PresenceInfo"
+      },
+      "severity": "Critical",
+      "resolution": "Reset the GPU and restart affected applications.",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "Destination FLA Translation Error",
+      "device_type": "GPU",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "gpu.xid.event"
+      },
+      "severity": "Warning",
+      "resolution": "Restart application.  If the application continues to trigger the same event, investigate application changes and logs to investigate potential application problem.",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "NVJPEG Error",
+      "device_type": "GPU",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "gpu.xid.event"
+      },
+      "severity": "Warning",
+      "resolution": "Restart application.  If the application continues to trigger the same event, investigate application changes and logs to investigate potential application problem.",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "OFA Error",
+      "device_type": "GPU",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "gpu.xid.event"
+      },
+      "severity": "Warning",
+      "resolution": "Restart application.  If the application continues to trigger the same event, investigate application changes and logs to investigate potential application problem.",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "Nvlink Error",
+      "device_type": "GPU",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "nvswitch.nvlink.NVLinkState"
+      },
+      "severity": "Critical",
+      "resolution": "TBD",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "PCIe link speed state change",
+      "device_type": "GPU",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS",
+        "object": "TBD",
+        "interface": "TBD",
+        "property": "TBD"
+      },
+      "severity": "Critical",
+      "resolution": "Reseat the GPU.  If the problem affects multiple connections on the upstream PLX, consider GPU tray RMA.",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.1.ResourceStateChanged"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "NVDEC Error",
+      "device_type": "GPU",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "gpu.xid.event"
+      },
+      "severity": "Warning",
+      "resolution": "Likely application/software issue. Restart application.  If the application continues to trigger the same event, investigate application changes and logs to investigate potential application problem.",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "Inforom Corruption",
+      "device_type": "GPU",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "TBD"
+      },
+      "severity": "Critical",
+      "resolution": "nvflash can be used to restore deafult inforom.  Inforom corruption is generally an indication of a software failure, and should be investigated with NVIDIA.",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "MMU Fault",
+      "device_type": "GPU",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "gpu.xid.event"
+      },
+      "severity": "OK",
+      "resolution": "Restart application.  If the application continues to trigger the same event, investigate application changes and logs to investigate potential application problem.",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "SM Warp Exception",
+      "device_type": "GPU",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "gpu.xid.event"
+      },
+      "severity": "OK",
+      "resolution": "Restart application.  If the application continues to trigger the same event, investigate application changes and logs to investigate potential application problem.",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "PWR BRAKE Asserted",
+      "device_type": "GPU",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS",
+        "object": "TBD",
+        "interface": "TBD",
+        "property": "TBD"
+      },
+      "severity": "Warning",
+      "resolution": "Review power configuration and status",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "VR Failure",
+      "device_type": "GPU",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "TBD"
+      },
+      "severity": "Critical",
+      "resolution": "Run field diags and evaluate for RMA",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "VR Fault",
+      "device_type": "GPU",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "gpu.interrupt.powerGoodAbnormalChange"
+      },
+      "severity": "Critical",
+      "resolution": "DC Cycle if condition removed, then it is VR themal related. If not then it is hard failure. ",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "Row-remapping pending",
+      "device_type": "GPU",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "metadata": "TBD"
+      },
+      "severity": "Warning",
+      "resolution": "No immediate recovery required. Reset the GPU at next service window.",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "Boot completed failure",
+      "device_type": "GPU",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "metadata": "TBD"
+      },
+      "severity": "Critical",
+      "resolution": "Glacier will try to recover AP by a reset/reboot. If still have problem, need to reflash AP FW manually",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "Secure boot failure",
+      "device_type": "GPU",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "metadata": "TBD"
+      },
+      "severity": "Critical",
+      "resolution": "Glacier will try to recover AP by a reset/reboot. If still have problem, need to reflash AP FW manually",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "SPI flash error",
+      "device_type": "GPU",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "metadata": "TBD"
+      },
+      "severity": "Critical",
+      "resolution": "Needs RMA",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "EROT recovery",
+      "device_type": "GPU",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "metadata": "TBD"
+      },
+      "severity": "Critical",
+      "resolution": "Run recovery tools from BMC",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "MCTP runtime failures",
+      "device_type": "GPU",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "metadata": "TBD"
+      },
+      "severity": "Critical",
+      "resolution": "Glacier will retry if encounters errors. If problem still there, need to clarify it's HW or FW issue. if HW, do RMA, if FW, reprogram AP/Glacier to a known good versions",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "PLDM runtime failures",
+      "device_type": "GPU",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "TBD"
+      },
+      "severity": "Critical",
+      "resolution": "Glacier will try to recover AP by a reset/reboot. If still have problem, need to reflash AP FW manually",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    }
+  ],
+  "NVSwitch": [
+    {
+      "event": "Over Temp",
+      "device_type": "NVSwitch",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "nvswitch.thermal.temperature.overTemperatureInfo"
+      },
+      "severity": "Critical",
+      "resolution": "Examine cooling and reset the affected device",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "Thermal Warning",
+      "device_type": "NVSwitch",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "nvswitch.thermal.alert"
+      },
+      "severity": "Warning",
+      "resolution": "Examine cooling system and workload",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "VR Failure",
+      "device_type": "NVSwitch",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "nvswitch.device.vrFault"
+      },
+      "severity": "Critical",
+      "resolution": "TBD",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "PCIe link speed state",
+      "device_type": "NVSwitch",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/inventory/system/chassis/Baseboard/PCIeDevices/NVSwitch[0-3]",
+        "interface": "xyz.openbmc_project.Inventory.Item.PCIeDevice",
+        "property": "PCIeType"
+      },
+      "severity": "Critical",
+      "resolution": "TBD",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "PCIe link width state",
+      "device_type": "NVSwitch",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/inventory/system/chassis/Baseboard/PCIeDevices/NVSwitch[0-3]",
+        "interface": "xyz.openbmc_project.Inventory.Item.PCIeDevice",
+        "property": "LanesInUse"
+      },
+      "severity": "Critical",
+      "resolution": "TBD",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "PCIe link error",
+      "device_type": "NVSwitch",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/inventory/system/fabrics/NVLinkFabric/Switches/NVSwitch[0-3]",
+        "interface": "xyz.openbmc_project.Inventory.Item.Switch",
+        "property": "Enabled"
+      },
+      "severity": "Critical",
+      "resolution": "TBD",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "VR Fault VDD",
+      "device_type": "NVSwitch",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "nvswitch.vdd.abnormalPowerChange"
+      },
+      "severity": "Critical",
+      "resolution": "DC cycle if conditioned removed then thermal of over current.",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "VR Fault DVDD",
+      "device_type": "NVSwitch",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "nvswitch.dvdd.abnormalPowerChange"
+      },
+      "severity": "Critical",
+      "resolution": "DC cycle if conditioned removed then thermal of over current.",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "VR Fault HVDD",
+      "device_type": "NVSwitch",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "nvswitch.hvdd.abnormalPowerChange"
+      },
+      "severity": "Critical",
+      "resolution": "DC cycle if conditioned removed then thermal of over current.",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "VR Fault 1.8V",
+      "device_type": "NVSwitch",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "nvswitch.1V8.abnormalPowerChange"
+      },
+      "severity": "Critical",
+      "resolution": "DC cycle if conditioned removed then thermal of over current.",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "VR Fault Combined",
+      "device_type": "NVSwitch",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "nvswitch.device.vrFault"
+      },
+      "severity": "Critical",
+      "resolution": "DC cycle if conditioned removed then thermal of over current.",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "Fallen off of bus",
+      "device_type": "NVSwitch",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "TBD"
+      },
+      "severity": "Critical",
+      "resolution": "Reset of the affected device",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "SMBPBI server unavailable",
+      "device_type": "NVSwitch",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "TBD"
+      },
+      "severity": "Critical",
+      "resolution": "TBD",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    }
+  ],
+  "PCIe Switch": [
+    {
+      "event": "VR Fault",
+      "device_type": "PCIe Switch",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "pcieswitch.0V8.abnormalPowerChange"
+      },
+      "severity": "Critical",
+      "resolution": "DC cycle if conditioned removed then thermal of over current",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "OverTemp",
+      "device_type": "PCIe Switch",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "pcieswitch.thermal.temperature.overTemperatureInfo"
+      },
+      "severity": "Critical",
+      "resolution": "System shutdown",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "PCIe link goes down",
+      "device_type": "PCIe Switch",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "TBD"
+      },
+      "severity": "Critical",
+      "resolution": "1. Host CPU issues link retraining attempt 2. board reset",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "Incorrect link speed",
+      "device_type": "PCIe Switch",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "TBD"
+      },
+      "severity": "Critical",
+      "resolution": "1. Host CPU issues link retraining attempt 2. board reset",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "Boot completed failure",
+      "device_type": "PCIe Switch",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "TBD"
+      },
+      "severity": "Critical",
+      "resolution": "Glacier will try to recover AP by a reset/reboot. If still have problem, need to reflash AP FW manually",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "Secure boot failure",
+      "device_type": "PCIe Switch",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "TBD"
+      },
+      "severity": "Critical",
+      "resolution": "Glacier will try to recover AP by a reset/reboot. If still have problem, need to reflash AP FW manually",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "EROT recovery",
+      "device_type": "PCIe Switch",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "TBD"
+      },
+      "severity": "Critical",
+      "resolution": "Run recovery tools from BMC",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "MCTP runtime failures",
+      "device_type": "PCIe Switch",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "metadata": "TBD"
+      },
+      "severity": "Critical",
+      "resolution": "Glacier will retry if encounters errors. If problem still there, need to clarify it's HW or FW issue. if HW, do RMA, if FW, reprogram AP/Glacier to a known good versions",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "PLDM runtime failures",
+      "device_type": "PCIe Switch",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "TBD"
+      },
+      "severity": "Critical",
+      "resolution": "Glacier will try to recover AP by a reset/reboot. If still have problem, need to reflash AP FW manually",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    }
+  ],
+  "Retimer": [
+    {
+      "event": "VR Fault 0.9V",
+      "device_type": "Retimer",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "pcieretimer.0V9.abnormalPowerChange"
+      },
+      "severity": "Critical",
+      "resolution": "DC Cycle Retimer 0.9V and 1.2V VR are dierectly connected to FPGA via I2C.",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "VR Fault 1.2V",
+      "device_type": "Retimer",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "TBD"
+      },
+      "severity": "Critical",
+      "resolution": "DC Cycle Retimer 0.9V and 1.2V VR are dierectly connected to FPGA via I2C.",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "VR Fault 1.8V",
+      "device_type": "Retimer",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "pcieretimer.1V8VDD.abnormalPowerChange"
+      },
+      "severity": "Critical",
+      "resolution": "DC Cycle Retimer 0.9V and 1.2V VR are dierectly connected to FPGA via I2C.",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "OverTemp",
+      "device_type": "Retimer",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "pcieretimer.thermal.temperature.overTemperatureInfo"
+      },
+      "severity": "Critical",
+      "resolution": "System shutdown",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "I2C EEPROM Error",
+      "device_type": "Retimer",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "TBD"
+      },
+      "severity": "Critical",
+      "resolution": "1. Device reset 2. Reflash or attest the EEPROM",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    }
+  ],
+  "VR": [
+    {
+      "event": "System VR Fault SYS_3V3",
+      "device_type": "VR",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "sysvr3v3.power.abnormalPowerChange"
+      },
+      "severity": "Critical",
+      "resolution": "DC Cycle",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "System VR Fault SYS_1V8",
+      "device_type": "VR",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "sysvr1v8.power.abnormalPowerChange"
+      },
+      "severity": "Critical",
+      "resolution": "DC Cycle",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    }
+  ],
+  "HSC": [
+    {
+      "event": "Baseboard HSC Fault",
+      "device_type": "HSC",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "hsc.power.abnormalPowerChange"
+      },
+      "severity": "Critical",
+      "resolution": "DC Cycle",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    }
+  ],
+  "HMC": [
+    {
+      "event": "OverTemp",
+      "device_type": "HMC",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "TBD"
+      },
+      "severity": "Critical",
+      "resolution": "System shutdown",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "Redfish service not available",
+      "device_type": "HMC",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "TBD"
+      },
+      "severity": "Critical",
+      "resolution": "Power cycle the baseboard.",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "USB network not accessible",
+      "device_type": "HMC",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "TBD"
+      },
+      "severity": "Critical",
+      "resolution": "Power cycle the baseboard.",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "USB connection not available",
+      "device_type": "HMC",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "TBD"
+      },
+      "severity": "Critical",
+      "resolution": "Power cycle the baseboard.",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "PLDM runtime failures",
+      "device_type": "HMC",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "TBD"
+      },
+      "severity": "Critical",
+      "resolution": "Glacier will retry if encounters errors. If problem still there, need to clarify it's HW or FW issue. if HW, do RMA, if FW, reprogram AP/Glacier to a known good versions",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    }
+  ],
+  "Baseboard": [
+    {
+      "event": "PCB Thermal Warning",
+      "device_type": "Baseboard",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "baseboard.pcb.temperature.Alert"
+      },
+      "severity": "Warning",
+      "resolution": "Increase system FAN speed",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    }
+  ],
+  "FPGA": [
+    {
+      "event": "Boot completed failure",
+      "device_type": "FPGA",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "TBD"
+      },
+      "severity": "Critical",
+      "resolution": "Glacier will try to recover AP by a reset/reboot. If still have problem, need to reflash AP FW manually",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "PLDM runtime failures",
+      "device_type": "FPGA",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "TBD"
+      },
+      "severity": "Critical",
+      "resolution": "Glacier will try to recover AP by a reset/reboot. If still have problem, need to reflash AP FW manually",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    }
+  ],
+  "LS10": [
+    {
+      "event": "Boot completed failure",
+      "device_type": "LS10",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "TBD"
+      },
+      "severity": "Critical",
+      "resolution": "Glacier will try to recover AP by a reset/reboot. If still have problem, need to reflash AP FW manually",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "Secure boot failure",
+      "device_type": "LS10",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "TBD"
+      },
+      "severity": "Critical",
+      "resolution": "Glacier will try to recover AP by a reset/reboot. If still have problem, need to reflash AP FW manually",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "VR fault",
+      "device_type": "LS10",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "TBD"
+      },
+      "severity": "Critical",
+      "resolution": "Needs RMA",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "SPI flash error",
+      "device_type": "LS10",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "TBD"
+      },
+      "severity": "Critical",
+      "resolution": "Needs RMA",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "EROT recovery",
+      "device_type": "LS10",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "TBD"
+      },
+      "severity": "Critical",
+      "resolution": "Run recovery tools from BMC",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "MCTP runtime failures",
+      "device_type": "LS10",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "metadata": "TBD"
+      },
+      "severity": "Critical",
+      "resolution": "Glacier will retry if encounters errors. If problem still there, need to clarify it's HW or FW issue. if HW, do RMA, if FW, reprogram AP/Glacier to a known good versions",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    },
+    {
+      "event": "PLDM runtime failures",
+      "device_type": "LS10",
+      "event_trigger": "",
+      "accessor": {
+        "type": "DBUS call",
+        "property": "TBD"
+      },
+      "severity": "Critical",
+      "resolution": "Glacier will try to recover AP by a reset/reboot. If still have problem, need to reflash AP FW manually",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": ""
+    }
+  ]
 }
