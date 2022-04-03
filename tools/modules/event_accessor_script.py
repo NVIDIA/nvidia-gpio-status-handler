@@ -83,10 +83,40 @@ class EventAccessorInjectorScript(InjectorScriptBase):
             "}\n"
             "\n"
             "\n"
-            "property_set() #1=object_path $2=interface, $3=property_name\n"
+            "change_value_method() #1=value to change\n"
+            "{\n"
+            "    result=0\n"
+            "    case \"$METHOD\" in \n"
+            "       \"add\")     gl_new_property_value=$[ ${1} + ${METHOD_VALUE} ];;\n"
+            "       \"bitmask\") gl_new_property_value=$[ ( ${1} + 1 ) | ${METHOD_VALUE} ];;\n"
+            "       \"lookup\")  gl_new_property_value=${METHOD_VALUE};;\n"
+            "    esac\n"
+            "}\n"
+            "\n"
+            "\n"
+            "property_set_method() #1=object_path $2=interface, $3=property_name\n"
             "{\n"
             "    gl_new_property_value=\"\"\n"
             "    gl_old_property_value=$gl_property_value\n"
+            "    if [ \"$METHOD\" = \"lookup\" ]\n"
+            "    then\n"
+            "        local save_method_value=${METHOD_VALUE}\n"
+            "        METHOD=\"add\" METHOD_VALUE=\"1\" property_set \"$@\"\n"
+            "        gl_rc=$?\n"
+            "        gl_property_value=$gl_new_property_value\n"
+            "        METHOD=\"lookup\"\n"
+            "        METHOD_VALUE=\"$save_method_value\"\n"
+            "    fi\n"
+            "    if [ $gl_rc -eq 0 ]\n"
+            "    then\n"
+            "        property_set \"$@\"\n"
+            "    fi\n"
+            "    return $gl_rc\n"
+            "}\n"
+            "\n"
+            "\n"
+            "property_set() #1=object_path $2=interface, $3=property_name\n"
+            "{\n"
             "\n"
             "    case $gl_property_type in\n"
             "        b)   if [ \"$gl_old_property_value\" = \"True\" ]; then\n"
@@ -99,7 +129,7 @@ class EventAccessorInjectorScript(InjectorScriptBase):
             "             sleep 1\n"
             "             ;;\n"
             "        ## that should work for integers and double types\n"
-            "        *)   gl_new_property_value=$[ ${gl_property_value} + 1 ];;\n"
+            "        *)   change_value_method ${gl_property_value};;\n"
             "    esac\n"
             "\n"
             "    cmd=\"busctl set-property $SERVICE $@ $gl_property_type"
@@ -135,7 +165,7 @@ class EventAccessorInjectorScript(InjectorScriptBase):
             "\n"
             "    property_get \"$@\"  \\\n"
             "        &&  current_logging_entries=$(latest_looging_entry) \\\n"
-            "        &&  property_set \"$@\"  \\\n"
+            "        &&  property_set_method \"$@\"  \\\n"
             "        &&  property_get \"$@\"\n"
             "\n"
             "   if [ $gl_rc -eq 0 ]; then\n"
@@ -180,11 +210,11 @@ class EventAccessorInjectorScript(InjectorScriptBase):
         return ret
 
 
-    def __generate_busctl_command_from_json_accessor_dbus(self, device):
+    def __generate_busctl_command_from_json_accessor_dbus(self, device, method, method_value):
         """
         Saves bustcl commands in the script
         """
-        cmd =  f"\nproperty_change {device} "
+        cmd =  f"\n METHOD=\"{method}\" METHOD_VALUE=\"{method_value}\" property_change {device} "
         cmd += f"{self._additional_data[com.KEY_ACCESSOR_INTERFACE]} "
         cmd += f"{self._additional_data[com.KEY_ACCESSOR_PROPERTY]}\n"
         super().write(cmd)
@@ -198,8 +228,16 @@ class EventAccessorInjectorScript(InjectorScriptBase):
         counter = 0
         super().parse_json_dict_data(device, data)
         if self.__get_accessor_type() == com.ACCESSOR_TYPE_DBUS:
+            method="add"
+            value="1"
+            if com.KEY_ACCESSOR_CHECK_BITMASK in self._additional_data:
+                method="bitmask"
+                value = self._additional_data[com.KEY_ACCESSOR_CHECK_BITMASK]
+            elif com.KEY_ACCESSOR_CHECK_LOOKUP in self._additional_data:
+                method="lookup"
+                value=self._additional_data[com.KEY_ACCESSOR_CHECK_LOOKUP]
             for device_item in com.expand_range(self._additional_data[com.KEY_ACCESSOR_OBJECT]):
-                self.__generate_busctl_command_from_json_accessor_dbus(device_item)
+                self.__generate_busctl_command_from_json_accessor_dbus(device_item, method, value)
                 counter += 1
             super().remove_accessor_fields()
             while counter > 0:

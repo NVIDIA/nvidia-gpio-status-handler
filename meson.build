@@ -114,13 +114,20 @@ if get_option('tests').enabled()
   endif
 endif
 
-srcfiles_unittest = ['test/dat_test.cpp', 'test/event_test.cpp',
-		'test/dat_traverse_test.cpp', 'test/event_detection_test.cpp']
+srcfiles_unittest = ['test/dat_test.cpp',
+                     'test/event_test.cpp',
+                     'test/dat_traverse_test.cpp',
+                     'test/accessor_test.cpp',
+                     'test/propertyvalue_string_test.cpp',
+		     'test/event_detection_test.cpp',
+                     'test/propertyvalue_variant_test.cpp'
+                    ]
 
 amllib_sources = [
                 'src/config_parser.cpp',
                 'src/dat_traverse.cpp',
                 'src/data_accessor.cpp',
+                'src/property_accessor.cpp',
                 'src/event_detection.cpp',
                 'src/event_handler.cpp',
                 'src/event_info.cpp',

@@ -71,7 +71,7 @@ class EventDetection : public object::Object
 
                 std::cout << "event.accessor: " << event.accessor
                           << ", acc: " << acc << "\n";
-                if (event.accessor == acc)
+                if (event.accessor == acc && event.accessor.check(acc) == true)
                 {
                     return &event;
                 }

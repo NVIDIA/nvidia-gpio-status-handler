@@ -5,18 +5,28 @@
 
 #pragma once
 
+#include "property_accessor.hpp"
+
 #include <nlohmann/json.hpp>
 
 #include <iostream>
 #include <map>
+#include <memory>
 #include <regex>
 #include <string>
 #include <vector>
 
 namespace data_accessor
 {
+
 constexpr auto typeKey = "type";
 constexpr auto nameKey = "name";
+constexpr auto checkKey = "check";
+constexpr auto objectKey = "object";
+constexpr auto interfaceKey = "interface";
+constexpr auto propertyKey = "property";
+constexpr auto executableKey = "executable";
+constexpr auto argumentsKey = "arguments";
 
 static std::map<std::string, std::vector<std::string>> accessorTypeKeys = {
     {"DBUS", {"object", "interface", "property"}},
@@ -29,12 +39,11 @@ static std::map<std::string, std::vector<std::string>> accessorTypeKeys = {
  */
 class DataAccessor
 {
-
   public:
-    DataAccessor()
+    DataAccessor() : _dataValue(nullptr)
     {}
 
-    DataAccessor(const nlohmann::json& acc) : _acc(acc)
+    DataAccessor(const nlohmann::json& acc) : _acc(acc), _dataValue(nullptr)
     {
         std::cout << "Const.: _acc: " << _acc << "\n";
     }
@@ -69,20 +78,19 @@ class DataAccessor
      */
     bool operator==(const DataAccessor& other)
     {
-        std::cout << "This: " << this->_acc << ", Other: " << other._acc
-                  << "\n";
+        std::cout << "This: " << _acc << ", Other: " << other._acc << "\n";
         if (!isValid(other._acc))
         {
             return false;
         }
-        if (this->_acc[typeKey] != other._acc[typeKey])
+        if (_acc[typeKey] != other._acc[typeKey])
         {
             return false;
         }
         for (auto& [key, val] : _acc.items())
         {
             std::cout << "key: " << key << ", val: " << val << "\n";
-            if (key == typeKey)
+            if (key == typeKey || key == checkKey) // skip check key
             {
                 continue;
             }
@@ -99,8 +107,46 @@ class DataAccessor
                 return std::regex_match(other._acc[key].get<std::string>(), r);
             }
         }
-        return this->_acc == other._acc;
+        return _acc == other._acc;
     }
+
+    /**
+     * @brief contains() checks if other is a sub set of this
+     * @param other
+     * @return true all fields from other match with this
+     *         false in case fields from other are not present in this or
+     *               their content do not match
+     */
+    bool contains(const DataAccessor& other) const;
+
+    /**
+     * @brief check() checks the if the value in '_dataValue'
+     *                matches with other DataAccessor criteria
+     *
+     *                The other DataAccessor criteria is like:
+     *
+     *                   {"check": {
+     *                               { "bitmask" , "0x01" }
+     *                             }
+     *                   }
+     *                Or:
+     *                   {"check": {
+     *                               { "lookup" , "1234" }
+     *                             }
+     *                   }
+     *
+     *    @sa read() or @sa readDbusProperty()
+     *
+     * @return true if the property value matches the criteria in other
+     */
+    bool check(const DataAccessor& acc) const;
+
+    /**
+     * @brief performs the check against itself
+     *
+     * @return
+     */
+    bool check() const;
 
     /**
      * @brief Access accessor just like do it on json
@@ -144,16 +190,23 @@ class DataAccessor
      */
     std::string read(void)
     {
-        if (_acc[typeKey] == "DBUS")
+        std::string ret{"123"};
+
+        if (isTypeDbus() == true)
         {
-            // return ReadDBusProperty(_acc["object"], _acc["interface"],
-            // _acc["property"]);
-            return "123"; // WIP
+            readDbus();
         }
-        else
+        else if (isTypeCmdline() == true)
         {
-            return "";
+            runCommandLine();
         }
+        if (_dataValue != nullptr)
+        {
+            ret = _dataValue->getString();
+        }
+        std::cout << __PRETTY_FUNCTION__ << "(): "
+                  << "ret=" << ret << std::endl;
+        return ret;
     }
 
     /**
@@ -174,10 +227,99 @@ class DataAccessor
      * @return true
      * @return false
      */
-    bool isValid(const nlohmann::json& acc)
+    bool isValid(const nlohmann::json& acc) const
     {
         return (acc.count(typeKey) > 0);
     }
+
+    /**
+     * @brief isTypeDbus()
+     *
+     * @return  true if acccessor["type"] exists and it is DBUS
+     */
+    inline bool isTypeDbus() const
+    {
+        return isValid(_acc) == true && _acc[typeKey] == "DBUS";
+    }
+
+    /**
+     * @brief isTypeCmdline()
+     *
+     * @return  true if acccessor["type"] exists and it is CMDLINE
+     */
+    inline bool isTypeCmdline() const
+    {
+        return isValid(_acc) == true && _acc[typeKey] == "CMDLINE";
+    }
+
+    /**
+     * @brief hasData() checks if a real data is stored in _dataValue
+     *
+     *                  It should return true after read() gets a real data
+     *
+     * @return true if there is some data stored
+     */
+    inline bool hasData() const
+    {
+        return _dataValue != nullptr;
+    }
+
+    /**
+     * @brief clearData() clear the _dataValue if it has a previous value
+     */
+    void clearData()
+    {
+        if (_dataValue != nullptr)
+        {
+            _dataValue.reset();
+            _dataValue = nullptr;
+        }
+    }
+
+    /**
+     * @brief   checks if it is Dbus type and if mandatory fields are present
+     *
+     * @return true if this Accessor Dbus is OK
+     */
+    bool isValidDbusAccessor() const
+    {
+        return isTypeDbus() == true && _acc.count(objectKey) != 0 &&
+               _acc.count(interfaceKey) != 0 && _acc.count(propertyKey) != 0;
+    }
+
+    /**
+     * @brief   checks if it is CMDLINE type and if executable field is present
+     *
+     *          The arguments field is optional
+     *
+     * @return true if this Accessor CMDLINE is OK
+     */
+    bool isValidCmdlineAccessor() const
+    {
+        return isTypeCmdline() == true && _acc.count(executableKey) != 0;
+    }
+
+    /**
+     * @brief readDbus() reads the property contained in _acc
+     *
+     *     _acc["object], _acc["interface"] and _acc["property"]
+     *
+     * @return true if the read operation was successful, false otherwise
+     */
+    bool readDbus();
+
+    /**
+     * Runs commands from Accessor type CMDLINE
+     * Accessor example:
+     * accessor": {
+     *       "type": "CMDLINE",
+     *       "executable": "mctp-vdm-util",
+     *       "arguments": "-c query_boot_status -t 32",
+     *       "check": {
+     *             "lookup": "00 02 40"
+     *       }
+     */
+    bool runCommandLine();
 
   private:
     /**
@@ -185,6 +327,13 @@ class DataAccessor
      *
      */
     nlohmann::json _acc;
+
+    /**
+     * @brief _dataValue stores the data value
+     *
+     * @sa read()
+     */
+    std::shared_ptr<PropertyValue> _dataValue;
 };
 
 } // namespace data_accessor
