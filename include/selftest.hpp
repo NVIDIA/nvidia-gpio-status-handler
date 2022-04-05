@@ -6,7 +6,8 @@
 #pragma once
 
 #include "aml.hpp"
-#include "object.hpp"
+#include "dat_traverse.hpp"
+#include "event_handler.hpp"
 
 #include <nlohmann/json.hpp>
 
@@ -16,8 +17,56 @@
 namespace selftest
 {
 
-aml::RcCode DoSelftest(const device::Device& dev, const std::string& report);
+/**
+ * @brief TestPointResult contains single test point result attributes
+ */
+struct TestPointResult
+{
+    /** @brief test point name, eg. "PGOOD", "DEVICE_HSC0" **/
+    std::string targetName;
 
+    /** @brief value read from accessor, eg. "OK", "HW_PIN_ABNORMAL_HIGH" **/
+    std::string valRead;
+
+    /** @brief DAT configured expected value, eg. "OK" **/
+    std::string valExpected;
+
+    /** @brief true when valRead equals valExpected **/
+    bool result;
+};
+
+/**
+ * @brief DeviceResult contains multiple test layer results of multiple TP
+ * results
+ */
+struct DeviceResult
+{
+    /**
+     * @brief eg. maps "power_rail" test layer onto its test points results
+     * vector as there can be many TP's
+     */
+    std::map<std::string, std::vector<TestPointResult>> layer;
+};
+
+/**
+ * @brief ReportResult is a container of multiple DeviceResults and its
+ * underlying containers
+ * @note  eg. DEV    |  layer      | test point  | testpoint result
+ *            GPU0  -> power_rail
+ *                                -> TP_PGOOD   -> (tp_result)
+ *                                -> EXAMPLE_TP -> (tp_result)
+ *                  -> pin_status
+ *                                -> EXAMPLE_TP -> (...)
+ *                  -> (...)
+ *            HSC0  -> power_rail -> (...)
+ *                  -> (...)
+ *            (...)
+ */
+using ReportResult = std::map<std::string, DeviceResult>;
+
+/**
+ * @brief A class to generate aggregated report from ReportResult.
+ */
 class Report
 {
   public:
@@ -25,37 +74,114 @@ class Report
     ~Report() = default;
 
   public:
-    nlohmann::json& GenerateReportHeader();
+    /**
+     * @brief Generates internal json report.
+     *
+     * @param[in] reportRes
+     */
+    void generateReport(ReportResult& reportRes);
 
-    friend ostream& operator<<(ostream& os, const Report& rpt);
+    /**
+     * @brief Returns internal json report object.
+     *
+     * @return json
+     */
+    const nlohmann::json& getReport(void);
+
+    /**
+     * @brief Output internal json report. Has to be generated first.
+     *
+     * @param os
+     * @param rpt
+     * @return std::ostream&
+     */
+    friend std::ostream& operator<<(std::ostream& os, const Report& rpt);
 
   private:
-    std::string _file;
+    /** @brief Internal report storage. **/
     nlohmann::json _report;
 };
 
-ostream& operator<<(ostream& os, const Report& rpt)
-{
-    os << rpt._report;
-    return os;
-}
-
-class Selftest : public object::Object
+/**
+ * @brief A class to perform selftest.
+ */
+class Selftest : public event_handler::EventHandler
 {
   public:
-    Selftest(const std::string& name = __PRETTY_FUNCTION__) :
-        object::Object(name)
-    {}
+    Selftest(const std::string& name,
+             const std::map<std::string, dat_traverse::Device>& dat);
     ~Selftest() = default;
 
   public:
-    aml::RcCode perform([[maybe_unused]] const device::Device& dev)
+    /**
+     * @brief Aggregates selftest results of report->devices->testpoints
+     * to simple ok or not ok.
+     *
+     * @param[in] reportRes
+     * @return true - all TP in report passed, false - any TP failed
+     */
+    bool evaluateTestReport(const ReportResult& reportRes);
+
+    /**
+     * @brief Checks if a device report is already in report container.
+     *
+     * @param[in] devName device name to check presence in reportRes
+     * @param[in] reportRes report container to check in for devName
+     * @return true - entry already in reportRes, false - entry absent
+     */
+    bool isDeviceCached(const std::string& devName,
+                        const ReportResult& reportRes);
+
+    /**
+     * @brief Performs selftest on device extracted from event and returns
+     * already evaluated test report corectness, not test operation status.
+     *
+     * @param[in] event
+     * @return aml::RcCode::succ when all testpoints passed, otherwise
+     * aml::RcCode::error (failed TP or failed test operation)
+     */
+    aml::RcCode process([[maybe_unused]] event_info::EventNode& event) override
     {
+        ReportResult rep;
+        const dat_traverse::Device& dev = _dat.at(event.device);
+
+        if (perform(dev, rep) != aml::RcCode::succ)
+        {
+            return aml::RcCode::error;
+        }
+
+        if (!evaluateTestReport(rep))
+        {
+            return aml::RcCode::error;
+        }
+
         return aml::RcCode::succ;
-    }
+    };
+
+    /** @brief Performs selftest on given device.
+     *
+     * @note the report container can be reused: as a cache to omit non unique
+     * device tests; to stack multiple but not associated by TP devices for
+     * report generation;
+     * @param[in]  dev        - device to perform test on
+     * @param[out] reportRes  - container with written in TP's results @ref
+     * <ReportResult>
+     * @return aml::RcCode meaning testing operation status, not test results
+     */
+    aml::RcCode perform(const dat_traverse::Device& dev,
+                        ReportResult& reportRes);
+
+    /** @brief Performs selftest on entire DAT.
+     *
+     * @param[out] reportRes  - container with written in TP's results @ref
+     * <ReportResult>
+     * @return aml::RcCode meaning testing operation status, not test results
+     */
+    aml::RcCode performEntireTree(ReportResult& reportRes);
 
   private:
-    nlohmann::json _report;
+    /** @brief Internal DAT reference. **/
+    const std::map<std::string, dat_traverse::Device>& _dat;
 };
 
 } // namespace selftest

@@ -45,7 +45,7 @@ class EventNode : public object::Object
 
   public:
     EventNode(const std::string& name = __PRETTY_FUNCTION__) :
-        object::Object(name)
+        object::Object(name), triggerCount(0)
     {}
 
     EventNode(const EventNode& r) = default;

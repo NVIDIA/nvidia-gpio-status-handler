@@ -4,7 +4,7 @@ amllib_sources = ['config_parser.cpp',
                 'property_accessor.cpp',
                 'event_detection.cpp',
                 'event_handler.cpp',
-                            'event_info.cpp',
+                'event_info.cpp',
                 'message_composer.cpp',
                 'message_dispatcher.cpp',
                 'oobaml_api.cpp']
@@ -17,9 +17,17 @@ amllib = shared_library('oobaml',
                         install : true,
                         install_dir : get_option('libdir'))
 
+selftestlib_sources = ['selftest.cpp']
+selftestlib = shared_library('selftest',
+                        selftestlib_sources,
+                        include_directories : inc,
+                        dependencies : declare_dependency(link_with : amllib),
+                        version : '0.0.0',
+                        install : true,
+                        install_dir : get_option('libdir'))
 
 oobamld_sources = ['aml_main.cpp']
-oobamld_deps = declare_dependency(link_with : amllib,
+oobamld_deps = declare_dependency(link_with : [amllib, selftestlib],
   include_directories : inc)
 
 oobamld = executable('oobamld',
@@ -29,7 +37,8 @@ oobamld = executable('oobamld',
         oobamld_deps,
         sdbusplus_dep,
         sdeventplus_dep,
-        phosphor_logging_dep,
+	phosphor_logging_dep,
     ],
     install: true,
 )
+

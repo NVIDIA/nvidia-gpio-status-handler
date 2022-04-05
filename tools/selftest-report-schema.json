@@ -1,0 +1,156 @@
+{
+  "description" : "Schema for the self-test report results",
+  "type" : "object",
+  "required": [
+    "header",
+    "tests"
+  ],
+  "additionalProperties": false,
+  "properties" : {
+    "header" : {
+      "type" : "object",
+      "required": [
+        "name",
+        "version",
+        "timestamp",
+        "summary"
+      ],
+      "additionalProperties": false,
+      "properties" : {
+        "name" : {
+          "type" : "string"
+        },
+        "version" : {
+          "type" : "string"
+        },
+        "timestamp" : {
+          "type" : "string",
+          "format" : "date-time"
+        },
+        "summary" : {
+          "type" : "object",
+          "required": [
+            "test-case-total",
+            "test-case-failed"
+          ],
+          "properties" : {
+            "test-case-total" : {
+              "type" : "integer",
+              "minimum" : 0
+            },
+            "test-case-failed" : {
+              "type" : "integer",
+              "minimum" : 0
+            }
+          }
+        }
+      }
+    },
+    "tests" : {
+      "type" : "array",
+      "items" : {
+        "type" : "object",
+        "required": [
+          "device-name",
+          "firmware-version",
+          "timestamp",
+          "power-rail-status",
+          "erot-control-status",
+          "pin-status",
+          "interface-status",
+          "protocol-status",
+          "firmware-status"
+        ],
+        "additionalProperties": false,
+        "properties" : {
+          "device-name" : {
+            "type" : "string"
+          },
+          "firmware-version" : {
+            "type" : "string"
+          },
+          "timestamp" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "power-rail-status" : {
+            "$ref" : "#/$defs/layer-status-report"
+          },
+          "erot-control-status" : {
+            "$ref" : "#/$defs/layer-status-report"
+          },
+          "pin-status" : {
+            "$ref" : "#/$defs/layer-status-report"
+          },
+          "interface-status" : {
+            "$ref" : "#/$defs/layer-status-report"
+          },
+          "protocol-status" : {
+            "$ref" : "#/$defs/layer-status-report"
+          },
+          "firmware-status" : {
+            "$ref" : "#/$defs/layer-status-report"
+          },
+          "data-dump" : {
+            "type" : "object",
+            "patternProperties" : {
+              ".*" : {
+                "type" : "string",
+                "contentEncoding" : "base64"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs" : {
+    "test-result" : {
+      "type" : "string",
+      "enum" : [
+        "Pass",
+        "Fail"
+      ]
+    },
+    "layer-status-report" : {
+      "type" : "object",
+      "required": [
+        "result",
+        "test-points"
+      ],
+      "additionalProperties": false,
+      "properties" : {
+        "result" : {
+          "$ref" : "#/$defs/test-result"
+        },
+        "test-points" : {
+          "type" : "array",
+          "items" : {
+            "type" : "object",
+            "required": [
+              "name",
+              "value",
+              "value-expected",
+              "result"
+            ],
+            "additionalProperties": false,
+            "properties" : {
+              "name" : {
+                "type" : "string"
+              },
+              "value" : {
+                "type" : "string"
+              },
+              "value-expected" : {
+                "type" : "string"
+              },
+              "result" : {
+                "$ref" : "#/$defs/test-result"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

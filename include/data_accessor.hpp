@@ -27,11 +27,12 @@ constexpr auto interfaceKey = "interface";
 constexpr auto propertyKey = "property";
 constexpr auto executableKey = "executable";
 constexpr auto argumentsKey = "arguments";
+constexpr auto deviceNameKey = "device_name";
 
 static std::map<std::string, std::vector<std::string>> accessorTypeKeys = {
     {"DBUS", {"object", "interface", "property"}},
-    {"OTHER", {"other"}},
-};
+    {"DEVICE", {"device_name"}},
+    {"OTHER", {"other"}}};
 
 /**
  * @brief A class for Data Accessor
@@ -196,6 +197,10 @@ class DataAccessor
         {
             readDbus();
         }
+        else if (isTypeDevice() == true)
+        {
+            return _acc[deviceNameKey];
+        }
         else if (isTypeCmdline() == true)
         {
             runCommandLine();
@@ -219,6 +224,16 @@ class DataAccessor
         return;
     }
 
+    /**
+     * @brief   checks if it is Device type and if mandatory fields are present
+     *
+     * @return true if this Accessor Device is OK
+     */
+    bool isValidDeviceAccessor() const
+    {
+        return isTypeDevice() == true && _acc.count(deviceNameKey) != 0;
+    }
+
   private:
     /**
      * @brief Check if a acc json has the "type" field.
@@ -240,6 +255,16 @@ class DataAccessor
     inline bool isTypeDbus() const
     {
         return isValid(_acc) == true && _acc[typeKey] == "DBUS";
+    }
+
+    /**
+     * @brief isTypeDevice()
+     *
+     * @return  true if acccessor["type"] exists and it is DEVICE
+     */
+    inline bool isTypeDevice() const
+    {
+        return isValid(_acc) == true && _acc[typeKey] == "DEVICE";
     }
 
     /**

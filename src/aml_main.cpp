@@ -19,6 +19,7 @@
 #include "event_info.hpp"
 #include "log.hpp"
 #include "message_composer.hpp"
+#include "selftest.hpp"
 
 #include <boost/container/flat_map.hpp>
 #include <phosphor-logging/log.hpp>
@@ -177,6 +178,8 @@ int main(int argc, char* argv[])
 
     event_handler::ClearEvent clearEvent;
     event_handler::EventHandlerManager eventHdlrMgr("EventHandlerManager");
+
+    selftest::Selftest selfTester("SelfTester1", aml::profile::datMap);
 
     eventHdlrMgr.RegisterHandler(&datTraverser);
     eventHdlrMgr.RegisterHandler(&msgComposer);

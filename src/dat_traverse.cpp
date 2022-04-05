@@ -26,10 +26,9 @@ namespace dat_traverse
 Device::~Device()
 {}
 
-void Device::populateMap(std::map<std::string, dat_traverse::Device>& m,
+void Device::populateMap(std::map<std::string, dat_traverse::Device>& dat,
                          const std::string& file)
 {
-
     std::ifstream i(file);
     json j;
     i >> j;
@@ -38,16 +37,16 @@ void Device::populateMap(std::map<std::string, dat_traverse::Device>& m,
     {
         auto deviceName = el.key();
         dat_traverse::Device device(deviceName, el.value());
-        m.insert(
+        dat.insert(
             std::pair<std::string, dat_traverse::Device>(deviceName, device));
     }
 
     // fill out parents of all child devices on 2nd pass
-    for (const auto& entry : m)
+    for (const auto& entry : dat)
     {
         for (const auto& child : entry.second.association)
         {
-            m.at(child).parents.push_back(entry.first);
+            dat.at(child).parents.push_back(entry.first);
         }
     }
 }

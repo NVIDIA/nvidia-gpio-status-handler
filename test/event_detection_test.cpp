@@ -13,7 +13,7 @@ event_detection::EventDetection eventDetection("EventDetection1", eventMap,
 
 static bool setup_event_cnt_test(event_info::EventNode& ev,
                                  int tested_trigger_count,
-                                 std::string device_name)
+                                 const std::string& device_name)
 {
     nlohmann::json j;
     j["event"] = "Event0";
@@ -86,12 +86,9 @@ TEST(EventDetectionTest, TID_4_counter_separation)
 
     for (auto i = 1; i < 10; i++)
     {
-        EXPECT_EQ(
-            eventDetection.IsEvent(ev1),
-            (ev1_trig_cnt <= 1)
-                ? (true)
-                : (ev1_trig_cnt--, false)); /* decrement counter and return
-                                               false to ternary operator */
+        /* decrement counter and return false to ternary operator */
+        EXPECT_EQ(eventDetection.IsEvent(ev1),
+                  (ev1_trig_cnt <= 1) ? (true) : (ev1_trig_cnt--, false));
         EXPECT_EQ(eventDetection.IsEvent(ev2),
                   (ev2_trig_cnt <= 1) ? (true) : (ev2_trig_cnt--, false));
         EXPECT_EQ(eventDetection.IsEvent(ev3),

@@ -76,11 +76,11 @@ class Device
 
     /** @brief Populates DAT map with JSON profile contents
      *
-     * @param[in]  m     - DAT map
-     * @param[in]  file  - name of JSON file
+     * @param[in]  dat     - DAT map
+     * @param[in]  file    - name of JSON file
      *
      */
-    static void populateMap(std::map<std::string, dat_traverse::Device>& m,
+    static void populateMap(std::map<std::string, dat_traverse::Device>& dat,
                             const std::string& file);
 
     Device(const std::string& s);

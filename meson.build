@@ -81,6 +81,7 @@ inc = include_directories('include')
 # subdir for meson project
 subdir('include')
 subdir('src')
+subdir('tools')
 #subdir('test')
 
 # Pkg-config
@@ -90,6 +91,12 @@ pkg_mod.generate(libraries : amllib,
                  name : 'oobaml',
                  filebase : 'oobaml',
                  description : 'nvidia-oobaml')
+
+pkg_mod.generate(libraries : selftestlib,
+                 version : '0.1',
+                 name : 'selftest',
+                 filebase : 'selftest',
+                 description : 'nvidia-oobaml-selftest')
 
 if get_option('tests').enabled()
   gtest_dep = dependency('gtest', main: true, disabler: true, required: false)
@@ -120,6 +127,7 @@ srcfiles_unittest = ['test/dat_test.cpp',
                      'test/accessor_test.cpp',
                      'test/propertyvalue_string_test.cpp',
 		     'test/event_detection_test.cpp',
+                     'test/selftest_test.cpp',
                      'test/propertyvalue_variant_test.cpp'
                     ]
 
@@ -135,13 +143,15 @@ amllib_sources = [
                 'src/message_dispatcher.cpp',
                 'src/oobaml_api.cpp']
 
+selftestlib_sources = ['src/selftest.cpp']
+
 bindir = get_option('prefix') + '/' + get_option('bindir')
 
 if(get_option('tests').enabled())
     # generate the test executable
     ut_bin = executable(
       'oobaml_unit_test',
-      srcfiles_unittest + amllib_sources,
+      srcfiles_unittest + amllib_sources + selftestlib_sources,
       include_directories : inc,
       install_dir: bindir,
       dependencies: aml_dependencies + [

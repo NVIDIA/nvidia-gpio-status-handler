@@ -10,8 +10,11 @@
 
 #include "aml.hpp"
 #include "cmd_line.hpp"
+#include "dat_traverse.hpp"
 #include "log.hpp"
 #include "selftest.hpp"
+
+#include <phosphor-logging/log.hpp>
 
 #include <fstream>
 #include <iostream>
@@ -26,16 +29,23 @@ using namespace phosphor::logging;
 const auto APPNAME = "selftest_tool";
 const auto APPVER = "0.1";
 
-log_init;
+/* TODO: multiple log_init causes issues in prog termination */
+// log_init;
+
+const std::string default_report_name = "selftest_report.json";
 
 struct Configuration
 {
+    /** @brief DAT file path **/
     std::string dat;
+    /** @brief device name to test or entire tree if empty **/
     std::string targetDevice;
+    /** @brief output report file path **/
     std::string report;
 };
 
-Configuration configuration;
+Configuration configuration = {
+    .dat = "", .targetDevice = "", .report = default_report_name};
 
 int loadDAT(cmd_line::ArgFuncParamType params)
 {
@@ -94,10 +104,11 @@ cmd_line::CmdLineArgs cmdLineArgs = {
      cmd_line::ActFlag::mandatory, "Device Association Tree filename.",
      loadDAT},
     {"-D", "", cmd_line::OptFlag::overwrite, "<device>",
-     cmd_line::ActFlag::mandatory, "Target Device for testing",
-     loadTargetDevice},
+     cmd_line::ActFlag::normal,
+     "Target Device for testing. Default: whole DAT tree", loadTargetDevice},
     {"-r", "", cmd_line::OptFlag::overwrite, "<file>",
-     cmd_line::ActFlag::normal, "Report file path.", loadReportPath},
+     cmd_line::ActFlag::normal,
+     "Report file path. Default: " + default_report_name, loadReportPath},
 };
 
 int show_help([[maybe_unused]] cmd_line::ArgFuncParamType params)
@@ -122,18 +133,63 @@ int main(int argc, char* argv[])
     int rc = 0;
     try
     {
-        cmd_line::CmdLine cmdLine(argc, argv, aml::cmdLineArgs);
+        cmd_line::CmdLine cmdLine(argc, argv, cmdLineArgs);
         rc = cmdLine.parse();
         rc = cmdLine.process();
     }
     catch (const std::exception& e)
     {
         std::cerr << "[E]" << e.what() << "\n";
-        aml::show_help({});
+        show_help({});
         return rc;
     }
 
-    // SelfTest Logic
+    // std::cout << "DAT: " << configuration.dat << "\n";
+    // std::cout << "Target: " << configuration.targetDevice << "\n";
+    // std::cout << "Report path: " << configuration.report << "\n";
+
+    std::map<std::string, dat_traverse::Device> datMap;
+    dat_traverse::Device::populateMap(datMap, configuration.dat);
+
+    if (configuration.targetDevice.size())
+    {
+        if (datMap.find(configuration.targetDevice) == datMap.end())
+        {
+            throw std::runtime_error("Device [" + configuration.targetDevice +
+                                     "] not found in provided DAT file!");
+        }
+    }
+
+    selftest::Selftest selftest("selfTest", datMap);
+    selftest::ReportResult reportResult;
+    aml::RcCode result = aml::RcCode::succ;
+
+    try
+    {
+        if (configuration.targetDevice.size())
+        {
+            auto& dev = datMap.at(configuration.targetDevice);
+            result = selftest.perform(dev, reportResult);
+        }
+        else
+        {
+            result = selftest.performEntireTree(reportResult);
+        }
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << e.what() << '\n';
+    }
+
+    if (result != aml::RcCode::succ)
+    {
+        return -1;
+    }
+
+    selftest::Report reportGenerator;
+    reportGenerator.generateReport(reportResult);
+    std::ofstream ofile(configuration.report);
+    ofile << reportGenerator;
 
     return 0;
 }

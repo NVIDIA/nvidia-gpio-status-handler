@@ -1,0 +1,103 @@
+{
+  "header" : {
+    "name" : "Self test report",
+    "version" : "1.0",
+    "timestamp" : "2022-03-22 21:32:00Z",
+    "summary" : {
+      "test-case-total" : 14,
+      "test-case-failed" : 2
+    }
+  },
+  "tests" : [
+    {
+      "device-name" : "gpu[0]",
+      "firmware-version" : "v2.01",
+      "timestamp" : "2022-03-22 21:32:00Z",
+      "power-rail-status" : {
+        "result" : "Pass",
+        "test-points" : [
+          {
+            "name" : "PGOOD",
+            "value" : "OK",
+            "value-expected" : "OK",
+            "result" : "Pass"
+          },
+          {
+            "name" : "VR",
+            "value" : "GOOD",
+            "value-expected" : "GOOD",
+            "result" : "Pass"
+          }
+        ]
+      },
+      "erot-control-status" : {
+        "result" : "Pass",
+        "test-points" : [
+        ]
+      },
+      "pin-status" : {
+        "result" : "Pass",
+        "test-points" : []
+      },
+      "interface-status" : {
+        "result" : "Pass",
+        "test-points" : []
+      },
+      "protocol-status" : {
+        "result" : "Pass",
+        "test-points" : []
+      },
+      "firmware-status" : {
+        "result" : "Pass",
+        "test-points" : []
+      },
+      "data-dump" : {
+        "device_1" : "Ohkei9heet6Ohpiyuedoch6oh",
+        "device_2" : "kahsh0iomohdooDi5cae0liegh2taekaVeikuf8soh6ahx1ohGh5ish8aipa0pahth8icahng7lu5Cae6aerei7aNe9WahPeeyee"
+      }
+    },
+    {
+      "device-name" : "gpu[0]",
+      "firmware-version" : "v2.01",
+      "timestamp" : "2022-03-22 21:32:00Z",
+      "power-rail-status" : {
+        "result" : "Pass",
+        "test-points" : [
+          {
+            "name" : "PGOOD",
+            "value" : "OK",
+            "value-expected" : "OK",
+            "result" : "Pass"
+          },
+          {
+            "name" : "VR",
+            "value" : "GOOD",
+            "value-expected" : "GOOD",
+            "result" : "Pass"
+          }
+        ]
+      },
+      "erot-control-status" : {
+        "result" : "Pass",
+        "test-points" : [
+        ]
+      },
+      "pin-status" : {
+        "result" : "Pass",
+        "test-points" : []
+      },
+      "interface-status" : {
+        "result" : "Pass",
+        "test-points" : []
+      },
+      "protocol-status" : {
+        "result" : "Pass",
+        "test-points" : []
+      },
+      "firmware-status" : {
+        "result" : "Pass",
+        "test-points" : []
+      }
+    }
+  ]
+}
