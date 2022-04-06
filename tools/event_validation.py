@@ -422,7 +422,8 @@ class InjectTest:
                 index=-1
                 while index > -4:  # try a couple on lines at bottom
                     if ':' in result_stdout[index]:
-                        self.events_injected_count = int((result_stdout[index].strip().split(':')[-1].strip()))
+                        str_injected = result_stdout[index].strip().split(':')[-1].strip()
+                        self.events_injected_count = int(str_injected)
                         break
                     index += -1
             except Exception as error:
@@ -468,6 +469,8 @@ class InjectTest:
                     optional_fields_match = com.compare_optional_event_fields(temp_dict, member)
                     if mandatory_fields_match is True and optional_fields_match is True:
                         del self.events_injected[log_id]
+                    else:
+                        log_id = 0 # just a debug break point
             except Exception as error:
                 message = "Exception occurred while matching keys for event id"
                 out = f"{message} :{log_id}: {str(error)}\n"
@@ -543,4 +546,3 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())  # OS status will have 0 status if this test runs OK and passes
-

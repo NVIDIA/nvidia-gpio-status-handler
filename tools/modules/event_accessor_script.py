@@ -17,6 +17,11 @@ class EventAccessorInjectorScript(InjectorScriptBase):
         super().__init__(json_file)
         self._busctl_cmd_counter = 0
         self._accessor_dbus_expected_events_list = []
+        """
+        Keeps commands in a list just to have the total counter
+        Then comands are generated later
+        """
+        self._commands_information_list = []
 
 
     def create_script_file(self):
@@ -35,7 +40,10 @@ class EventAccessorInjectorScript(InjectorScriptBase):
             "gl_old_property_value=\"\"\n"
             "gl_rc=0\n"
             "gl_script_rc=0\n"
-            "gl_injections=0\n"
+            "gl_total_comands=0  # will be set as the total intended commands\n"
+            "gl_counter_commands=0 # counter for commands being executed\n"
+            "gl_injections=0  # successful injections\n"
+            "\n"
             "gl_debug=0\n"
             "DRY_RUN=1 # default do not run commands 'busctl set-property'\n"
             "\n"
@@ -119,10 +127,11 @@ class EventAccessorInjectorScript(InjectorScriptBase):
             "{\n"
             "\n"
             "    case $gl_property_type in\n"
-            "        b)   if [ \"$gl_old_property_value\" = \"True\" ]; then\n"
-            "                gl_new_property_value=\"False\"\n"
+            "        b)   echo $gl_old_property_value | grep -i true > /dev/null\n"
+            "             if [ $? -eq 0 ]; then\n"
+            "                gl_new_property_value=\"false\"\n"
             "             else\n"
-            "                gl_new_property_value=\"True\"\n"
+            "                gl_new_property_value=\"true\"\n"
             "             fi\n"
             "             ;;\n"
             "        s)   gl_new_property_value=$( date +%F%X )\n"
@@ -160,9 +169,19 @@ class EventAccessorInjectorScript(InjectorScriptBase):
             "    gl_rc=0\n"
             "    local current_logging_entries=0\n"
             "    local new_logging_entries=0\n"
+            "    gl_counter_commands=$[ $gl_counter_commands + 1 ]\n"
             "    echo\n"
-            "    echo ============\n"
+            "    if [ $gl_total_comands -ne 0 ]; then\n"
+            "       echo \"injecting [$gl_counter_commands/$gl_total_comands]\"\n"
+            "    else\n"
+            "       echo ============\n"
+            "    fi\n"
             "\n"
+            "    if [ \"$METHOD\" = \"skip\" ]; then\n"
+            "       echo \"[skipping \'$METHOD_VALUE\'] $@\"\n"
+            "       echo\n"
+            "       return\n"
+            "    fi\n"
             "    property_get \"$@\"  \\\n"
             "        &&  current_logging_entries=$(latest_looging_entry) \\\n"
             "        &&  property_set_method \"$@\"  \\\n"
@@ -173,6 +192,7 @@ class EventAccessorInjectorScript(InjectorScriptBase):
             "   else\n"
             "       echo [debug] busctl failed\n"
             "   fi\n"
+            "   echo\n"
             "}\n"
             "\n"
             "\n")
@@ -180,9 +200,8 @@ class EventAccessorInjectorScript(InjectorScriptBase):
 
     def close_script_file(self):
         """
-        override parent method
+        override parent method, does nothing, close will be called from super()
         """
-        super().priv_close_script_file("\n\necho; echo \"Successful Injections: $gl_injections\"\n")
 
 
     def get_accessor_dbus_expected_events_list(self):
@@ -199,6 +218,7 @@ class EventAccessorInjectorScript(InjectorScriptBase):
         ret = "none"
         if com.KEY_ACCESSOR_TYPE in self._additional_data:
             accessor_type = self._additional_data[com.KEY_ACCESSOR_TYPE]
+            ret = accessor_type
             if accessor_type.upper() == com.ACCESSOR_TYPE_DBUS:
                 try:
                     if len(self._additional_data[com.KEY_ACCESSOR_OBJECT]) > 0 and \
@@ -210,14 +230,42 @@ class EventAccessorInjectorScript(InjectorScriptBase):
         return ret
 
 
-    def __generate_busctl_command_from_json_accessor_dbus(self, device, method, method_value):
+    def __store_command_information(self, device, method, method_value):
+        """
+        Stores command information in the list self._commands_information_list
+        This information is used to generate 'busctl 'commands later
+        """
+        information = {}
+        information["device"] = device
+        information["method"] = method
+        information["method_value"] = method_value
+        if com.KEY_ACCESSOR_INTERFACE in self._additional_data:
+            information[com.KEY_ACCESSOR_INTERFACE] = \
+                self._additional_data[com.KEY_ACCESSOR_INTERFACE]
+            information[com.KEY_ACCESSOR_PROPERTY] = \
+                self._additional_data[com.KEY_ACCESSOR_PROPERTY]
+        self._commands_information_list.append(information)
+
+
+    def __write_busctl_commands_into_script(self, cmd_info):
         """
         Saves bustcl commands in the script
         """
-        cmd =  f"\n METHOD=\"{method}\" METHOD_VALUE=\"{method_value}\" property_change {device} "
-        cmd += f"{self._additional_data[com.KEY_ACCESSOR_INTERFACE]} "
-        cmd += f"{self._additional_data[com.KEY_ACCESSOR_PROPERTY]}\n"
+        cmd =  f"\n METHOD=\"{cmd_info['method']}\" METHOD_VALUE=\"{cmd_info['method_value']}\" "
+        cmd += f"property_change {cmd_info['device']} "
+        if com.KEY_ACCESSOR_INTERFACE in cmd_info and com.KEY_ACCESSOR_PROPERTY in cmd_info:
+            cmd += f"{cmd_info[com.KEY_ACCESSOR_INTERFACE]} "
+            cmd += f"{cmd_info[com.KEY_ACCESSOR_PROPERTY]}\n"
         super().write(cmd)
+
+
+    def __store_in_expected_events_list(self):
+        """
+        Stores event data to be later compared with RedFish data
+        """
+        event_data = self._additional_data.copy()
+        super().remove_accessor_fields(event_data)
+        self._accessor_dbus_expected_events_list.append(event_data)
 
 
     def generate_busctl_command_from_json_dict(self, device, data):
@@ -225,22 +273,49 @@ class EventAccessorInjectorScript(InjectorScriptBase):
         Redefines parent method
         Generates commands in the script if the accessor_type is not empty and is handled
         """
-        counter = 0
         super().parse_json_dict_data(device, data)
-        if self.__get_accessor_type() == com.ACCESSOR_TYPE_DBUS:
-            method="add"
-            value="1"
-            if com.KEY_ACCESSOR_CHECK_BITMASK in self._additional_data:
-                method="bitmask"
-                value = self._additional_data[com.KEY_ACCESSOR_CHECK_BITMASK]
-            elif com.KEY_ACCESSOR_CHECK_LOOKUP in self._additional_data:
-                method="lookup"
-                value=self._additional_data[com.KEY_ACCESSOR_CHECK_LOOKUP]
-            for device_item in com.expand_range(self._additional_data[com.KEY_ACCESSOR_OBJECT]):
-                self.__generate_busctl_command_from_json_accessor_dbus(device_item, method, value)
-                counter += 1
-            super().remove_accessor_fields()
-            while counter > 0:
-                self._accessor_dbus_expected_events_list.append(self._additional_data.copy())
-                counter -= 1
+        accessor_type = self.__get_accessor_type()
+        if  accessor_type == com.ACCESSOR_TYPE_DBUS:
+            if self._additional_data[com.KEY_ACCESSOR_OBJECT].upper() == "TBD" or \
+                  self._additional_data[com.KEY_ACCESSOR_INTERFACE].upper() == "TBD" or \
+                  self._additional_data[com.KEY_ACCESSOR_PROPERTY].upper() == "TBD":
+                method="skip"
+                value="any DBUS accessor field = TBD"
+                self.__store_command_information(device, method, value)
+            else:
+                method="add"
+                value="1"
+                if com.KEY_ACCESSOR_CHECK_BITMASK in self._additional_data:
+                    method="bitmask"
+                    value = self._additional_data[com.KEY_ACCESSOR_CHECK_BITMASK]
+                elif com.KEY_ACCESSOR_CHECK_LOOKUP in self._additional_data:
+                    method="lookup"
+                    value=self._additional_data[com.KEY_ACCESSOR_CHECK_LOOKUP]
+                device_range = com.expand_range(self._additional_data[com.KEY_ACCESSOR_OBJECT])
+                for device_item in device_range:
+                    self.__store_command_information(device_item, method, value)
+                    self.__store_in_expected_events_list()
+        else:
+            method ="skip"
+            value = f"accessor.type = {accessor_type}"
+            self.__store_command_information(device, method, value)
+        super().remove_accessor_fields()
 
+
+    def generate_script_from_json(self):
+        """
+        Redefines from super
+
+        Calls generate_script_from_json() from super which does not generate
+          the commands using its empy close_script_file()
+        Writes the total of commands to be executed, it allows having a percentage
+        Then writes all the commands
+        """
+        super().generate_script_from_json()
+        total_commands = len(self._commands_information_list)
+        if total_commands > 0:
+            super().write(f"\ngl_total_comands={total_commands}\n\n")
+            for cmd_info in self._commands_information_list:
+                self.__write_busctl_commands_into_script(cmd_info)
+            bottom = "\n\necho; echo \"Successful Injections: $gl_injections\"\n"
+            super().priv_close_script_file(bottom)

@@ -75,9 +75,12 @@ def get_logging_entry_level(level):
     """
     Just formats a entry level
     """
-    level_str = level[0].upper()
-    level_str += level[1:]
-    full_level = f"{LOGGING_ENTRY_STR}.Level.{level_str}"
+    if level.lower() == "ok":
+        full_level = f"{LOGGING_ENTRY_STR}.Level.Notice"
+    else:
+        level_str = level[0].upper()
+        level_str += level[1:]
+        full_level = f"{LOGGING_ENTRY_STR}.Level.{level_str}"
     return full_level
 
 
@@ -189,7 +192,14 @@ def __compare_event_data_and_redfish_data(key_list, mandatory_flag, injected_dic
                     continue
                 ret = False
                 break
-            if  injected_dict[injected_key] != redfish_dict[key]:
+            value_injected = injected_dict[injected_key]
+            value_redfish = redfish_dict[key]
+            ## compare strings without spaces, this works around some event creation problems
+            if isinstance(value_injected, str):
+                value_injected = ''.join(value_injected.split())
+            if isinstance(value_redfish, str):
+                value_redfish = ''.join(value_redfish.split())
+            if  value_injected != value_redfish:
                 ret = False
                 break
     except Exception as error:

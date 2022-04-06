@@ -141,6 +141,8 @@ class InjectorScriptBase(abc.ABC):
         ## this is the position to put the counter of custom field_and_value
         for field in fields_device:
             value = data_device[field]
+            if isinstance(value, str):
+                value = ' '.join(value.split())
             if field in com.JSON_MANDATORY_FIELDS:
                 self.__parse_json_mandatory_fields(field, value)
             elif field in com.JSON_ADDITIONAL_FIELDS:
@@ -184,16 +186,21 @@ class InjectorScriptBase(abc.ABC):
             self.close_script_file()
 
 
-    def remove_accessor_fields(self):
+    def remove_accessor_fields(self, table=None):
         """
         Just remove these fields to use the entire content of self._additional_data
+
+        Other dict table can used by passing as parameter
         """
+
+        if table is None:
+            table = self._additional_data
         accessor_key = f"{com.KEY_ACCESSOR}."
-        for key in list(self._additional_data.keys()):
+        for key in list(table.keys()):
             if key.startswith(accessor_key):
-                del self._additional_data[key]
-        if com.KEY_ACCESSOR_TYPE in self._additional_data:
-            del self._additional_data[com.KEY_ACCESSOR_TYPE]
+                del table[key]
+        if com.KEY_ACCESSOR_TYPE in table:
+            del table[com.KEY_ACCESSOR_TYPE]
 
 
     def generate_device_busctl_commands(self, device, data):
