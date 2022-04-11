@@ -3,7 +3,10 @@
     {
       "event": "OverTemp",
       "device_type": "GPU",
-      "event_trigger": "",
+      "event_trigger": {
+        "type": "DBUS call",
+        "property": "gpu.thermal.temperature.overTemperatureInfo"
+      },
       "accessor": {
         "type": "DBUS call",
         "property": "gpu.thermal.temperature.overTemperatureInfo"
@@ -30,7 +33,10 @@
     {
       "event": "Thermal Warning",
       "device_type": "GPU",
-      "event_trigger": "",
+      "event_trigger": {
+        "type": "DBUS call",
+        "property": "gpu.thermal.alert"
+      },
       "accessor": {
         "type": "DBUS call",
         "property": "gpu.thermal.alert"
@@ -51,7 +57,7 @@
     {
       "event": "SRAM ECC uncorrectable error count",
       "device_type": "GPU",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS",
         "object": "/xyz/openbmc_project/inventory/system/processors/GPU[0-7]",
@@ -74,7 +80,7 @@
     {
       "event": "DRAM Contained ECC Error",
       "device_type": "GPU",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS",
         "object": "/xyz/openbmc_project/inventory/system/memory/GPUDRAM[0-7]",
@@ -97,7 +103,7 @@
     {
       "event": "DRAM Uncontained ECC Error",
       "device_type": "GPU",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS",
         "object": "/xyz/openbmc_project/inventory/system/memory/GPUDRAM[0-7]",
@@ -120,7 +126,7 @@
     {
       "event": "Physically Missing",
       "device_type": "GPU",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "gpu.interrupt.PresenceInfo"
@@ -141,7 +147,7 @@
     {
       "event": "Destination FLA Translation Error",
       "device_type": "GPU",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "gpu.xid.event"
@@ -162,7 +168,7 @@
     {
       "event": "NVJPEG Error",
       "device_type": "GPU",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "gpu.xid.event"
@@ -183,7 +189,7 @@
     {
       "event": "OFA Error",
       "device_type": "GPU",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "gpu.xid.event"
@@ -204,7 +210,7 @@
     {
       "event": "Nvlink Error",
       "device_type": "GPU",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "nvswitch.nvlink.NVLinkState"
@@ -225,7 +231,7 @@
     {
       "event": "PCIe link speed state change",
       "device_type": "GPU",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS",
         "object": "TBD",
@@ -248,7 +254,7 @@
     {
       "event": "NVDEC Error",
       "device_type": "GPU",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "gpu.xid.event"
@@ -269,7 +275,7 @@
     {
       "event": "Inforom Corruption",
       "device_type": "GPU",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "TBD"
@@ -290,7 +296,7 @@
     {
       "event": "MMU Fault",
       "device_type": "GPU",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "gpu.xid.event"
@@ -311,7 +317,7 @@
     {
       "event": "SM Warp Exception",
       "device_type": "GPU",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "gpu.xid.event"
@@ -332,7 +338,7 @@
     {
       "event": "PWR BRAKE Asserted",
       "device_type": "GPU",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS",
         "object": "TBD",
@@ -355,7 +361,7 @@
     {
       "event": "VR Failure",
       "device_type": "GPU",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "TBD"
@@ -376,7 +382,7 @@
     {
       "event": "VR Fault",
       "device_type": "GPU",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "gpu.interrupt.powerGoodAbnormalChange"
@@ -397,7 +403,7 @@
     {
       "event": "Row-remapping pending",
       "device_type": "GPU",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "metadata": "TBD"
@@ -418,7 +424,7 @@
     {
       "event": "Boot completed failure",
       "device_type": "GPU",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "metadata": "TBD"
@@ -439,7 +445,7 @@
     {
       "event": "Secure boot failure",
       "device_type": "GPU",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "metadata": "TBD"
@@ -460,7 +466,7 @@
     {
       "event": "SPI flash error",
       "device_type": "GPU",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "metadata": "TBD"
@@ -481,7 +487,7 @@
     {
       "event": "EROT recovery",
       "device_type": "GPU",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "metadata": "TBD"
@@ -502,7 +508,7 @@
     {
       "event": "MCTP runtime failures",
       "device_type": "GPU",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "metadata": "TBD"
@@ -523,7 +529,7 @@
     {
       "event": "PLDM runtime failures",
       "device_type": "GPU",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "TBD"
@@ -546,7 +552,7 @@
     {
       "event": "Over Temp",
       "device_type": "NVSwitch",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "nvswitch.thermal.temperature.overTemperatureInfo"
@@ -567,7 +573,7 @@
     {
       "event": "Thermal Warning",
       "device_type": "NVSwitch",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "nvswitch.thermal.alert"
@@ -588,7 +594,7 @@
     {
       "event": "VR Failure",
       "device_type": "NVSwitch",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "nvswitch.device.vrFault"
@@ -609,7 +615,7 @@
     {
       "event": "PCIe link speed state",
       "device_type": "NVSwitch",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS",
         "object": "/xyz/openbmc_project/inventory/system/chassis/Baseboard/PCIeDevices/NVSwitch[0-3]",
@@ -632,7 +638,7 @@
     {
       "event": "PCIe link width state",
       "device_type": "NVSwitch",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS",
         "object": "/xyz/openbmc_project/inventory/system/chassis/Baseboard/PCIeDevices/NVSwitch[0-3]",
@@ -655,7 +661,7 @@
     {
       "event": "PCIe link error",
       "device_type": "NVSwitch",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS",
         "object": "/xyz/openbmc_project/inventory/system/fabrics/NVLinkFabric/Switches/NVSwitch[0-3]",
@@ -678,7 +684,7 @@
     {
       "event": "VR Fault VDD",
       "device_type": "NVSwitch",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "nvswitch.vdd.abnormalPowerChange"
@@ -699,7 +705,7 @@
     {
       "event": "VR Fault DVDD",
       "device_type": "NVSwitch",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "nvswitch.dvdd.abnormalPowerChange"
@@ -720,7 +726,7 @@
     {
       "event": "VR Fault HVDD",
       "device_type": "NVSwitch",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "nvswitch.hvdd.abnormalPowerChange"
@@ -741,7 +747,7 @@
     {
       "event": "VR Fault 1.8V",
       "device_type": "NVSwitch",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "nvswitch.1V8.abnormalPowerChange"
@@ -762,7 +768,7 @@
     {
       "event": "VR Fault Combined",
       "device_type": "NVSwitch",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "nvswitch.device.vrFault"
@@ -783,7 +789,7 @@
     {
       "event": "Fallen off of bus",
       "device_type": "NVSwitch",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "TBD"
@@ -804,7 +810,7 @@
     {
       "event": "SMBPBI server unavailable",
       "device_type": "NVSwitch",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "TBD"
@@ -827,7 +833,7 @@
     {
       "event": "VR Fault",
       "device_type": "PCIe Switch",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "pcieswitch.0V8.abnormalPowerChange"
@@ -848,7 +854,7 @@
     {
       "event": "OverTemp",
       "device_type": "PCIe Switch",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "pcieswitch.thermal.temperature.overTemperatureInfo"
@@ -869,7 +875,7 @@
     {
       "event": "PCIe link goes down",
       "device_type": "PCIe Switch",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "TBD"
@@ -890,7 +896,7 @@
     {
       "event": "Incorrect link speed",
       "device_type": "PCIe Switch",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "TBD"
@@ -911,7 +917,7 @@
     {
       "event": "Boot completed failure",
       "device_type": "PCIe Switch",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "TBD"
@@ -932,7 +938,7 @@
     {
       "event": "Secure boot failure",
       "device_type": "PCIe Switch",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "TBD"
@@ -953,7 +959,7 @@
     {
       "event": "EROT recovery",
       "device_type": "PCIe Switch",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "TBD"
@@ -974,7 +980,7 @@
     {
       "event": "MCTP runtime failures",
       "device_type": "PCIe Switch",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "metadata": "TBD"
@@ -995,7 +1001,7 @@
     {
       "event": "PLDM runtime failures",
       "device_type": "PCIe Switch",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "TBD"
@@ -1018,7 +1024,7 @@
     {
       "event": "VR Fault 0.9V",
       "device_type": "Retimer",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "pcieretimer.0V9.abnormalPowerChange"
@@ -1039,7 +1045,7 @@
     {
       "event": "VR Fault 1.2V",
       "device_type": "Retimer",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "TBD"
@@ -1060,7 +1066,7 @@
     {
       "event": "VR Fault 1.8V",
       "device_type": "Retimer",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "pcieretimer.1V8VDD.abnormalPowerChange"
@@ -1081,7 +1087,7 @@
     {
       "event": "OverTemp",
       "device_type": "Retimer",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "pcieretimer.thermal.temperature.overTemperatureInfo"
@@ -1102,7 +1108,7 @@
     {
       "event": "I2C EEPROM Error",
       "device_type": "Retimer",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "TBD"
@@ -1125,7 +1131,7 @@
     {
       "event": "System VR Fault SYS_3V3",
       "device_type": "VR",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "sysvr3v3.power.abnormalPowerChange"
@@ -1146,7 +1152,7 @@
     {
       "event": "System VR Fault SYS_1V8",
       "device_type": "VR",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "sysvr1v8.power.abnormalPowerChange"
@@ -1169,7 +1175,7 @@
     {
       "event": "Baseboard HSC Fault",
       "device_type": "HSC",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "hsc.power.abnormalPowerChange"
@@ -1192,7 +1198,7 @@
     {
       "event": "OverTemp",
       "device_type": "HMC",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "TBD"
@@ -1213,7 +1219,7 @@
     {
       "event": "Redfish service not available",
       "device_type": "HMC",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "TBD"
@@ -1234,7 +1240,7 @@
     {
       "event": "USB network not accessible",
       "device_type": "HMC",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "TBD"
@@ -1255,7 +1261,7 @@
     {
       "event": "USB connection not available",
       "device_type": "HMC",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "TBD"
@@ -1276,7 +1282,7 @@
     {
       "event": "PLDM runtime failures",
       "device_type": "HMC",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "TBD"
@@ -1299,7 +1305,7 @@
     {
       "event": "PCB Thermal Warning",
       "device_type": "Baseboard",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "baseboard.pcb.temperature.Alert"
@@ -1322,7 +1328,7 @@
     {
       "event": "Boot completed failure",
       "device_type": "FPGA",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "TBD"
@@ -1343,7 +1349,7 @@
     {
       "event": "PLDM runtime failures",
       "device_type": "FPGA",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "TBD"
@@ -1366,7 +1372,7 @@
     {
       "event": "Boot completed failure",
       "device_type": "LS10",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "TBD"
@@ -1387,7 +1393,7 @@
     {
       "event": "Secure boot failure",
       "device_type": "LS10",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "TBD"
@@ -1408,7 +1414,7 @@
     {
       "event": "VR fault",
       "device_type": "LS10",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "TBD"
@@ -1429,7 +1435,7 @@
     {
       "event": "SPI flash error",
       "device_type": "LS10",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "TBD"
@@ -1450,7 +1456,7 @@
     {
       "event": "EROT recovery",
       "device_type": "LS10",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "TBD"
@@ -1471,7 +1477,7 @@
     {
       "event": "MCTP runtime failures",
       "device_type": "LS10",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "metadata": "TBD"
@@ -1492,7 +1498,7 @@
     {
       "event": "PLDM runtime failures",
       "device_type": "LS10",
-      "event_trigger": "",
+      "event_trigger": {},
       "accessor": {
         "type": "DBUS call",
         "property": "TBD"

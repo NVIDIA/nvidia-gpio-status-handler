@@ -185,6 +185,16 @@ class DataAccessor
     }
 
     /**
+     * @brief determine if _acc is empty json object or not
+     *
+     * @return bool
+     */
+    bool isEmpty(void)
+    {
+        return _acc.empty();
+    }
+
+    /**
      * @brief read value per the accessor info
      *
      * @return std::string

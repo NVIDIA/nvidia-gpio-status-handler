@@ -82,6 +82,9 @@ class EventNode : public object::Object
     /** @brief Accesssor info **/
     data_accessor::DataAccessor accessor;
 
+    /** @brief Trigger accessor info **/
+    data_accessor::DataAccessor trigger;
+
     /** @brief Event count map: maps device name to count **/
     std::map<std::string, int> count;
 
@@ -102,6 +105,7 @@ class EventNode : public object::Object
 
     /** @brief Particular device name .. i.e. GPU0 **/
     std::string device;
+
 };
 
 using EventMap = std::map<std::string, std::vector<event_info::EventNode>>;

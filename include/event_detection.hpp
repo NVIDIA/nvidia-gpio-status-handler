@@ -71,9 +71,25 @@ class EventDetection : public object::Object
 
                 std::cout << "event.accessor: " << event.accessor
                           << ", acc: " << acc << "\n";
-                if (event.accessor == acc && event.accessor.check(acc) == true)
+
+                if (event.accessor == acc)
                 {
-                    return &event;
+                    if (event.trigger.isEmpty())
+                    {
+                        if (event.accessor.check(acc))
+                        {
+                            return &event;
+                        }
+                        return nullptr;
+                    }
+                    else
+                    {
+                        if (event.trigger == acc && event.trigger.check(acc))
+                        {
+                            return &event;
+                        }
+                        return nullptr;
+                    }
                 }
             }
         }

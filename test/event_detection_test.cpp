@@ -23,7 +23,8 @@ static bool setup_event_cnt_test(event_info::EventNode& ev,
     j["redfish"]["message_id"] = "ResourceEvent.1.0.ResourceErrorsDetected";
     j["telemetries"] = {"t0", "t1"};
     j["trigger_count"] = tested_trigger_count;
-    j["event_trigger"] = "trigger";
+    j["event_trigger"]["metadata"] = "metadata";
+    j["event_trigger"]["type"] = "DBUS";
     j["action"] = "do something";
     j["event_counter_reset"]["type"] = "type";
     j["event_counter_reset"]["metadata"] = "metadata";
@@ -34,6 +35,77 @@ static bool setup_event_cnt_test(event_info::EventNode& ev,
     // ev.print();
 
     return true;
+}
+
+TEST(EventLookupTest, TriggerAccessor)
+{
+    event_info::EventNode ev("Sample Event");
+    nlohmann::json j;
+    j["event"] = "Event0";
+    j["device_type"] = "GPU";
+    j["severity"] = "Critical";
+    j["resolution"] = "Contact NVIDIA Support";
+    j["redfish"]["message_id"] = "ResourceEvent.1.0.ResourceErrorsDetected";
+    j["telemetries"] = {"t0", "t1"};
+    j["trigger_count"] = 0;
+    j["event_trigger"]["property"] = "property";
+    j["event_trigger"]["type"] = "DBUS";
+    j["action"] = "do something";
+    j["event_counter_reset"]["type"] = "type";
+    j["event_counter_reset"]["metadata"] = "metadata";
+    j["accessor"]["property"] = "property";
+    j["accessor"]["type"] = "DBUS";
+    ev.loadFrom(j);
+
+    event_info::EventNode ev2("Sample Event2");
+    nlohmann::json j2;
+    j2["event"] = "Event0";
+    j2["device_type"] = "GPU";
+    j2["severity"] = "Critical";
+    j2["resolution"] = "Contact NVIDIA Support";
+    j2["redfish"]["message_id"] = "ResourceEvent.1.0.ResourceErrorsDetected";
+    j2["telemetries"] = {"t0", "t1"};
+    j2["trigger_count"] = 0;
+    j2["event_trigger"] = nlohmann::json::object();
+    j2["action"] = "do something";
+    j2["event_counter_reset"]["type"] = "type";
+    j2["event_counter_reset"]["metadata"] = "metadata";
+    j2["accessor"]["property"] = "property2";
+    j2["accessor"]["type"] = "DBUS";
+    ev2.loadFrom(j2);
+
+    std::vector<event_info::EventNode> v;
+    v.push_back(ev);
+    v.push_back(ev2);
+
+    event_info::EventMap eventMap;
+
+    eventMap.insert(
+        std::pair<std::string, std::vector<event_info::EventNode>>("GPU", v));
+
+    event_handler::EventHandlerManager* eventHdlrMgr = nullptr;
+
+    event_detection::EventDetection eventDetection("EventDetection2", &eventMap,
+                                                   eventHdlrMgr);
+
+    nlohmann::json j3;
+    j3["property"] = "property2";
+    j3["type"] = "DBUS";
+    data_accessor::DataAccessor accessor = j3;
+
+    nlohmann::json j4;
+    j4["property"] = "property";
+    j4["type"] = "DBUS";
+    data_accessor::DataAccessor accessorTrigger = j4;
+
+    nlohmann::json j5;
+    j5["property"] = "prop";
+    j5["type"] = "DBUS";
+    data_accessor::DataAccessor accessorNil = j5;
+
+    EXPECT_NE(eventDetection.LookupEventFrom(accessor), nullptr);
+    EXPECT_NE(eventDetection.LookupEventFrom(accessorTrigger), nullptr);
+    EXPECT_EQ(eventDetection.LookupEventFrom(accessorNil), nullptr);
 }
 
 TEST(EventDetectionTest, TID_1_triggers_instantly)
