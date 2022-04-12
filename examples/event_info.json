@@ -246,7 +246,7 @@
         "metadata": ""
       },
       "redfish": {
-        "message_id": "ResourceEvent.1.1.ResourceStateChanged"
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
       "action": ""
