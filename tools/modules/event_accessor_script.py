@@ -172,7 +172,8 @@ class EventAccessorInjectorScript(InjectorScriptBase):
             "    gl_counter_commands=$[ $gl_counter_commands + 1 ]\n"
             "    echo\n"
             "    if [ $gl_total_comands -ne 0 ]; then\n"
-            "       echo \"injecting [$gl_counter_commands/$gl_total_comands]\"\n"
+            "       echo -n \"injecting [$gl_counter_commands/$gl_total_comands]\"\n"
+            "       echo \" ACCESSOR_TYPE='$ACCESSOR_TYPE' EVENT='$EVENT'\"\n"
             "    else\n"
             "       echo ============\n"
             "    fi\n"
@@ -230,7 +231,7 @@ class EventAccessorInjectorScript(InjectorScriptBase):
         return ret
 
 
-    def __store_command_information(self, device, method, method_value):
+    def __store_command_information(self, device, method, method_value, accessor_type):
         """
         Stores command information in the list self._commands_information_list
         This information is used to generate 'busctl 'commands later
@@ -239,6 +240,7 @@ class EventAccessorInjectorScript(InjectorScriptBase):
         information["device"] = device
         information["method"] = method
         information["method_value"] = method_value
+        information["accessor_type"] = accessor_type
         if com.KEY_ACCESSOR_INTERFACE in self._additional_data:
             information[com.KEY_ACCESSOR_INTERFACE] = \
                 self._additional_data[com.KEY_ACCESSOR_INTERFACE]
@@ -252,6 +254,9 @@ class EventAccessorInjectorScript(InjectorScriptBase):
         Saves bustcl commands in the script
         """
         cmd =  f"\n METHOD=\"{cmd_info['method']}\" METHOD_VALUE=\"{cmd_info['method_value']}\" "
+        cmd += f"ACCESSOR_TYPE=\"{cmd_info['accessor_type']}\" "
+        if len(self._busctl_info) > com.INDEX_EVENT:
+            cmd += f"EVENT=\"{self._busctl_info[com.INDEX_EVENT]}\" "
         cmd += f"property_change {cmd_info['device']} "
         if com.KEY_ACCESSOR_INTERFACE in cmd_info and com.KEY_ACCESSOR_PROPERTY in cmd_info:
             cmd += f"{cmd_info[com.KEY_ACCESSOR_INTERFACE]} "
@@ -268,6 +273,29 @@ class EventAccessorInjectorScript(InjectorScriptBase):
         self._accessor_dbus_expected_events_list.append(event_data)
 
 
+    def store_busctl_commands_as_dbus_accessor(self, device, accessor_type):
+        """
+        Generates commands in the script regardless the accessor data
+        """
+        method="add"
+        value="1"
+        if com.KEY_ACCESSOR_CHECK_BITMASK in self._additional_data:
+            method="bitmask"
+            value = self._additional_data[com.KEY_ACCESSOR_CHECK_BITMASK]
+        elif com.KEY_ACCESSOR_CHECK_LOOKUP in self._additional_data:
+            method="lookup"
+            value=self._additional_data[com.KEY_ACCESSOR_CHECK_LOOKUP]
+        if com.KEY_ACCESSOR_OBJECT in self._additional_data:
+            device_range = com.expand_range(self._additional_data[com.KEY_ACCESSOR_OBJECT])
+            for device_item in device_range:
+                self.__store_command_information(device_item, method, value, accessor_type)
+                self.__store_in_expected_events_list()
+        else:
+            self.__store_command_information(device, method, value, accessor_type)
+            self.__store_in_expected_events_list()
+
+
+
     def generate_busctl_command_from_json_dict(self, device, data):
         """
         Redefines parent method
@@ -275,30 +303,24 @@ class EventAccessorInjectorScript(InjectorScriptBase):
         """
         super().parse_json_dict_data(device, data)
         accessor_type = self.__get_accessor_type()
-        if  accessor_type == com.ACCESSOR_TYPE_DBUS:
-            if self._additional_data[com.KEY_ACCESSOR_OBJECT].upper() == "TBD" or \
-                  self._additional_data[com.KEY_ACCESSOR_INTERFACE].upper() == "TBD" or \
-                  self._additional_data[com.KEY_ACCESSOR_PROPERTY].upper() == "TBD":
-                method="skip"
-                value="any DBUS accessor field = TBD"
-                self.__store_command_information(device, method, value)
-            else:
-                method="add"
-                value="1"
-                if com.KEY_ACCESSOR_CHECK_BITMASK in self._additional_data:
-                    method="bitmask"
-                    value = self._additional_data[com.KEY_ACCESSOR_CHECK_BITMASK]
-                elif com.KEY_ACCESSOR_CHECK_LOOKUP in self._additional_data:
-                    method="lookup"
-                    value=self._additional_data[com.KEY_ACCESSOR_CHECK_LOOKUP]
-                device_range = com.expand_range(self._additional_data[com.KEY_ACCESSOR_OBJECT])
-                for device_item in device_range:
-                    self.__store_command_information(device_item, method, value)
-                    self.__store_in_expected_events_list()
-        else:
-            method ="skip"
-            value = f"accessor.type = {accessor_type}"
-            self.__store_command_information(device, method, value)
+        self.store_busctl_commands_as_dbus_accessor(device, accessor_type)
+
+        ## Block commented, removed skipping, everything is performed
+        #--------------------------------------------------------------
+        #if  accessor_type == com.ACCESSOR_TYPE_DBUS:
+            #if self._additional_data[com.KEY_ACCESSOR_OBJECT].upper() == "TBD" or \
+                  #self._additional_data[com.KEY_ACCESSOR_INTERFACE].upper() == "TBD" or \
+                  #self._additional_data[com.KEY_ACCESSOR_PROPERTY].upper() == "TBD":
+                #method="skip"
+                #value="any DBUS accessor field = TBD"
+                #self.__store_command_information(device, method, value)
+            #else:
+                #self.store_busctl_commands_as_dbus_accessor(device, accessor_type)
+        #else:
+            #method ="skip"
+            #value = f"accessor.type = {accessor_type}"
+            #self.__store_command_information(device, method, value, accessor_type)
+        #--------------------------------------------------------------
         super().remove_accessor_fields()
 
 
