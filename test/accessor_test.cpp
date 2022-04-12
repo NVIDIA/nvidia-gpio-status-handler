@@ -19,14 +19,6 @@ const nlohmann::json jsonBITMASK = {
     {"property", "Depth"},
     {"check", {{"bitmask", "0x01"}}}};
 
-// it contains the 'check' field
-const nlohmann::json jsonLOOKUP = {
-    {"type", "DBUS"},
-    {"object", "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]"},
-    {"interface", "xyz.openbmc_project.Inventory.Decorator.Dimension"},
-    {"property", "Depth"},
-    {"check", {{"lookup", "0x30"}}}};
-
 // it DOES NOT contain the 'check' field
 const nlohmann::json jsonDEVICE = {
     {"type", "DBUS"},
@@ -48,39 +40,11 @@ TEST(DataAccessor, ContainsNegative)
     EXPECT_NE(accessorPROPERTY.contains(accessorEVENT), true);
 }
 
-TEST(DataAccessor, CheckNegativeBitmaskEmptyPropertyValue)
-{
-    CheckDefinitionMap accessorCHECK = {{"bitmask", "0x01"}};
-    PropertyValue propertyValueFail(std::string{""});
-    EXPECT_NE(propertyValueFail.check(accessorCHECK), true);
-}
-
-TEST(DataAccessor, CheckPositiveBitmaskPropertyValue)
-{
-    CheckDefinitionMap accessorCHECK = {{"bitmask", "0x01"}};
-    PropertyValue propertyValuePass(std::string{"0x03"});
-    EXPECT_EQ(propertyValuePass.check(accessorCHECK), true);
-}
-
-TEST(DataAccessor, CheckNegativePropertyValue)
-{
-    const CheckDefinitionMap accessorCHECK = {{"bitmask", "0x01"}};
-    PropertyValue propertyValueFail{std::string{"2"}};
-    EXPECT_NE(propertyValueFail.check(accessorCHECK), true);
-}
-
 TEST(DataAccessor, CheckPositiveNoCheckField)
 {
     DataAccessor accessorWITHOUTCheck{jsonDEVICE};
     DataAccessor accessorPROPERTY{jsonDEVICE};
     EXPECT_EQ(accessorWITHOUTCheck.check(accessorPROPERTY), true);
-}
-
-TEST(DataAccessor, CheckPositiveLookupString)
-{
-    CheckDefinitionMap accessorCHECK = {{"lookup", "0x40"}};
-    PropertyValue propertyValue{std::string{"0x30 0x40 0x50"}};
-    EXPECT_EQ(propertyValue.check(accessorCHECK), true);
 }
 
 TEST(DataAccessor, CheckPositiveCMDLINE)
@@ -146,4 +110,67 @@ TEST(DataAccessor, CheckPositiveScriptCMDLINE)
     std::filesystem::remove(filenamepath);
 
     EXPECT_EQ(result, true);
+}
+
+TEST(DataAccessor, CheckPositiveBitmaskRedefinition)
+{
+    DataAccessor jAccessor(jsonBITMASK); // {"bitmask", "0x01"}
+    PropertyVariant dataValue(0x10f);    // bits 0,1,2,3 and 8
+    DataAccessor dAccessor(dataValue);
+
+    // without redefinition
+    EXPECT_EQ(jAccessor.check(dAccessor), true); // bit 0
+    // with redefinition, bits 1-3 pass
+    EXPECT_EQ(jAccessor.check(dAccessor, PropertyVariant(int64_t(0x02))), true);
+    EXPECT_EQ(jAccessor.check(dAccessor, PropertyVariant(int64_t(0x04))), true);
+    EXPECT_EQ(jAccessor.check(dAccessor, PropertyVariant(int64_t(0x08))), true);
+    // bits 4-7 fail
+    EXPECT_NE(jAccessor.check(dAccessor, PropertyVariant(int64_t(0x10))), true);
+    EXPECT_NE(jAccessor.check(dAccessor, PropertyVariant(int64_t(0x20))), true);
+    EXPECT_NE(jAccessor.check(dAccessor, PropertyVariant(int64_t(0x40))), true);
+    EXPECT_NE(jAccessor.check(dAccessor, PropertyVariant(int64_t(0x80))), true);
+    // finally bit 8 passes
+    EXPECT_EQ(jAccessor.check(dAccessor, PropertyVariant(int64_t(256))), true);
+}
+
+TEST(DataAccessor, CheckPositiveLookupRedefinition)
+{
+    const nlohmann::json json = {{"type", "CMDLINE"},
+                                 {"executable", "/bin/echo"},
+                                 {"arguments", "ff 00 00 00 00 00 02 40 66 28"},
+                                 {"check", {{"lookup", "_doesNotExist_"}}}};
+    DataAccessor jAccessor(json);
+
+    // not found without redefenition
+    EXPECT_NE(jAccessor.check(), true);
+    // found with redefinition
+    EXPECT_EQ(jAccessor.check(PropertyVariant(std::string{"40 6"})), true);
+    EXPECT_EQ(jAccessor.check(PropertyVariant(std::string{"ff 0"})), true);
+    EXPECT_EQ(jAccessor.check(PropertyVariant(std::string{"6 28"})), true);
+    // redefinition whennot found
+    EXPECT_NE(jAccessor.check(PropertyVariant(std::string{"zz"})), true);
+}
+
+TEST(DataAccessor, CheckPositiveLookupForDeviceName)
+{
+    const nlohmann::json json = {{"type", "CMDLINE"},
+                                 {"executable", "/bin/echo"},
+                                 {"arguments", "query_boot_status [0-7]"},
+                                 {"check", {{"lookup", "GPU0"}}}};
+    DataAccessor jAccessor(json);
+    const std::string device{"GPU0"};
+    EXPECT_EQ(jAccessor.check(device), true);
+}
+
+TEST(DataAccessor, CheckNegativeLookupForDeviceName)
+{
+    const nlohmann::json json = {{"type", "CMDLINE"},
+                                 {"executable", "/bin/echo"},
+                                 {"arguments", "query_boot_status [0-7]"},
+                                 {"check", {{"lookup", "GPU0"}}}};
+    DataAccessor jAccessor(json);
+    const std::string device{"GPU0"};
+
+    PropertyVariant redefineLookup{std::string{"GPU1"}};
+    EXPECT_NE(jAccessor.check(device, redefineLookup), true);
 }

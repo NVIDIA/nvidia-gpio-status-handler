@@ -9,7 +9,7 @@
  * @brief populates map but takes json object as an input instead of filepath
  */
 void populateMapMock(std::map<std::string, dat_traverse::Device>& dat,
-                    const nlohmann::json& j)
+                     const nlohmann::json& j)
 {
     for (const auto& el : j.items())
     {

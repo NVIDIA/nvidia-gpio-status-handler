@@ -58,7 +58,7 @@ struct PropertyValueData
     std::string strValue;
     uint64_t value64;
     bool valid;
-    explicit PropertyValueData(const std::string str = {""}) :
+    explicit PropertyValueData(const std::string& str = {""}) :
         strValue(str), value64(0), valid(false)
     {
         // Empty
@@ -202,7 +202,8 @@ class PropertyValue
      *
      * @return  the check result between this and the other PropertyValue object
      */
-    bool check(const CheckDefinitionMap& map) const;
+    bool check(const CheckDefinitionMap& map,
+               const PropertyVariant& redefCriteria = PropertyVariant()) const;
 
     /**
      * @brief bitmask performs a bitmask (or bit a bit) from  the value stored
@@ -250,7 +251,7 @@ class PropertyValue
      * @return  true if otherLookup._data.strValue was found in the string
      *          from _data
      */
-    bool lookup(const PropertyValue& other,
+    bool lookup(const PropertyValue& otherLookup,
                 CaseSensitivity cs = caseSensitive) const;
 
     /**
@@ -280,7 +281,7 @@ class PropertyValue
         return _data.valid;
     }
 
-  private:
+  protected:
     /**
      * @brief getPropertyDataFromVariant
      *
@@ -322,6 +323,7 @@ class PropertyString : public PropertyValue
 {
   public:
     explicit PropertyString(const std::string& value);
+    explicit PropertyString(const PropertyVariant& varVar);
     PropertyString() = delete;
     ~PropertyString() = default;
 };

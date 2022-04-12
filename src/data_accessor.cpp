@@ -5,9 +5,10 @@
 
 #include "data_accessor.hpp"
 
-#include <unistd.h>
-
 #include <boost/process.hpp>
+
+#include <regex>
+#include <string>
 
 namespace data_accessor
 {
@@ -46,48 +47,65 @@ bool DataAccessor::contains(const DataAccessor& other) const
     return ret;
 }
 
-bool DataAccessor::check(const DataAccessor& acc) const
+bool DataAccessor::check(const DataAccessor& otherAcc,
+                         const PropertyVariant& redefCriteria,
+                         const std::string& device) const
 {
     bool ret = true; // defaults to true if accessor["check"] does not exist
     if (_acc.count(checkKey) != 0)
     {
-        DataAccessor& accNonConst = const_cast<DataAccessor&>(acc);
-        accNonConst.read();
+        DataAccessor& accNonConst = const_cast<DataAccessor&>(otherAcc);
+        // until this moment device is not necessary in PropertyValue::check()
+        accNonConst.read(device);
         if ((ret = accNonConst.hasData()) == true)
         {
             auto checkDefinition = _acc[checkKey].get<CheckDefinitionMap>();
-            ret = acc._dataValue->check(checkDefinition);
+            ret = otherAcc._dataValue->check(checkDefinition, redefCriteria);
         }
     }
     return ret;
 }
 
+bool DataAccessor::check(const DataAccessor& otherAcc,
+                         const std::string& device,
+                         const PropertyVariant& redefCriteria) const
+{
+    return check(otherAcc, redefCriteria, device);
+}
+
+bool DataAccessor::check(const PropertyVariant& redefCriteria,
+                         const std::string& device) const
+{
+    return check(*this, redefCriteria, device);
+}
+
+bool DataAccessor::check(const std::string& device,
+                         const PropertyVariant& redefCriteria) const
+{
+    return check(*this, redefCriteria, device);
+}
+
 bool DataAccessor::check() const
 {
-    return check(*this);
+    return check(*this, PropertyVariant(), std::string{""});
 }
 
 bool DataAccessor::readDbus()
 {
-    bool ret = false;
     clearData();
-    if (isValidDbusAccessor() == true)
+    bool ret = isValidDbusAccessor();
+    if (ret == true)
     {
         auto propVariant = readDbusProperty(_acc[objectKey], _acc[interfaceKey],
                                             _acc[propertyKey]);
-        // index not zero, not std::monostate that means valid data
-        if ((ret = propVariant.index() != 0) == true)
-        {
-            _dataValue =
-                std::make_shared<PropertyValue>(PropertyValue(propVariant));
-        }
+        ret = setDataValueFromVariant(propVariant);
     }
     std::cout << __PRETTY_FUNCTION__ << "(): "
               << "ret=" << ret << std::endl;
     return ret;
 }
 
-bool DataAccessor::runCommandLine()
+bool DataAccessor::runCommandLine(const std::string& device)
 {
     clearData();
     bool ret = isValidCmdlineAccessor();
@@ -96,7 +114,26 @@ bool DataAccessor::runCommandLine()
         auto cmd = _acc[executableKey].get<std::string>();
         if (_acc.count(argumentsKey) != 0)
         {
-            cmd += ' ' + _acc[argumentsKey].get<std::string>();
+            auto args = _acc[argumentsKey].get<std::string>();
+            auto regexPosition = std::string::npos;
+            const std::regex reg{".*(\\[[0-9]+\\-[0-9]+\\]).*"};
+            std::smatch match;
+            if (std::regex_search(args, match, reg))
+            {
+                std::string regexString = match[1];
+                regexPosition = args.find_first_of(regexString);
+                // replace the range by device
+                if (device.empty() == false)
+                {
+                    args.replace(regexPosition, regexString.size(), device);
+                }
+                else // expand the range inside args
+                {
+                    // TODO: "before A[0-3] after" => "before A0 A1 A2 A3 after"
+                    // args = expandRangeFromString(args);
+                }
+            }
+            cmd += ' ' + args;
         }
         std::cout << "[D] " << __PRETTY_FUNCTION__ << "() "
                   << "cmd: " << cmd << std::endl;
@@ -127,6 +164,19 @@ bool DataAccessor::runCommandLine()
             _dataValue =
                 std::make_shared<PropertyValue>(PropertyString(result));
         }
+    }
+    return ret;
+}
+
+bool DataAccessor::setDataValueFromVariant(const PropertyVariant& propVariant)
+{
+    clearData();
+    bool ret = propVariant.index() != 0;
+    // index not zero, not std::monostate that means valid data
+    if (ret == true)
+    {
+        _dataValue =
+            std::make_shared<PropertyValue>(PropertyValue(propVariant));
     }
     return ret;
 }

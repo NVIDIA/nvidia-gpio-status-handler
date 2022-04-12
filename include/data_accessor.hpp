@@ -49,6 +49,14 @@ class DataAccessor
         std::cout << "Const.: _acc: " << _acc << "\n";
     }
 
+    /**
+     *  @brief  used for tests purpose with an invalid accessor type
+     */
+    DataAccessor(const PropertyVariant& initialData) : _dataValue(nullptr)
+    {
+        setDataValueFromVariant(initialData);
+    }
+
     ~DataAccessor() = default;
 
   public:
@@ -121,31 +129,79 @@ class DataAccessor
     bool contains(const DataAccessor& other) const;
 
     /**
-     * @brief check() checks the if the value in '_dataValue'
-     *                matches with other DataAccessor criteria
+     * @brief performs a check operation of its criteria against otherAcc data
      *
-     *                The other DataAccessor criteria is like:
+     *   This DataAccessor has the DataAccessor operation criteria
      *
-     *                   {"check": {
-     *                               { "bitmask" , "0x01" }
-     *                             }
-     *                   }
-     *                Or:
-     *                   {"check": {
-     *                               { "lookup" , "1234" }
-     *                             }
-     *                   }
+     * @param otherAcc contains the data the checked again this criteria*
+     *        otherAcc calls read() get its data.
      *
-     *    @sa read() or @sa readDbusProperty()
+     * @param [optional] redefCriteria  other value to be used in this
+     *                   DataAccessor criteria.
      *
-     * @return true if the property value matches the criteria in other
+     * @param [optional] device  the device name passed into read()
+     *
+     * redefinition of 'bitmask' criteria'
+     * @code:
+     *   const nlohmann::json json = {
+     *     {"type", "DBUS"},
+     *     {"object", "/xyz/openbmc_project/inventory/system/chassis/GPU0"},
+     *     {"interface", "xyz.openbmc_project.Inventory.Decorator.Dimension"},
+     *     {"property", "Depth"},
+     *     {"check", {{"bitmask", "0x01"}}}
+     *   };
+     *
+     * // supposing the property above of GPU0 having the value 271 = 0x10
+     *   DataAccessor(json).check() // true using 0x01 from current criteria
+     *
+     * // The following Criteria call examples with redefinition return true:
+     *   DataAccessor(json).check(PropertyVariant(uint64_t(0x02)); // bit 1 set
+     *   DataAccessor(json).check(PropertyVariant(uint64_t(0x04)); // bit 2 set
+     *   DataAccessor(json).check(PropertyVariant(uint64_t(0x08)); // bit 3 set
+     *
+     * // The following call returns false
+     *   DataAccessor(json).check(PropertyVariant(uint64_t(0x10)); // bit 4 NOT
+     * @endcode
+     *
+     * redefinition of 'lookup' criteria
+     * @code
+     *  const nlohmann::json json = {
+     *      {"type", "CMDLINE"},
+     *      {"executable", "/bin/echo"},
+     *      {"arguments", "ff 00 00 00 00 00 02 40 66 28"},
+     *      {"check", {{"lookup", "00 02 40"}}}
+     *  };
+     *
+     *  DataAccessor(json).check(PropertyVariant(std::string{"40 6"})); // true
+     *  DataAccessor(json).check(PropertyVariant(std::string{"zz"}));   // false
+     * @endcode
+     *
+     * @return true of the criteria matches the value
      */
-    bool check(const DataAccessor& acc) const;
+    bool check(const DataAccessor& otherAcc,
+               const PropertyVariant& redefCriteria = PropertyVariant(),
+               const std::string& device = std::string{""}) const;
 
     /**
-     * @brief performs the check against itself
-     *
-     * @return
+     * @brief [overloaded] with inverted order of device and redefCriteria
+     */
+    bool check(const DataAccessor& otherAcc, const std::string& device,
+               const PropertyVariant& redefCriteria = PropertyVariant()) const;
+    /**
+     * @brief [overloaded] using otherAcc = *this and device
+     */
+    bool check(const std::string& device,
+               const PropertyVariant& redefCriteria = PropertyVariant()) const;
+    /**
+     * @brief [overloaded] using otherAcc = *this and redefCriteria
+     */
+    bool check(const PropertyVariant& redefCriteria,
+               const std::string& device = std::string{""}) const;
+
+    /**
+     * @brief [overloaded] using otherAcc = *this,
+     *                           redefCriteria = PropertyVariant()
+     *                           empty device
      */
     bool check() const;
 
@@ -199,7 +255,7 @@ class DataAccessor
      *
      * @return std::string
      */
-    std::string read(void)
+    std::string read(const std::string& device = std::string{""})
     {
         std::string ret{"123"};
 
@@ -213,7 +269,7 @@ class DataAccessor
         }
         else if (isTypeCmdline() == true)
         {
-            runCommandLine();
+            runCommandLine(device);
         }
         if (_dataValue != nullptr)
         {
@@ -354,7 +410,16 @@ class DataAccessor
      *             "lookup": "00 02 40"
      *       }
      */
-    bool runCommandLine();
+    bool runCommandLine(const std::string& device = std::string{""});
+
+    /**
+     * @brief   just initializes the _dataValue creating a PropertyVariant
+     *
+     * @param propVariant the value itself
+     *
+     * @return true if the propVariant has a valid data, otherwise false
+     */
+    bool setDataValueFromVariant(const PropertyVariant& propVariant);
 
   private:
     /**

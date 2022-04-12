@@ -70,7 +70,7 @@ void EventNode::loadFrom(const json& j)
     this->event = j["event"];
     this->deviceType = j["device_type"];
     this->triggerCount = j["trigger_count"].get<int>();
-    //this->eventTrigger = j["event_trigger"];
+    // this->eventTrigger = j["event_trigger"];
 
     this->trigger = j["event_trigger"];
 

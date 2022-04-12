@@ -78,6 +78,20 @@ PropertyString::PropertyString(const std::string& value) : PropertyValue()
     _data.strValue = value;
 }
 
+PropertyString::PropertyString(const PropertyVariant& varVar) : PropertyValue()
+{
+    if (std::holds_alternative<std::string>(varVar) == true)
+    {
+        _data.strValue = std::get<std::string>(varVar);
+        _data.valid = false;
+    }
+    else
+    {
+        getPropertyDataFromVariant(varVar);
+        _data.valid = false; // make sure it will not be used as Integer
+    }
+}
+
 PropertyValue::PropertyValue(const std::string& value)
 {
     // string2Uint64 will set all fields from _data sructure
@@ -99,20 +113,27 @@ PropertyValue::PropertyValue(const PropertyVariant& value)
     getPropertyDataFromVariant(value);
 }
 
-bool PropertyValue::check(const CheckDefinitionMap& map) const
+bool PropertyValue::check(const CheckDefinitionMap& map,
+                          const PropertyVariant& redefCriteria) const
 {
     bool ret = false;
     for (auto& accessorCheck : map)
     {
         auto& key = accessorCheck.first;
         if (key == bitmaskKey)
-        {
-            PropertyValue maskValue(accessorCheck.second);
+        { // != 0 means not std::monostate
+            PropertyValue maskValue = redefCriteria.index() != 0
+                                          ? PropertyValue(redefCriteria)
+                                          : PropertyValue(accessorCheck.second);
             ret = bitmask(maskValue);
         }
         else if (key == lookupKey)
         {
-            PropertyString lookupWhat(accessorCheck.second);
+            PropertyString lookupWhat =
+                redefCriteria.index() != 0
+                    ? // != 0 means not std::monostate
+                    PropertyString(redefCriteria)
+                    : PropertyString(accessorCheck.second);
             ret = lookup(lookupWhat);
         }
         if (ret == false)

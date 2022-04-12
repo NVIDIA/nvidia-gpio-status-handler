@@ -102,3 +102,49 @@ TEST(PropertyValue, Bitmask2Properties)
     PropertyValue propBit3{variantBit3};
     EXPECT_EQ(prop.bitmask(propBit3), false);
 }
+
+TEST(PropertyValue, CheckNegativeBitmaskEmptyPropertyValue)
+{
+    CheckDefinitionMap accessorCHECK = {{"bitmask", "0x01"}};
+    PropertyValue propertyValueFail(std::string{""});
+    EXPECT_NE(propertyValueFail.check(accessorCHECK), true);
+}
+
+TEST(PropertyValue, CheckPositiveBitmaskPropertyValue)
+{
+    CheckDefinitionMap accessorCHECK = {{"bitmask", "0x01"}};
+    PropertyValue propertyValuePass(std::string{"0x03"});
+    EXPECT_EQ(propertyValuePass.check(accessorCHECK), true);
+}
+
+TEST(PropertyValue, CheckNegativePropertyValue)
+{
+    const CheckDefinitionMap accessorCHECK = {{"bitmask", "0x01"}};
+    PropertyValue propertyValueFail{std::string{"2"}};
+    EXPECT_NE(propertyValueFail.check(accessorCHECK), true);
+}
+
+TEST(PropertyValue, CheckPositiveLookupString)
+{
+    CheckDefinitionMap accessorCHECK = {{"lookup", "0x40"}};
+    PropertyValue propertyValue{std::string{"0x30 0x40 0x50"}};
+    EXPECT_EQ(propertyValue.check(accessorCHECK), true);
+}
+
+TEST(PropertyValue, CheckPositiveBitmaskPropertyValueRedefinition)
+{
+    CheckDefinitionMap accessorCHECK = {{"bitmask", "0x01"}};
+    PropertyValue propertyValuePass(std::string{"0x02"});
+
+    PropertyVariant maskRedefinition(int64_t(0x02));
+    EXPECT_EQ(propertyValuePass.check(accessorCHECK, maskRedefinition), true);
+}
+
+TEST(PropertyValue, CheckNegativeBitmaskPropertyValueRedefinition)
+{
+    CheckDefinitionMap accessorCHECK = {{"bitmask", "0x01"}};
+    PropertyValue propertyValueFail(std::string{"0x03"});
+
+    PropertyVariant maskRedefinition(int64_t(0x04));
+    EXPECT_NE(propertyValueFail.check(accessorCHECK, maskRedefinition), true);
+}
