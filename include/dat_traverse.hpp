@@ -83,7 +83,7 @@ class Device
     static void populateMap(std::map<std::string, dat_traverse::Device>& dat,
                             const std::string& file);
 
-    Device(const std::string& s);
+    explicit Device(const std::string& s);
     Device(const std::string& s, const json& j);
     ~Device();
 
@@ -150,6 +150,19 @@ class DATTraverse : public event_handler::EventHandler
     void setDAT(const std::map<std::string, dat_traverse::Device>& dat);
 
     //  private:
+
+    /**
+     * @brief searches for vector of associated subdevices
+     *
+     * @param dat
+     * @param device
+     *
+     * @return vector of associated devices to device argument
+     */
+    static std::vector<std::string> getSubAssociations(
+        std::map<std::string, dat_traverse::Device>& dat,
+        const std::string& device);
+
     /**
      * @brief Fully traverses a device and stops if comparator
      *        detects an issue in which case action function
@@ -170,7 +183,7 @@ class DATTraverse : public event_handler::EventHandler
         const std::vector<
             std::function<void(std::map<std::string, dat_traverse::Device>& dat,
                                const dat_traverse::Device& device)>>
-            action);
+            &action);
 
     /**
      * @brief Fully traverses a device in reverse direction
@@ -192,7 +205,7 @@ class DATTraverse : public event_handler::EventHandler
             comparator,
         const std::vector<std::function<void(
             dat_traverse::Device& device, const dat_traverse::Status& status)>>
-            action);
+            &action);
 
     /**
      * @brief Checks to see if the device has parents
@@ -221,7 +234,7 @@ class DATTraverse : public event_handler::EventHandler
                                      const dat_traverse::Status& status);
 
     /**
-     * @brief Sets health/healthrollup/state/originOfConidtion properties
+     * @brief Sets healthrollup/state properties
      *
      * @param device
      * @param dat

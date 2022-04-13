@@ -105,6 +105,9 @@ class EventNode : public object::Object
 
     /** @brief Particular device name .. i.e. GPU0 **/
     std::string device;
+
+    /** @brief Report of selftest **/
+    nlohmann::json selftestReport;
 };
 
 using EventMap = std::map<std::string, std::vector<event_info::EventNode>>;

@@ -5,12 +5,6 @@
 
 #include "gmock/gmock.h"
 
-event_info::EventMap* eventMap = nullptr;
-event_handler::EventHandlerManager* eventHdlrMgr = nullptr;
-/* Empty object needed just for calling isEvent method */
-event_detection::EventDetection eventDetection("EventDetection1", eventMap,
-                                               eventHdlrMgr);
-
 static bool setup_event_cnt_test(event_info::EventNode& ev,
                                  int tested_trigger_count,
                                  const std::string& device_name)
@@ -91,17 +85,17 @@ TEST(EventLookupTest, TriggerAccessor)
     nlohmann::json j3;
     j3["property"] = "property2";
     j3["type"] = "DBUS";
-    data_accessor::DataAccessor accessor = j3;
+    data_accessor::DataAccessor accessor(j3);
 
     nlohmann::json j4;
     j4["property"] = "property";
     j4["type"] = "DBUS";
-    data_accessor::DataAccessor accessorTrigger = j4;
+    data_accessor::DataAccessor accessorTrigger(j4);
 
     nlohmann::json j5;
     j5["property"] = "prop";
     j5["type"] = "DBUS";
-    data_accessor::DataAccessor accessorNil = j5;
+    data_accessor::DataAccessor accessorNil(j5);
 
     EXPECT_NE(eventDetection.LookupEventFrom(accessor), nullptr);
     EXPECT_NE(eventDetection.LookupEventFrom(accessorTrigger), nullptr);
@@ -110,6 +104,10 @@ TEST(EventLookupTest, TriggerAccessor)
 
 TEST(EventDetectionTest, TID_1_triggers_instantly)
 {
+    event_info::EventMap* eventMap = nullptr;
+    event_handler::EventHandlerManager* eventHdlrMgr = nullptr;
+    event_detection::EventDetection eventDetection("EventDetection1", eventMap,
+                                               eventHdlrMgr);
     event_info::EventNode event("TID_1_triggers_instantly");
     int trigger_count = 0;
     EXPECT_EQ(setup_event_cnt_test(event, trigger_count, "GPU5"), true);
@@ -119,6 +117,10 @@ TEST(EventDetectionTest, TID_1_triggers_instantly)
 
 TEST(EventDetectionTest, TID_2_triggers_instantly)
 {
+    event_info::EventMap* eventMap = nullptr;
+    event_handler::EventHandlerManager* eventHdlrMgr = nullptr;
+    event_detection::EventDetection eventDetection("EventDetection1", eventMap,
+                                               eventHdlrMgr);
     event_info::EventNode event("TID_2_triggers_instantly");
     int trigger_count = 1;
     EXPECT_EQ(setup_event_cnt_test(event, trigger_count, "GPU5"), true);
@@ -128,6 +130,10 @@ TEST(EventDetectionTest, TID_2_triggers_instantly)
 
 TEST(EventDetectionTest, TID_3_triggers_on_trigger_count)
 {
+    event_info::EventMap* eventMap = nullptr;
+    event_handler::EventHandlerManager* eventHdlrMgr = nullptr;
+    event_detection::EventDetection eventDetection("EventDetection1", eventMap,
+                                               eventHdlrMgr);
     event_info::EventNode event("TID_3_triggers_on_trigger_count");
     int trigger_count = 5;
     EXPECT_EQ(setup_event_cnt_test(event, trigger_count, "GPU5"), true);
@@ -144,6 +150,10 @@ TEST(EventDetectionTest, TID_3_triggers_on_trigger_count)
 
 TEST(EventDetectionTest, TID_4_counter_separation)
 {
+    event_info::EventMap* eventMap = nullptr;
+    event_handler::EventHandlerManager* eventHdlrMgr = nullptr;
+    event_detection::EventDetection eventDetection("EventDetection1", eventMap,
+                                               eventHdlrMgr);
     event_info::EventNode ev1("TID_4_counter_separation");
     int ev1_trig_cnt = 1;
     EXPECT_EQ(setup_event_cnt_test(ev1, ev1_trig_cnt, "GPU1"), true);

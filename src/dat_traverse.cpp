@@ -172,21 +172,46 @@ void DATTraverse::setOriginOfCondition(dat_traverse::Device& targetDevice,
     targetDevice.healthStatus.originOfCondition = status.originOfCondition;
 }
 
+std::vector<std::string> DATTraverse::getSubAssociations(
+    std::map<std::string, dat_traverse::Device>& dat,
+    const std::string& device)
+{
+    std::queue<std::string> fringe;
+    std::vector<std::string> childVec;
+    fringe.push(device);
+    childVec.push_back(device);
+
+    while (!fringe.empty())
+    {
+        std::string deviceName = fringe.front();
+        fringe.pop();
+        const dat_traverse::Device& node = dat.at(deviceName);
+
+        for (const auto& child : node.association)
+        {
+            fringe.push(child);
+            childVec.push_back(child);
+        }
+    }
+
+    return childVec;
+}
+
 void DATTraverse::parentTraverse(
     std::map<std::string, dat_traverse::Device>& dat, const std::string& device,
     const std::function<bool(const dat_traverse::Device& device)> comparator,
     const std::vector<std::function<void(dat_traverse::Device& device,
                                          const dat_traverse::Status& status)>>
-        action)
+        &action)
 {
 
-    dat_traverse::Device& node = dat.at(device);
+    dat_traverse::Device& dev = dat.at(device);
 
     dat_traverse::Status status;
-    status.health = node.healthStatus.health;
-    status.healthRollup = node.healthStatus.health;
+    status.health = dev.healthStatus.health;
+    status.healthRollup = dev.healthStatus.health;
     status.originOfCondition = device;
-    status.triState = node.healthStatus.triState;
+    status.triState = dev.healthStatus.triState;
 
     std::queue<std::string> fringe;
     fringe.push(device);

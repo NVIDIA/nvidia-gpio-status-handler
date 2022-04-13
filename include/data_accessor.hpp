@@ -52,7 +52,7 @@ class DataAccessor
     /**
      *  @brief  used for tests purpose with an invalid accessor type
      */
-    DataAccessor(const PropertyVariant& initialData) : _dataValue(nullptr)
+    explicit DataAccessor(const PropertyVariant& initialData) : _dataValue(nullptr)
     {
         setDataValueFromVariant(initialData);
     }

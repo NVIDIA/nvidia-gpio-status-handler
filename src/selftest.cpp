@@ -20,12 +20,10 @@ bool Selftest::evaluateTestReport(const ReportResult& reportRes)
     {
         for (auto& layer : dev.second.layer)
         {
-            for (auto& tp : layer.second)
+            if (std::any_of(layer.second.begin(), layer.second.end(),
+                [](auto tp){return !tp.result;}))
             {
-                if (!tp.result)
-                {
-                    return false;
-                }
+                return false;
             }
         }
     }
@@ -181,12 +179,12 @@ void Report::generateReport(ReportResult& reportRes)
                     layerPassOrFail = false;
                 }
 
+                auto resStr = tp.result ? reportResultPass : reportResultFail;
                 jdev[layerKey]["test-points"] +=
                     {{"name", tp.targetName},
                      {"value", tp.valRead},
                      {"value-expected", tp.valExpected},
-                     {"result",
-                      tp.result ? reportResultPass : reportResultFail}};
+                     {"result", resStr}};
             }
             jdev[layerKey]["result"] =
                 layerPassOrFail ? reportResultPass : reportResultFail;
@@ -213,3 +211,57 @@ aml::RcCode DoSelftest([[maybe_unused]] const dat_traverse::Device& dev,
 }
 
 } // namespace selftest
+
+
+namespace event_handler
+{
+
+void RootCauseTracer::handleFault(dat_traverse::Device& dev,
+                                dat_traverse::Device& rootCauseDevice)
+{
+    dat_traverse::Status status;
+    status.health = "Critical";
+    status.healthRollup = "Critical";
+    status.originOfCondition = rootCauseDevice.name;
+    status.triState = "Error";
+    DATTraverse::setHealthProperties(dev, status);
+    DATTraverse::setOriginOfCondition(dev, status);
+    // TODO: add log ?
+}
+
+aml::RcCode RootCauseTracer::process(
+        [[maybe_unused]] event_info::EventNode& event)
+{
+    std::string problemDevice = event.device;
+    if (problemDevice.length() == 0)
+    {
+        return aml::RcCode::error;
+    }
+    
+    auto devsToTest = DATTraverse::getSubAssociations(_dat, problemDevice);
+    selftest::ReportResult completeReportRes;
+    selftest::Selftest selftester("rootCauseSelftester", _dat);
+
+    for (auto& devName : devsToTest)
+    {
+        auto& devTest = _dat.at(devName);
+        if (selftester.perform(devTest, completeReportRes) != aml::RcCode::succ)
+        {
+            return aml::RcCode::error;
+        }
+
+        if (!selftester.evaluateTestReport(completeReportRes))
+        {
+            handleFault(_dat.at(problemDevice), devTest);
+            break;
+        }
+    }
+
+    selftest::Report reportGenerator;
+    reportGenerator.generateReport(completeReportRes);
+    event.selftestReport = reportGenerator.getReport();
+
+    return aml::RcCode::succ;
+}
+
+} // namespace event_handler

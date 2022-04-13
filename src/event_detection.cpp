@@ -81,7 +81,7 @@ std::unique_ptr<sdbusplus::bus::match_t> EventDetection::startEventDetection(
                 j[data_accessor::accessorTypeKeys[type][0]] = objectPath;
                 j[data_accessor::accessorTypeKeys[type][1]] = msgInterface;
                 j[data_accessor::accessorTypeKeys[type][2]] = eventProperty;
-                data_accessor::DataAccessor accessor = j;
+                data_accessor::DataAccessor accessor(j);
                 auto candidate = evtDet->LookupEventFrom(accessor);
                 if (candidate == nullptr)
                 {
