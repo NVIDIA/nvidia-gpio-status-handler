@@ -20,6 +20,8 @@
 namespace event_detection
 {
 
+constexpr int invalidIntParam = -1;
+
 /**
  * @class EventDetection
  * @brief Responsible for catching D-Bus signals and GPIO state change
@@ -103,18 +105,29 @@ class EventDetection : public object::Object
      * @return true
      * @return false
      */
-    bool IsEvent(event_info::EventNode& candidate)
+    bool IsEvent(event_info::EventNode& candidate, int compareCount = invalidIntParam)
     {
-        auto countDiff =
-            candidate.triggerCount - (candidate.count[candidate.device] + 1);
+        int count = candidate.count[candidate.device] + 1;
+        if (candidate.valueAsCount)
+        {
+            count = (compareCount == -1) ? std::stoi(candidate.accessor.read()) : compareCount;
+        }
+
+        auto countDiff = candidate.triggerCount - count;
 
         if (countDiff <= 0)
         {
-            candidate.count[candidate.device] = candidate.triggerCount;
+            if (!candidate.valueAsCount)
+            {
+                candidate.count[candidate.device] = candidate.triggerCount;
+            }
             return true;
         }
 
-        candidate.count[candidate.device]++;
+        if (!candidate.valueAsCount)
+        {
+            candidate.count[candidate.device]++;
+        }
         return false;
     }
 

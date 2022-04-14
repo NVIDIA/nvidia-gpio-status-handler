@@ -28,7 +28,7 @@ std::unique_ptr<sdbusplus::bus::match_t> EventDetection::startEventDetection(
     auto dbusEventHandlerMatcherCallback =
         [evtDet](sdbusplus::message::message& msg) {
             std::string msgInterface;
-            boost::container::flat_map<std::string, std::variant<std::string>>
+            boost::container::flat_map<std::string, std::variant<double>>
                 propertiesChanged;
             msg.read(msgInterface, propertiesChanged);
 
@@ -63,7 +63,7 @@ std::unique_ptr<sdbusplus::bus::match_t> EventDetection::startEventDetection(
                  destination=:1.93 serial=6777 reply_serial=2 variant double 100
                  *
                  */
-                auto variant = std::get_if<std::string>(&pc.second);
+                auto variant = std::get_if<double>(&pc.second);
                 std::string eventProperty = pc.first;
 
                 if (eventProperty.empty() || nullptr == variant)
@@ -89,7 +89,14 @@ std::unique_ptr<sdbusplus::bus::match_t> EventDetection::startEventDetection(
                     continue;
                 }
 
-                if (evtDet->IsEvent(*candidate))
+                int eventValue = invalidIntParam;
+                if (candidate->valueAsCount)
+                {
+                    std::cout << "event value for event " << candidate->event << ": " << *variant << "\n";
+                    eventValue = int(*variant);
+                }
+
+                if (evtDet->IsEvent(*candidate, eventValue))
                 {
                     event_info::EventNode event = *candidate;
                     event.device =

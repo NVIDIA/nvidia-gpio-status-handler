@@ -22,6 +22,7 @@ TEST(EventTest, LoadJson)
     j["event_counter_reset"]["metadata"] = "metadata";
     j["accessor"]["metadata"] = "metadata";
     j["accessor"]["type"] = "DBUS";
+    j["value_as_count"] = false;
     event_info::EventNode event("test event");
     event.loadFrom(j);
     EXPECT_EQ(event.event, "Event0");
@@ -47,6 +48,7 @@ TEST(MsgCompTest, MakeCall)
     j["event_counter_reset"]["metadata"] = "metadata";
     j["accessor"]["metadata"] = "metadata";
     j["accessor"]["type"] = "DBUS";
+    j["value_as_count"] = false;
     event_info::EventNode event("test event");
     event.loadFrom(j);
     message_composer::MessageComposer mc("Test Msg Composer");
@@ -86,6 +88,7 @@ TEST(EventTelemtries, MakeCall)
     j["event_counter_reset"]["metadata"] = "metadata";
     j["accessor"]["metadata"] = "metadata";
     j["accessor"]["type"] = "DBUS";
+    j["value_as_count"] = false;
     event_info::EventNode event("test event");
     event.loadFrom(j);
 

@@ -106,6 +106,9 @@ class EventNode : public object::Object
     /** @brief Particular device name .. i.e. GPU0 **/
     std::string device;
 
+    /** @brief Flag to indicate if we should use event value as trigger count **/
+    bool valueAsCount;
+
     /** @brief Report of selftest **/
     nlohmann::json selftestReport;
 };

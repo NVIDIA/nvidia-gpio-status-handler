@@ -28,7 +28,8 @@
           "property": "gpu.thermal.temperature.overTemperatureInfo"
         }
       ],
-      "action": "SelfTest"
+      "action": "SelfTest",
+      "value_as_count": false
     },
     {
       "event": "Thermal Warning",
@@ -52,7 +53,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "SRAM ECC uncorrectable error count",
@@ -75,7 +77,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": true 
     },
     {
       "event": "DRAM Contained ECC Error",
@@ -98,7 +101,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": true 
     },
     {
       "event": "DRAM Uncontained ECC Error",
@@ -121,7 +125,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": true 
     },
     {
       "event": "Physically Missing",
@@ -142,7 +147,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "Destination FLA Translation Error",
@@ -163,7 +169,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "NVJPEG Error",
@@ -184,7 +191,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "OFA Error",
@@ -205,7 +213,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "Nvlink Error",
@@ -226,7 +235,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "PCIe link speed state change",
@@ -249,7 +259,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "NVDEC Error",
@@ -270,7 +281,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "Inforom Corruption",
@@ -291,7 +303,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "MMU Fault",
@@ -312,7 +325,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "SM Warp Exception",
@@ -333,7 +347,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "PWR BRAKE Asserted",
@@ -356,7 +371,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "VR Failure",
@@ -377,7 +393,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "VR Fault",
@@ -398,7 +415,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "Row-remapping pending",
@@ -419,7 +437,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "Boot completed failure",
@@ -440,7 +459,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "Secure boot failure",
@@ -461,7 +481,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "SPI flash error",
@@ -482,7 +503,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "EROT recovery",
@@ -503,7 +525,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "MCTP runtime failures",
@@ -524,7 +547,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "PLDM runtime failures",
@@ -545,7 +569,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     }
   ],
   "NVSwitch": [
@@ -568,7 +593,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "Thermal Warning",
@@ -589,7 +615,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "VR Failure",
@@ -610,7 +637,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "PCIe link speed state",
@@ -633,7 +661,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "PCIe link width state",
@@ -656,7 +685,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "PCIe link error",
@@ -679,7 +709,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "VR Fault VDD",
@@ -700,7 +731,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "VR Fault DVDD",
@@ -721,7 +753,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "VR Fault HVDD",
@@ -742,7 +775,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "VR Fault 1.8V",
@@ -763,7 +797,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "VR Fault Combined",
@@ -784,7 +819,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "Fallen off of bus",
@@ -805,7 +841,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "SMBPBI server unavailable",
@@ -826,7 +863,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     }
   ],
   "PCIe Switch": [
@@ -849,7 +887,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "OverTemp",
@@ -870,7 +909,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "PCIe link goes down",
@@ -891,7 +931,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "Incorrect link speed",
@@ -912,7 +953,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "Boot completed failure",
@@ -933,7 +975,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "Secure boot failure",
@@ -954,7 +997,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "EROT recovery",
@@ -975,7 +1019,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "MCTP runtime failures",
@@ -996,7 +1041,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "PLDM runtime failures",
@@ -1017,7 +1063,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     }
   ],
   "Retimer": [
@@ -1040,7 +1087,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "VR Fault 1.2V",
@@ -1061,7 +1109,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "VR Fault 1.8V",
@@ -1082,7 +1131,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "OverTemp",
@@ -1103,7 +1153,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "I2C EEPROM Error",
@@ -1124,7 +1175,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     }
   ],
   "VR": [
@@ -1147,7 +1199,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "System VR Fault SYS_1V8",
@@ -1168,7 +1221,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     }
   ],
   "HSC": [
@@ -1191,7 +1245,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     }
   ],
   "HMC": [
@@ -1214,7 +1269,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "Redfish service not available",
@@ -1235,7 +1291,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "USB network not accessible",
@@ -1256,7 +1313,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "USB connection not available",
@@ -1277,7 +1335,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "PLDM runtime failures",
@@ -1298,7 +1357,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     }
   ],
   "Baseboard": [
@@ -1321,7 +1381,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     }
   ],
   "FPGA": [
@@ -1344,7 +1405,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "PLDM runtime failures",
@@ -1365,7 +1427,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     }
   ],
   "LS10": [
@@ -1388,7 +1451,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "Secure boot failure",
@@ -1409,7 +1473,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "VR fault",
@@ -1430,7 +1495,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "SPI flash error",
@@ -1451,7 +1517,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "EROT recovery",
@@ -1472,7 +1539,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "MCTP runtime failures",
@@ -1493,7 +1561,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     },
     {
       "event": "PLDM runtime failures",
@@ -1514,7 +1583,8 @@
         "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
-      "action": ""
+      "action": "",
+      "value_as_count": false
     }
   ]
 }

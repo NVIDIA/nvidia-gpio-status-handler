@@ -24,6 +24,7 @@ static bool setup_event_cnt_test(event_info::EventNode& ev,
     j["event_counter_reset"]["metadata"] = "metadata";
     j["accessor"]["metadata"] = "metadata";
     j["accessor"]["type"] = "DBUS";
+    j["value_as_count"] = false;
     ev.loadFrom(j);
     ev.device = device_name;
     // ev.print();
@@ -49,6 +50,7 @@ TEST(EventLookupTest, TriggerAccessor)
     j["event_counter_reset"]["metadata"] = "metadata";
     j["accessor"]["property"] = "property";
     j["accessor"]["type"] = "DBUS";
+    j["value_as_count"] = false;
     ev.loadFrom(j);
 
     event_info::EventNode ev2("Sample Event2");
@@ -66,6 +68,7 @@ TEST(EventLookupTest, TriggerAccessor)
     j2["event_counter_reset"]["metadata"] = "metadata";
     j2["accessor"]["property"] = "property2";
     j2["accessor"]["type"] = "DBUS";
+    j2["value_as_count"] = false;
     ev2.loadFrom(j2);
 
     std::vector<event_info::EventNode> v;
@@ -81,6 +84,22 @@ TEST(EventLookupTest, TriggerAccessor)
 
     event_detection::EventDetection eventDetection("EventDetection2", &eventMap,
                                                    eventHdlrMgr);
+
+    ev.device = "GPU";
+    EXPECT_EQ(eventDetection.IsEvent(ev), true);
+    EXPECT_EQ(ev.count[ev.device], 0);
+
+    ev.valueAsCount = true;
+    EXPECT_EQ(eventDetection.IsEvent(ev, 10), true);
+
+    ev.triggerCount = 20;
+    EXPECT_EQ(eventDetection.IsEvent(ev, 10), false);
+
+    ev.count[ev.device] = 10;
+    ev.valueAsCount = false;
+    EXPECT_EQ(eventDetection.IsEvent(ev), false);
+    EXPECT_EQ(ev.count[ev.device], 11);
+    ev.triggerCount = 0;
 
     nlohmann::json j3;
     j3["property"] = "property2";
