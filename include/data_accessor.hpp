@@ -44,7 +44,8 @@ class DataAccessor
     DataAccessor() : _dataValue(nullptr)
     {}
 
-    DataAccessor(const nlohmann::json& acc) : _acc(acc), _dataValue(nullptr)
+    explicit DataAccessor(const nlohmann::json& acc) :
+        _acc(acc), _dataValue(nullptr)
     {
         std::cout << "Const.: _acc: " << _acc << "\n";
     }
@@ -52,7 +53,8 @@ class DataAccessor
     /**
      *  @brief  used for tests purpose with an invalid accessor type
      */
-    explicit DataAccessor(const PropertyVariant& initialData) : _dataValue(nullptr)
+    explicit DataAccessor(const PropertyVariant& initialData) :
+        _dataValue(nullptr)
     {
         setDataValueFromVariant(initialData);
     }

@@ -76,7 +76,7 @@ void EventNode::loadFrom(const json& j)
 
     for (auto& entry : j["telemetries"])
     {
-        this->telemetries.push_back(entry);
+        this->telemetries.push_back((data_accessor::DataAccessor)entry);
     }
     // this->telemetries = j["telemetries"].get<std::vector<std::string>>();
     this->action = j["action"];
@@ -90,7 +90,8 @@ void EventNode::loadFrom(const json& j)
     this->accessor = j["accessor"];
     std::cout << "Loaded accessor: " << this->accessor << ", j: " << j << "\n";
 
-    this->valueAsCount = j.contains("value_as_count") ? j["value_as_count"].get<bool>() : false;
+    this->valueAsCount =
+        j.contains("value_as_count") ? j["value_as_count"].get<bool>() : false;
 }
 
 static void

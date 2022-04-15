@@ -92,7 +92,8 @@ std::unique_ptr<sdbusplus::bus::match_t> EventDetection::startEventDetection(
                 int eventValue = invalidIntParam;
                 if (candidate->valueAsCount)
                 {
-                    std::cout << "event value for event " << candidate->event << ": " << *variant << "\n";
+                    std::cout << "event value for event " << candidate->event
+                              << ": " << *variant << "\n";
                     eventValue = int(*variant);
                 }
 

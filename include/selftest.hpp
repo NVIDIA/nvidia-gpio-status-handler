@@ -186,21 +186,21 @@ class Selftest : public event_handler::EventHandler
 
 } // namespace selftest
 
-
 namespace event_handler
 {
 /**
  * @brief A class for finding the potential root cause of problem when an event
  * is received, it tests device and it associated devices through device
  * association tree.
- * 
+ *
  */
 class RootCauseTracer : public EventHandler
 {
   public:
     RootCauseTracer(const std::string& name,
-        std::map<std::string, dat_traverse::Device>& dat) :
-        EventHandler(name), _dat(dat)
+                    std::map<std::string, dat_traverse::Device>& dat) :
+        EventHandler(name),
+        _dat(dat)
     {}
 
     ~RootCauseTracer() = default;
@@ -208,19 +208,19 @@ class RootCauseTracer : public EventHandler
   public:
     /**
      * @brief does selftest on device taken from event and associated devices;
-     * stops on first faulty device and updates health and origin of condition 
+     * stops on first faulty device and updates health and origin of condition
      * of event device. Writes back test report to event.
      *
      * @param[in out] event - shall carry problematic device name; gets written
      * in selftest report of problematic device + its associated devices
-     * 
+     *
      * @return aml::RcCode::succ when performed root cause tracing, otherwise
-     * aml::RcCode::error (wrong device name in event, performing selftest 
+     * aml::RcCode::error (wrong device name in event, performing selftest
      * failed). Warning - does not mean a root cause was found, but op success.
      */
     aml::RcCode process([[maybe_unused]] event_info::EventNode& event) override;
 
-    private:
+  private:
     /**
      * @brief called internally when found device that fails selftest
      *
@@ -228,7 +228,7 @@ class RootCauseTracer : public EventHandler
      * @param[in] rootCauseDevice - device which failed selftest
      */
     void handleFault(dat_traverse::Device& dev,
-                    dat_traverse::Device& rootCauseDevice);
+                     dat_traverse::Device& rootCauseDevice);
 
     /** @brief Internal DAT reference. **/
     std::map<std::string, dat_traverse::Device>& _dat;

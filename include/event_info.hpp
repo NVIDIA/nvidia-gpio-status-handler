@@ -45,7 +45,7 @@ class EventNode : public object::Object
 
   public:
     EventNode(const std::string& name = __PRETTY_FUNCTION__) :
-        object::Object(name), triggerCount(0)
+        object::Object(name), triggerCount(0), valueAsCount(false)
     {}
 
     EventNode(const EventNode& r) = default;
@@ -106,7 +106,8 @@ class EventNode : public object::Object
     /** @brief Particular device name .. i.e. GPU0 **/
     std::string device;
 
-    /** @brief Flag to indicate if we should use event value as trigger count **/
+    /** @brief Flag to indicate if we should use event value as trigger count
+     * **/
     bool valueAsCount;
 
     /** @brief Report of selftest **/

@@ -173,8 +173,7 @@ void DATTraverse::setOriginOfCondition(dat_traverse::Device& targetDevice,
 }
 
 std::vector<std::string> DATTraverse::getSubAssociations(
-    std::map<std::string, dat_traverse::Device>& dat,
-    const std::string& device)
+    std::map<std::string, dat_traverse::Device>& dat, const std::string& device)
 {
     std::queue<std::string> fringe;
     std::vector<std::string> childVec;
@@ -201,8 +200,8 @@ void DATTraverse::parentTraverse(
     std::map<std::string, dat_traverse::Device>& dat, const std::string& device,
     const std::function<bool(const dat_traverse::Device& device)> comparator,
     const std::vector<std::function<void(dat_traverse::Device& device,
-                                         const dat_traverse::Status& status)>>
-        &action)
+                                         const dat_traverse::Status& status)>>&
+        action)
 {
 
     dat_traverse::Device& dev = dat.at(device);

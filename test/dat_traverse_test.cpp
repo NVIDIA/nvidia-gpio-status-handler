@@ -94,7 +94,7 @@ TEST(DatTraverseTest, gettingAssociations)
 
     nlohmann::json jgpu0 = j;
     jgpu0["name"] = "GPU0";
-    jgpu0["association"] = {"HSC0", "GPU0-ERoT","Retimer0"};
+    jgpu0["association"] = {"HSC0", "GPU0-ERoT", "Retimer0"};
     dat_traverse::Device gpu0("GPU0", jgpu0);
 
     nlohmann::json jhsc0 = j;
@@ -120,16 +120,16 @@ TEST(DatTraverseTest, gettingAssociations)
     std::map<std::string, dat_traverse::Device> dat;
     dat.insert(std::pair<std::string, dat_traverse::Device>(gpu0.name, gpu0));
     dat.insert(std::pair<std::string, dat_traverse::Device>(hsc0.name, hsc0));
-    dat.insert(std::pair<std::string, 
-        dat_traverse::Device>(gpu0erot.name, gpu0erot));
-    dat.insert(std::pair<std::string, 
-        dat_traverse::Device>(retimer0.name, retimer0));
+    dat.insert(
+        std::pair<std::string, dat_traverse::Device>(gpu0erot.name, gpu0erot));
+    dat.insert(
+        std::pair<std::string, dat_traverse::Device>(retimer0.name, retimer0));
     dat.insert(std::pair<std::string, dat_traverse::Device>(hsc8.name, hsc8));
 
     event_handler::DATTraverse datTraverser("DatTraverser1");
 
-    std::vector<std::string> childVec = datTraverser.getSubAssociations(dat, 
-                                                                    gpu0.name);
+    std::vector<std::string> childVec =
+        datTraverser.getSubAssociations(dat, gpu0.name);
 
     EXPECT_EQ(childVec[0], gpu0.name);
     EXPECT_EQ(childVec[1], hsc0.name);

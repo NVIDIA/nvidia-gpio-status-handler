@@ -126,7 +126,7 @@ TEST(EventDetectionTest, TID_1_triggers_instantly)
     event_info::EventMap* eventMap = nullptr;
     event_handler::EventHandlerManager* eventHdlrMgr = nullptr;
     event_detection::EventDetection eventDetection("EventDetection1", eventMap,
-                                               eventHdlrMgr);
+                                                   eventHdlrMgr);
     event_info::EventNode event("TID_1_triggers_instantly");
     int trigger_count = 0;
     EXPECT_EQ(setup_event_cnt_test(event, trigger_count, "GPU5"), true);
@@ -139,7 +139,7 @@ TEST(EventDetectionTest, TID_2_triggers_instantly)
     event_info::EventMap* eventMap = nullptr;
     event_handler::EventHandlerManager* eventHdlrMgr = nullptr;
     event_detection::EventDetection eventDetection("EventDetection1", eventMap,
-                                               eventHdlrMgr);
+                                                   eventHdlrMgr);
     event_info::EventNode event("TID_2_triggers_instantly");
     int trigger_count = 1;
     EXPECT_EQ(setup_event_cnt_test(event, trigger_count, "GPU5"), true);
@@ -152,7 +152,7 @@ TEST(EventDetectionTest, TID_3_triggers_on_trigger_count)
     event_info::EventMap* eventMap = nullptr;
     event_handler::EventHandlerManager* eventHdlrMgr = nullptr;
     event_detection::EventDetection eventDetection("EventDetection1", eventMap,
-                                               eventHdlrMgr);
+                                                   eventHdlrMgr);
     event_info::EventNode event("TID_3_triggers_on_trigger_count");
     int trigger_count = 5;
     EXPECT_EQ(setup_event_cnt_test(event, trigger_count, "GPU5"), true);
@@ -172,7 +172,7 @@ TEST(EventDetectionTest, TID_4_counter_separation)
     event_info::EventMap* eventMap = nullptr;
     event_handler::EventHandlerManager* eventHdlrMgr = nullptr;
     event_detection::EventDetection eventDetection("EventDetection1", eventMap,
-                                               eventHdlrMgr);
+                                                   eventHdlrMgr);
     event_info::EventNode ev1("TID_4_counter_separation");
     int ev1_trig_cnt = 1;
     EXPECT_EQ(setup_event_cnt_test(ev1, ev1_trig_cnt, "GPU1"), true);

@@ -105,12 +105,14 @@ class EventDetection : public object::Object
      * @return true
      * @return false
      */
-    bool IsEvent(event_info::EventNode& candidate, int compareCount = invalidIntParam)
+    bool IsEvent(event_info::EventNode& candidate,
+                 int compareCount = invalidIntParam)
     {
         int count = candidate.count[candidate.device] + 1;
         if (candidate.valueAsCount)
         {
-            count = (compareCount == -1) ? std::stoi(candidate.accessor.read()) : compareCount;
+            count = (compareCount == -1) ? std::stoi(candidate.accessor.read())
+                                         : compareCount;
         }
 
         auto countDiff = candidate.triggerCount - count;

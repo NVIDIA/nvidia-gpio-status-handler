@@ -178,8 +178,8 @@ int main(int argc, char* argv[])
 
     event_handler::ClearEvent clearEvent;
     event_handler::EventHandlerManager eventHdlrMgr("EventHandlerManager");
-    event_handler::RootCauseTracer rootCauseTracer("RootCauseTracer", 
-                                                    aml::profile::datMap);
+    event_handler::RootCauseTracer rootCauseTracer("RootCauseTracer",
+                                                   aml::profile::datMap);
 
     eventHdlrMgr.RegisterHandler(&datTraverser);
     eventHdlrMgr.RegisterHandler(&rootCauseTracer);

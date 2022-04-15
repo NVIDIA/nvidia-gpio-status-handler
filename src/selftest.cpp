@@ -21,7 +21,7 @@ bool Selftest::evaluateTestReport(const ReportResult& reportRes)
         for (auto& layer : dev.second.layer)
         {
             if (std::any_of(layer.second.begin(), layer.second.end(),
-                [](auto tp){return !tp.result;}))
+                            [](auto tp) { return !tp.result; }))
             {
                 return false;
             }
@@ -212,12 +212,11 @@ aml::RcCode DoSelftest([[maybe_unused]] const dat_traverse::Device& dev,
 
 } // namespace selftest
 
-
 namespace event_handler
 {
 
 void RootCauseTracer::handleFault(dat_traverse::Device& dev,
-                                dat_traverse::Device& rootCauseDevice)
+                                  dat_traverse::Device& rootCauseDevice)
 {
     dat_traverse::Status status;
     status.health = "Critical";
@@ -229,15 +228,15 @@ void RootCauseTracer::handleFault(dat_traverse::Device& dev,
     // TODO: add log ?
 }
 
-aml::RcCode RootCauseTracer::process(
-        [[maybe_unused]] event_info::EventNode& event)
+aml::RcCode
+    RootCauseTracer::process([[maybe_unused]] event_info::EventNode& event)
 {
     std::string problemDevice = event.device;
     if (problemDevice.length() == 0)
     {
         return aml::RcCode::error;
     }
-    
+
     auto devsToTest = DATTraverse::getSubAssociations(_dat, problemDevice);
     selftest::ReportResult completeReportRes;
     selftest::Selftest selftester("rootCauseSelftester", _dat);

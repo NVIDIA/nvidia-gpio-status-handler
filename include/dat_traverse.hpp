@@ -159,9 +159,9 @@ class DATTraverse : public event_handler::EventHandler
      *
      * @return vector of associated devices to device argument
      */
-    static std::vector<std::string> getSubAssociations(
-        std::map<std::string, dat_traverse::Device>& dat,
-        const std::string& device);
+    static std::vector<std::string>
+        getSubAssociations(std::map<std::string, dat_traverse::Device>& dat,
+                           const std::string& device);
 
     /**
      * @brief Fully traverses a device and stops if comparator
@@ -182,8 +182,7 @@ class DATTraverse : public event_handler::EventHandler
             comparator,
         const std::vector<
             std::function<void(std::map<std::string, dat_traverse::Device>& dat,
-                               const dat_traverse::Device& device)>>
-            &action);
+                               const dat_traverse::Device& device)>>& action);
 
     /**
      * @brief Fully traverses a device in reverse direction
@@ -204,8 +203,8 @@ class DATTraverse : public event_handler::EventHandler
         const std::function<bool(const dat_traverse::Device& device)>
             comparator,
         const std::vector<std::function<void(
-            dat_traverse::Device& device, const dat_traverse::Status& status)>>
-            &action);
+            dat_traverse::Device& device, const dat_traverse::Status& status)>>&
+            action);
 
     /**
      * @brief Checks to see if the device has parents
