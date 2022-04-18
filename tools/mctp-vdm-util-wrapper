@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+
+# Copyright (c) 2021, NVIDIA CORPORATION.  All rights reserved.
+#
+#  NVIDIA CORPORATION and its licensors retain all intellectual property
+#  and proprietary rights in and to this software, related documentation
+#  and any modifications thereto.  Any use, reproduction, disclosure or
+#  distribution of this software and related documentation without an express
+#  license agreement from NVIDIA CORPORATION is strictly prohibited.
+
+# Simple wrapper to 'mctp-vdm-util-wrapper' to map 'device name' to 'device id'
+
+set -o pipefail
+
+## Simple wrapper to call mctp-vdm-util
+##         which syntax is:  mctp-vdm-util -c comment -t deviceid
+##
+## wrapper syntax: $0 [-dry-run] <comment> <device-name>
+##
+##   just gets the device-id from device-name to call mctp-vdm-util
+
+DEVICENAME_EID_LIST="\
+FPGA:13
+HMC:14
+GPU0:15
+GPU1:16
+GPU2:17
+GPU3:18
+GPU4:19
+GPU5:20
+GPU6:21
+GPU7:22
+NVSwitch0:23
+NVSwitch1:24
+NVSwitch2:25
+NVSwitch3:26
+PCIeSwitch:27
+"
+
+getDeviceEid() #1=device name
+{
+    local device=$1
+    local eid=-1
+
+    for device_eid in $DEVICENAME_EID_LIST
+    do
+        local name=$(echo $device_eid | cut -f1 -d:)
+        ## comparing with ignorecase
+        if [ "${name,,}" = "${device,,}" ]
+        then
+            eid=$(echo $device_eid | cut -f2 -d:)
+            break
+        fi
+    done
+    echo  $eid
+}
+
+DRY_RUN=0
+
+## -dry-run just prints the mctp-vdm-util command line
+if [ "$1"  = "-dry-run" ]; then
+   DRY_RUN=1
+   shift
+fi
+
+if [ $# -ne 2 ]; then
+    echo "syntax: $0 <comment> <device>"
+    exit 1
+fi
+
+COMMENT="-c \"$1\""
+
+device_id=`getDeviceEid $2` # $2=device-name, find the right device eid for it
+DEVICE="-t $device_id"
+CMD="mctp-vdm-util $COMMENT $DEVICE"
+status=0
+if [ $DRY_RUN -eq 0 ]; then
+    output=`eval $CMD`
+    status=$?
+else
+    output="$CMD"
+fi
+
+echo $output
+exit $status

@@ -147,6 +147,10 @@ selftestlib_sources = ['src/selftest.cpp']
 
 bindir = get_option('prefix') + '/' + get_option('bindir')
 
+## install mctp wrapper
+install_data('tools/mctp-vdm-util-wrapper',
+             install_dir : bindir)
+
 if(get_option('tests').enabled())
     # generate the test executable
     ut_bin = executable(

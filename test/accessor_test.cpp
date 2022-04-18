@@ -174,3 +174,18 @@ TEST(DataAccessor, CheckNegativeLookupForDeviceName)
     PropertyVariant redefineLookup{std::string{"GPU1"}};
     EXPECT_NE(jAccessor.check(device, redefineLookup), true);
 }
+
+TEST(DataAccessor, CheckLookupMctpVdmUtilWrapper)
+{
+    // the wrapper contains the option -dry-run
+    // which makes it just print the command line wihout calling mctp-vdm-util
+    const nlohmann::json json = {
+        {"type", "CMDLINE"},
+        {"executable", "mctp-vdm-util-wrapper"},
+        {"arguments", "-dry-run query_boot_status [0-7]"},
+        {"check", {{"lookup", "-t 20"}}}};
+
+    DataAccessor jAccessor(json);
+    const std::string device{"GPU5"};
+    EXPECT_EQ(jAccessor.check(device), true);
+}

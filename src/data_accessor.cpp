@@ -121,7 +121,7 @@ bool DataAccessor::runCommandLine(const std::string& device)
             if (std::regex_search(args, match, reg))
             {
                 std::string regexString = match[1];
-                regexPosition = args.find_first_of(regexString);
+                regexPosition = args.find(regexString);
                 // replace the range by device
                 if (device.empty() == false)
                 {
