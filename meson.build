@@ -70,6 +70,7 @@ aml_dependencies += sdbusplus_dep
 aml_dependencies += phosphor_logging_dep
 #aml_dependencies += dependency('glib-2.0')
 aml_dependencies += dependency('threads')
+aml_dependencies += meson.get_compiler('cpp').find_library('rt')
 
 if cxx.has_header('nlohmann/json.hpp')
     aml_dependencies += declare_dependency()
@@ -126,9 +127,10 @@ srcfiles_unittest = ['test/dat_test.cpp',
                      'test/dat_traverse_test.cpp',
                      'test/accessor_test.cpp',
                      'test/propertyvalue_string_test.cpp',
-		     'test/event_detection_test.cpp',
+                     'test/event_detection_test.cpp',
                      'test/selftest_test.cpp',
-                     'test/propertyvalue_variant_test.cpp'
+                     'test/propertyvalue_variant_test.cpp',
+                     'test/gpio_monitor_test.cpp'
                     ]
 
 amllib_sources = [
@@ -166,5 +168,4 @@ if(get_option('tests').enabled())
     test('oobaml_unit_test', ut_bin)
 endif
 
-
-
+subdir('gpio-status-handler')

@@ -38,6 +38,7 @@ oobamld = executable('oobamld',
         sdbusplus_dep,
         sdeventplus_dep,
 	phosphor_logging_dep,
+        meson.get_compiler('cpp').find_library('rt')
     ],
     install: true,
 )
