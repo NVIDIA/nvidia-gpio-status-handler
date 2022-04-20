@@ -43,8 +43,10 @@ class EventAccessorInjectorScript(InjectorScriptBase):
             "gl_total_comands=0  # will be set as the total intended commands\n"
             "gl_counter_commands=0 # counter for commands being executed\n"
             "gl_injections=0  # successful injections\n"
+            "gl_current_logging_entries=0"
             "\n"
-            "gl_debug=0\n"
+            "gl_debug=1\n"
+            "gl_error_file=/tmp/_event_error_$$\n"
             "DRY_RUN=1 # default do not run commands 'busctl set-property'\n"
             "\n"
             "while [ \"$1\" != \"\" ]; do\n"
@@ -63,7 +65,7 @@ class EventAccessorInjectorScript(InjectorScriptBase):
             "   [ $gl_debug -eq 0 ] && return 0 # only when debug is active\n"
             "   latest_entry=0\n"
             "   for entry_value in  $(busctl tree xyz.openbmc_project.Logging | "
-            "grep /xyz/openbmc_project/logging/entry/ | awk -F / '{ print $NF}')\n"
+            "grep /xyz/openbmc_project/logging/entry/ | awk -F / '{ print $NF}' 2> $gl_error_file)\n"
             "   do\n"
             "      entry=${entry_value//[!0-9]/}\n"
             "      [ \"$entry\" != \"\" -a $entry -gt $latest_entry ] && latest_entry=$entry\n"
@@ -78,13 +80,13 @@ class EventAccessorInjectorScript(InjectorScriptBase):
             "    gl_property_type=\"\"\n"
             "    local cmd=\"busctl get-property $SERVICE $@\"\n"
             "    echo \"property_get(): $cmd\"\n"
-            "    local get_value=$(eval $cmd)\n"
-            "    echo \" $get_value\"\n"
-            "    if [ $? -ne 0 ]; then\n"
+            "    local get_value=$(eval $cmd 2> $gl_error_file)\n"
+            "    if [ $? -ne 0 -o \"$get_value\" = \"\" ]; then\n"
             "        gl_rc=1\n"
             "    else\n"
-            "        gl_property_value=$(echo $get_value | awk '{print $NF}')\n"
-            "        gl_property_type=$(echo $get_value | awk '{print $(NF-1)}')\n"
+            "        echo \" $get_value\"\n"
+            "        gl_property_value=$(echo $get_value | awk '{print $NF}' 2> $gl_error_file )\n"
+            "        gl_property_type=$(echo $get_value | awk '{print $(NF-1)}' 2> $gl_error_file)\n"
             "        [ \"$gl_property_value\" = \"\" -o \"$gl_property_type\" = \"\" ] && gl_rc=1\n"
             "    fi\n"
             "    return $gl_rc\n"
@@ -144,36 +146,70 @@ class EventAccessorInjectorScript(InjectorScriptBase):
             "    cmd=\"busctl set-property $SERVICE $@ $gl_property_type"
             " \'$gl_new_property_value\'\"\n"
             "    echo \"property_set(): $cmd\"\n"
-             "   [ $DRY_RUN -eq 1 ] && return\n"
-            "    eval $cmd\n"
+            "    [ $DRY_RUN -eq 1 ] && return\n"
+            "    eval $cmd 2> $gl_error_file\n"
             "    gl_rc=$?\n"
-            "    if [ $gl_rc -eq 0 ]; then\n"
+            "    if [ $gl_rc -eq 0 -a  $gl_debug -eq 0 ]; then\n"
             "       gl_injections=$[ $gl_injections + 1 ]\n"
             "    fi\n"
             "    return $gl_rc\n"
             "}\n"
             "\n"
+            "matchDevice() # $1=device to match  $2=entryid to check\n"
+            "{                     \n"
+            "    device=$(busctl get-property xyz.openbmc_project.Logging /xyz/openbmc_project/logging/entry/$2 xyz.openbmc_project.Logging.Entry AdditionalData  \\\n"
+            "              | awk -F 'namespace='   '{print $2}' |  awk '{print $0}' | tr -d \\\")\n"
+            "    to_match=$(echo $1 | awk -F  / '{print $NF}')\n"
+            "    if [ \"$to_match\" = \"$device\" ]; then\n"
+            "       echo $2 ## correct entry id\n"
+            "    fi\n"
+            "}\n"
+            "\n"
             "verifyInjection()\n"
             "{\n"
-            "   new_logging_entries=$(latest_looging_entry)\n"
-            "    local expected_logging_entry=$[ $current_logging_entries + 1 ]\n"
-            "    if [ $new_logging_entries -gt $current_logging_entries ]; then\n"
-            "       echo [debug] created EventLog Id $new_logging_entries\n"
+            "    seconds=10\n"
+            "    local logid=\"\" # more then one event can be created\n"
+            "    while [ \"$logid\" = \"\" -a $seconds -gt 0 ]; do\n"
+            "       echo -ne waiting for the event, trying at most $seconds times to get a new EventLogId ...\r \n"
+            "       sleep 1\n"
+            "       local new_logging_entries=$(latest_looging_entry)\n"
+            "       local expected_logging_entry=$[ $gl_current_logging_entries + 1 ]\n"
+            "       if [ $new_logging_entries -gt $gl_current_logging_entries ]; then\n"
+            "          while [ \"$logid\" = \"\" -a $expected_logging_entry -le $new_logging_entries ]; do\n"
+            "               logid=$(matchDevice $1 $expected_logging_entry)\n"
+            "               expected_logging_entry=$[$expected_logging_entry + 1]\n"
+            "          done\n"
+            "       fi\n"
+            "       seconds=$[ $seconds - 1 ]\n"
+            "    done\n"
+            "    if [ \"$logid\" != \"\" ]; then\n"
+            "       echo -ne \"\r\"\n"
+            "       showStatus \"created EventLogId [ $logid ]\"\n"
+            "       gl_injections=$[ $gl_injections + 1 ]\n"
             "    else\n"
-            "       echo [debug] EventLog NOT created\n"
+            "       gl_rc=1\n"
+            "       showStatus 'busctl commands worked but Event NOT created'\n"
             "    fi\n"
+            "}\n"
+            "\n"
+            "showStatus()\n"
+            "{\n"
+            "    status='injected'\n"
+            "    [ $gl_rc -ne 0 ] && status='failed'\n"
+            "    error_msg=$(cat $gl_error_file 2> /dev/null)\n"
+            "    message=\"[debug: $gl_counter_commands/$gl_total_comands] $status EVENT='$EVENT' : '$1' '$error_msg'\"\n"
+            "    echo $message\n"
             "}\n"
             "\n"
             "property_change() #1=object_path $2=interface, $3=property_name\n"
             "{\n"
             "    gl_rc=0\n"
-            "    local current_logging_entries=0\n"
-            "    local new_logging_entries=0\n"
+            "    gl_current_logging_entries=0\n"
             "    gl_counter_commands=$[ $gl_counter_commands + 1 ]\n"
             "    echo\n"
             "    if [ $gl_total_comands -ne 0 ]; then\n"
             "       echo -n \"injecting [$gl_counter_commands/$gl_total_comands]\"\n"
-            "       echo \" ACCESSOR_TYPE='$ACCESSOR_TYPE' EVENT='$EVENT'\"\n"
+            "       echo \" EVENT='$EVENT' ACCESSOR_TYPE='$ACCESSOR_TYPE'\"\n"
             "    else\n"
             "       echo ============\n"
             "    fi\n"
@@ -184,16 +220,16 @@ class EventAccessorInjectorScript(InjectorScriptBase):
             "       return\n"
             "    fi\n"
             "    property_get \"$@\"  \\\n"
-            "        &&  current_logging_entries=$(latest_looging_entry) \\\n"
+            "        &&  gl_current_logging_entries=$(latest_looging_entry) \\\n"
             "        &&  property_set_method \"$@\"  \\\n"
             "        &&  property_get \"$@\"\n"
             "\n"
+            "   [ $DRY_RUN -eq 1 ] && return\n"
             "   if [ $gl_rc -eq 0 ]; then\n"
-            "       [ $gl_debug -eq 1 ] && verifyInjection\n"
+            "       [ $gl_debug -eq 1 ] && verifyInjection $1\n"
             "   else\n"
-            "       echo [debug] busctl failed\n"
+            "       showStatus 'busctl command failed'\n"
             "   fi\n"
-            "   echo\n"
             "}\n"
             "\n"
             "\n")
@@ -241,6 +277,7 @@ class EventAccessorInjectorScript(InjectorScriptBase):
         information["method"] = method
         information["method_value"] = method_value
         information["accessor_type"] = accessor_type
+        information["event"]         = self._busctl_info[com.INDEX_EVENT]
         if com.KEY_ACCESSOR_INTERFACE in self._additional_data:
             information[com.KEY_ACCESSOR_INTERFACE] = \
                 self._additional_data[com.KEY_ACCESSOR_INTERFACE]
@@ -251,12 +288,12 @@ class EventAccessorInjectorScript(InjectorScriptBase):
 
     def __write_busctl_commands_into_script(self, cmd_info):
         """
-        Saves bustcl commands in the script
+        Saves busctl commands in the script
         """
         cmd =  f"\n METHOD=\"{cmd_info['method']}\" METHOD_VALUE=\"{cmd_info['method_value']}\" "
         cmd += f"ACCESSOR_TYPE=\"{cmd_info['accessor_type']}\" "
         if len(self._busctl_info) > com.INDEX_EVENT:
-            cmd += f"EVENT=\"{self._busctl_info[com.INDEX_EVENT]}\" "
+            cmd += f"EVENT=\"{cmd_info['event']}\" "
         cmd += f"property_change {cmd_info['device']} "
         if com.KEY_ACCESSOR_INTERFACE in cmd_info and com.KEY_ACCESSOR_PROPERTY in cmd_info:
             cmd += f"{cmd_info[com.KEY_ACCESSOR_INTERFACE]} "
@@ -264,12 +301,14 @@ class EventAccessorInjectorScript(InjectorScriptBase):
         super().write(cmd)
 
 
-    def __store_in_expected_events_list(self):
+    def __store_in_expected_events_list(self, device):
         """
         Stores event data to be later compared with RedFish data
         """
         event_data = self._additional_data.copy()
         super().remove_accessor_fields(event_data)
+        event_data['event'] = self._busctl_info[com.INDEX_EVENT]
+        event_data['device'] = device
         self._accessor_dbus_expected_events_list.append(event_data)
 
 
@@ -289,10 +328,10 @@ class EventAccessorInjectorScript(InjectorScriptBase):
             device_range = com.expand_range(self._additional_data[com.KEY_ACCESSOR_OBJECT])
             for device_item in device_range:
                 self.__store_command_information(device_item, method, value, accessor_type)
-                self.__store_in_expected_events_list()
+                self.__store_in_expected_events_list(device_item)
         else:
             self.__store_command_information(device, method, value, accessor_type)
-            self.__store_in_expected_events_list()
+            self.__store_in_expected_events_list(device)
 
 
 

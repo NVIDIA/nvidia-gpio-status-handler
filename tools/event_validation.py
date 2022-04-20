@@ -333,7 +333,7 @@ class InjectTest:
             msg  = f"Exception occurred while running command {event_inject_cmd} over ssh:"
             msg += f"\n{''.join(result_stdout)}"
             raise Exception(msg)
-        return result_stdout.split('\n')
+        return result_stdout.splitlines()
 
     def parse_event_logging_output_get_events_injected(self, result_stdout):
         """
@@ -384,7 +384,7 @@ class InjectTest:
                 raise Exception(f"{msg}:  {str(error)}") from error
 
 
-    def get_events_list_from_json_file(self, event_logs_script):
+    def get_events_list_from_json_file(self, result_stdout, event_logs_script):
         """
         This function is similar to parse_event_logging_output_get_events_injected()
         Inserts data in the dict self.events_injected, to be compared to redfish data
@@ -392,10 +392,22 @@ class InjectTest:
         """
         current_log_number = self.initial_log_count # number of logs found before injection
         supposed_injected_events = event_logs_script.get_accessor_dbus_expected_events_list()
-        for event_data in supposed_injected_events:
-            current_log_number += 1
-            self.events_injected[current_log_number] = event_data
-            self.total_events  += 1
+        for line in result_stdout:
+            # failed    -> "[debug: 63/100] failed EVENT='VR Fault DVDD' : 'busctl command failed'
+            # successful-> "[debug: 61/100] injected EVENT='PCIe link error' : 'created EventLogId [ 28 ]"
+            if "[debug:" in line and "injected" in line:
+                    words = line.split(' ')
+                    index_event= int(words[1].split('/')[0]) - 1
+                    event_id=0
+                    counter = 3
+                    while counter < len(words):
+                        if words[counter] == "EventLogId":
+                            event_id = int(words[counter+2])
+                            break
+                        counter += 1
+                    self.events_injected[event_id] = supposed_injected_events[index_event]
+                    self.total_events  += 1
+                    current_log_number += 1
 
     def inject_events(self):
         """
@@ -432,7 +444,7 @@ class InjectTest:
             if TEST_MODE == TEST_MODE_EVENTS_LOGGING:
                 self.parse_event_logging_output_get_events_injected(result_stdout)
             elif TEST_MODE == TEST_MODE_CHANGE_DEVICE_STATUS:
-                self.get_events_list_from_json_file(event_logs_script)
+                self.get_events_list_from_json_file(result_stdout, event_logs_script)
         except Exception as error:
             raise error
         finally:
