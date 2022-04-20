@@ -13,6 +13,7 @@
 
 #include <ostream>
 #include <string>
+#include <vector>
 
 namespace selftest
 {
@@ -113,6 +114,15 @@ class Selftest : public event_handler::EventHandler
     ~Selftest() = default;
 
   public:
+    /**
+     * @brief Updates device health on the DBUS in GpuMgr tree
+     *
+     * @param[in] device - name of device
+     * @param[in] health - health status of device
+     */
+    void updateDeviceHealth(const std::string& device,
+                            const std::string& health);
+
     /**
      * @brief Aggregates selftest results of report->devices->testpoints
      * to simple ok or not ok.
@@ -226,9 +236,11 @@ class RootCauseTracer : public EventHandler
      *
      * @param[out] dev  - device to update health and origin of condition
      * @param[in] rootCauseDevice - device which failed selftest
+     * @param[in] selftester - self test object
      */
     void handleFault(dat_traverse::Device& dev,
-                     dat_traverse::Device& rootCauseDevice);
+                     dat_traverse::Device& rootCauseDevice,
+                     selftest::Selftest& selftester);
 
     /** @brief Internal DAT reference. **/
     std::map<std::string, dat_traverse::Device>& _dat;

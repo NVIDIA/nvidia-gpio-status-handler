@@ -5,14 +5,89 @@
 
 #include "selftest.hpp"
 
+#include <boost/algorithm/string.hpp>
+#include <boost/asio.hpp>
+#include <phosphor-logging/log.hpp>
+#include <sdbusplus/asio/connection.hpp>
+#include <sdbusplus/asio/property.hpp>
+#include <sdbusplus/bus.hpp>
+#include <sdbusplus/exception.hpp>
+
 #include <chrono>
 #include <iostream>
+#include <variant>
 
 namespace selftest
 {
 
 static constexpr auto reportResultPass = "Pass";
 static constexpr auto reportResultFail = "Fail";
+
+using phosphor::logging::entry;
+using phosphor::logging::level;
+using phosphor::logging::log;
+
+void Selftest::updateDeviceHealth(const std::string& device,
+                                  const std::string& health)
+{
+    try
+    {
+        auto bus = sdbusplus::bus::new_default_system();
+        auto method = bus.new_method_call("xyz.openbmc_project.ObjectMapper",
+                                          "/xyz/openbmc_project/object_mapper",
+                                          "xyz.openbmc_project.ObjectMapper",
+                                          "GetSubTree");
+        method.append("/xyz/openbmc_project/inventory/system");
+        method.append(2);
+        method.append(std::vector<std::string>());
+
+        using GetSubTreeType = std::vector<std::pair<
+            std::string,
+            std::vector<std::pair<std::string, std::vector<std::string>>>>>;
+
+        auto reply = bus.call(method);
+        GetSubTreeType subtree;
+        reply.read(subtree);
+
+        boost::asio::io_context ioc;
+        auto conn = sdbusplus::asio::connection(ioc);
+
+        for (auto& objPath : subtree)
+        {
+            if (boost::algorithm::ends_with(objPath.first, "/" + device))
+            {
+                std::cout << "Setting Health Property for: " << objPath.first
+                          << "\n";
+
+                std::string&& healthState =
+                    "xyz.openbmc_project.State.Decorator.Health.HealthType." +
+                    health;
+
+                sdbusplus::asio::setProperty(
+                    conn, "xyz.openbmc_project.GpuMgr", objPath.first,
+                    "xyz.openbmc_project.State.Decorator.Health", "Health",
+                    healthState, [this](const boost::system::error_code& ec) {
+                        if (ec)
+                        {
+                            std::cout
+                                << "Error: it supposed to be ok to change health property "
+                                << ec << "\n";
+                            return;
+                        }
+                        std::cout << "Changed health property as expected\n";
+                    });
+
+                ioc.poll();
+            }
+        }
+    }
+    catch (const sdbusplus::exception::SdBusError& e)
+    {
+        std::cerr << "ERROR WITH SDBUSPLUS BUS " << e.what() << "\n";
+        log<level::ERR>("Failed to establish sdbusplus connection",
+                        entry("SDBUSERR=%s", e.what()));
+    }
+}
 
 bool Selftest::evaluateTestReport(const ReportResult& reportRes)
 {
@@ -216,7 +291,8 @@ namespace event_handler
 {
 
 void RootCauseTracer::handleFault(dat_traverse::Device& dev,
-                                  dat_traverse::Device& rootCauseDevice)
+                                  dat_traverse::Device& rootCauseDevice,
+                                  selftest::Selftest& selftester)
 {
     dat_traverse::Status status;
     status.health = "Critical";
@@ -225,11 +301,11 @@ void RootCauseTracer::handleFault(dat_traverse::Device& dev,
     status.triState = "Error";
     DATTraverse::setHealthProperties(dev, status);
     DATTraverse::setOriginOfCondition(dev, status);
-    // TODO: add log ?
+    selftester.updateDeviceHealth(dev.name, status.health);
 }
 
-aml::RcCode
-    RootCauseTracer::process([[maybe_unused]] event_info::EventNode& event)
+aml::RcCode RootCauseTracer::process([
+    [maybe_unused]] event_info::EventNode& event)
 {
     std::string problemDevice = event.device;
     if (problemDevice.length() == 0)
@@ -251,7 +327,7 @@ aml::RcCode
 
         if (!selftester.evaluateTestReport(completeReportRes))
         {
-            handleFault(_dat.at(problemDevice), devTest);
+            handleFault(_dat.at(problemDevice), devTest, selftester);
             break;
         }
     }
