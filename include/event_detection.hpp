@@ -16,6 +16,7 @@
 #include <iostream>
 #include <string>
 #include <thread>
+#include <memory>
 
 namespace event_detection
 {
@@ -141,14 +142,18 @@ class EventDetection : public object::Object
     void RunEventHandlers(event_info::EventNode& event)
     {
         std::cout << "Create thread to process event.\n";
-        auto thread = new std::thread([this, event]() mutable {
+        auto thread = std::make_unique<std::thread>([this, event]() mutable {
             std::cout << "calling hdlrMgr: " << this->_hdlrMgr->getName()
                       << "\n";
             auto hdlrMgr = *this->_hdlrMgr;
             hdlrMgr.RunAllHandlers(event);
         });
 
-        if (thread == nullptr)
+        if (thread != nullptr)
+        {
+            thread->detach(); // separate, this no longer owns this thread
+        }
+        else
         {
             std::cout << "Create thread to process event failed!\n";
         }
