@@ -4,12 +4,16 @@
       "event": "OverTemp",
       "device_type": "GPU",
       "event_trigger": {
-        "type": "DBUS call",
-        "property": "gpu.thermal.temperature.overTemperatureInfo"
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/GpioStatusHandler",
+        "interface": "xyz.openbmc_project.GpioStatus",
+        "property": "THERM_OVERT",
+        "check": {"bitmask": "1"}
       },
       "accessor": {
-        "type": "DBUS call",
-        "property": "gpu.thermal.temperature.overTemperatureInfo"
+        "type": "DeviceCoreAPI",
+        "property": "gpu.thermal.temperature.overTemperatureInfo",
+        "check": {"bitmask": "1"}
       },
       "severity": "Critical",
       "resolution": "Run field diags and evaluate for RMA",
@@ -78,7 +82,7 @@
       },
       "telemetries": [],
       "action": "",
-      "value_as_count": true 
+      "value_as_count": true
     },
     {
       "event": "DRAM Contained ECC Error",
@@ -102,7 +106,7 @@
       },
       "telemetries": [],
       "action": "",
-      "value_as_count": true 
+      "value_as_count": true
     },
     {
       "event": "DRAM Uncontained ECC Error",
@@ -126,7 +130,7 @@
       },
       "telemetries": [],
       "action": "",
-      "value_as_count": true 
+      "value_as_count": true
     },
     {
       "event": "Physically Missing",
