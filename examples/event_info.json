@@ -28,7 +28,7 @@
       "telemetries": [
         {
           "name": "temperature",
-          "type": "DBUS call",
+          "type": "DeviceCoreAPI",
           "property": "gpu.thermal.temperature.overTemperatureInfo"
         }
       ],
@@ -39,11 +39,11 @@
       "event": "Thermal Warning",
       "device_type": "GPU",
       "event_trigger": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "gpu.thermal.alert"
       },
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "gpu.thermal.alert"
       },
       "severity": "Warning",
@@ -137,7 +137,7 @@
       "device_type": "GPU",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "gpu.interrupt.PresenceInfo"
       },
       "severity": "Critical",
@@ -159,7 +159,7 @@
       "device_type": "GPU",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "gpu.xid.event"
       },
       "severity": "Warning",
@@ -181,7 +181,7 @@
       "device_type": "GPU",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "gpu.xid.event"
       },
       "severity": "Warning",
@@ -203,7 +203,7 @@
       "device_type": "GPU",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "gpu.xid.event"
       },
       "severity": "Warning",
@@ -225,7 +225,7 @@
       "device_type": "GPU",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "nvswitch.nvlink.NVLinkState"
       },
       "severity": "Critical",
@@ -253,7 +253,7 @@
         "property": "TBD"
       },
       "severity": "Critical",
-      "resolution": "Reseat the GPU.  If the problem affects multiple connections on the upstream PLX, consider GPU tray RMA.",
+      "resolution": "Reset the GPU. If the problem affects multiple connections on the upstream PLX, consider GPU tray RMA.",
       "trigger_count": 0,
       "event_counter_reset": {
         "type": "",
@@ -271,7 +271,7 @@
       "device_type": "GPU",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "gpu.xid.event"
       },
       "severity": "Warning",
@@ -293,7 +293,7 @@
       "device_type": "GPU",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "TBD"
       },
       "severity": "Critical",
@@ -315,7 +315,7 @@
       "device_type": "GPU",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "gpu.xid.event"
       },
       "severity": "OK",
@@ -337,7 +337,7 @@
       "device_type": "GPU",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "gpu.xid.event"
       },
       "severity": "OK",
@@ -383,7 +383,7 @@
       "device_type": "GPU",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "TBD"
       },
       "severity": "Critical",
@@ -405,7 +405,7 @@
       "device_type": "GPU",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "gpu.interrupt.powerGoodAbnormalChange"
       },
       "severity": "Critical",
@@ -427,7 +427,7 @@
       "device_type": "GPU",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "metadata": "TBD"
       },
       "severity": "Warning",
@@ -449,7 +449,7 @@
       "device_type": "GPU",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "metadata": "TBD"
       },
       "severity": "Critical",
@@ -471,7 +471,7 @@
       "device_type": "GPU",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "metadata": "TBD"
       },
       "severity": "Critical",
@@ -493,7 +493,7 @@
       "device_type": "GPU",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "metadata": "TBD"
       },
       "severity": "Critical",
@@ -515,7 +515,7 @@
       "device_type": "GPU",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "metadata": "TBD"
       },
       "severity": "Critical",
@@ -537,7 +537,7 @@
       "device_type": "GPU",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "metadata": "TBD"
       },
       "severity": "Critical",
@@ -559,7 +559,7 @@
       "device_type": "GPU",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "TBD"
       },
       "severity": "Critical",
@@ -583,7 +583,7 @@
       "device_type": "NVSwitch",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "nvswitch.thermal.temperature.overTemperatureInfo"
       },
       "severity": "Critical",
@@ -605,7 +605,7 @@
       "device_type": "NVSwitch",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "nvswitch.thermal.alert"
       },
       "severity": "Warning",
@@ -627,7 +627,7 @@
       "device_type": "NVSwitch",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "nvswitch.device.vrFault"
       },
       "severity": "Critical",
@@ -721,7 +721,7 @@
       "device_type": "NVSwitch",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "nvswitch.vdd.abnormalPowerChange"
       },
       "severity": "Critical",
@@ -743,7 +743,7 @@
       "device_type": "NVSwitch",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "nvswitch.dvdd.abnormalPowerChange"
       },
       "severity": "Critical",
@@ -765,7 +765,7 @@
       "device_type": "NVSwitch",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "nvswitch.hvdd.abnormalPowerChange"
       },
       "severity": "Critical",
@@ -787,7 +787,7 @@
       "device_type": "NVSwitch",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "nvswitch.1V8.abnormalPowerChange"
       },
       "severity": "Critical",
@@ -809,7 +809,7 @@
       "device_type": "NVSwitch",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "nvswitch.device.vrFault"
       },
       "severity": "Critical",
@@ -831,7 +831,7 @@
       "device_type": "NVSwitch",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "TBD"
       },
       "severity": "Critical",
@@ -853,7 +853,7 @@
       "device_type": "NVSwitch",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "TBD"
       },
       "severity": "Critical",
@@ -877,7 +877,7 @@
       "device_type": "PCIe Switch",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "pcieswitch.0V8.abnormalPowerChange"
       },
       "severity": "Critical",
@@ -899,7 +899,7 @@
       "device_type": "PCIe Switch",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "pcieswitch.thermal.temperature.overTemperatureInfo"
       },
       "severity": "Critical",
@@ -921,7 +921,7 @@
       "device_type": "PCIe Switch",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "TBD"
       },
       "severity": "Critical",
@@ -943,7 +943,7 @@
       "device_type": "PCIe Switch",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "TBD"
       },
       "severity": "Critical",
@@ -965,7 +965,7 @@
       "device_type": "PCIe Switch",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "TBD"
       },
       "severity": "Critical",
@@ -987,7 +987,7 @@
       "device_type": "PCIe Switch",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "TBD"
       },
       "severity": "Critical",
@@ -1009,7 +1009,7 @@
       "device_type": "PCIe Switch",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "TBD"
       },
       "severity": "Critical",
@@ -1031,7 +1031,7 @@
       "device_type": "PCIe Switch",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "metadata": "TBD"
       },
       "severity": "Critical",
@@ -1053,7 +1053,7 @@
       "device_type": "PCIe Switch",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "TBD"
       },
       "severity": "Critical",
@@ -1077,7 +1077,7 @@
       "device_type": "Retimer",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "pcieretimer.0V9.abnormalPowerChange"
       },
       "severity": "Critical",
@@ -1099,7 +1099,7 @@
       "device_type": "Retimer",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "TBD"
       },
       "severity": "Critical",
@@ -1121,7 +1121,7 @@
       "device_type": "Retimer",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "pcieretimer.1V8VDD.abnormalPowerChange"
       },
       "severity": "Critical",
@@ -1143,7 +1143,7 @@
       "device_type": "Retimer",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "pcieretimer.thermal.temperature.overTemperatureInfo"
       },
       "severity": "Critical",
@@ -1165,7 +1165,7 @@
       "device_type": "Retimer",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "TBD"
       },
       "severity": "Critical",
@@ -1189,7 +1189,7 @@
       "device_type": "VR",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "sysvr3v3.power.abnormalPowerChange"
       },
       "severity": "Critical",
@@ -1211,7 +1211,7 @@
       "device_type": "VR",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "sysvr1v8.power.abnormalPowerChange"
       },
       "severity": "Critical",
@@ -1235,7 +1235,7 @@
       "device_type": "HSC",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "hsc.power.abnormalPowerChange"
       },
       "severity": "Critical",
@@ -1259,7 +1259,7 @@
       "device_type": "HMC",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "TBD"
       },
       "severity": "Critical",
@@ -1281,7 +1281,7 @@
       "device_type": "HMC",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "TBD"
       },
       "severity": "Critical",
@@ -1303,7 +1303,7 @@
       "device_type": "HMC",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "TBD"
       },
       "severity": "Critical",
@@ -1325,7 +1325,7 @@
       "device_type": "HMC",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "TBD"
       },
       "severity": "Critical",
@@ -1347,7 +1347,7 @@
       "device_type": "HMC",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "TBD"
       },
       "severity": "Critical",
@@ -1371,7 +1371,7 @@
       "device_type": "Baseboard",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "baseboard.pcb.temperature.Alert"
       },
       "severity": "Warning",
@@ -1395,7 +1395,7 @@
       "device_type": "FPGA",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "TBD"
       },
       "severity": "Critical",
@@ -1417,7 +1417,7 @@
       "device_type": "FPGA",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "TBD"
       },
       "severity": "Critical",
@@ -1441,7 +1441,7 @@
       "device_type": "LS10",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "TBD"
       },
       "severity": "Critical",
@@ -1463,7 +1463,7 @@
       "device_type": "LS10",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "TBD"
       },
       "severity": "Critical",
@@ -1485,7 +1485,7 @@
       "device_type": "LS10",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "TBD"
       },
       "severity": "Critical",
@@ -1507,7 +1507,7 @@
       "device_type": "LS10",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "TBD"
       },
       "severity": "Critical",
@@ -1529,7 +1529,7 @@
       "device_type": "LS10",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "TBD"
       },
       "severity": "Critical",
@@ -1551,7 +1551,7 @@
       "device_type": "LS10",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "metadata": "TBD"
       },
       "severity": "Critical",
@@ -1573,7 +1573,7 @@
       "device_type": "LS10",
       "event_trigger": {},
       "accessor": {
-        "type": "DBUS call",
+        "type": "DeviceCoreAPI",
         "property": "TBD"
       },
       "severity": "Critical",
