@@ -9,6 +9,14 @@
       "GPU5",
       "GPU6",
       "GPU7",
+      "GPUDRAM0",
+      "GPUDRAM1",
+      "GPUDRAM2",
+      "GPUDRAM3",
+      "GPUDRAM4",
+      "GPUDRAM5",
+      "GPUDRAM6",
+      "GPUDRAM7",
       "NVSwitch0",
       "NVSwitch1",
       "NVSwitch2",
@@ -1198,6 +1206,78 @@
         "expected_value": "GOOD"
       }
     ]
+  },
+  "GPUDRAM0": {
+    "association": [],
+    "power_rail": [],
+    "erot_control": [],
+    "pin_status": [],
+    "interface_status": [],
+    "protocol_status": [],
+    "firmware_status": []
+  },
+  "GPUDRAM1": {
+    "association": [],
+    "power_rail": [],
+    "erot_control": [],
+    "pin_status": [],
+    "interface_status": [],
+    "protocol_status": [],
+    "firmware_status": []
+  },
+  "GPUDRAM2": {
+    "association": [],
+    "power_rail": [],
+    "erot_control": [],
+    "pin_status": [],
+    "interface_status": [],
+    "protocol_status": [],
+    "firmware_status": []
+  },
+  "GPUDRAM3": {
+    "association": [],
+    "power_rail": [],
+    "erot_control": [],
+    "pin_status": [],
+    "interface_status": [],
+    "protocol_status": [],
+    "firmware_status": []
+  },
+  "GPUDRAM4": {
+    "association": [],
+    "power_rail": [],
+    "erot_control": [],
+    "pin_status": [],
+    "interface_status": [],
+    "protocol_status": [],
+    "firmware_status": []
+  },
+  "GPUDRAM5": {
+    "association": [],
+    "power_rail": [],
+    "erot_control": [],
+    "pin_status": [],
+    "interface_status": [],
+    "protocol_status": [],
+    "firmware_status": []
+  },
+  "GPUDRAM6": {
+    "association": [],
+    "power_rail": [],
+    "erot_control": [],
+    "pin_status": [],
+    "interface_status": [],
+    "protocol_status": [],
+    "firmware_status": []
+  },
+  "GPUDRAM7": {
+    "association": [],
+    "power_rail": [],
+    "erot_control": [],
+    "pin_status": [],
+    "interface_status": [],
+    "protocol_status": [],
+    "firmware_status": []
   },
   "NVSwitch0": {
     "association": [

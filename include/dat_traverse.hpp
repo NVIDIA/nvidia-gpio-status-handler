@@ -121,6 +121,7 @@ class DATTraverse : public event_handler::EventHandler
         std::string problemDevice = event.device;
         if (problemDevice.length() == 0)
         {
+            std::cout << this->getName() << " error: empty device\n";
             return aml::RcCode::error;
         }
 

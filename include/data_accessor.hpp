@@ -89,36 +89,35 @@ class DataAccessor
      */
     bool operator==(const DataAccessor& other)
     {
-        std::cout << "This: " << _acc << ", Other: " << other._acc << "\n";
-        if (!isValid(other._acc))
+        bool ret = isValid(other._acc) && _acc[typeKey] == other._acc[typeKey];
+        if (ret == true)
         {
-            return false;
-        }
-        if (_acc[typeKey] != other._acc[typeKey])
-        {
-            return false;
-        }
-        for (auto& [key, val] : _acc.items())
-        {
-            std::cout << "key: " << key << ", val: " << val << "\n";
-            if (key == typeKey || key == checkKey) // skip check key
+            for (auto& [key, val] : _acc.items())
             {
-                continue;
-            }
-            else
-            {
+                if (key == typeKey || key == checkKey) // skip check key
+                {
+                    continue;
+                }
                 if (other._acc.count(key) == 0)
                 {
-                    // the key is not in 'other'
-                    std::cout << "Other has no key. False.\n";
-                    return false;
+                    ret = false;
+                    break;
                 }
 
                 const std::regex r{val}; // 'val' could have regex format
-                return std::regex_match(other._acc[key].get<std::string>(), r);
+                auto values_match =
+                        std::regex_match(other._acc[key].get<std::string>(), r);
+                if (values_match == false)
+                {
+                    ret = false;
+                    break;
+                }
             }
         }
-        return _acc == other._acc;
+        std::cout << __PRETTY_FUNCTION__ << "\n\tThis: " << _acc
+                   << "\n\tOther: " << other._acc
+                   << "\n\treturn: " << ret << std::endl;
+        return ret;
     }
 
     /**

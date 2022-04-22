@@ -86,7 +86,7 @@
     },
     {
       "event": "DRAM Contained ECC Error",
-      "device_type": "GPU",
+      "device_type": "GPUDRAM",
       "event_trigger": {},
       "accessor": {
         "type": "DBUS",
@@ -110,7 +110,7 @@
     },
     {
       "event": "DRAM Uncontained ECC Error",
-      "device_type": "GPU",
+      "device_type": "GPUDRAM",
       "event_trigger": {},
       "accessor": {
         "type": "DBUS",

@@ -101,6 +101,9 @@ class EventHandlerManager : public object::Object
 
             if (rc != aml::RcCode::succ)
             {
+                std::cout << "Error: Handler " << hdlr->getName() << 
+                    " on event " << event.getName() << " failed, rc = " <<
+                    aml::to_integer(rc) << "\n";
                 // log_err("handler(%s) on event(%s) failed, rc = %d!\n",
                 //         hdlr->getName().c_str(), event.getName().c_str(),
                 //         aml::to_integer(rc));
