@@ -19,6 +19,15 @@
 namespace data_accessor
 {
 
+namespace dbus
+{
+std::string getService(const std::string& objectPath,
+                       const std::string& interface);
+auto deviceGetCoreAPI(const int devId, const std::string& property);
+auto deviceClearCoreAPI(const int devId, const std::string& property);
+} // namespace dbus
+
+
 constexpr auto typeKey = "type";
 constexpr auto nameKey = "name";
 constexpr auto checkKey = "check";
@@ -31,8 +40,10 @@ constexpr auto deviceNameKey = "device_name";
 
 static std::map<std::string, std::vector<std::string>> accessorTypeKeys = {
     {"DBUS", {"object", "interface", "property"}},
+    {"DeviceCoreAPI", {"property"}},
     {"DEVICE", {"device_name"}},
-    {"OTHER", {"other"}}};
+    {"OTHER", {"other"}},
+};
 
 /**
  * @brief A class for Data Accessor
@@ -272,6 +283,11 @@ class DataAccessor
         {
             runCommandLine(device);
         }
+        else if (isValid(_acc) == true && _acc[typeKey] == "DeviceCoreAPI")
+        {
+            //dbus::deviceGetCoreAPI()
+        }
+
         if (_dataValue != nullptr)
         {
             ret = _dataValue->getString();

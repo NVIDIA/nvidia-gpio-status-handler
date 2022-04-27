@@ -2,6 +2,8 @@
 /*
  *
  */
+#include <phosphor-logging/elog.hpp>
+#include <fmt/format.h>
 
 #include "data_accessor.hpp"
 
@@ -12,6 +14,136 @@
 
 namespace data_accessor
 {
+
+namespace dbus
+{
+using namespace phosphor::logging;
+
+static auto bus = sdbusplus::bus::new_default();
+
+std::string getService(const std::string& objectPath,
+                       const std::string& interface)
+{
+    constexpr auto mapperBusBame = "xyz.openbmc_project.ObjectMapper";
+    constexpr auto mapperObjectPath = "/xyz/openbmc_project/object_mapper";
+    constexpr auto mapperInterface = "xyz.openbmc_project.ObjectMapper";
+    std::vector<std::pair<std::string, std::vector<std::string>>> response;
+    auto method = bus.new_method_call(mapperBusBame, mapperObjectPath,
+                                      mapperInterface, "GetObject");
+    method.append(objectPath, std::vector<std::string>({interface}));
+    try
+    {
+        auto reply = bus.call(method);
+        reply.read(response);
+    }
+    catch (const sdbusplus::exception::exception& e)
+    {
+        log<level::ERR>("D-Bus call exception",
+                        entry("OBJPATH={%s}", objectPath.c_str()),
+                        entry("INTERFACE={%s}", interface.c_str()),
+                        entry("SDBUSERR=%s", e.what()));
+
+        throw std::runtime_error("Service name is not found");
+    }
+
+    if (response.empty())
+    {
+        throw std::runtime_error("Service name response is empty");
+    }
+    return response.begin()->first;
+}
+
+auto deviceGetCoreAPI(const int devId, const std::string& property)
+{
+    constexpr auto service = "xyz.openbmc_project.GpuMgr";
+    constexpr auto object = "/xyz/openbmc_project/GpuMgr";
+    constexpr auto interface = "xyz.openbmc_project.GpuMgr.Server";
+    constexpr auto callName = "DeviceGetData";
+
+    constexpr auto accMode = 1; // Calling in Passthrough Mode. Blocked call.
+
+    auto method = bus.new_method_call(service, object, interface, callName);
+    method.append(devId);
+    method.append(property);
+    method.append(accMode);
+
+    std::tuple < int, std::string, std::vector < uint32_t >> response;
+    try
+    {
+        auto reply = bus.call(method);
+        reply.read(response);
+    }
+    catch (const sdbusplus::exception::SdBusError& e)
+    {
+        log<level::ERR>("Failed to make call for ",
+                        entry("property=(%s[%d])", property.c_str(), devId),
+                        entry("SDBUSERR=%s", e.what()));
+        throw std::runtime_error("Get device call is not found!");
+    }
+
+    uint64_t value = 0;
+    std::string valueStr = "";
+
+    // response example:
+    // (isau) 0 "Baseboard GPU over temperature info : 0001" 2 1 0
+    auto rc = std::get<int>(response);
+
+    if (rc != 0)
+    {
+        log<level::ERR>("Failed to get value of ",
+                        entry("property=(%s[%d])", property.c_str(), devId),
+                        entry("rc=%d", rc));
+    }
+    else
+    {
+        auto data = std::get<std::vector<uint32_t>>(response);
+        // Per SMBPBI spec: data[0]:dataOut, data[1]:exDataOut
+        value = ((uint64_t)data[1] << 32 | data[0]);
+
+        // msg example: "Baseboard GPU over temperature info : 0001"
+        auto msg = std::get<std::string>(response);
+        valueStr = msg.substr(msg.find(" : "), msg.length());
+    }
+
+    return std::make_tuple(rc, valueStr, value);
+}
+
+auto deviceClearCoreAPI(const int devId, const std::string& property)
+{
+    constexpr auto service = "xyz.openbmc_project.GpuMgr";
+    constexpr auto object = "/xyz/openbmc_project/GpuMgr";
+    constexpr auto interface = "xyz.openbmc_project.GpuMgr.Server";
+    constexpr auto callName = "DeviceClearData";
+
+    auto method = bus.new_method_call(service, object, interface, callName);
+    method.append(devId);
+    method.append(property);
+
+    int rc = 0;
+    try
+    {
+        auto reply = bus.call(method);
+        reply.read(rc);
+    }
+    catch (const sdbusplus::exception::SdBusError& e)
+    {
+        log<level::ERR>("Failed to make call for ",
+                        entry("property=(%s[%d])", property.c_str(), devId),
+                        entry("SDBUSERR=%s", e.what()));
+        throw std::runtime_error("Clear device call is not found!");
+    }
+
+    if (rc != 0)
+    {
+        log<level::ERR>("Failed to get value of ",
+                        entry("property=(%s[%d])", property.c_str(), devId),
+                        entry("rc=%d", rc));
+    }
+
+    return rc;
+}
+
+} // namespace dbus
 
 bool DataAccessor::contains(const DataAccessor& other) const
 {
