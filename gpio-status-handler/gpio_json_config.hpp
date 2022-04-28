@@ -62,7 +62,7 @@ class GpioJsonConfig
      * library, 2. from the 'nlohmann::json' library, 3. an instance of
      * @GpioConfigError.
      */
-    GpioJsonConfig(const std::string& fileName);
+    explicit GpioJsonConfig(const std::string& fileName);
 
     /** @brief Get the json config object read from @fileName
      * passed to the constructor. **/
@@ -78,7 +78,7 @@ class GpioJsonConfig
 class GpioConfigError : public nlohmann::json::exception
 {
   public:
-    GpioConfigError(const char* message);
+    explicit GpioConfigError(const char* message);
 };
 
 } // namespace gpio_handler

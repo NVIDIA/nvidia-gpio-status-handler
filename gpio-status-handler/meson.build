@@ -17,6 +17,7 @@ gpio_status_handlerd = executable(
     implicit_include_directories: true,
     dependencies: [sdbusplus,
                    gpio_device,
-                   threads],
+                   threads,
+                   phosphor_logging_dep],
     install_dir: bindir,
     install : true)

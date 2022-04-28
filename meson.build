@@ -147,8 +147,7 @@ srcfiles_unittest = ['test/dat_test.cpp',
                      'test/event_detection_test.cpp',
                      'test/selftest_test.cpp',
                      'test/propertyvalue_variant_test.cpp',
-		     'test/util_test.cpp',
-                     'test/gpio_monitor_test.cpp'
+                     'test/util_test.cpp'
                     ]
 
 amllib_sources = [

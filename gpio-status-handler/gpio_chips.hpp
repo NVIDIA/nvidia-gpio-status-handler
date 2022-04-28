@@ -28,7 +28,8 @@ class GpioChips
      * could be opened. Strong exception guarantee (the state of the program is
      * rolled back to the state just before the constructor call).
      */
-    GpioChips(const GpioJsonConfig& jsonConfig);
+    explicit GpioChips(const GpioJsonConfig& jsonConfig);
+
     /**
      * @brief Close all the gpio devices managed by this object.
      */
