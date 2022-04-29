@@ -56,8 +56,10 @@ void Selftest::updateDeviceHealth(const std::string& device,
         {
             if (boost::algorithm::ends_with(objPath.first, "/" + device))
             {
+#ifdef ENABLE_LOGS
                 std::cout << "Setting Health Property for: " << objPath.first
                           << "\n";
+#endif
 
                 std::string&& healthState =
                     "xyz.openbmc_project.State.Decorator.Health.HealthType." +
@@ -69,12 +71,16 @@ void Selftest::updateDeviceHealth(const std::string& device,
                     healthState, [this](const boost::system::error_code& ec) {
                         if (ec)
                         {
+#ifdef ENABLE_LOGS
                             std::cout
                                 << "Error: it supposed to be ok to change health property "
                                 << ec << "\n";
+#endif
                             return;
                         }
+#ifdef ENABLE_LOGS
                         std::cout << "Changed health property as expected\n";
+#endif
                     });
 
                 ioc.poll();

@@ -2,12 +2,12 @@
 /*
  *
  */
-#include <phosphor-logging/elog.hpp>
-#include <fmt/format.h>
-
 #include "data_accessor.hpp"
 
+#include <fmt/format.h>
+
 #include <boost/process.hpp>
+#include <phosphor-logging/elog.hpp>
 
 #include <regex>
 #include <string>
@@ -67,7 +67,7 @@ auto deviceGetCoreAPI(const int devId, const std::string& property)
     method.append(property);
     method.append(accMode);
 
-    std::tuple < int, std::string, std::vector < uint32_t >> response;
+    std::tuple<int, std::string, std::vector<uint32_t>> response;
     try
     {
         auto reply = bus.call(method);
@@ -154,8 +154,10 @@ bool DataAccessor::contains(const DataAccessor& other) const
         {
             if (_acc.count(key) == 0)
             {
+#ifdef ENABLE_LOGS
                 std::cout << __PRETTY_FUNCTION__ << "(): "
                           << "key=" << key << " not found in _acc" << std::endl;
+#endif
                 ret = false;
                 break;
             }
@@ -166,16 +168,20 @@ bool DataAccessor::contains(const DataAccessor& other) const
             auto values_match = std::regex_match(val_string, reg_value);
             if (values_match == false)
             {
+#ifdef ENABLE_LOGS
                 std::cout << __PRETTY_FUNCTION__ << "(): "
                           << " values do not match key=" << key
                           << " value=" << val << std::endl;
+#endif
                 ret = false;
                 break;
             }
         }
     }
+#ifdef ENABLE_LOGS
     std::cout << __PRETTY_FUNCTION__ << "(): "
               << "ret=" << ret << std::endl;
+#endif
     return ret;
 }
 
@@ -232,8 +238,10 @@ bool DataAccessor::readDbus()
                                             _acc[propertyKey]);
         ret = setDataValueFromVariant(propVariant);
     }
+#ifdef ENABLE_LOGS
     std::cout << __PRETTY_FUNCTION__ << "(): "
               << "ret=" << ret << std::endl;
+#endif
     return ret;
 }
 
@@ -267,8 +275,10 @@ bool DataAccessor::runCommandLine(const std::string& device)
             }
             cmd += ' ' + args;
         }
+#ifdef ENABLE_LOGS
         std::cout << "[D] " << __PRETTY_FUNCTION__ << "() "
                   << "cmd: " << cmd << std::endl;
+#endif
         std::string result{""};
         try
         {

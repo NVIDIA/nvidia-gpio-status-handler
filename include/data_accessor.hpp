@@ -27,7 +27,6 @@ auto deviceGetCoreAPI(const int devId, const std::string& property);
 auto deviceClearCoreAPI(const int devId, const std::string& property);
 } // namespace dbus
 
-
 constexpr auto typeKey = "type";
 constexpr auto nameKey = "name";
 constexpr auto checkKey = "check";
@@ -58,7 +57,9 @@ class DataAccessor
     explicit DataAccessor(const nlohmann::json& acc) :
         _acc(acc), _dataValue(nullptr)
     {
+#ifdef ENABLE_LOGS
         std::cout << "Const.: _acc: " << _acc << "\n";
+#endif
     }
 
     /**
@@ -83,7 +84,9 @@ class DataAccessor
     {
         if (!isValid(acc))
         {
+#ifdef ENABLE_LOGS
             std::cout << "not valid: acc = " << acc << "\n";
+#endif
             return _acc;
         }
 
@@ -117,7 +120,7 @@ class DataAccessor
 
                 const std::regex r{val}; // 'val' could have regex format
                 auto values_match =
-                        std::regex_match(other._acc[key].get<std::string>(), r);
+                    std::regex_match(other._acc[key].get<std::string>(), r);
                 if (values_match == false)
                 {
                     ret = false;
@@ -125,9 +128,11 @@ class DataAccessor
                 }
             }
         }
+#ifdef ENABLE_LOGS
         std::cout << __PRETTY_FUNCTION__ << "\n\tThis: " << _acc
-                   << "\n\tOther: " << other._acc
-                   << "\n\treturn: " << ret << std::endl;
+                  << "\n\tOther: " << other._acc << "\n\treturn: " << ret
+                  << std::endl;
+#endif
         return ret;
     }
 
@@ -285,15 +290,17 @@ class DataAccessor
         }
         else if (isValid(_acc) == true && _acc[typeKey] == "DeviceCoreAPI")
         {
-            //dbus::deviceGetCoreAPI()
+            // dbus::deviceGetCoreAPI()
         }
 
         if (_dataValue != nullptr)
         {
             ret = _dataValue->getString();
         }
+#ifdef ENABLE_LOGS
         std::cout << __PRETTY_FUNCTION__ << "(): "
                   << "ret=" << ret << std::endl;
+#endif
         return ret;
     }
 

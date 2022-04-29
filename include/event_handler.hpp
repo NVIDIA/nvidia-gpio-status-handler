@@ -95,15 +95,19 @@ class EventHandlerManager : public object::Object
         {
             // log_dbg("running handler(%s) on event(%s).\n",
             //         hdlr->getName().c_str(), event.getName().c_str());
+#ifdef ENABLE_LOGS
             std::cout << "calling hdlr: " << hdlr->getName() << "\n";
+#endif
 
             auto rc = hdlr->process(event);
 
             if (rc != aml::RcCode::succ)
             {
-                std::cout << "Error: Handler " << hdlr->getName() << 
-                    " on event " << event.getName() << " failed, rc = " <<
-                    aml::to_integer(rc) << "\n";
+#ifdef ENABLE_LOGS
+                std::cout << "Error: Handler " << hdlr->getName()
+                          << " on event " << event.getName()
+                          << " failed, rc = " << aml::to_integer(rc) << "\n";
+#endif
                 // log_err("handler(%s) on event(%s) failed, rc = %d!\n",
                 //         hdlr->getName().c_str(), event.getName().c_str(),
                 //         aml::to_integer(rc));

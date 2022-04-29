@@ -14,9 +14,9 @@
 #include <sdbusplus/asio/object_server.hpp>
 
 #include <iostream>
+#include <memory>
 #include <string>
 #include <thread>
-#include <memory>
 
 namespace event_detection
 {
@@ -71,9 +71,10 @@ class EventDetection : public object::Object
                 // event.accessor["object"] =
                 // "xyz/openbmc_project/sensors/temperature/TEMP_GB_GPU[0-7]"
                 // acc["object"]
-
+#ifdef ENABLE_LOGS
                 std::cout << "event.accessor: " << event.accessor
                           << ", acc: " << acc << "\n";
+#endif
 
                 if (event.accessor == acc)
                 {
@@ -141,10 +142,14 @@ class EventDetection : public object::Object
      */
     void RunEventHandlers(event_info::EventNode& event)
     {
+#ifdef ENABLE_LOGS
         std::cout << "Create thread to process event.\n";
+#endif
         auto thread = std::make_unique<std::thread>([this, event]() mutable {
+#ifdef ENABLE_LOGS
             std::cout << "calling hdlrMgr: " << this->_hdlrMgr->getName()
                       << "\n";
+#endif
             auto hdlrMgr = *this->_hdlrMgr;
             hdlrMgr.RunAllHandlers(event);
         });
@@ -155,7 +160,9 @@ class EventDetection : public object::Object
         }
         else
         {
+#ifdef ENABLE_LOGS
             std::cout << "Create thread to process event failed!\n";
+#endif
         }
     }
 
@@ -175,7 +182,9 @@ class EventDetection : public object::Object
         if (std::regex_search(objPath.begin(), objPath.end(), m, r))
         {
             auto name = m[1]; // the 2nd field is the matched substring.
+#ifdef ENABLE_LOGS
             std::cout << "Devname: " << name << "\n.";
+#endif
             return name;
         }
         return "";

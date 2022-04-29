@@ -36,13 +36,17 @@ std::unique_ptr<sdbusplus::bus::match_t> EventDetection::startEventDetection(
 
             std::string signalSignature = msg.get_signature();
 
+#ifdef ENABLE_LOGS
             std::cout << "objectPath:" << objectPath << "\n";
             std::cout << "signalSignature:" << signalSignature << "\n";
             std::cout << "msgInterface:" << msgInterface << "\n";
+#endif
 
             if (propertiesChanged.empty())
             {
+#ifdef ENABLE_LOGS
                 std::cout << "empty propertiesChanged, return.\n";
+#endif
                 return;
             }
 
@@ -68,12 +72,16 @@ std::unique_ptr<sdbusplus::bus::match_t> EventDetection::startEventDetection(
 
                 if (eventProperty.empty() || nullptr == variant)
                 {
+#ifdef ENABLE_LOGS
                     std::cout << "empty eventProperty, skip.\n";
+#endif
                     continue;
                 }
 
+#ifdef ENABLE_LOGS
                 cout << "Path: " << objectPath << " Property: " << eventProperty
                      << ", Variant: " << variant << "\n";
+#endif
 
                 const std::string type = "DBUS";
                 nlohmann::json j;
@@ -85,15 +93,19 @@ std::unique_ptr<sdbusplus::bus::match_t> EventDetection::startEventDetection(
                 auto candidate = evtDet->LookupEventFrom(accessor);
                 if (candidate == nullptr)
                 {
+#ifdef ENABLE_LOGS
                     std::cout << "No event found in the supporting list.\n";
+#endif
                     continue;
                 }
 
                 int eventValue = invalidIntParam;
                 if (candidate->valueAsCount)
                 {
+#ifdef ENABLE_LOGS
                     std::cout << "event value for event " << candidate->event
                               << ": " << *variant << "\n";
+#endif
                     eventValue = int(*variant);
                 }
 
@@ -103,7 +115,9 @@ std::unique_ptr<sdbusplus::bus::match_t> EventDetection::startEventDetection(
                     event.device =
                         DetermineDeviceName(objectPath, event.deviceType);
 
+#ifdef ENABLE_LOGS
                     std::cout << "Throw out a eventHdlrMgr.\n";
+#endif
                     evtDet->RunEventHandlers(event);
                 }
             }
@@ -119,7 +133,9 @@ std::unique_ptr<sdbusplus::bus::match_t> EventDetection::startEventDetection(
             sdbusplus::bus::match::rules::interface(
                 "org.freedesktop.DBus.Properties"),
         std::move(dbusEventHandlerMatcherCallback));
+#ifdef ENABLE_LOGS
     std::cout << "dbusEventHandlerMatcher created.\n";
+#endif
 
     return dbusEventHandlerMatcher;
 }
@@ -129,8 +145,10 @@ void EventDetection::identifyEventCandidate(const std::string& objPath,
                                             const std::string& signature,
                                             const std::string& property)
 {
+#ifdef ENABLE_LOGS
     cout << "dbus([" << objPath << "]/[" << signature << "]/[" << property
          << "]).\n";
+#endif
     std::regex rgx("obj=\"(.+?)\"");
     std::smatch match;
 
@@ -149,14 +167,18 @@ void EventDetection::identifyEventCandidate(const std::string& objPath,
 
                 if (objPath.find(eventPath) != std::string::npos)
                 {
+#ifdef ENABLE_LOGS
                     cout << "Matched event: " << objPath << " " << eventPath
                          << "\n";
+#endif
                     goto exit;
                 }
             }
             else
             {
+#ifdef ENABLE_LOGS
                 cout << "Regex Issue";
+#endif
                 goto exit;
             }
         }
@@ -164,8 +186,10 @@ void EventDetection::identifyEventCandidate(const std::string& objPath,
     }
 exit:
 
+#ifdef ENABLE_LOGS
     cout << "Exit"
          << "\n";
+#endif
 }
 #endif
 // void EventDetection::~EventDetection()

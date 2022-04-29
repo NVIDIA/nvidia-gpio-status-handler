@@ -19,7 +19,9 @@ namespace event_info
 
 void loadFromFile(EventMap& eventMap, const std::string& file)
 {
+#ifdef ENABLE_LOGS
     std::cout << "loadFromFile func (" << file << ").\n";
+#endif
     std::ifstream i(file);
     json j;
     i >> j;
@@ -28,18 +30,26 @@ void loadFromFile(EventMap& eventMap, const std::string& file)
     {
         auto deviceType = el.key();
         std::vector<event_info::EventNode> v = {};
+#ifdef ENABLE_LOGS
         std::cout << "new device type: " << deviceType << "\r\n";
+#endif
 
         for (const auto& event : el.value())
         {
+#ifdef ENABLE_LOGS
             std::cout << "\tcreate event (" << event["event"] << ").\n";
+#endif
 
             event_info::EventNode eventNode(event["event"]);
 
+#ifdef ENABLE_LOGS
             std::cout << "\tload event (" << event["event"] << ").\n";
+#endif
             eventNode.loadFrom(event);
 
+#ifdef ENABLE_LOGS
             std::cout << "\tpush event (" << event["event"] << ").\n";
+#endif
 
             v.push_back(eventNode);
         }
@@ -88,14 +98,17 @@ void EventNode::loadFrom(const json& j)
                              {j["severity"], j["resolution"]}};
 
     this->accessor = j["accessor"];
+
+#ifdef ENABLE_LOGS
     std::cout << "Loaded accessor: " << this->accessor << ", j: " << j << "\n";
+#endif
 
     this->valueAsCount =
         j.contains("value_as_count") ? j["value_as_count"].get<bool>() : false;
 }
 
-static void
-    print_accessor([[maybe_unused]] const data_accessor::DataAccessor& acc)
+static void print_accessor([
+    [maybe_unused]] const data_accessor::DataAccessor& acc)
 {
     /* todo */
     return;
@@ -103,6 +116,8 @@ static void
 
 static void print_node(const EventNode& n)
 {
+    print_accessor(n.accessor);
+#ifdef ENABLE_LOGS
     std::cout << "\tDumping event     " << n.event << "\n";
 
     std::cout << "\t\tdeviceType      " << n.deviceType << "\n";
@@ -111,6 +126,7 @@ static void print_node(const EventNode& n)
               << "todo"
               << "\n";
     print_accessor(n.accessor);
+
     std::cout << "\t\tcount(map)      " << n.count.size() << "\n";
     for (auto& p : n.count)
     {
@@ -135,6 +151,7 @@ static void print_node(const EventNode& n)
 
     std::cout << "\t\taction          " << n.action << "\n";
     std::cout << "\t\tdevice          " << n.device << "\n";
+#endif
 }
 
 void EventNode::print(const EventNode& n) const

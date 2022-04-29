@@ -62,8 +62,10 @@ int loadDAT(cmd_line::ArgFuncParamType params)
 {
     if (params[0].size() == 0)
     {
+#ifdef ENABLE_LOGS
         cout << "Need a parameter!"
              << "\n";
+#endif
         return -1;
     }
 
@@ -84,8 +86,10 @@ int loadEvents(cmd_line::ArgFuncParamType params)
 {
     if (params[0].size() == 0)
     {
+#ifdef ENABLE_LOGS
         cout << "Need a parameter!"
              << "\n";
+#endif
         return -1;
     }
 
@@ -186,13 +190,17 @@ int main(int argc, char* argv[])
     eventHdlrMgr.RegisterHandler(&msgComposer);
     eventHdlrMgr.RegisterHandler(&clearEvent);
 
+#ifdef ENABLE_LOGS
     cout << "Creating " << oob_aml::SERVICE_BUSNAME << "\n";
+#endif
 
     rc = sd_bus_default_system(&aml::bus);
     if (rc < 0)
     {
+#ifdef ENABLE_LOGS
         cout << "Failed to connect to system bus"
              << "\n";
+#endif
     }
 
     auto io = std::make_shared<boost::asio::io_context>();
