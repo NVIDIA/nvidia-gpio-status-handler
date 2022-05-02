@@ -16,14 +16,14 @@
         "check": {"bitmask": "1"}
       },
       "severity": "Critical",
-      "resolution": "Run field diags and evaluate for RMA",
+      "resolution": "Check thermal environmental to ensure GPU operates under Shutdown Temperature (UpperFatal threshold) and power cycle the BaseBoard to recover.",
       "trigger_count": 0,
       "event_counter_reset": {
         "type": "",
         "metadata": ""
       },
       "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+        "message_id": "ResourceEvent.1.0.ResourceErrorThresholdExceeded"
       },
       "telemetries": [
         {
@@ -71,7 +71,7 @@
         "property": "ueCount"
       },
       "severity": "Critical",
-      "resolution": "Reset the GPU.  If the GPU continues to exhibit the problem run field diagnostics and evaluate for RMA.",
+      "resolution": "Reset the GPU. If the GPU continues to exhibit the problem, isolate the server for RMA evaluation.",
       "trigger_count": 0,
       "event_counter_reset": {
         "type": "",
@@ -141,7 +141,7 @@
         "property": "gpu.interrupt.PresenceInfo"
       },
       "severity": "Critical",
-      "resolution": "Reset the GPU and restart affected applications.",
+      "resolution": "Cordon the HGX server node for further diagnosis.",
       "trigger_count": 0,
       "event_counter_reset": {
         "type": "",
@@ -387,7 +387,7 @@
         "property": "TBD"
       },
       "severity": "Critical",
-      "resolution": "Run field diags and evaluate for RMA",
+      "resolution": "Power cycle the BaseBoard. If it does not recover the failure, it is permanant damage.",
       "trigger_count": 0,
       "event_counter_reset": {
         "type": "",
@@ -409,7 +409,7 @@
         "property": "gpu.interrupt.powerGoodAbnormalChange"
       },
       "severity": "Critical",
-      "resolution": "DC Cycle if condition removed, then it is VR themal related. If not then it is hard failure. ",
+      "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation.",
       "trigger_count": 0,
       "event_counter_reset": {
         "type": "",
@@ -587,14 +587,14 @@
         "property": "nvswitch.thermal.temperature.overTemperatureInfo"
       },
       "severity": "Critical",
-      "resolution": "Examine cooling and reset the affected device",
+      "resolution": "Power off the BaseBoard within 1 second, the NVSwitch will be held in reset. Check thermal environmental to ensure the NVSwitch operates under UpperFatal threshold and power cycle the BaseBoard to recover. ",
       "trigger_count": 0,
       "event_counter_reset": {
         "type": "",
         "metadata": ""
       },
       "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+        "message_id": "ResourceEvent.1.0.ResourceErrorThresholdExceeded"
       },
       "telemetries": [],
       "action": "",
@@ -609,14 +609,14 @@
         "property": "nvswitch.thermal.alert"
       },
       "severity": "Warning",
-      "resolution": "Examine cooling system and workload",
+      "resolution": "Increase the BaseBoard cooling and check thermal environmental to ensure the NVSwtich operates under UpperCritical threshold. ",
       "trigger_count": 0,
       "event_counter_reset": {
         "type": "",
         "metadata": ""
       },
       "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+        "message_id": "ResourceEvent.1.0.ResourceErrorThresholdExceeded"
       },
       "telemetries": [],
       "action": "",
@@ -631,7 +631,7 @@
         "property": "nvswitch.device.vrFault"
       },
       "severity": "Critical",
-      "resolution": "TBD",
+      "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation.",
       "trigger_count": 0,
       "event_counter_reset": {
         "type": "",
@@ -655,7 +655,7 @@
         "property": "PCIeType"
       },
       "severity": "Critical",
-      "resolution": "TBD",
+      "resolution": "Reset the link. If problem persists, isolate the server for RMA evaluation.",
       "trigger_count": 0,
       "event_counter_reset": {
         "type": "",
@@ -679,7 +679,7 @@
         "property": "LanesInUse"
       },
       "severity": "Critical",
-      "resolution": "TBD",
+      "resolution": "Reset the link. If problem persists, isolate the server for RMA evaluation.",
       "trigger_count": 0,
       "event_counter_reset": {
         "type": "",
@@ -703,7 +703,7 @@
         "property": "Enabled"
       },
       "severity": "Critical",
-      "resolution": "TBD",
+      "resolution": "Reset the link. If problem persists, isolate the server for RMA evaluation.",
       "trigger_count": 0,
       "event_counter_reset": {
         "type": "",
@@ -725,7 +725,7 @@
         "property": "nvswitch.vdd.abnormalPowerChange"
       },
       "severity": "Critical",
-      "resolution": "DC cycle if conditioned removed then thermal of over current.",
+      "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation.",
       "trigger_count": 0,
       "event_counter_reset": {
         "type": "",
@@ -747,7 +747,7 @@
         "property": "nvswitch.dvdd.abnormalPowerChange"
       },
       "severity": "Critical",
-      "resolution": "DC cycle if conditioned removed then thermal of over current.",
+      "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation.",
       "trigger_count": 0,
       "event_counter_reset": {
         "type": "",
@@ -769,7 +769,7 @@
         "property": "nvswitch.hvdd.abnormalPowerChange"
       },
       "severity": "Critical",
-      "resolution": "DC cycle if conditioned removed then thermal of over current.",
+      "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation.",
       "trigger_count": 0,
       "event_counter_reset": {
         "type": "",
@@ -791,7 +791,7 @@
         "property": "nvswitch.1V8.abnormalPowerChange"
       },
       "severity": "Critical",
-      "resolution": "DC cycle if conditioned removed then thermal of over current.",
+      "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation.",
       "trigger_count": 0,
       "event_counter_reset": {
         "type": "",
@@ -813,7 +813,7 @@
         "property": "nvswitch.device.vrFault"
       },
       "severity": "Critical",
-      "resolution": "DC cycle if conditioned removed then thermal of over current.",
+      "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation.",
       "trigger_count": 0,
       "event_counter_reset": {
         "type": "",
@@ -881,7 +881,7 @@
         "property": "pcieswitch.0V8.abnormalPowerChange"
       },
       "severity": "Critical",
-      "resolution": "DC cycle if conditioned removed then thermal of over current",
+      "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation.",
       "trigger_count": 0,
       "event_counter_reset": {
         "type": "",
@@ -903,14 +903,14 @@
         "property": "pcieswitch.thermal.temperature.overTemperatureInfo"
       },
       "severity": "Critical",
-      "resolution": "System shutdown",
+      "resolution": "Power off the BaseBoard within 1 second, the PCIe Switch will be held in reset. Check thermal environmental to ensure the PCIe Switch operates under UpperFatal threshold and power cycle the BaseBoard to recover. ",
       "trigger_count": 0,
       "event_counter_reset": {
         "type": "",
         "metadata": ""
       },
       "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+        "message_id": "ResourceEvent.1.0.ResourceErrorThresholdExceeded"
       },
       "telemetries": [],
       "action": "",
@@ -1081,7 +1081,7 @@
         "property": "pcieretimer.0V9.abnormalPowerChange"
       },
       "severity": "Critical",
-      "resolution": "DC Cycle Retimer 0.9V and 1.2V VR are dierectly connected to FPGA via I2C.",
+      "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation",
       "trigger_count": 0,
       "event_counter_reset": {
         "type": "",
@@ -1103,7 +1103,7 @@
         "property": "TBD"
       },
       "severity": "Critical",
-      "resolution": "DC Cycle Retimer 0.9V and 1.2V VR are dierectly connected to FPGA via I2C.",
+      "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation",
       "trigger_count": 0,
       "event_counter_reset": {
         "type": "",
@@ -1125,7 +1125,7 @@
         "property": "pcieretimer.1V8VDD.abnormalPowerChange"
       },
       "severity": "Critical",
-      "resolution": "DC Cycle Retimer 0.9V and 1.2V VR are dierectly connected to FPGA via I2C.",
+      "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation",
       "trigger_count": 0,
       "event_counter_reset": {
         "type": "",
@@ -1147,14 +1147,14 @@
         "property": "pcieretimer.thermal.temperature.overTemperatureInfo"
       },
       "severity": "Critical",
-      "resolution": "System shutdown",
+      "resolution": "Power off the BaseBoard within 1 second, and the Retimer will be held in reset. Check thermal environmental to ensure the Retimer operates under UpperFatal threshold and power cycle the BaseBoard to recover. ",
       "trigger_count": 0,
       "event_counter_reset": {
         "type": "",
         "metadata": ""
       },
       "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+        "message_id": "ResourceEvent.1.0.ResourceErrorThresholdExceeded"
       },
       "telemetries": [],
       "action": "",
@@ -1193,7 +1193,7 @@
         "property": "sysvr3v3.power.abnormalPowerChange"
       },
       "severity": "Critical",
-      "resolution": "DC Cycle",
+      "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation.",
       "trigger_count": 0,
       "event_counter_reset": {
         "type": "",
@@ -1215,7 +1215,7 @@
         "property": "sysvr1v8.power.abnormalPowerChange"
       },
       "severity": "Critical",
-      "resolution": "DC Cycle",
+      "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation.",
       "trigger_count": 0,
       "event_counter_reset": {
         "type": "",
@@ -1239,7 +1239,7 @@
         "property": "hsc.power.abnormalPowerChange"
       },
       "severity": "Critical",
-      "resolution": "DC Cycle",
+      "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation.",
       "trigger_count": 0,
       "event_counter_reset": {
         "type": "",
