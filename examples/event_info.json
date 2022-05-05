@@ -699,8 +699,8 @@
       "accessor": {
         "type": "DBUS",
         "object": "/xyz/openbmc_project/inventory/system/fabrics/NVLinkFabric/Switches/NVSwitch[0-3]",
-        "interface": "xyz.openbmc_project.Inventory.Item.Switch",
-        "property": "Enabled"
+        "interface": "xyz.openbmc_project.PCIe.PCIeECC",
+        "property": "ceCount"
       },
       "severity": "Critical",
       "resolution": "Reset the link. If problem persists, isolate the server for RMA evaluation.",

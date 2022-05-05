@@ -10,7 +10,10 @@
 #include "event_handler.hpp"
 #include "event_info.hpp"
 
+#include <boost/algorithm/string.hpp>
 #include <nlohmann/json.hpp>
+#include <sdbusplus/bus.hpp>
+#include <sdbusplus/exception.hpp>
 
 #include <string>
 
@@ -46,6 +49,41 @@ class MessageComposer : public event_handler::EventHandler
             return aml::RcCode::succ;
         }
         return aml::RcCode::error;
+    }
+
+    /**
+     * @brief Return device path for REDFISH_ORIGIN_OF_CONDITION
+     *
+     * @param event
+     * @return std::string&
+     */
+    static std::string getDeviceDBusPath(const event_info::EventNode& event)
+    {
+
+        auto bus = sdbusplus::bus::new_default_system();
+        auto method = bus.new_method_call("xyz.openbmc_project.ObjectMapper",
+                                          "/xyz/openbmc_project/object_mapper",
+                                          "xyz.openbmc_project.ObjectMapper",
+                                          "GetSubTree");
+        method.append("/xyz/openbmc_project/inventory/system", 2,
+                      std::vector<std::string>());
+
+        using GetSubTreeType = std::vector<std::pair<
+            std::string,
+            std::vector<std::pair<std::string, std::vector<std::string>>>>>;
+
+        auto reply = bus.call(method);
+        GetSubTreeType subtree;
+        reply.read(subtree);
+
+        for (auto& objPath : subtree)
+        {
+            if (boost::algorithm::ends_with(objPath.first, "/" + event.device))
+            {
+                return objPath.first;
+            }
+        }
+        return "";
     }
 
     /**
