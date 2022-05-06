@@ -107,8 +107,8 @@ void EventNode::loadFrom(const json& j)
         j.contains("value_as_count") ? j["value_as_count"].get<bool>() : false;
 }
 
-static void print_accessor([
-    [maybe_unused]] const data_accessor::DataAccessor& acc)
+static void
+    print_accessor([[maybe_unused]] const data_accessor::DataAccessor& acc)
 {
     /* todo */
     return;

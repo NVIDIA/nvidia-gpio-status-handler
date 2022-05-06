@@ -5,7 +5,9 @@
 
 #pragma once
 
+#include "dbus_accessor.hpp"
 #include "property_accessor.hpp"
+#include "util.hpp"
 
 #include <nlohmann/json.hpp>
 
@@ -14,18 +16,11 @@
 #include <memory>
 #include <regex>
 #include <string>
+#include <tuple>
 #include <vector>
 
 namespace data_accessor
 {
-
-namespace dbus
-{
-std::string getService(const std::string& objectPath,
-                       const std::string& interface);
-auto deviceGetCoreAPI(const int devId, const std::string& property);
-auto deviceClearCoreAPI(const int devId, const std::string& property);
-} // namespace dbus
 
 constexpr auto typeKey = "type";
 constexpr auto nameKey = "name";
@@ -223,12 +218,28 @@ class DataAccessor
     bool check() const;
 
     /**
+     * @brief performs a @sa check() against thisData and against other
+     *
+     *        This is usually a 'event trigger' Accessor
+     *
+     * @param accData  Accessor which was created when Propety has changed
+     *
+     * @param other     Accessor which will check iself in device loop
+     *
+     * @param eventType The device type which is used to expand device names
+     *
+     * @return a list of device names that check matches
+     */
+    bool check(const DataAccessor& accData, const DataAccessor& other,
+               const std::string& eventType);
+
+    /**
      * @brief Access accessor just like do it on json
      *
      * @param key
      * @return auto
      */
-    auto operator[](const std::string& key)
+    auto operator[](const std::string& key) const
     {
         return _acc[key];
     }
@@ -252,7 +263,7 @@ class DataAccessor
      * @param key
      * @return auto
      */
-    auto count(const std::string& key)
+    auto count(const std::string& key) const
     {
         return _acc.count(key);
     }
@@ -262,9 +273,28 @@ class DataAccessor
      *
      * @return bool
      */
-    bool isEmpty(void)
+    bool isEmpty(void) const
     {
         return _acc.empty();
+    }
+
+    /**
+     * @brief checks if accessor["check"] exists
+     *
+     * @return true if that exists
+     */
+    inline bool existsCheckKey() const
+    {
+        return isEmpty() == false && _acc.count(checkKey) != 0;
+    }
+
+    /**
+     * @brief checks if _acc["check"]["bitmask"] exists
+     * @return true if that exists, otherwise false
+     */
+    bool existsCheckBitmask() const
+    {
+        return existsCheckKey() && _acc[checkKey].count(bitmaskKey) != 0;
     }
 
     /**
@@ -288,9 +318,9 @@ class DataAccessor
         {
             runCommandLine(device);
         }
-        else if (isValid(_acc) == true && _acc[typeKey] == "DeviceCoreAPI")
+        else if (isTypeDeviceCoreApi() == true)
         {
-            // dbus::deviceGetCoreAPI()
+            readDeviceCoreApi(device);
         }
 
         if (_dataValue != nullptr)
@@ -322,6 +352,16 @@ class DataAccessor
     bool isValidDeviceAccessor() const
     {
         return isTypeDevice() == true && _acc.count(deviceNameKey) != 0;
+    }
+
+    /**
+     * @brief  the @sa check() is supposed to fill _latestCheckedDevices
+     *
+     * @return the _latestAssertedDevices, a map with deviceId and deviceName
+     */
+    inline util::DeviceIdMap getAssertedDeviceNames() const
+    {
+        return _latestAssertedDevices;
     }
 
   private:
@@ -368,6 +408,15 @@ class DataAccessor
     }
 
     /**
+     * @brief isTypeDeviceCoreApi()
+     *
+     * @return true if acccessor["type"] exists and it is "DeviceCoreAPI"
+     */
+    inline bool isTypeDeviceCoreApi() const
+    {
+        return isValid(_acc) == true && _acc[typeKey] == "DeviceCoreAPI";
+    }
+    /**
      * @brief hasData() checks if a real data is stored in _dataValue
      *
      *                  It should return true after read() gets a real data
@@ -392,6 +441,23 @@ class DataAccessor
     }
 
     /**
+     * @brief getDataValue() instead of read() it returns the real data
+     *
+     * @note  It does not call read(), just returns the data if exists
+     *
+     * @return returns the data if exists, otherwise an invalid PropertyValue
+     */
+    inline PropertyValue getDataValue() const
+    {
+        PropertyValue data;
+        if (hasData() == true)
+        {
+            data = *_dataValue;
+        }
+        return data;
+    }
+
+    /**
      * @brief   checks if it is Dbus type and if mandatory fields are present
      *
      * @return true if this Accessor Dbus is OK
@@ -412,6 +478,16 @@ class DataAccessor
     bool isValidCmdlineAccessor() const
     {
         return isTypeCmdline() == true && _acc.count(executableKey) != 0;
+    }
+
+    /**
+     * @brief isValidDeviceCoreApiAccessor()
+     *
+     * @return true if the Accessor type "DeviceCoreAPI" has property
+     */
+    bool isValidDeviceCoreApiAccessor() const
+    {
+        return isTypeDeviceCoreApi() && _acc.count(propertyKey) != 0;
     }
 
     /**
@@ -445,6 +521,23 @@ class DataAccessor
      */
     bool setDataValueFromVariant(const PropertyVariant& propVariant);
 
+    /**
+     * @brief readDeviceCoreApi() reads data for Accessor "DeviceCoreAPI"
+     *
+     * @return true if the propVariant has a valid data, otherwise false
+     */
+    bool readDeviceCoreApi(const std::string& device);
+
+    /**
+     * @brief looks in other["object"] and this["object"] and in device
+     *          to find a device name
+     * @param other
+     * @param device
+     * @return a valid device name such as "GPU1" or empty string
+     */
+    std::string findDeviceName(const DataAccessor& other,
+                               const std::string& device) const;
+
   private:
     /**
      * @brief hold json data for the accessor.
@@ -458,6 +551,11 @@ class DataAccessor
      * @sa read()
      */
     std::shared_ptr<PropertyValue> _dataValue;
+
+    /**
+     * @brief after calling check() it may contain the list of device names
+     */
+    util::DeviceIdMap _latestAssertedDevices;
 };
 
 } // namespace data_accessor

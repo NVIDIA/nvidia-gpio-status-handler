@@ -130,6 +130,7 @@ srcfiles_unittest = ['test/dat_test.cpp',
                      'test/event_detection_test.cpp',
                      'test/selftest_test.cpp',
                      'test/propertyvalue_variant_test.cpp',
+		     'test/util_test.cpp',
                      'test/gpio_monitor_test.cpp'
                     ]
 
@@ -138,6 +139,8 @@ amllib_sources = [
                 'src/dat_traverse.cpp',
                 'src/data_accessor.cpp',
                 'src/property_accessor.cpp',
+		'src/dbus_accessor.cpp',
+		'src/util.cpp',
                 'src/event_detection.cpp',
                 'src/event_handler.cpp',
                 'src/event_info.cpp',

@@ -1,149 +1,18 @@
-
 /*
  *
  */
 #include "data_accessor.hpp"
 
-#include <fmt/format.h>
+#include "util.hpp"
 
 #include <boost/process.hpp>
-#include <phosphor-logging/elog.hpp>
 
 #include <regex>
 #include <string>
+#include <vector>
 
 namespace data_accessor
 {
-
-namespace dbus
-{
-using namespace phosphor::logging;
-
-static auto bus = sdbusplus::bus::new_default();
-
-std::string getService(const std::string& objectPath,
-                       const std::string& interface)
-{
-    constexpr auto mapperBusBame = "xyz.openbmc_project.ObjectMapper";
-    constexpr auto mapperObjectPath = "/xyz/openbmc_project/object_mapper";
-    constexpr auto mapperInterface = "xyz.openbmc_project.ObjectMapper";
-    std::vector<std::pair<std::string, std::vector<std::string>>> response;
-    auto method = bus.new_method_call(mapperBusBame, mapperObjectPath,
-                                      mapperInterface, "GetObject");
-    method.append(objectPath, std::vector<std::string>({interface}));
-    try
-    {
-        auto reply = bus.call(method);
-        reply.read(response);
-    }
-    catch (const sdbusplus::exception::exception& e)
-    {
-        log<level::ERR>("D-Bus call exception",
-                        entry("OBJPATH={%s}", objectPath.c_str()),
-                        entry("INTERFACE={%s}", interface.c_str()),
-                        entry("SDBUSERR=%s", e.what()));
-
-        throw std::runtime_error("Service name is not found");
-    }
-
-    if (response.empty())
-    {
-        throw std::runtime_error("Service name response is empty");
-    }
-    return response.begin()->first;
-}
-
-auto deviceGetCoreAPI(const int devId, const std::string& property)
-{
-    constexpr auto service = "xyz.openbmc_project.GpuMgr";
-    constexpr auto object = "/xyz/openbmc_project/GpuMgr";
-    constexpr auto interface = "xyz.openbmc_project.GpuMgr.Server";
-    constexpr auto callName = "DeviceGetData";
-
-    constexpr auto accMode = 1; // Calling in Passthrough Mode. Blocked call.
-
-    auto method = bus.new_method_call(service, object, interface, callName);
-    method.append(devId);
-    method.append(property);
-    method.append(accMode);
-
-    std::tuple<int, std::string, std::vector<uint32_t>> response;
-    try
-    {
-        auto reply = bus.call(method);
-        reply.read(response);
-    }
-    catch (const sdbusplus::exception::SdBusError& e)
-    {
-        log<level::ERR>("Failed to make call for ",
-                        entry("property=(%s[%d])", property.c_str(), devId),
-                        entry("SDBUSERR=%s", e.what()));
-        throw std::runtime_error("Get device call is not found!");
-    }
-
-    uint64_t value = 0;
-    std::string valueStr = "";
-
-    // response example:
-    // (isau) 0 "Baseboard GPU over temperature info : 0001" 2 1 0
-    auto rc = std::get<int>(response);
-
-    if (rc != 0)
-    {
-        log<level::ERR>("Failed to get value of ",
-                        entry("property=(%s[%d])", property.c_str(), devId),
-                        entry("rc=%d", rc));
-    }
-    else
-    {
-        auto data = std::get<std::vector<uint32_t>>(response);
-        // Per SMBPBI spec: data[0]:dataOut, data[1]:exDataOut
-        value = ((uint64_t)data[1] << 32 | data[0]);
-
-        // msg example: "Baseboard GPU over temperature info : 0001"
-        auto msg = std::get<std::string>(response);
-        valueStr = msg.substr(msg.find(" : "), msg.length());
-    }
-
-    return std::make_tuple(rc, valueStr, value);
-}
-
-auto deviceClearCoreAPI(const int devId, const std::string& property)
-{
-    constexpr auto service = "xyz.openbmc_project.GpuMgr";
-    constexpr auto object = "/xyz/openbmc_project/GpuMgr";
-    constexpr auto interface = "xyz.openbmc_project.GpuMgr.Server";
-    constexpr auto callName = "DeviceClearData";
-
-    auto method = bus.new_method_call(service, object, interface, callName);
-    method.append(devId);
-    method.append(property);
-
-    int rc = 0;
-    try
-    {
-        auto reply = bus.call(method);
-        reply.read(rc);
-    }
-    catch (const sdbusplus::exception::SdBusError& e)
-    {
-        log<level::ERR>("Failed to make call for ",
-                        entry("property=(%s[%d])", property.c_str(), devId),
-                        entry("SDBUSERR=%s", e.what()));
-        throw std::runtime_error("Clear device call is not found!");
-    }
-
-    if (rc != 0)
-    {
-        log<level::ERR>("Failed to get value of ",
-                        entry("property=(%s[%d])", property.c_str(), devId),
-                        entry("rc=%d", rc));
-    }
-
-    return rc;
-}
-
-} // namespace dbus
 
 bool DataAccessor::contains(const DataAccessor& other) const
 {
@@ -190,17 +59,51 @@ bool DataAccessor::check(const DataAccessor& otherAcc,
                          const std::string& device) const
 {
     bool ret = true; // defaults to true if accessor["check"] does not exist
-    if (_acc.count(checkKey) != 0)
+    if (existsCheckKey() == true)
     {
+        bool deviceHasRange = util::existsRange(device);
+        std::string deviceToRead = findDeviceName(otherAcc, device);
         DataAccessor& accNonConst = const_cast<DataAccessor&>(otherAcc);
-        // until this moment device is not necessary in PropertyValue::check()
-        accNonConst.read(device);
+        accNonConst.read(deviceToRead);
         if ((ret = accNonConst.hasData()) == true)
         {
-            auto checkDefinition = _acc[checkKey].get<CheckDefinitionMap>();
-            ret = otherAcc._dataValue->check(checkDefinition, redefCriteria);
+            auto checkMap = _acc[checkKey].get<CheckDefinitionMap>();
+            /**
+             * special logic for bitmask
+             * --------------------------
+             *   bitmask should match for deviceId present in either:
+             *    1. deviceToRead and there is no regex in device
+             *    2. device is regex, i.e, comes from 'event.device_type'
+             */
+            bool hasDevice = deviceHasRange || deviceToRead.empty() == false;
+            bool bitM = existsCheckBitmask();
+            bool bitmaskNoRedefined = redefCriteria.index() == 0;
+            if (hasDevice == true && bitM == true && bitmaskNoRedefined == true)
+            {
+                ret = false; // set to false
+                util::DeviceIdMap devices =
+                    (deviceHasRange == true)
+                        ? util::expandDeviceRange(device)
+                        : util::expandDeviceRange(deviceToRead);
+                // now walk thuru devices
+                for (auto& deviceItem : devices)
+                {
+                    auto devId = deviceItem.first;
+                    PropertyVariant bitmask(uint64_t(1 << devId));
+                    if (otherAcc._dataValue->check(checkMap, bitmask) == true)
+                    {
+                        const auto& deviceName = deviceItem.second;
+                        ret = true; // true if at least one device
+                        accNonConst._latestAssertedDevices[devId] = deviceName;
+                    }
+                }
+            }
+            else // common case
+            {
+                ret = otherAcc._dataValue->check(checkMap, redefCriteria);
+            }
         }
-    }
+    } // existsCheckKey() == true
     return ret;
 }
 
@@ -228,14 +131,36 @@ bool DataAccessor::check() const
     return check(*this, PropertyVariant(), std::string{""});
 }
 
+bool DataAccessor::check(const DataAccessor& accData, const DataAccessor& other,
+                         const std::string& eventType)
+{
+    bool ret = check(accData, eventType); // first event_trigger check
+    if (ret == true && other.existsCheckKey() == true)
+    {
+        ret = other.check(eventType);
+        if (ret == true)
+        {
+            auto latestCheckedDevices = other._latestAssertedDevices;
+            if (latestCheckedDevices.empty() == false)
+            {
+                DataAccessor& accNonConst = const_cast<DataAccessor&>(accData);
+                DataAccessor& otherNonConst = const_cast<DataAccessor&>(other);
+                otherNonConst._latestAssertedDevices.clear();
+                accNonConst._latestAssertedDevices = latestCheckedDevices;
+            }
+        }
+    }
+    return ret;
+}
+
 bool DataAccessor::readDbus()
 {
     clearData();
     bool ret = isValidDbusAccessor();
     if (ret == true)
     {
-        auto propVariant = readDbusProperty(_acc[objectKey], _acc[interfaceKey],
-                                            _acc[propertyKey]);
+        auto propVariant = dbus::readDbusProperty(
+            _acc[objectKey], _acc[interfaceKey], _acc[propertyKey]);
         ret = setDataValueFromVariant(propVariant);
     }
 #ifdef ENABLE_LOGS
@@ -255,23 +180,14 @@ bool DataAccessor::runCommandLine(const std::string& device)
         if (_acc.count(argumentsKey) != 0)
         {
             auto args = _acc[argumentsKey].get<std::string>();
-            auto regexPosition = std::string::npos;
-            const std::regex reg{".*(\\[[0-9]+\\-[0-9]+\\]).*"};
-            std::smatch match;
-            if (std::regex_search(args, match, reg))
+            if (device.empty() == false)
             {
-                std::string regexString = match[1];
-                regexPosition = args.find(regexString);
-                // replace the range by device
-                if (device.empty() == false)
-                {
-                    args.replace(regexPosition, regexString.size(), device);
-                }
-                else // expand the range inside args
-                {
-                    // TODO: "before A[0-3] after" => "before A0 A1 A2 A3 after"
-                    // args = expandRangeFromString(args);
-                }
+                args = util::replaceRangeByMatchedValue(args, device);
+            }
+            else // expand the range inside args
+            {
+                // TODO: "before A[0-3] after" => "before A0 A1 A2 A3 after"
+                // args = expandRangeFromString(args);
             }
             cmd += ' ' + args;
         }
@@ -321,6 +237,43 @@ bool DataAccessor::setDataValueFromVariant(const PropertyVariant& propVariant)
             std::make_shared<PropertyValue>(PropertyValue(propVariant));
     }
     return ret;
+}
+
+bool DataAccessor::readDeviceCoreApi(const std::string& device)
+{
+    clearData();
+    bool ret = isValidDeviceCoreApiAccessor();
+    if (ret == true)
+    {
+        auto deviceId = util::getDeviceId(device);
+        auto tuple = dbus::deviceGetCoreAPI(deviceId, _acc[propertyKey]);
+        auto rc = std::get<int>(tuple);
+        if (rc != 0)
+        {
+            ret = false;
+        }
+        else
+        {
+            _dataValue = std::make_shared<PropertyValue>(PropertyValue(
+                std::get<std::string>(tuple), std::get<uint64_t>(tuple)));
+        }
+    }
+    return ret;
+}
+
+std::string DataAccessor::findDeviceName(const DataAccessor& other,
+                                         const std::string& device) const
+{
+    std::string deviceName = util::getDeviceName(device);
+    if (deviceName.empty() == true && other.count(objectKey) != 0)
+    {
+        deviceName = util::getDeviceName(other[objectKey].get<std::string>());
+    }
+    if (deviceName.empty() == true && _acc.count(objectKey) != 0)
+    {
+        deviceName = util::getDeviceName(_acc[objectKey].get<std::string>());
+    }
+    return deviceName;
 }
 
 } // namespace data_accessor

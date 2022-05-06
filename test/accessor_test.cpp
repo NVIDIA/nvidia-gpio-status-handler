@@ -6,6 +6,7 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <tuple>
 
 #include <gtest/gtest.h>
 
@@ -190,26 +191,26 @@ TEST(DataAccessor, CheckLookupMctpVdmUtilWrapper)
     EXPECT_EQ(jAccessor.check(device), true);
 }
 
-TEST(DataAccessor,  EqualPositiveRegexAgainstNoRegex)
+TEST(DataAccessor, EqualPositiveRegexAgainstNoRegex)
 {
     const nlohmann::json jsonFile = {
-    {"type", "DBUS"},
-    {"object", "/xyz/openbmc_project/inventory/system/memory/GPU[0-7]"}};
+        {"type", "DBUS"},
+        {"object", "/xyz/openbmc_project/inventory/system/memory/GPU[0-7]"}};
 
     const nlohmann::json dbusProperty = {
-    {"type", "DBUS"},
-    {"object", "/xyz/openbmc_project/inventory/system/memory/GPU0"}};
+        {"type", "DBUS"},
+        {"object", "/xyz/openbmc_project/inventory/system/memory/GPU0"}};
 
     DataAccessor jsonAccessor(jsonFile);
     DataAccessor objectAccessor(dbusProperty);
     EXPECT_EQ(jsonAccessor == objectAccessor, true);
 }
 
-TEST(DataAccessor,  EqualNegativeRegexAgainstItself)
+TEST(DataAccessor, EqualNegativeRegexAgainstItself)
 {
     const nlohmann::json jsonFile = {
-    {"type", "DBUS"},
-    {"object", "/xyz/openbmc_project/inventory/system/memory/GPU[0-7]"}};
+        {"type", "DBUS"},
+        {"object", "/xyz/openbmc_project/inventory/system/memory/GPU[0-7]"}};
 
     DataAccessor jsonAccessor(jsonFile);
 
@@ -217,156 +218,134 @@ TEST(DataAccessor,  EqualNegativeRegexAgainstItself)
     EXPECT_NE(jsonAccessor == jsonAccessor, true);
 }
 
-TEST(DataAccessor,  EqualNegativeNoRegxAgainstRegex)
+TEST(DataAccessor, EqualNegativeNoRegxAgainstRegex)
 {
     const nlohmann::json jsonFile = {
-    {"type", "DBUS"},
-    {"object", "/xyz/openbmc_project/inventory/system/memory/GPU0"}};
+        {"type", "DBUS"},
+        {"object", "/xyz/openbmc_project/inventory/system/memory/GPU0"}};
 
     const nlohmann::json dbusProperty = {
-    {"type", "DBUS"},
-    {"object", "/xyz/openbmc_project/inventory/system/memory/GPU[0-7]"}};
+        {"type", "DBUS"},
+        {"object", "/xyz/openbmc_project/inventory/system/memory/GPU[0-7]"}};
 
     DataAccessor jsonAccessor(jsonFile);
     DataAccessor objectAccessor(dbusProperty);
     EXPECT_NE(jsonAccessor == objectAccessor, true);
 }
 
-TEST(DataAccessor,  EqualPositiveTypeOnly)
+TEST(DataAccessor, EqualPositiveTypeOnly)
 {
-    const nlohmann::json jsonFile = {
-    {"type", "DBUS"}};
+    const nlohmann::json jsonFile = {{"type", "DBUS"}};
 
-    const nlohmann::json dbusProperty = {
-    {"type", "DBUS"}};
+    const nlohmann::json dbusProperty = {{"type", "DBUS"}};
 
     DataAccessor jsonAccessor(jsonFile);
     DataAccessor objectAccessor(dbusProperty);
     EXPECT_EQ(jsonAccessor == objectAccessor, true);
 }
 
-TEST(DataAccessor,  EqualPositiveNoRegxAgainstNoRegex)
+TEST(DataAccessor, EqualPositiveNoRegxAgainstNoRegex)
 {
     const nlohmann::json jsonFile = {
-    {"type", "DBUS"},
-    {"object", "/xyz/openbmc_project/inventory/system/memory/GPU0"}};
+        {"type", "DBUS"},
+        {"object", "/xyz/openbmc_project/inventory/system/memory/GPU0"}};
 
     const nlohmann::json dbusProperty = {
-    {"type", "DBUS"},
-    {"object", "/xyz/openbmc_project/inventory/system/memory/GPU0"}};
+        {"type", "DBUS"},
+        {"object", "/xyz/openbmc_project/inventory/system/memory/GPU0"}};
 
     DataAccessor jsonAccessor(jsonFile);
     DataAccessor objectAccessor(dbusProperty);
     EXPECT_EQ(jsonAccessor == objectAccessor, true);
 }
 
-TEST(DataAccessor,  EqualPositiveWithSkippedCheckField)
+TEST(DataAccessor, EqualPositiveWithSkippedCheckField)
 {
     const nlohmann::json jsonFile = {
-    {"type", "DBUS"},
-    {"object", "/xyz/openbmc_project/inventory/system/memory/GPU0"}};
+        {"type", "DBUS"},
+        {"object", "/xyz/openbmc_project/inventory/system/memory/GPU0"}};
 
     const nlohmann::json dbusProperty = {
-    {"type", "DBUS"},
-    {"object", "/xyz/openbmc_project/inventory/system/memory/GPU0"},
-    {"check", {{"bitmask", "0x01"}}}};
+        {"type", "DBUS"},
+        {"object", "/xyz/openbmc_project/inventory/system/memory/GPU0"},
+        {"check", {{"bitmask", "0x01"}}}};
 
     DataAccessor jsonAccessor(jsonFile);
     DataAccessor objectAccessor(dbusProperty);
     EXPECT_EQ(jsonAccessor == objectAccessor, true);
 }
 
-TEST(DataAccessor,  EqualNegativeRegexAgainstNoRegex)
+TEST(DataAccessor, EqualNegativeRegexAgainstNoRegex)
 {
     const nlohmann::json jsonFile = {
-    {"type", "DBUS"},
-    {"object", "/xyz/openbmc_project/inventory/system/memory/GPU[0-7]"}};
+        {"type", "DBUS"},
+        {"object", "/xyz/openbmc_project/inventory/system/memory/GPU[0-7]"}};
 
     const nlohmann::json dbusProperty = {
-    {"type", "DBUS"},
-    {"object", "/xyz/openbmc_project/inventory/system/memory/GPU"}};
+        {"type", "DBUS"},
+        {"object", "/xyz/openbmc_project/inventory/system/memory/GPU"}};
 
     DataAccessor jsonAccessor(jsonFile);
     DataAccessor objectAccessor(dbusProperty);
     EXPECT_NE(jsonAccessor == objectAccessor, true);
 }
 
-TEST(DataAccessor,  EqualNegativeDifferentTypes)
+TEST(DataAccessor, EqualNegativeDifferentTypes)
 {
     const nlohmann::json jsonFile = {
-    {"type", "DBUS"},
-    {"object", "/xyz/openbmc_project/inventory/system/memory/GPU[0-7]"}};
+        {"type", "DBUS"},
+        {"object", "/xyz/openbmc_project/inventory/system/memory/GPU[0-7]"}};
 
     const nlohmann::json dbusProperty = {
-    {"type", "DBUS call"},
-    {"object", "/xyz/openbmc_project/inventory/system/memory/GPU0"}};
+        {"type", "DBUS call"},
+        {"object", "/xyz/openbmc_project/inventory/system/memory/GPU0"}};
 
     DataAccessor jsonAccessor(jsonFile);
     DataAccessor objectAccessor(dbusProperty);
     EXPECT_NE(jsonAccessor == objectAccessor, true);
 }
 
-TEST(DataAccessor,  EqualNegativeNoTypeInThis)
+TEST(DataAccessor, EqualNegativeNoTypeInThis)
 {
     const nlohmann::json jsonFile = {
-    {"object", "/xyz/openbmc_project/inventory/system/memory/GPU[0-7]"}};
+        {"object", "/xyz/openbmc_project/inventory/system/memory/GPU[0-7]"}};
 
     const nlohmann::json dbusProperty = {
-    {"type", "DBUS"},
-    {"object", "/xyz/openbmc_project/inventory/system/memory/GPU0"}};
+        {"type", "DBUS"},
+        {"object", "/xyz/openbmc_project/inventory/system/memory/GPU0"}};
 
     DataAccessor jsonAccessor(jsonFile);
     DataAccessor objectAccessor(dbusProperty);
     EXPECT_NE(jsonAccessor == objectAccessor, true);
 }
 
-TEST(DataAccessor,  EqualNegativeNoTypeInOther)
+TEST(DataAccessor, EqualNegativeNoTypeInOther)
 {
     const nlohmann::json jsonFile = {
-    {"type", "DBUS"},
-    {"object", "/xyz/openbmc_project/inventory/system/memory/GPU[0-7]"}};
+        {"type", "DBUS"},
+        {"object", "/xyz/openbmc_project/inventory/system/memory/GPU[0-7]"}};
 
     const nlohmann::json dbusProperty = {
-    {"object", "/xyz/openbmc_project/inventory/system/memory/GPU0"}};
+        {"object", "/xyz/openbmc_project/inventory/system/memory/GPU0"}};
 
     DataAccessor jsonAccessor(jsonFile);
     DataAccessor objectAccessor(dbusProperty);
     EXPECT_NE(jsonAccessor == objectAccessor, true);
 }
 
-TEST(DataAccessor,  EqualOperatorNegativeCompleteAccessorDiffObject)
+TEST(DataAccessor, EqualOperatorNegativeCompleteAccessorDiffObject)
 {
     const nlohmann::json jsonFile = {
-    {"type", "DBUS"},
-    {"object", "/xyz/openbmc_project/inventory/system/memory/GPU[0-7]"},
-    {"interface", "xyz.openbmc_project.Memory.MemoryECC"},
-    {"property", "ceCount"}};
+        {"type", "DBUS"},
+        {"object", "/xyz/openbmc_project/inventory/system/memory/GPU[0-7]"},
+        {"interface", "xyz.openbmc_project.Memory.MemoryECC"},
+        {"property", "ceCount"}};
 
     const nlohmann::json dbusProperty = {
-    {"type", "DBUS"},
-    {"object", "/xyz/openbmc_project/inventory/system/memory/GPUDRAM0"},
-    {"interface", "xyz.openbmc_project.Memory.MemoryECC"},
-    {"property", "ceCount"}};
-
-    DataAccessor jsonAccessor(jsonFile);
-    DataAccessor objectAccessor(dbusProperty);
-
-    EXPECT_NE(jsonAccessor == objectAccessor, true);
-}
-
-TEST(DataAccessor,  EqualOperatorNegativeCompleteAccessorDiffInterface)
-{
-    const nlohmann::json jsonFile = {
-    {"type", "DBUS"},
-    {"object", "/xyz/openbmc_project/inventory/system/memory/GPUDRAM[0-7]"},
-    {"interface", "xyz.openbmc_project.Memory.MemoryECC.Different"},
-    {"property", "ceCount"}};
-
-    const nlohmann::json dbusProperty = {
-    {"type", "DBUS"},
-    {"object", "/xyz/openbmc_project/inventory/system/memory/GPUDRAM0"},
-    {"interface", "xyz.openbmc_project.Memory.MemoryECC"},
-    {"property", "ceCount"}};
+        {"type", "DBUS"},
+        {"object", "/xyz/openbmc_project/inventory/system/memory/GPUDRAM0"},
+        {"interface", "xyz.openbmc_project.Memory.MemoryECC"},
+        {"property", "ceCount"}};
 
     DataAccessor jsonAccessor(jsonFile);
     DataAccessor objectAccessor(dbusProperty);
@@ -374,22 +353,100 @@ TEST(DataAccessor,  EqualOperatorNegativeCompleteAccessorDiffInterface)
     EXPECT_NE(jsonAccessor == objectAccessor, true);
 }
 
-TEST(DataAccessor,  EqualOperatorNegativeCompleteAccessorDiffProperty)
+TEST(DataAccessor, EqualOperatorNegativeCompleteAccessorDiffInterface)
 {
     const nlohmann::json jsonFile = {
-    {"type", "DBUS"},
-    {"object", "/xyz/openbmc_project/inventory/system/memory/GPUDRAM[0-7]"},
-    {"interface", "xyz.openbmc_project.Memory.MemoryECC"},
-    {"property", "ceCount"}};
+        {"type", "DBUS"},
+        {"object", "/xyz/openbmc_project/inventory/system/memory/GPUDRAM[0-7]"},
+        {"interface", "xyz.openbmc_project.Memory.MemoryECC.Different"},
+        {"property", "ceCount"}};
 
     const nlohmann::json dbusProperty = {
-    {"type", "DBUS"},
-    {"object", "/xyz/openbmc_project/inventory/system/memory/GPUDRAM0"},
-    {"interface", "xyz.openbmc_project.Memory.MemoryECC"},
-    {"property", "ceCount_changed"}};
+        {"type", "DBUS"},
+        {"object", "/xyz/openbmc_project/inventory/system/memory/GPUDRAM0"},
+        {"interface", "xyz.openbmc_project.Memory.MemoryECC"},
+        {"property", "ceCount"}};
 
     DataAccessor jsonAccessor(jsonFile);
     DataAccessor objectAccessor(dbusProperty);
 
     EXPECT_NE(jsonAccessor == objectAccessor, true);
 }
+
+TEST(DataAccessor, EqualOperatorNegativeCompleteAccessorDiffProperty)
+{
+    const nlohmann::json jsonFile = {
+        {"type", "DBUS"},
+        {"object", "/xyz/openbmc_project/inventory/system/memory/GPUDRAM[0-7]"},
+        {"interface", "xyz.openbmc_project.Memory.MemoryECC"},
+        {"property", "ceCount"}};
+
+    const nlohmann::json dbusProperty = {
+        {"type", "DBUS"},
+        {"object", "/xyz/openbmc_project/inventory/system/memory/GPUDRAM0"},
+        {"interface", "xyz.openbmc_project.Memory.MemoryECC"},
+        {"property", "ceCount_changed"}};
+
+    DataAccessor jsonAccessor(jsonFile);
+    DataAccessor objectAccessor(dbusProperty);
+
+    EXPECT_NE(jsonAccessor == objectAccessor, true);
+}
+
+#if 0 // these tests depend on DBUS, TODO: use Goggle Mock
+TEST(DataAccessor, EventTriggerForOverTemperature)
+{
+    const nlohmann::json eventTrigger = {
+        {"type", "DBUS"},
+        {"object", "/xyz/openbmc_project/GpioStatusHandler"},
+        {"interface", "xyz.openbmc_project.GpioStatus"},
+        {"property", "THERM_OVERT"},
+        {"check", {{"equal", "true"}}}};
+
+    const nlohmann::json accessor = {
+        {"type", "DeviceCoreAPI"},
+        {"property", "gpu.thermal.temperature.overTemperatureInfo"},
+        {"check", {{"bitmask", "1"}}}};
+
+    DataAccessor triggerAccessor{eventTrigger};
+    DataAccessor accessorAccessor{accessor};
+
+    DataAccessor dataForEventTrigger(PropertyVariant(bool(true)));
+    auto ok = triggerAccessor.check(dataForEventTrigger, accessorAccessor,
+                                    "GPU[0-7]");
+    EXPECT_EQ(ok, true);
+
+    auto devices = dataForEventTrigger.getLatestCheckedDeviceNames();
+    EXPECT_EQ(devices.empty(), false);
+}
+
+TEST(DataAccessor, EventTriggerForDestinationFlaTranslationError)
+{
+    const nlohmann::json eventTrigger = {
+        {"type", "DBUS"},
+        {"object", "/xyz/openbmc_project/inventory/system/chassis/GPU0"},
+        {"interface", "xyz.openbmc_project.com.nvidia.Events.PendingRegister"},
+        {"property", "EventsPendingRegister"},
+        {"check", {{"bitmask", "1"}}}};
+
+    const nlohmann::json accessor = {{"type", "DeviceCoreAPI"},
+                                     {"property", "gpu.xid.event"},
+                                     {"check", {{"lookup", "30"}}}};
+
+    DataAccessor triggerAccessor{eventTrigger};
+    DataAccessor accessorAccessor{accessor};
+
+    // 0x0c = 12 decimal which  matches GPU2 and GPU3
+    const int gpu2id = 2;
+    const int gpu3id = 3;
+    DataAccessor dataForEventTrigger(PropertyVariant(uint64_t(0x0c)));
+
+    auto ok = triggerAccessor.check(dataForEventTrigger, accessorAccessor,
+                                    "GPU[0-7]");
+    EXPECT_EQ(ok, true);
+    auto devices = dataForEventTrigger.getLatestCheckedDeviceNames();
+    EXPECT_EQ(devices.size(), 2);
+    EXPECT_EQ(devices.count(gpu2id), 1);
+    EXPECT_EQ(devices.count(gpu3id), 1);
+}
+#endif

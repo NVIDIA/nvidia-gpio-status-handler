@@ -22,6 +22,8 @@ namespace event_detection
 {
 
 constexpr int invalidIntParam = -1;
+using DbusEventHandlerList =
+    std::vector<std::unique_ptr<sdbusplus::bus::match_t>>;
 
 /**
  * @class EventDetection
@@ -42,6 +44,10 @@ class EventDetection : public object::Object
     void identifyEventCandidate(const std::string& objPath,
                                 const std::string& signature,
                                 const std::string& property);
+    /**
+     * @brief This is the callback which handles DBUS properties changes
+     */
+    static void dbusEventHandlerCallback(sdbusplus::message::message& msg);
 
     /**
      * @brief Register DBus propertiesChanged handler.
@@ -49,9 +55,9 @@ class EventDetection : public object::Object
      * @param evtDet
      * @param conn
      * @param iface
-     * @return std::unique_ptr<sdbusplus::bus::match_t>
+     * @return a list of std::unique_ptr<sdbusplus::bus::match_t>
      */
-    static std::unique_ptr<sdbusplus::bus::match_t>
+    static DbusEventHandlerList
         startEventDetection(EventDetection* evtDet,
                             std::shared_ptr<sdbusplus::asio::connection> conn);
 
@@ -68,32 +74,29 @@ class EventDetection : public object::Object
         {
             for (auto& event : eventPerDevType.second)
             {
-                // event.accessor["object"] =
-                // "xyz/openbmc_project/sensors/temperature/TEMP_GB_GPU[0-7]"
-                // acc["object"]
 #ifdef ENABLE_LOGS
-                std::cout << "event.accessor: " << event.accessor
-                          << ", acc: " << acc << "\n";
+                std::cout << __PRETTY_FUNCTION__
+                          << "\n\tevent.accessor: " << event.accessor
+                          << "\n\tevent.trigger: " << event.trigger
+                          << "\n\tacc: " << acc << "\n";
 #endif
+                /**
+                 * event.trigger is compared first, when it macthes:
+                 *   1. event.trigger performs a check against the data from acc
+                 *   2. if check passes and event.accessor is not empty
+                 *     2.1 event.accessor performs a check against its own data
+                 */
+                if (event.trigger.isEmpty() == false && event.trigger == acc)
+                {
+                    bool ret = event.trigger.check(acc, event.accessor,
+                                                   event.deviceType);
+                    return (ret == true) ? &event : nullptr;
+                }
 
                 if (event.accessor == acc)
                 {
-                    if (event.trigger.isEmpty())
-                    {
-                        if (event.accessor.check(acc))
-                        {
-                            return &event;
-                        }
-                        return nullptr;
-                    }
-                    else
-                    {
-                        if (event.trigger == acc && event.trigger.check(acc))
-                        {
-                            return &event;
-                        }
-                        return nullptr;
-                    }
+                    bool ret = event.accessor.check(acc, event.deviceType);
+                    return (ret == true) ? &event : nullptr;
                 }
             }
         }
@@ -142,9 +145,6 @@ class EventDetection : public object::Object
      */
     void RunEventHandlers(event_info::EventNode& event)
     {
-#ifdef ENABLE_LOGS
-        std::cout << "Create thread to process event.\n";
-#endif
         auto thread = std::make_unique<std::thread>([this, event]() mutable {
 #ifdef ENABLE_LOGS
             std::cout << "calling hdlrMgr: " << this->_hdlrMgr->getName()

@@ -11,9 +11,6 @@
 
 #include "property_accessor.hpp"
 
-#include <sdbusplus/bus.hpp>
-#include <sdbusplus/exception.hpp>
-
 #include <algorithm>
 #include <cctype>
 #include <iostream>
@@ -28,50 +25,6 @@
 
 namespace data_accessor
 {
-
-constexpr auto gpuManagerService = "xyz.openbmc_project.GpuMgr";
-constexpr auto freeDesktopInterface = "org.freedesktop.DBus.Properties";
-constexpr auto getCall = "Get";
-
-PropertyVariant readDbusProperty(const std::string& objPath,
-                                 const std::string& interface,
-                                 const std::string& property)
-{
-
-    PropertyVariant value;
-    bool errorStatus = false;
-    std::string errorWhat{""};
-    try
-    {
-        auto bus = sdbusplus::bus::new_default_system();
-
-        // TODO: use the getService() as soon it becomes available
-        auto method = bus.new_method_call(gpuManagerService, objPath.c_str(),
-                                          freeDesktopInterface, getCall);
-        method.append(interface, property);
-        auto reply = bus.call(method);
-        reply.read(value);
-    }
-    // sdbusplus::exception::SdBusError inherits std::exception
-    catch (const std::exception& error)
-    {
-        errorWhat = error.what();
-        errorStatus = true;
-    }
-    catch (...)
-    {
-        errorStatus = true;
-    }
-    if (errorStatus == true)
-    {
-        std::cerr << __PRETTY_FUNCTION__ << "(): "
-                  << "Failed to get property "
-                  << "PROPERTY=" << property << "PATH=" << objPath
-                  << "INTERFACE=" << interface << "ERROR=" << errorWhat
-                  << std::endl;
-    }
-    return value;
-}
 
 PropertyString::PropertyString(const std::string& value) : PropertyValue()
 {
@@ -98,6 +51,13 @@ PropertyValue::PropertyValue(const std::string& value)
     string2Uint64(value);
 }
 
+PropertyValue::PropertyValue(const std::string& valueStr, uint64_t value64)
+{
+    _data.strValue = valueStr;
+    _data.value64 = value64;
+    _data.valid = true;
+}
+
 PropertyValue::~PropertyValue()
 {
     // Empty
@@ -121,20 +81,20 @@ bool PropertyValue::check(const CheckDefinitionMap& map,
     {
         auto& key = accessorCheck.first;
         if (key == bitmaskKey)
-        { // != 0 means not std::monostate
-            PropertyValue maskValue = redefCriteria.index() != 0
-                                          ? PropertyValue(redefCriteria)
-                                          : PropertyValue(accessorCheck.second);
-            ret = bitmask(maskValue);
+        {
+            ret = bitmask(criteria::getValueFromCriteria(redefCriteria,
+                                                         accessorCheck.second));
         }
         else if (key == lookupKey)
         {
-            PropertyString lookupWhat =
-                redefCriteria.index() != 0
-                    ? // != 0 means not std::monostate
-                    PropertyString(redefCriteria)
-                    : PropertyString(accessorCheck.second);
-            ret = lookup(lookupWhat);
+            ret = lookup(criteria::getStringFromCriteria(redefCriteria,
+                                                         accessorCheck.second));
+        }
+        else if (key == equalKey)
+        {
+            auto value = criteria::getStringFromCriteria(redefCriteria,
+                                                         accessorCheck.second);
+            ret = value._data.strValue == _data.strValue;
         }
         if (ret == false)
         {
@@ -255,5 +215,32 @@ void PropertyValue::string2Uint64(const std::string& value)
         }
     }
 }
+
+namespace criteria
+{
+
+PropertyString getStringFromCriteria(const PropertyVariant& redefCriteria,
+                                     const std::string& accessorValue)
+{
+    // index() != 0 means not std::monostate
+    PropertyString value = redefCriteria.index() != 0
+                               ? PropertyString(redefCriteria)
+                               : PropertyString(accessorValue);
+
+    return value;
+}
+
+PropertyValue getValueFromCriteria(const PropertyVariant& redefCriteria,
+                                   const std::string& accessorValue)
+{
+    // index() != 0 means not std::monostate
+    PropertyValue value = redefCriteria.index() != 0
+                              ? PropertyValue(redefCriteria)
+                              : PropertyValue(accessorValue);
+
+    return value;
+}
+
+} // namespace criteria
 
 } // namespace data_accessor

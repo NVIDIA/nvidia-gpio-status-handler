@@ -26,6 +26,7 @@ using CheckDefinitionMap = std::map<std::string, std::string>;
 
 constexpr auto bitmaskKey = "bitmask";
 constexpr auto lookupKey = "lookup";
+constexpr auto equalKey = "equal";
 
 /**
  * @brief Variant2String
@@ -33,17 +34,6 @@ constexpr auto lookupKey = "lookup";
  * @return a std::string from the variant
  */
 std::string Variant2String(const PropertyVariant& variantVar);
-
-/**
- * @brief getDbusProperty() gets the value from a property in DBUS
- * @param objPath
- * @param interface
- * @param property
- * @return the value based on std::variant
- */
-PropertyVariant readDbusProperty(const std::string& objPath,
-                                 const std::string& interface,
-                                 const std::string& property);
 
 /**
  * @brief PropertyValueData represents any Data with 64 bit integer
@@ -125,12 +115,12 @@ class PropertyValueDataHelper
             data->valid = true;
             if (booleanData == true)
             {
-                data->strValue = "True";
+                data->strValue = "true";
                 data->value64 = 1;
             }
             else
             {
-                data->strValue = "False";
+                data->strValue = "false";
                 data->value64 = 0;
             }
             return true;
@@ -189,6 +179,7 @@ class PropertyValue
     PropertyValue();
     explicit PropertyValue(const PropertyVariant& value);
     explicit PropertyValue(const std::string& value);
+    explicit PropertyValue(const std::string& valueStr, uint64_t value64);
     virtual ~PropertyValue();
 
     /**
@@ -327,5 +318,25 @@ class PropertyString : public PropertyValue
     PropertyString() = delete;
     ~PropertyString() = default;
 };
+
+namespace criteria
+{
+/**
+ * @brief helper function to get redefined value if specified
+ * @param redefCriteria
+ * @param accessorValue
+ * @return value from redefCriteria if that exists, otherwise accessorValue
+ */
+PropertyString getStringFromCriteria(const PropertyVariant& redefCriteria,
+                                     const std::string& accessorValue);
+/**
+ * @brief helper function to get redefined value if specified
+ * @param redefCriteria
+ * @param accessorValue
+ * @return value from redefCriteria if that exists, otherwise accessorValue
+ */
+PropertyValue getValueFromCriteria(const PropertyVariant& redefCriteria,
+                                   const std::string& accessorValue);
+} // namespace criteria
 
 } // namespace data_accessor

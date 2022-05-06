@@ -310,8 +310,8 @@ void RootCauseTracer::handleFault(dat_traverse::Device& dev,
     selftester.updateDeviceHealth(dev.name, status.health);
 }
 
-aml::RcCode RootCauseTracer::process([
-    [maybe_unused]] event_info::EventNode& event)
+aml::RcCode
+    RootCauseTracer::process([[maybe_unused]] event_info::EventNode& event)
 {
     std::string problemDevice = event.device;
     if (problemDevice.length() == 0)

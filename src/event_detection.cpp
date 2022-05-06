@@ -6,6 +6,7 @@
 
 #include "aml.hpp"
 #include "aml_main.hpp"
+#include "data_accessor.hpp"
 #include "log.hpp"
 
 #include <boost/container/flat_map.hpp>
@@ -22,122 +23,141 @@ using namespace std;
 namespace event_detection
 {
 
-std::unique_ptr<sdbusplus::bus::match_t> EventDetection::startEventDetection(
-    EventDetection* evtDet, std::shared_ptr<sdbusplus::asio::connection> conn)
+constexpr auto dbusServiceList = {
+    "xyz.openbmc_project.GpuMgr",
+    "xyz.openbmc_project.GpioStatusHandler",
+    "xyz.openbmc_project.Tsm",
+};
+
+/**
+ * @brief keeps the main EventDetection pointer received by startEventDetection
+ */
+static EventDetection* eventDetectionPtr = nullptr;
+
+void EventDetection::dbusEventHandlerCallback(sdbusplus::message::message& msg)
 {
-    auto dbusEventHandlerMatcherCallback =
-        [evtDet](sdbusplus::message::message& msg) {
-            std::string msgInterface;
-            boost::container::flat_map<std::string, std::variant<double>>
-                propertiesChanged;
-            msg.read(msgInterface, propertiesChanged);
+    std::string msgInterface;
+    boost::container::flat_map<std::string, std::variant<double>>
+        propertiesChanged;
+    msg.read(msgInterface, propertiesChanged);
 
-            std::string objectPath = msg.get_path();
+    std::string objectPath = msg.get_path();
 
-            std::string signalSignature = msg.get_signature();
+    std::string signalSignature = msg.get_signature();
 
 #ifdef ENABLE_LOGS
-            std::cout << "objectPath:" << objectPath << "\n";
-            std::cout << "signalSignature:" << signalSignature << "\n";
-            std::cout << "msgInterface:" << msgInterface << "\n";
+    std::cout << "objectPath:" << objectPath << "\n";
+    std::cout << "signalSignature:" << signalSignature << "\n";
+    std::cout << "msgInterface:" << msgInterface << "\n";
 #endif
 
-            if (propertiesChanged.empty())
+    if (propertiesChanged.empty())
+    {
+#ifdef ENABLE_LOGS
+        std::cout << "empty propertiesChanged, return.\n";
+#endif
+        return;
+    }
+
+    for (auto& pc : propertiesChanged)
+    {
+        /**
+         * Example
+         *
+            signal time=1645151704.737424 sender=org.freedesktop.DBus ->
+         destination=:1.93 serial=4294967295 path=/org/freedesktop/DBus;
+         interface=org.freedesktop.DBus; member=NameAcquired string
+         ":1.93" method call time=1645151704.762798 sender=:1.93 ->
+         destination=xyz.openbmc_project.GpuMgr serial=2
+         path=/xyz/openbmc_project/inventory/system/chassis/GPU0;
+         interface=org.freedesktop.DBus.Properties; member=Get string
+         "xyz.openbmc_project.Inventory.Decorator.Dimension" string
+         "Depth" method return time=1645151704.764463 sender=:1.58 ->
+         destination=:1.93 serial=6777 reply_serial=2 variant double 100
+         *
+         */
+        auto variant = std::get_if<double>(&pc.second);
+        std::string eventProperty = pc.first;
+
+        if (eventProperty.empty() || nullptr == variant)
+        {
+#ifdef ENABLE_LOGS
+            std::cout << "empty eventProperty, skip.\n";
+#endif
+            continue;
+        }
+
+#ifdef ENABLE_LOGS
+        cout << "Path: " << objectPath << " Property: " << eventProperty
+             << ", Variant: " << variant << "\n";
+#endif
+
+        const std::string type = "DBUS";
+        nlohmann::json j;
+        j[data_accessor::typeKey] = type;
+        j[data_accessor::accessorTypeKeys[type][0]] = objectPath;
+        j[data_accessor::accessorTypeKeys[type][1]] = msgInterface;
+        j[data_accessor::accessorTypeKeys[type][2]] = eventProperty;
+        data_accessor::DataAccessor accessor(j);
+        auto candidate = eventDetectionPtr->LookupEventFrom(accessor);
+        if (candidate == nullptr)
+        {
+#ifdef ENABLE_LOGS
+            std::cout << "No event found in the supporting list.\n";
+#endif
+            continue;
+        }
+        auto assertedDeviceNames = accessor.getAssertedDeviceNames();
+        if (assertedDeviceNames.empty() == true)
+        {
+            // just use deviceId 0
+            assertedDeviceNames[0] =
+                DetermineDeviceName(objectPath, candidate->deviceType);
+        }
+        event_info::EventNode event = *candidate;
+        int eventValue = invalidIntParam;
+        if (candidate->valueAsCount)
+        {
+#ifdef ENABLE_LOGS
+            std::cout << "event value for event " << candidate->event << ": "
+                      << *variant << "\n";
+#endif
+            eventValue = int(*variant);
+        }
+        for (const auto& device : assertedDeviceNames)
+        {
+            event.device = device.second;
+#ifdef ENABLE_LOGS
+            std::cout << __func__ << "device: " << event.device
+                      << " Throw out an eventHdlrMgr.\n";
+#endif
+            if (eventDetectionPtr->IsEvent(*candidate, eventValue))
             {
-#ifdef ENABLE_LOGS
-                std::cout << "empty propertiesChanged, return.\n";
-#endif
-                return;
+                eventDetectionPtr->RunEventHandlers(event);
             }
+        }
+    }
+}
 
-            for (auto& pc : propertiesChanged)
-            {
-                /**
-                 * Example
-                 *
-                    signal time=1645151704.737424 sender=org.freedesktop.DBus ->
-                 destination=:1.93 serial=4294967295 path=/org/freedesktop/DBus;
-                 interface=org.freedesktop.DBus; member=NameAcquired string
-                 ":1.93" method call time=1645151704.762798 sender=:1.93 ->
-                 destination=xyz.openbmc_project.GpuMgr serial=2
-                 path=/xyz/openbmc_project/inventory/system/chassis/GPU0;
-                 interface=org.freedesktop.DBus.Properties; member=Get string
-                 "xyz.openbmc_project.Inventory.Decorator.Dimension" string
-                 "Depth" method return time=1645151704.764463 sender=:1.58 ->
-                 destination=:1.93 serial=6777 reply_serial=2 variant double 100
-                 *
-                 */
-                auto variant = std::get_if<double>(&pc.second);
-                std::string eventProperty = pc.first;
-
-                if (eventProperty.empty() || nullptr == variant)
-                {
-#ifdef ENABLE_LOGS
-                    std::cout << "empty eventProperty, skip.\n";
-#endif
-                    continue;
-                }
-
-#ifdef ENABLE_LOGS
-                cout << "Path: " << objectPath << " Property: " << eventProperty
-                     << ", Variant: " << variant << "\n";
-#endif
-
-                const std::string type = "DBUS";
-                nlohmann::json j;
-                j[data_accessor::typeKey] = type;
-                j[data_accessor::accessorTypeKeys[type][0]] = objectPath;
-                j[data_accessor::accessorTypeKeys[type][1]] = msgInterface;
-                j[data_accessor::accessorTypeKeys[type][2]] = eventProperty;
-                data_accessor::DataAccessor accessor(j);
-                auto candidate = evtDet->LookupEventFrom(accessor);
-                if (candidate == nullptr)
-                {
-#ifdef ENABLE_LOGS
-                    std::cout << "No event found in the supporting list.\n";
-#endif
-                    continue;
-                }
-
-                int eventValue = invalidIntParam;
-                if (candidate->valueAsCount)
-                {
-#ifdef ENABLE_LOGS
-                    std::cout << "event value for event " << candidate->event
-                              << ": " << *variant << "\n";
-#endif
-                    eventValue = int(*variant);
-                }
-
-                if (evtDet->IsEvent(*candidate, eventValue))
-                {
-                    event_info::EventNode event = *candidate;
-                    event.device =
-                        DetermineDeviceName(objectPath, event.deviceType);
-
-#ifdef ENABLE_LOGS
-                    std::cout << "Throw out a eventHdlrMgr.\n";
-#endif
-                    evtDet->RunEventHandlers(event);
-                }
-            }
-
-            return;
-        };
-
-    auto dbusEventHandlerMatcher = std::make_unique<sdbusplus::bus::match_t>(
-        static_cast<sdbusplus::bus::bus&>(*conn),
-        sdbusplus::bus::match::rules::type::signal() +
-            sdbusplus::bus::match::rules::sender("xyz.openbmc_project.GpuMgr") +
-            sdbusplus::bus::match::rules::member("PropertiesChanged") +
-            sdbusplus::bus::match::rules::interface(
-                "org.freedesktop.DBus.Properties"),
-        std::move(dbusEventHandlerMatcherCallback));
+DbusEventHandlerList EventDetection::startEventDetection(
+    EventDetection* eventDetection,
+    std::shared_ptr<sdbusplus::asio::connection> conn)
+{
+    // it will be used in EventDetection::dbusEventHandlerCallback()
+    eventDetectionPtr = eventDetection;
+    auto genericHandler = std::bind(&EventDetection::dbusEventHandlerCallback,
+                                    std::placeholders::_1);
+    DbusEventHandlerList handlerList;
+    for (auto& service : dbusServiceList)
+    {
+        handlerList.push_back(
+            data_accessor::dbus::registerServicePropertyChanged(
+                conn, service, genericHandler));
+    }
 #ifdef ENABLE_LOGS
     std::cout << "dbusEventHandlerMatcher created.\n";
 #endif
-
-    return dbusEventHandlerMatcher;
+    return handlerList;
 }
 
 #if 0
