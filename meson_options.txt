@@ -1,8 +1,8 @@
 option('debug_log', type: 'integer', min : 0, max : 4, value : 0,
         description : 'Enable debug log Level')
-option('api_stubs', type : 'feature', value: 'auto', 
-        description : 'Manager API stubs enablement')
+option('enable-debug-log', type : 'feature', value: 'disabled',
+        description : 'Enable debug log')
 option('sandbox_mode', type : 'feature', value : 'auto',
         description : 'Sandbox mode enablement')
-option ('tests', type : 'feature', value : 'enabled', 
+option ('tests', type : 'feature', value : 'enabled',
         description : 'Enable Unit tests for oobaml')

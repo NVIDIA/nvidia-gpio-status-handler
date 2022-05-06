@@ -33,6 +33,23 @@ if get_option('sandbox_mode').enabled()
     add_project_arguments('-DSANDBOX_MODE', language : lang)
 endif
 
+# Get the options and enable the respective features
+## create a MAP of  "options : feature_flag"
+
+feature_map = {
+  'enable-debug-log'                            : '-DENABLE_LOGS',
+}
+
+# Get the options status and build a project summary to show which flags are
+# being enabled during the configuration time.
+
+foreach option_key,option_value : feature_map
+  if(get_option(option_key).enabled())
+      summary(option_key,option_value, section : 'Enabled Features')
+      add_global_arguments(option_value,language : lang)
+  endif
+endforeach
+
 systemd_dep = dependency('systemd')
 
 sdbusplus_dep = dependency('sdbusplus', required: false)
