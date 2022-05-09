@@ -87,12 +87,17 @@
     {
       "event": "DRAM Contained ECC Error",
       "device_type": "GPUDRAM[0-7]",
-      "event_trigger": {},
-      "accessor": {
+      "event_trigger": {
         "type": "DBUS",
-        "object": "/xyz/openbmc_project/inventory/system/memory/GPUDRAM[0-7]",
-        "interface": "xyz.openbmc_project.Memory.MemoryECC",
-        "property": "ceCount"
+        "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+        "interface": "xyz.openbmc_project.com.nvidia.Events.PendingRegister",
+        "property": "EventsPendingRegister",
+        "check": {"bitmask": "4"}
+      },
+      "accessor": {
+        "type": "DeviceCoreApi",
+        "property": "gpu.xid.event",
+        "check": {"equal": "...94..."}
       },
       "severity": "Warning",
       "resolution": "Restart the affected application.",
@@ -111,12 +116,17 @@
     {
       "event": "DRAM Uncontained ECC Error",
       "device_type": "GPUDRAM[0-7]",
-      "event_trigger": {},
-      "accessor": {
+      "event_trigger": {
         "type": "DBUS",
-        "object": "/xyz/openbmc_project/inventory/system/memory/GPUDRAM[0-7]",
-        "interface": "xyz.openbmc_project.Memory.MemoryECC",
-        "property": "ueCount"
+        "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+        "interface": "xyz.openbmc_project.com.nvidia.Events.PendingRegister",
+        "property": "EventsPendingRegister",
+        "check": {"bitmask": "4"}
+      },
+      "accessor": {
+        "type": "DeviceCoreApi",
+        "property": "gpu.xid.event",
+        "check": {"equal": "...95..."}
       },
       "severity": "Critical",
       "resolution": "Reset the GPU and restart affected applications.",
@@ -135,10 +145,17 @@
     {
       "event": "Physically Missing",
       "device_type": "GPU[0-7]",
-      "event_trigger": {},
+      "event_trigger": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/GpioStatusHandler",
+        "interface": "xyz.openbmc_project.GpioStatus",
+        "property": "I2C3_ALERT",
+        "check": {"equal": "true"}
+      },
       "accessor": {
         "type": "DeviceCoreAPI",
-        "property": "gpu.interrupt.PresenceInfo"
+        "property": "gpu.interrupt.PresenceInfo",
+        "check": {"bitmask": "1"}
       },
       "severity": "Critical",
       "resolution": "Cordon the HGX server node for further diagnosis.",
@@ -148,7 +165,7 @@
         "metadata": ""
       },
       "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+        "message_id": "ResourceEvent.1.1.ResourceStateChanged"
       },
       "telemetries": [],
       "action": "",
