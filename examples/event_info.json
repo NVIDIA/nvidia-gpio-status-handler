@@ -2,13 +2,13 @@
   "GPU": [
     {
       "event": "OverTemp",
-      "device_type": "GPU",
+      "device_type": "GPU[0-7]",
       "event_trigger": {
         "type": "DBUS",
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "THERM_OVERT",
-        "check": {"bitmask": "1"}
+        "check": { "equal": "true" }
       },
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -37,7 +37,7 @@
     },
     {
       "event": "Thermal Warning",
-      "device_type": "GPU",
+      "device_type": "GPU[0-7]",
       "event_trigger": {
         "type": "DeviceCoreAPI",
         "property": "gpu.thermal.alert"
@@ -62,7 +62,7 @@
     },
     {
       "event": "SRAM ECC uncorrectable error count",
-      "device_type": "GPU",
+      "device_type": "GPU[0-7]",
       "event_trigger": {},
       "accessor": {
         "type": "DBUS",
@@ -86,7 +86,7 @@
     },
     {
       "event": "DRAM Contained ECC Error",
-      "device_type": "GPUDRAM",
+      "device_type": "GPUDRAM[0-7]",
       "event_trigger": {},
       "accessor": {
         "type": "DBUS",
@@ -110,7 +110,7 @@
     },
     {
       "event": "DRAM Uncontained ECC Error",
-      "device_type": "GPUDRAM",
+      "device_type": "GPUDRAM[0-7]",
       "event_trigger": {},
       "accessor": {
         "type": "DBUS",
@@ -134,7 +134,7 @@
     },
     {
       "event": "Physically Missing",
-      "device_type": "GPU",
+      "device_type": "GPU[0-7]",
       "event_trigger": {},
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -156,11 +156,18 @@
     },
     {
       "event": "Destination FLA Translation Error",
-      "device_type": "GPU",
-      "event_trigger": {},
+      "device_type": "GPU[0-7]",
+      "event_trigger": {
+          "type": "DBUS",
+          "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
+          "interface": "xyz.openbmc_project.com.nvidia.Events.PendingRegister",
+          "property": "EventsPendingRegister",
+          "check": {"bitmask" : "1"}
+      },
       "accessor": {
         "type": "DeviceCoreAPI",
-        "property": "gpu.xid.event"
+        "property": "gpu.xid.event",
+        "check": {"lookup": "30"}
       },
       "severity": "Warning",
       "resolution": "Restart application.  If the application continues to trigger the same event, investigate application changes and logs to investigate potential application problem.",
@@ -178,7 +185,7 @@
     },
     {
       "event": "NVJPEG Error",
-      "device_type": "GPU",
+      "device_type": "GPU[0-7]",
       "event_trigger": {},
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -200,7 +207,7 @@
     },
     {
       "event": "OFA Error",
-      "device_type": "GPU",
+      "device_type": "GPU[0-7]",
       "event_trigger": {},
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -222,7 +229,7 @@
     },
     {
       "event": "Nvlink Error",
-      "device_type": "GPU",
+      "device_type": "GPU[0-7]",
       "event_trigger": {},
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -244,7 +251,7 @@
     },
     {
       "event": "PCIe link speed state change",
-      "device_type": "GPU",
+      "device_type": "GPU[0-7]",
       "event_trigger": {},
       "accessor": {
         "type": "DBUS",
@@ -268,7 +275,7 @@
     },
     {
       "event": "NVDEC Error",
-      "device_type": "GPU",
+      "device_type": "GPU[0-7]",
       "event_trigger": {},
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -290,7 +297,7 @@
     },
     {
       "event": "Inforom Corruption",
-      "device_type": "GPU",
+      "device_type": "GPU[0-7]",
       "event_trigger": {},
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -312,7 +319,7 @@
     },
     {
       "event": "MMU Fault",
-      "device_type": "GPU",
+      "device_type": "GPU[0-7]",
       "event_trigger": {},
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -334,7 +341,7 @@
     },
     {
       "event": "SM Warp Exception",
-      "device_type": "GPU",
+      "device_type": "GPU[0-7]",
       "event_trigger": {},
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -356,7 +363,7 @@
     },
     {
       "event": "PWR BRAKE Asserted",
-      "device_type": "GPU",
+      "device_type": "GPU[0-7]",
       "event_trigger": {},
       "accessor": {
         "type": "DBUS",
@@ -380,7 +387,7 @@
     },
     {
       "event": "VR Failure",
-      "device_type": "GPU",
+      "device_type": "GPU[0-7]",
       "event_trigger": {},
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -402,7 +409,7 @@
     },
     {
       "event": "VR Fault",
-      "device_type": "GPU",
+      "device_type": "GPU[0-7]",
       "event_trigger": {},
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -424,7 +431,7 @@
     },
     {
       "event": "Row-remapping pending",
-      "device_type": "GPU",
+      "device_type": "GPU[0-7]",
       "event_trigger": {},
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -446,7 +453,7 @@
     },
     {
       "event": "Boot completed failure",
-      "device_type": "GPU",
+      "device_type": "GPU[0-7]",
       "event_trigger": {},
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -468,7 +475,7 @@
     },
     {
       "event": "Secure boot failure",
-      "device_type": "GPU",
+      "device_type": "GPU[0-7]",
       "event_trigger": {},
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -490,7 +497,7 @@
     },
     {
       "event": "SPI flash error",
-      "device_type": "GPU",
+      "device_type": "GPU[0-7]",
       "event_trigger": {},
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -512,7 +519,7 @@
     },
     {
       "event": "EROT recovery",
-      "device_type": "GPU",
+      "device_type": "GPU[0-7]",
       "event_trigger": {},
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -534,7 +541,7 @@
     },
     {
       "event": "MCTP runtime failures",
-      "device_type": "GPU",
+      "device_type": "GPU[0-7]",
       "event_trigger": {},
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -556,7 +563,7 @@
     },
     {
       "event": "PLDM runtime failures",
-      "device_type": "GPU",
+      "device_type": "GPU[0-7]",
       "event_trigger": {},
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -580,7 +587,7 @@
   "NVSwitch": [
     {
       "event": "Over Temp",
-      "device_type": "NVSwitch",
+      "device_type": "NVSwitch[0-3]",
       "event_trigger": {},
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -602,7 +609,7 @@
     },
     {
       "event": "Thermal Warning",
-      "device_type": "NVSwitch",
+      "device_type": "NVSwitch[0-3]",
       "event_trigger": {},
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -624,7 +631,7 @@
     },
     {
       "event": "VR Failure",
-      "device_type": "NVSwitch",
+      "device_type": "NVSwitch[0-3]",
       "event_trigger": {},
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -646,7 +653,7 @@
     },
     {
       "event": "PCIe link speed state",
-      "device_type": "NVSwitch",
+      "device_type": "NVSwitch[0-3]",
       "event_trigger": {},
       "accessor": {
         "type": "DBUS",
@@ -670,7 +677,7 @@
     },
     {
       "event": "PCIe link width state",
-      "device_type": "NVSwitch",
+      "device_type": "NVSwitch[0-3]",
       "event_trigger": {},
       "accessor": {
         "type": "DBUS",
@@ -694,7 +701,7 @@
     },
     {
       "event": "PCIe link error",
-      "device_type": "NVSwitch",
+      "device_type": "NVSwitch[0-3]",
       "event_trigger": {},
       "accessor": {
         "type": "DBUS",
@@ -718,7 +725,7 @@
     },
     {
       "event": "VR Fault VDD",
-      "device_type": "NVSwitch",
+      "device_type": "NVSwitch[0-3]",
       "event_trigger": {},
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -740,7 +747,7 @@
     },
     {
       "event": "VR Fault DVDD",
-      "device_type": "NVSwitch",
+      "device_type": "NVSwitch[0-3]",
       "event_trigger": {},
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -762,7 +769,7 @@
     },
     {
       "event": "VR Fault HVDD",
-      "device_type": "NVSwitch",
+      "device_type": "NVSwitch[0-3]",
       "event_trigger": {},
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -784,7 +791,7 @@
     },
     {
       "event": "VR Fault 1.8V",
-      "device_type": "NVSwitch",
+      "device_type": "NVSwitch[0-3]",
       "event_trigger": {},
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -806,7 +813,7 @@
     },
     {
       "event": "VR Fault Combined",
-      "device_type": "NVSwitch",
+      "device_type": "NVSwitch[0-3]",
       "event_trigger": {},
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -828,7 +835,7 @@
     },
     {
       "event": "Fallen off of bus",
-      "device_type": "NVSwitch",
+      "device_type": "NVSwitch[0-3]",
       "event_trigger": {},
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -850,7 +857,7 @@
     },
     {
       "event": "SMBPBI server unavailable",
-      "device_type": "NVSwitch",
+      "device_type": "NVSwitch[0-3]",
       "event_trigger": {},
       "accessor": {
         "type": "DeviceCoreAPI",
