@@ -898,7 +898,7 @@
   "PCIe Switch": [
     {
       "event": "VR Fault",
-      "device_type": "PCIe Switch",
+      "device_type": "PCIeSwitch",
       "event_trigger": {},
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -920,11 +920,18 @@
     },
     {
       "event": "OverTemp",
-      "device_type": "PCIe Switch",
-      "event_trigger": {},
+      "device_type": "PCIeSwitch",
+      "event_trigger": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/GpioStatusHandler",
+        "interface": "xyz.openbmc_project.GpioStatus",
+        "property": "THERM_OVERT",
+        "check": { "equal": "true" }
+      },
       "accessor": {
         "type": "DeviceCoreAPI",
-        "property": "pcieswitch.thermal.temperature.overTemperatureInfo"
+        "property": "pcieswitch.thermal.temperature.overTemperatureInfo",
+        "check": {"bitmask": "1"}
       },
       "severity": "Critical",
       "resolution": "Power off the BaseBoard within 1 second, the PCIe Switch will be held in reset. Check thermal environmental to ensure the PCIe Switch operates under UpperFatal threshold and power cycle the BaseBoard to recover. ",
@@ -942,7 +949,7 @@
     },
     {
       "event": "PCIe link goes down",
-      "device_type": "PCIe Switch",
+      "device_type": "PCIeSwitch",
       "event_trigger": {},
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -964,7 +971,7 @@
     },
     {
       "event": "Incorrect link speed",
-      "device_type": "PCIe Switch",
+      "device_type": "PCIeSwitch",
       "event_trigger": {},
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -986,7 +993,7 @@
     },
     {
       "event": "Boot completed failure",
-      "device_type": "PCIe Switch",
+      "device_type": "PCIeSwitch",
       "event_trigger": {},
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -1008,7 +1015,7 @@
     },
     {
       "event": "Secure boot failure",
-      "device_type": "PCIe Switch",
+      "device_type": "PCIeSwitch",
       "event_trigger": {},
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -1030,7 +1037,7 @@
     },
     {
       "event": "EROT recovery",
-      "device_type": "PCIe Switch",
+      "device_type": "PCIeSwitch",
       "event_trigger": {},
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -1052,7 +1059,7 @@
     },
     {
       "event": "MCTP runtime failures",
-      "device_type": "PCIe Switch",
+      "device_type": "PCIeSwitch",
       "event_trigger": {},
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -1074,7 +1081,7 @@
     },
     {
       "event": "PLDM runtime failures",
-      "device_type": "PCIe Switch",
+      "device_type": "PCIeSwitch",
       "event_trigger": {},
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -1098,7 +1105,7 @@
   "Retimer": [
     {
       "event": "VR Fault 0.9V",
-      "device_type": "Retimer",
+      "device_type": "Retimer[0-7]",
       "event_trigger": {},
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -1120,7 +1127,7 @@
     },
     {
       "event": "VR Fault 1.2V",
-      "device_type": "Retimer",
+      "device_type": "Retimer[0-7]",
       "event_trigger": {},
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -1142,7 +1149,7 @@
     },
     {
       "event": "VR Fault 1.8V",
-      "device_type": "Retimer",
+      "device_type": "Retimer[0-7]",
       "event_trigger": {},
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -1164,11 +1171,18 @@
     },
     {
       "event": "OverTemp",
-      "device_type": "Retimer",
-      "event_trigger": {},
+      "device_type": "Retimer[0-7]",
+      "event_trigger": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/GpioStatusHandler",
+        "interface": "xyz.openbmc_project.GpioStatus",
+        "property": "THERM_OVERT",
+        "check": { "equal": "true" }
+      },
       "accessor": {
         "type": "DeviceCoreAPI",
-        "property": "pcieretimer.thermal.temperature.overTemperatureInfo"
+        "property": "pcieretimer.thermal.temperature.overTemperatureInfo",
+        "check": {"bitmask": "1"}
       },
       "severity": "Critical",
       "resolution": "Power off the BaseBoard within 1 second, and the Retimer will be held in reset. Check thermal environmental to ensure the Retimer operates under UpperFatal threshold and power cycle the BaseBoard to recover. ",
@@ -1186,7 +1200,7 @@
     },
     {
       "event": "I2C EEPROM Error",
-      "device_type": "Retimer",
+      "device_type": "Retimer[0-7]",
       "event_trigger": {},
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -1256,7 +1270,7 @@
   "HSC": [
     {
       "event": "Baseboard HSC Fault",
-      "device_type": "HSC",
+      "device_type": "HSC[0-9]",
       "event_trigger": {},
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -1281,10 +1295,17 @@
     {
       "event": "OverTemp",
       "device_type": "HMC",
-      "event_trigger": {},
+      "event_trigger": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/GpioStatusHandler",
+        "interface": "xyz.openbmc_project.GpioStatus",
+        "property": "THERM_OVERT",
+        "check": { "equal": "true" }
+      },
       "accessor": {
         "type": "DeviceCoreAPI",
-        "property": "TBD"
+        "property": "TBD",
+        "check": {"bitmask": "1"}
       },
       "severity": "Critical",
       "resolution": "System shutdown",
