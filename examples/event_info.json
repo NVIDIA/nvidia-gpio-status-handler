@@ -1001,7 +1001,7 @@
       "value_as_count": false
     }
   ],
-  "PCIe Switch": [
+  "PCIeSwitch": [
     {
       "event": "VR Fault",
       "device_type": "PCIeSwitch",
@@ -1106,7 +1106,7 @@
     },
     {
       "event": "Boot completed failure",
-      "device_type": "PCIe Switch",
+      "device_type": "PCIeSwitch",
       "event_trigger": {
         "type": "DBUS",
         "object": "/xyz/openbmc_project/GpioStatusHandler",
@@ -1138,7 +1138,7 @@
     },
     {
       "event": "Secure boot failure",
-      "device_type": "PCIe Switch",
+      "device_type": "PCIeSwitch",
       "event_trigger": {
         "type": "DBUS",
         "object": "/xyz/openbmc_project/GpioStatusHandler",
@@ -1192,7 +1192,7 @@
     },
     {
       "event": "MCTP runtime failures",
-      "device_type": "PCIe Switch",
+      "device_type": "PCIeSwitch",
       "event_trigger": {
         "type": "DBUS",
         "object": "/xyz/openbmc_project/GpioStatusHandler",
@@ -1224,7 +1224,7 @@
     },
     {
       "event": "PLDM runtime failures",
-      "device_type": "PCIe Switch",
+      "device_type": "PCIeSwitch",
       "event_trigger": {
         "type": "DBUS",
         "object": "/xyz/openbmc_project/GpioStatusHandler",
@@ -1725,7 +1725,7 @@
   "LS10": [
     {
       "event": "Boot completed failure",
-      "device_type": "LS10",
+      "device_type": "LS10[0-3]",
       "event_trigger": {
         "type": "DBUS",
         "object": "/xyz/openbmc_project/GpioStatusHandler",
@@ -1736,7 +1736,7 @@
       "accessor": {
         "type": "CMDLINE",
         "executable": "mctp-vdm-util-wrapper",
-        "arguments": "query-boot-status GPU0[0-7]",
+        "arguments": "query-boot-status LS10[0-3]",
         "check":{
           "bitmask": "0x8000000"
         }
@@ -1789,7 +1789,7 @@
     },
     {
       "event": "VR fault",
-      "device_type": "LS10",
+      "device_type": "LS10[0-3]",
       "event_trigger": {},
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -1843,7 +1843,7 @@
     },
     {
       "event": "EROT recovery",
-      "device_type": "LS10",
+      "device_type": "LS10[0-3]",
       "event_trigger": {},
       "accessor": {
         "type": "DeviceCoreAPI",
