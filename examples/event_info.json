@@ -605,10 +605,17 @@
     {
       "event": "Over Temp",
       "device_type": "NVSwitch[0-3]",
-      "event_trigger": {},
+      "event_trigger": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/GpioStatusHandler",
+        "interface": "xyz.openbmc_project.GpioStatus",
+        "property": "THERM_OVERT",
+        "check": {"equal": "true"}
+      },
       "accessor": {
         "type": "DeviceCoreAPI",
-        "property": "nvswitch.thermal.temperature.overTemperatureInfo"
+        "property": "nvswitch.thermal.temperature.overTemperatureInfo",
+        "check": {"bitmask": "1"}
       },
       "severity": "Critical",
       "resolution": "Power off the BaseBoard within 1 second, the NVSwitch will be held in reset. Check thermal environmental to ensure the NVSwitch operates under UpperFatal threshold and power cycle the BaseBoard to recover. ",
@@ -627,10 +634,17 @@
     {
       "event": "Thermal Warning",
       "device_type": "NVSwitch[0-3]",
-      "event_trigger": {},
+      "event_trigger": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/GpioStatusHandler",
+        "interface": "xyz.openbmc_project.GpioStatus",
+        "property": "I2C4_ALERT",
+        "check": {"equal": "true"}
+      },
       "accessor": {
         "type": "DeviceCoreAPI",
-        "property": "nvswitch.thermal.alert"
+        "property": "nvswitch.thermal.alert",
+        "check": {"bitmask": "1"}
       },
       "severity": "Warning",
       "resolution": "Increase the BaseBoard cooling and check thermal environmental to ensure the NVSwtich operates under UpperCritical threshold. ",
@@ -649,10 +663,17 @@
     {
       "event": "VR Failure",
       "device_type": "NVSwitch[0-3]",
-      "event_trigger": {},
+      "event_trigger": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/GpioStatusHandler",
+        "interface": "xyz.openbmc_project.GpioStatus",
+        "property": "I2C4_ALERT",
+        "check": {"equal": "true"}
+      },
       "accessor": {
         "type": "DeviceCoreAPI",
-        "property": "nvswitch.device.vrFault"
+        "property": "nvswitch.device.vrFault",
+        "check": {"bitmask": "1"}
       },
       "severity": "Critical",
       "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation.",
@@ -743,10 +764,17 @@
     {
       "event": "VR Fault VDD",
       "device_type": "NVSwitch[0-3]",
-      "event_trigger": {},
+      "event_trigger": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/GpioStatusHandler",
+        "interface": "xyz.openbmc_project.GpioStatus",
+        "property": "I2C4_ALERT",
+        "check": {"equal": "true"}
+      },
       "accessor": {
         "type": "DeviceCoreAPI",
-        "property": "nvswitch.vdd.abnormalPowerChange"
+        "property": "nvswitch.vdd.abnormalPowerChange",
+        "check": {"bitmask": "1"}
       },
       "severity": "Critical",
       "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation.",
@@ -765,10 +793,17 @@
     {
       "event": "VR Fault DVDD",
       "device_type": "NVSwitch[0-3]",
-      "event_trigger": {},
+      "event_trigger": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/GpioStatusHandler",
+        "interface": "xyz.openbmc_project.GpioStatus",
+        "property": "I2C4_ALERT",
+        "check": {"equal": "true"}
+      },
       "accessor": {
         "type": "DeviceCoreAPI",
-        "property": "nvswitch.dvdd.abnormalPowerChange"
+        "property": "nvswitch.dvdd.abnormalPowerChange",
+        "check": {"bitmask": "1"}
       },
       "severity": "Critical",
       "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation.",
@@ -787,10 +822,17 @@
     {
       "event": "VR Fault HVDD",
       "device_type": "NVSwitch[0-3]",
-      "event_trigger": {},
+      "event_trigger": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/GpioStatusHandler",
+        "interface": "xyz.openbmc_project.GpioStatus",
+        "property": "I2C4_ALERT",
+        "check": {"equal": "true"}
+      },
       "accessor": {
         "type": "DeviceCoreAPI",
-        "property": "nvswitch.hvdd.abnormalPowerChange"
+        "property": "nvswitch.hvdd.abnormalPowerChange",
+        "check": {"bitmask": "1"}
       },
       "severity": "Critical",
       "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation.",
@@ -809,10 +851,17 @@
     {
       "event": "VR Fault 1.8V",
       "device_type": "NVSwitch[0-3]",
-      "event_trigger": {},
+      "event_trigger": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/GpioStatusHandler",
+        "interface": "xyz.openbmc_project.GpioStatus",
+        "property": "I2C4_ALERT",
+        "check": {"equal": "true"}
+      },
       "accessor": {
         "type": "DeviceCoreAPI",
-        "property": "nvswitch.1V8.abnormalPowerChange"
+        "property": "nvswitch.1V8.abnormalPowerChange",
+        "check": {"bitmask": "1"}
       },
       "severity": "Critical",
       "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation.",
@@ -831,10 +880,17 @@
     {
       "event": "VR Fault Combined",
       "device_type": "NVSwitch[0-3]",
-      "event_trigger": {},
+      "event_trigger": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/GpioStatusHandler",
+        "interface": "xyz.openbmc_project.GpioStatus",
+        "property": "I2C4_ALERT",
+        "check": {"equal": "true"}
+      },
       "accessor": {
         "type": "DeviceCoreAPI",
-        "property": "nvswitch.device.vrFault"
+        "property": "nvswitch.device.vrFault",
+        "check": {"bitmask": "1"}
       },
       "severity": "Critical",
       "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation.",
@@ -899,10 +955,17 @@
     {
       "event": "VR Fault",
       "device_type": "PCIeSwitch",
-      "event_trigger": {},
+      "event_trigger": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/GpioStatusHandler",
+        "interface": "xyz.openbmc_project.GpioStatus",
+        "property": "I2C4_ALERT",
+        "check": {"equal": "true"}
+      },
       "accessor": {
         "type": "DeviceCoreAPI",
-        "property": "pcieswitch.0V8.abnormalPowerChange"
+        "property": "pcieswitch.0V8.abnormalPowerChange",
+        "check": {"bitmask": "1"}
       },
       "severity": "Critical",
       "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation.",
@@ -1225,10 +1288,17 @@
     {
       "event": "System VR Fault SYS_3V3",
       "device_type": "VR",
-      "event_trigger": {},
+      "event_trigger": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/GpioStatusHandler",
+        "interface": "xyz.openbmc_project.GpioStatus",
+        "property": "I2C4_ALERT",
+        "check": {"equal": "true"}
+      },
       "accessor": {
         "type": "DeviceCoreAPI",
-        "property": "sysvr3v3.power.abnormalPowerChange"
+        "property": "sysvr3v3.power.abnormalPowerChange",
+        "check": {"bitmask": "1"}
       },
       "severity": "Critical",
       "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation.",
@@ -1247,10 +1317,17 @@
     {
       "event": "System VR Fault SYS_1V8",
       "device_type": "VR",
-      "event_trigger": {},
+      "event_trigger": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/GpioStatusHandler",
+        "interface": "xyz.openbmc_project.GpioStatus",
+        "property": "I2C4_ALERT",
+        "check": {"equal": "true"}
+      },
       "accessor": {
         "type": "DeviceCoreAPI",
-        "property": "sysvr1v8.power.abnormalPowerChange"
+        "property": "sysvr1v8.power.abnormalPowerChange",
+        "check": {"bitmask": "1"}
       },
       "severity": "Critical",
       "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation.",
@@ -1271,10 +1348,17 @@
     {
       "event": "Baseboard HSC Fault",
       "device_type": "HSC[0-9]",
-      "event_trigger": {},
+      "event_trigger": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/GpioStatusHandler",
+        "interface": "xyz.openbmc_project.GpioStatus",
+        "property": "I2C4_ALERT",
+        "check": {"equal": "true"}
+      },
       "accessor": {
         "type": "DeviceCoreAPI",
-        "property": "hsc.power.abnormalPowerChange"
+        "property": "hsc.power.abnormalPowerChange",
+        "check": {"bitmask": "1"}
       },
       "severity": "Critical",
       "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation.",
@@ -1410,17 +1494,55 @@
       "value_as_count": false
     }
   ],
+  "Inlet Sensor": [
+    {
+      "event": "Inlet Thermal Warning",
+      "device_type": "Inlet Sensor",
+      "event_trigger": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/GpioStatusHandler",
+        "interface": "xyz.openbmc_project.GpioStatus",
+        "property": "I2C4_ALERT",
+        "check": {"equal": "true"}
+      },
+      "accessor": {
+        "type": "DeviceCoreAPI",
+        "property": "inletTemp.thermal.temperature.threshold.alert",
+        "check": {"bitmask": "1"}
+      },
+      "severity": "Warning",
+      "resolution": "Increase the BaseBoard cooling and check thermal environmental to ensure Inlet Temperature reading is under UpperCritical threshold. ",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": "",
+      "value_as_count": false
+    }
+  ],
   "Baseboard": [
     {
       "event": "PCB Thermal Warning",
       "device_type": "Baseboard",
-      "event_trigger": {},
+      "event_trigger": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/GpioStatusHandler",
+        "interface": "xyz.openbmc_project.GpioStatus",
+        "property": "I2C4_ALERT",
+        "check": {"equal": "true"}
+      },
       "accessor": {
         "type": "DeviceCoreAPI",
-        "property": "baseboard.pcb.temperature.Alert"
+        "property": "baseboard.pcb.temperature.Alert",
+        "check": {"bitmask": "1"}
       },
       "severity": "Warning",
-      "resolution": "Increase system FAN speed",
+      "resolution": "Increase the BaseBoard cooling and check thermal environmental to ensure Inlet Temperature reading is under UpperCritical threshold. ",
       "trigger_count": 0,
       "event_counter_reset": {
         "type": "",
