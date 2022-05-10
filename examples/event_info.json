@@ -471,14 +471,24 @@
     {
       "event": "Boot completed failure",
       "device_type": "GPU[0-7]",
-      "event_trigger": {},
+      "event_trigger": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/GpioStatusHandler",
+        "interface": "xyz.openbmc_project.GpioStatus",
+        "property": "I2C3_ALERT",
+        "check": { "equal": "true" }
+      },
       "accessor": {
-        "type": "DeviceCoreAPI",
-        "metadata": "TBD"
+        "type": "CMDLINE",
+        "executable": "mctp-vdm-util-wrapper",
+        "arguments": "query-boot-status GPU0[0-7]",
+        "check":{
+          "bitmask": "0x8000000"
+        }
       },
       "severity": "Critical",
-      "resolution": "Glacier will try to recover AP by a reset/reboot. If still have problem, need to reflash AP FW manually",
-      "trigger_count": 0,
+      "resolution": "eROT will try to recover AP by a reset/reboot. If there is still a problem, AP FW needs to be re-flashed.",
+      "trigger_count": 1,
       "event_counter_reset": {
         "type": "",
         "metadata": ""
@@ -493,14 +503,24 @@
     {
       "event": "Secure boot failure",
       "device_type": "GPU[0-7]",
-      "event_trigger": {},
+      "event_trigger": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/GpioStatusHandler",
+        "interface": "xyz.openbmc_project.GpioStatus",
+        "property": "I2C3_ALERT",
+        "check": { "equal": "true" }
+      },
       "accessor": {
-        "type": "DeviceCoreAPI",
-        "metadata": "TBD"
+        "type": "CMDLINE",
+        "executable": "mctp-vdm-util-wrapper",
+        "arguments": "query-boot-status GPU0[0-7]",
+        "check":{
+          "bitmask": "0x00000600"
+        }
       },
       "severity": "Critical",
-      "resolution": "Glacier will try to recover AP by a reset/reboot. If still have problem, need to reflash AP FW manually",
-      "trigger_count": 0,
+      "resolution": "eROT will try to recover AP by a reset/reboot. If there is still a problem, AP FW needs to be re-flashed.",
+      "trigger_count": 1,
       "event_counter_reset": {
         "type": "",
         "metadata": ""
@@ -515,13 +535,23 @@
     {
       "event": "SPI flash error",
       "device_type": "GPU[0-7]",
-      "event_trigger": {},
+      "event_trigger": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/GpioStatusHandler",
+        "interface": "xyz.openbmc_project.GpioStatus",
+        "property": "I2C3_ALERT",
+        "check": { "equal": "true" }
+      },
       "accessor": {
-        "type": "DeviceCoreAPI",
-        "metadata": "TBD"
+        "type": "CMDLINE",
+        "executable": "mctp-vdm-util-wrapper",
+        "arguments": "query-boot-status GPU[0-7]",
+        "check":{
+          "bitmask": "0x02000000"
+        }
       },
       "severity": "Critical",
-      "resolution": "Needs RMA",
+      "resolution": "Cordon HGX server from the cluster for RMA evaluation.",
       "trigger_count": 0,
       "event_counter_reset": {
         "type": "",
@@ -559,14 +589,24 @@
     {
       "event": "MCTP runtime failures",
       "device_type": "GPU[0-7]",
-      "event_trigger": {},
+      "event_trigger": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/GpioStatusHandler",
+        "interface": "xyz.openbmc_project.GpioStatus",
+        "property": "I2C3_ALERT",
+        "check": { "equal": "true" }
+      },
       "accessor": {
-        "type": "DeviceCoreAPI",
-        "metadata": "TBD"
+        "type": "CMDLINE",
+        "executable": "mctp-vdm-util-wrapper",
+        "arguments": "download_log GPU[0-7]",
+        "check":{
+          "bitmask": "0x00000001"
+        }
       },
       "severity": "Critical",
-      "resolution": "Glacier will retry if encounters errors. If problem still there, need to clarify it's HW or FW issue. if HW, do RMA, if FW, reprogram AP/Glacier to a known good versions",
-      "trigger_count": 0,
+      "resolution": "BaseBoard components will retry if encounters errors. If problem persists, analyze FPGA log or ERoT log.",
+      "trigger_count": 1,
       "event_counter_reset": {
         "type": "",
         "metadata": ""
@@ -581,14 +621,24 @@
     {
       "event": "PLDM runtime failures",
       "device_type": "GPU[0-7]",
-      "event_trigger": {},
+      "event_trigger": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/GpioStatusHandler",
+        "interface": "xyz.openbmc_project.GpioStatus",
+        "property": "I2C3_ALERT",
+        "check": { "equal": "true" }
+      },
       "accessor": {
-        "type": "DeviceCoreAPI",
-        "property": "TBD"
+        "type": "CMDLINE",
+        "executable": "mctp-vdm-util-wrapper",
+        "arguments": "download_log GPU[0-7]",
+        "check":{
+          "bitmask": "0x00000001"
+        }
       },
       "severity": "Critical",
-      "resolution": "Glacier will try to recover AP by a reset/reboot. If still have problem, need to reflash AP FW manually",
-      "trigger_count": 0,
+      "resolution": "BaseBoard components will retry if encounters errors. If problem persists, analyze FPGA log or ERoT log.",
+      "trigger_count": 1,
       "event_counter_reset": {
         "type": "",
         "metadata": ""
@@ -1056,15 +1106,25 @@
     },
     {
       "event": "Boot completed failure",
-      "device_type": "PCIeSwitch",
-      "event_trigger": {},
+      "device_type": "PCIe Switch",
+      "event_trigger": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/GpioStatusHandler",
+        "interface": "xyz.openbmc_project.GpioStatus",
+        "property": "I2C3_ALERT",
+        "check": { "equal": "true" }
+      },
       "accessor": {
-        "type": "DeviceCoreAPI",
-        "property": "TBD"
+        "type": "CMDLINE",
+        "executable": "mctp-vdm-util-wrapper",
+        "arguments": "query-boot-status GPU0[0-7]",
+        "check":{
+          "bitmask": "0x8000000"
+        }
       },
       "severity": "Critical",
-      "resolution": "Glacier will try to recover AP by a reset/reboot. If still have problem, need to reflash AP FW manually",
-      "trigger_count": 0,
+      "resolution": "eROT will try to recover AP by a reset/reboot. If there is still a problem, AP FW needs to be re-flashed.",
+      "trigger_count": 1,
       "event_counter_reset": {
         "type": "",
         "metadata": ""
@@ -1078,15 +1138,25 @@
     },
     {
       "event": "Secure boot failure",
-      "device_type": "PCIeSwitch",
-      "event_trigger": {},
+      "device_type": "PCIe Switch",
+      "event_trigger": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/GpioStatusHandler",
+        "interface": "xyz.openbmc_project.GpioStatus",
+        "property": "I2C3_ALERT",
+        "check": { "equal": "true" }
+      },
       "accessor": {
-        "type": "DeviceCoreAPI",
-        "property": "TBD"
+        "type": "CMDLINE",
+        "executable": "mctp-vdm-util-wrapper",
+        "arguments": "query-boot-status PCIeSwitch",
+        "check":{
+          "bitmask": "0x00000600"
+        }
       },
       "severity": "Critical",
-      "resolution": "Glacier will try to recover AP by a reset/reboot. If still have problem, need to reflash AP FW manually",
-      "trigger_count": 0,
+      "resolution": "eROT will try to recover AP by a reset/reboot. If there is still a problem, AP FW needs to be re-flashed.",
+      "trigger_count": 1,
       "event_counter_reset": {
         "type": "",
         "metadata": ""
@@ -1122,15 +1192,25 @@
     },
     {
       "event": "MCTP runtime failures",
-      "device_type": "PCIeSwitch",
-      "event_trigger": {},
+      "device_type": "PCIe Switch",
+      "event_trigger": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/GpioStatusHandler",
+        "interface": "xyz.openbmc_project.GpioStatus",
+        "property": "I2C3_ALERT",
+        "check": { "equal": "true" }
+      },
       "accessor": {
-        "type": "DeviceCoreAPI",
-        "metadata": "TBD"
+        "type": "CMDLINE",
+        "executable": "mctp-vdm-util-wrapper",
+        "arguments": "download_log PCIeSwitch",
+        "check":{
+          "bitmask": "0x00000001"
+        }
       },
       "severity": "Critical",
-      "resolution": "Glacier will retry if encounters errors. If problem still there, need to clarify it's HW or FW issue. if HW, do RMA, if FW, reprogram AP/Glacier to a known good versions",
-      "trigger_count": 0,
+      "resolution": "BaseBoard components will retry if encounters errors. If problem persists, analyze FPGA log or ERoT log.",
+      "trigger_count": 1,
       "event_counter_reset": {
         "type": "",
         "metadata": ""
@@ -1144,15 +1224,25 @@
     },
     {
       "event": "PLDM runtime failures",
-      "device_type": "PCIeSwitch",
-      "event_trigger": {},
+      "device_type": "PCIe Switch",
+      "event_trigger": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/GpioStatusHandler",
+        "interface": "xyz.openbmc_project.GpioStatus",
+        "property": "I2C3_ALERT",
+        "check": { "equal": "true" }
+      },
       "accessor": {
-        "type": "DeviceCoreAPI",
-        "property": "TBD"
+        "type": "CMDLINE",
+        "executable": "mctp-vdm-util-wrapper",
+        "arguments": "download_log PCIeSwitch",
+        "check":{
+          "bitmask": "0x00000001"
+        }
       },
       "severity": "Critical",
-      "resolution": "Glacier will try to recover AP by a reset/reboot. If still have problem, need to reflash AP FW manually",
-      "trigger_count": 0,
+      "resolution": "BaseBoard components will retry if encounters errors. If problem persists, analyze FPGA log or ERoT log.",
+      "trigger_count": 1,
       "event_counter_reset": {
         "type": "",
         "metadata": ""
@@ -1474,14 +1564,24 @@
     {
       "event": "PLDM runtime failures",
       "device_type": "HMC",
-      "event_trigger": {},
+      "event_trigger": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/GpioStatusHandler",
+        "interface": "xyz.openbmc_project.GpioStatus",
+        "property": "I2C3_ALERT",
+        "check": { "equal": "true" }
+      },
       "accessor": {
-        "type": "DeviceCoreAPI",
-        "property": "TBD"
+        "type": "CMDLINE",
+        "executable": "mctp-vdm-util-wrapper",
+        "arguments": "download_log HMC",
+        "check":{
+          "bitmask": "0x00000001"
+        }
       },
       "severity": "Critical",
-      "resolution": "Glacier will retry if encounters errors. If problem still there, need to clarify it's HW or FW issue. if HW, do RMA, if FW, reprogram AP/Glacier to a known good versions",
-      "trigger_count": 0,
+      "resolution": "BaseBoard components will retry if encounters errors. If problem persists, analyze FPGA log or ERoT log.",
+      "trigger_count": 1,
       "event_counter_reset": {
         "type": "",
         "metadata": ""
@@ -1560,14 +1660,24 @@
     {
       "event": "Boot completed failure",
       "device_type": "FPGA",
-      "event_trigger": {},
+      "event_trigger": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/GpioStatusHandler",
+        "interface": "xyz.openbmc_project.GpioStatus",
+        "property": "I2C3_ALERT",
+        "check": { "equal": "true" }
+      },
       "accessor": {
-        "type": "DeviceCoreAPI",
-        "property": "TBD"
+        "type": "CMDLINE",
+        "executable": "mctp-vdm-util-wrapper",
+        "arguments": "query-boot-status GPU0[0-7]",
+        "check":{
+          "bitmask": "0x8000000"
+        }
       },
       "severity": "Critical",
-      "resolution": "Glacier will try to recover AP by a reset/reboot. If still have problem, need to reflash AP FW manually",
-      "trigger_count": 0,
+      "resolution": "eROT will try to recover AP by a reset/reboot. If there is still a problem, AP FW needs to be re-flashed.",
+      "trigger_count": 1,
       "event_counter_reset": {
         "type": "",
         "metadata": ""
@@ -1582,14 +1692,24 @@
     {
       "event": "PLDM runtime failures",
       "device_type": "FPGA",
-      "event_trigger": {},
+      "event_trigger": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/GpioStatusHandler",
+        "interface": "xyz.openbmc_project.GpioStatus",
+        "property": "I2C3_ALERT",
+        "check": { "equal": "true" }
+      },
       "accessor": {
-        "type": "DeviceCoreAPI",
-        "property": "TBD"
+        "type": "CMDLINE",
+        "executable": "mctp-vdm-util-wrapper",
+        "arguments": "download_log FPGA",
+        "check":{
+          "bitmask": "0x00000001"
+        }
       },
       "severity": "Critical",
-      "resolution": "Glacier will try to recover AP by a reset/reboot. If still have problem, need to reflash AP FW manually",
-      "trigger_count": 0,
+      "resolution": "BaseBoard components will retry if encounters errors. If problem persists, analyze FPGA log or ERoT log.",
+      "trigger_count": 1,
       "event_counter_reset": {
         "type": "",
         "metadata": ""
@@ -1606,14 +1726,24 @@
     {
       "event": "Boot completed failure",
       "device_type": "LS10",
-      "event_trigger": {},
+      "event_trigger": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/GpioStatusHandler",
+        "interface": "xyz.openbmc_project.GpioStatus",
+        "property": "I2C3_ALERT",
+        "check": { "equal": "true" }
+      },
       "accessor": {
-        "type": "DeviceCoreAPI",
-        "property": "TBD"
+        "type": "CMDLINE",
+        "executable": "mctp-vdm-util-wrapper",
+        "arguments": "query-boot-status GPU0[0-7]",
+        "check":{
+          "bitmask": "0x8000000"
+        }
       },
       "severity": "Critical",
-      "resolution": "Glacier will try to recover AP by a reset/reboot. If still have problem, need to reflash AP FW manually",
-      "trigger_count": 0,
+      "resolution": "eROT will try to recover AP by a reset/reboot. If there is still a problem, AP FW needs to be re-flashed.",
+      "trigger_count": 1,
       "event_counter_reset": {
         "type": "",
         "metadata": ""
@@ -1627,15 +1757,25 @@
     },
     {
       "event": "Secure boot failure",
-      "device_type": "LS10",
-      "event_trigger": {},
+      "device_type": "LS10[0-3]",
+      "event_trigger": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/GpioStatusHandler",
+        "interface": "xyz.openbmc_project.GpioStatus",
+        "property": "I2C3_ALERT",
+        "check": { "equal": "true" }
+      },
       "accessor": {
-        "type": "DeviceCoreAPI",
-        "property": "TBD"
+        "type": "CMDLINE",
+        "executable": "mctp-vdm-util-wrapper",
+        "arguments": "query-boot-status LS10[0-3]",
+        "check":{
+          "bitmask": "0x00000600"
+        }
       },
       "severity": "Critical",
-      "resolution": "Glacier will try to recover AP by a reset/reboot. If still have problem, need to reflash AP FW manually",
-      "trigger_count": 0,
+      "resolution": "eROT will try to recover AP by a reset/reboot. If there is still a problem, AP FW needs to be re-flashed.",
+      "trigger_count": 1,
       "event_counter_reset": {
         "type": "",
         "metadata": ""
@@ -1671,14 +1811,24 @@
     },
     {
       "event": "SPI flash error",
-      "device_type": "LS10",
-      "event_trigger": {},
+      "device_type": "LS10[0-3]",
+      "event_trigger": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/GpioStatusHandler",
+        "interface": "xyz.openbmc_project.GpioStatus",
+        "property": "I2C3_ALERT",
+        "check": { "equal": "true" }
+      },
       "accessor": {
-        "type": "DeviceCoreAPI",
-        "property": "TBD"
+        "type": "CMDLINE",
+        "executable": "mctp-vdm-util-wrapper",
+        "arguments": "query-boot-status LS10[0-3]",
+        "check":{
+          "bitmask": "0x02000000"
+        }
       },
       "severity": "Critical",
-      "resolution": "Needs RMA",
+      "resolution": "Cordon HGX server from the cluster for RMA evaluation.",
       "trigger_count": 0,
       "event_counter_reset": {
         "type": "",
@@ -1715,15 +1865,25 @@
     },
     {
       "event": "MCTP runtime failures",
-      "device_type": "LS10",
-      "event_trigger": {},
+      "device_type": "LS10[0-3]",
+      "event_trigger": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/GpioStatusHandler",
+        "interface": "xyz.openbmc_project.GpioStatus",
+        "property": "I2C3_ALERT",
+        "check": { "equal": "true" }
+      },
       "accessor": {
-        "type": "DeviceCoreAPI",
-        "metadata": "TBD"
+        "type": "CMDLINE",
+        "executable": "mctp-vdm-util-wrapper",
+        "arguments": "download_log LS10[0-3]",
+        "check":{
+          "bitmask": "0x00000001"
+        }
       },
       "severity": "Critical",
-      "resolution": "Glacier will retry if encounters errors. If problem still there, need to clarify it's HW or FW issue. if HW, do RMA, if FW, reprogram AP/Glacier to a known good versions",
-      "trigger_count": 0,
+      "resolution": "BaseBoard components will retry if encounters errors. If problem persists, analyze FPGA log or ERoT log.",
+      "trigger_count": 1,
       "event_counter_reset": {
         "type": "",
         "metadata": ""
@@ -1737,15 +1897,25 @@
     },
     {
       "event": "PLDM runtime failures",
-      "device_type": "LS10",
-      "event_trigger": {},
+      "device_type": "LS10[0-3]",
+      "event_trigger": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/GpioStatusHandler",
+        "interface": "xyz.openbmc_project.GpioStatus",
+        "property": "I2C3_ALERT",
+        "check": { "equal": "true" }
+      },
       "accessor": {
-        "type": "DeviceCoreAPI",
-        "property": "TBD"
+        "type": "CMDLINE",
+        "executable": "mctp-vdm-util-wrapper",
+        "arguments": "download_log LS10[0-3]",
+        "check":{
+          "bitmask": "0x00000001"
+        }
       },
       "severity": "Critical",
-      "resolution": "Glacier will try to recover AP by a reset/reboot. If still have problem, need to reflash AP FW manually",
-      "trigger_count": 0,
+      "resolution": "BaseBoard components will retry if encounters errors. If problem persists, analyze FPGA log or ERoT log.",
+      "trigger_count": 1,
       "event_counter_reset": {
         "type": "",
         "metadata": ""
