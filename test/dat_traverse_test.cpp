@@ -64,17 +64,60 @@ TEST(DatTraverseTest, FullTraversal)
     parentCallbacks.push_back(datTraverser.setHealthProperties);
     parentCallbacks.push_back(datTraverser.setOriginOfCondition);
 
-    EXPECT_EQ(dat.at("GPU0").healthStatus.triState, "Active");
+    if (dat.count("GPU0") > 0)
+    {
+        EXPECT_EQ(dat.at("GPU0").healthStatus.triState, "Active");
+    }
+    else
+    {
+        std::cerr << "Error: deviceName:" << "GPU0" << "is an invalid key!" << std::endl;
+        return;
+    }
 
     datTraverser.parentTraverse(dat, hsc8.name, datTraverser.hasParents,
                                 parentCallbacks);
 
-    EXPECT_EQ(dat.at("Retimer0").healthStatus.healthRollup, "Critical");
-    EXPECT_EQ(dat.at("GPU0").healthStatus.triState, "Error");
-    EXPECT_EQ(dat.at("Retimer0").healthStatus.originOfCondition, hsc8.name);
-    EXPECT_EQ(dat.at("GPU0").healthStatus.originOfCondition, hsc8.name);
-    EXPECT_EQ(dat.at("Retimer0").healthStatus.health, "OK");
-    EXPECT_EQ(dat.at("HSC8").healthStatus.health, "Critical");
+    if (dat.count("Retimer0") > 0)
+    {
+        EXPECT_EQ(dat.at("Retimer0").healthStatus.healthRollup, "Critical");
+    }
+    else
+    {
+        std::cerr << "Error: deviceName:" << "Retimer0" << "is an invalid key!" << std::endl;
+        return;
+    }
+
+    if (dat.count("GPU0") > 0) 
+    {
+        EXPECT_EQ(dat.at("GPU0").healthStatus.triState, "Error");
+        EXPECT_EQ(dat.at("GPU0").healthStatus.originOfCondition, hsc8.name);
+    }
+    else
+    {
+        std::cerr << "Error: deviceName:" << "GPU0" << "is an invalid key!" << std::endl;
+        return;
+    }
+
+    if (dat.count("Retimer0") > 0)
+    {
+        EXPECT_EQ(dat.at("Retimer0").healthStatus.originOfCondition, hsc8.name);
+        EXPECT_EQ(dat.at("Retimer0").healthStatus.health, "OK");
+    }
+    else
+    {
+        std::cerr << "Error: deviceName:" << "Retimer0" << "is an invalid key!" << std::endl;
+        return;
+    }
+
+    if (dat.count("HSC8") > 0)
+    {
+        EXPECT_EQ(dat.at("HSC8").healthStatus.health, "Critical");
+    }
+    else
+    {
+        std::cerr << "Error: deviceName:" << "HSC8" << "is an invalid key!" << std::endl;
+    }
+
 }
 
 TEST(DatTraverseTest, gettingAssociations)

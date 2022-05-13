@@ -46,7 +46,15 @@ void Device::populateMap(std::map<std::string, dat_traverse::Device>& dat,
     {
         for (const auto& child : entry.second.association)
         {
-            dat.at(child).parents.push_back(entry.first);
+            if (dat.count(child) > 0)
+            {
+                dat.at(child).parents.push_back(entry.first);
+            }
+            else
+            {   
+                std::cerr << "Error: deviceName:" << child << "does not exist in DAT!" << std::endl;
+
+            }
         }
     }
 }
@@ -60,8 +68,14 @@ void Device::printTree(const std::map<std::string, dat_traverse::Device>& m)
         std::string deviceName = fringe.front();
         fringe.pop();
 
-        dat_traverse::Device device = m.at(deviceName);
+        if (m.count(deviceName) == 0)
+        {
+            std::cerr << "Error: deviceName:" << deviceName << "is an invalid key!" << std::endl;
+            continue;
+        }
 
+        dat_traverse::Device device = m.at(deviceName);
+        
         std::cerr << "Found Device " << deviceName << "\n";
         for (const auto& parent : device.parents)
         {
@@ -135,6 +149,11 @@ void DATTraverse::printBranch(
     for (const auto& dev : devices)
     {
         std::cerr << dev << ":\n";
+        if (dat.count(dev) == 0)
+        {
+            std::cerr << "Error: deviceName:" << dev << "does not exist in DAT. Skipping print." << std::endl;
+            continue;
+        }
         auto device = dat.at(dev);
         std::cerr << "Health: " << device.healthStatus.health << "\n";
         std::cerr << "Healthrollup: " << device.healthStatus.healthRollup
@@ -184,6 +203,12 @@ std::vector<std::string> DATTraverse::getSubAssociations(
     {
         std::string deviceName = fringe.front();
         fringe.pop();
+        
+        if (dat.count(deviceName) == 0)
+        {
+            std::cerr << "Error: deviceName:" << deviceName << "is an invalid key!" << std::endl;
+            continue;
+        }
         const dat_traverse::Device& node = dat.at(deviceName);
 
         for (const auto& child : node.association)
@@ -203,6 +228,11 @@ void DATTraverse::parentTraverse(
                                          const dat_traverse::Status& status)>>&
         action)
 {
+    if (dat.count(device) == 0)
+    {
+        std::cerr << "Error: deviceName:" << device << "is an invalid key!" << std::endl;
+        return;
+    }
 
     dat_traverse::Device& dev = dat.at(device);
 
@@ -219,6 +249,12 @@ void DATTraverse::parentTraverse(
     {
         std::string deviceName = fringe.front();
         fringe.pop();
+
+        if (dat.count(deviceName) == 0)
+        {
+            std::cerr << "Error: deviceName:" << deviceName << "is an invalid key!" << std::endl;
+            continue;
+        }
 
         dat_traverse::Device& node = dat.at(deviceName);
 
