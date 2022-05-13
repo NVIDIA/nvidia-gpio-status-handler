@@ -9,14 +9,6 @@
       "GPU5",
       "GPU6",
       "GPU7",
-      "GPUDRAM0",
-      "GPUDRAM1",
-      "GPUDRAM2",
-      "GPUDRAM3",
-      "GPUDRAM4",
-      "GPUDRAM5",
-      "GPUDRAM6",
-      "GPUDRAM7",
       "NVSwitch0",
       "NVSwitch1",
       "NVSwitch2",
@@ -99,6 +91,7 @@
     "association": [
       "HSC0",
       "GPU0-ERoT",
+      "GPUDRAM0",
       "Retimer0"
     ],
     "power_rail": [
@@ -238,6 +231,7 @@
     "association": [
       "HSC1",
       "GPU1-ERoT",
+      "GPUDRAM1",
       "Retimer1"
     ],
     "power_rail": [
@@ -377,6 +371,7 @@
     "association": [
       "HSC2",
       "GPU2-ERoT",
+      "GPUDRAM2",
       "Retimer2"
     ],
     "power_rail": [
@@ -516,6 +511,7 @@
     "association": [
       "HSC3",
       "GPU3-ERoT",
+      "GPUDRAM3",
       "Retimer3"
     ],
     "power_rail": [
@@ -655,6 +651,7 @@
     "association": [
       "HSC4",
       "GPU4-ERoT",
+      "GPUDRAM4",
       "Retimer4"
     ],
     "power_rail": [
@@ -794,6 +791,7 @@
     "association": [
       "HSC5",
       "GPU5-ERoT",
+      "GPUDRAM5",
       "Retimer5"
     ],
     "power_rail": [
@@ -933,6 +931,7 @@
     "association": [
       "HSC6",
       "GPU6-ERoT",
+      "GPUDRAM6",
       "Retimer6"
     ],
     "power_rail": [
@@ -1072,6 +1071,7 @@
     "association": [
       "HSC7",
       "GPU7-ERoT",
+      "GPUDRAM7",
       "Retimer7"
     ],
     "power_rail": [
@@ -2295,7 +2295,84 @@
     "association": [
       "HSC_STBY",
       "FPGA-ERoT",
-      "HMC"
+      "InletSensor"
+    ],
+    "power_rail": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "test point name",
+        "accessor": {
+            "type": "accessor type",
+            "object": "object path",
+            "interface": "interface path",
+            "property": "property name"
+        },
+        "expected_value": "OK"
+      }
+    ]
+  },
+  "InletSensor": {
+    "association": [
+      "HSC_STBY"
     ],
     "power_rail": [
       {

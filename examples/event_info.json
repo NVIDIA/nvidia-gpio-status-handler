@@ -13,7 +13,7 @@
       "accessor": {
         "type": "DeviceCoreAPI",
         "property": "gpu.thermal.temperature.overTemperatureInfo",
-        "check": {"bitmask": "1"}
+        "check": {"bitmap": "1"}
       },
       "severity": "Critical",
       "resolution": "Check thermal environmental to ensure GPU operates under Shutdown Temperature (UpperFatal threshold) and power cycle the BaseBoard to recover.",
@@ -95,9 +95,9 @@
         "check": {"bitmask": "4"}
       },
       "accessor": {
-        "type": "DeviceCoreApi",
+        "type": "DeviceCoreAPI",
         "property": "gpu.xid.event",
-        "check": {"equal": "...94..."}
+        "check": {"lookup": "94"}
       },
       "severity": "Warning",
       "resolution": "Restart the affected application.",
@@ -124,9 +124,9 @@
         "check": {"bitmask": "4"}
       },
       "accessor": {
-        "type": "DeviceCoreApi",
+        "type": "DeviceCoreAPI",
         "property": "gpu.xid.event",
-        "check": {"equal": "...95..."}
+        "check": {"lookup": "95"}
       },
       "severity": "Critical",
       "resolution": "Reset the GPU and restart affected applications.",
@@ -155,7 +155,7 @@
       "accessor": {
         "type": "DeviceCoreAPI",
         "property": "gpu.interrupt.PresenceInfo",
-        "check": {"bitmask": "1"}
+        "check": {"bitmap": "1"}
       },
       "severity": "Critical",
       "resolution": "Cordon the HGX server node for further diagnosis.",
@@ -425,12 +425,19 @@
       "value_as_count": false
     },
     {
-      "event": "VR Fault",
+      "event": "VR Failure",
       "device_type": "GPU[0-7]",
-      "event_trigger": {},
+      "event_trigger": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/GpioStatusHandler",
+        "interface": "xyz.openbmc_project.GpioStatus",
+        "property": "I2C3_ALERT",
+        "check": {"equal": "true"}
+      },
       "accessor": {
         "type": "DeviceCoreAPI",
-        "property": "gpu.interrupt.powerGoodAbnormalChange"
+        "property": "gpu.interrupt.powerGoodAbnormalChange",
+        "check": {"bitmask": "1"}
       },
       "severity": "Critical",
       "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation.",
@@ -665,7 +672,7 @@
       "accessor": {
         "type": "DeviceCoreAPI",
         "property": "nvswitch.thermal.temperature.overTemperatureInfo",
-        "check": {"bitmask": "1"}
+        "check": {"bitmap": "1"}
       },
       "severity": "Critical",
       "resolution": "Power off the BaseBoard within 1 second, the NVSwitch will be held in reset. Check thermal environmental to ensure the NVSwitch operates under UpperFatal threshold and power cycle the BaseBoard to recover. ",
@@ -694,7 +701,7 @@
       "accessor": {
         "type": "DeviceCoreAPI",
         "property": "nvswitch.thermal.alert",
-        "check": {"bitmask": "1"}
+        "check": {"bitmap": "1"}
       },
       "severity": "Warning",
       "resolution": "Increase the BaseBoard cooling and check thermal environmental to ensure the NVSwtich operates under UpperCritical threshold. ",
@@ -723,7 +730,7 @@
       "accessor": {
         "type": "DeviceCoreAPI",
         "property": "nvswitch.device.vrFault",
-        "check": {"bitmask": "1"}
+        "check": {"bitmap": "1"}
       },
       "severity": "Critical",
       "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation.",
@@ -824,7 +831,7 @@
       "accessor": {
         "type": "DeviceCoreAPI",
         "property": "nvswitch.vdd.abnormalPowerChange",
-        "check": {"bitmask": "1"}
+        "check": {"bitmap": "1"}
       },
       "severity": "Critical",
       "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation.",
@@ -853,7 +860,7 @@
       "accessor": {
         "type": "DeviceCoreAPI",
         "property": "nvswitch.dvdd.abnormalPowerChange",
-        "check": {"bitmask": "1"}
+        "check": {"bitmap": "1"}
       },
       "severity": "Critical",
       "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation.",
@@ -882,7 +889,7 @@
       "accessor": {
         "type": "DeviceCoreAPI",
         "property": "nvswitch.hvdd.abnormalPowerChange",
-        "check": {"bitmask": "1"}
+        "check": {"bitmap": "1"}
       },
       "severity": "Critical",
       "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation.",
@@ -911,7 +918,7 @@
       "accessor": {
         "type": "DeviceCoreAPI",
         "property": "nvswitch.1V8.abnormalPowerChange",
-        "check": {"bitmask": "1"}
+        "check": {"bitmap": "1"}
       },
       "severity": "Critical",
       "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation.",
@@ -940,7 +947,7 @@
       "accessor": {
         "type": "DeviceCoreAPI",
         "property": "nvswitch.device.vrFault",
-        "check": {"bitmask": "1"}
+        "check": {"bitmap": "1"}
       },
       "severity": "Critical",
       "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation.",
@@ -999,6 +1006,210 @@
       "telemetries": [],
       "action": "",
       "value_as_count": false
+    },
+    {
+      "event": "Boot completed failure",
+      "device_type": "NVSwitch[0-3]",
+      "event_trigger": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/GpioStatusHandler",
+        "interface": "xyz.openbmc_project.GpioStatus",
+        "property": "I2C3_ALERT",
+        "check": { "equal": "true" }
+      },
+      "accessor": {
+        "type": "CMDLINE",
+        "executable": "mctp-vdm-util-wrapper",
+        "arguments": "AP0_BOOTCOMPLETE_TIMEOUT NVSwitch[0-3]",
+        "check":{
+          "equal": "1"
+        }
+      },
+      "severity": "Critical",
+      "resolution": "eROT will try to recover AP by a reset/reboot. If there is still a problem, AP FW needs to be re-flashed.",
+      "trigger_count": 1,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": "",
+      "value_as_count": false
+    },
+    {
+      "event": "Secure boot failure",
+      "device_type": "NVSwitch[0-3]",
+      "event_trigger": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/GpioStatusHandler",
+        "interface": "xyz.openbmc_project.GpioStatus",
+        "property": "I2C3_ALERT",
+        "check": { "equal": "true" }
+      },
+      "accessor": {
+        "type": "CMDLINE",
+        "executable": "mctp-vdm-util-wrapper",
+        "arguments": "AP0_PRIMARY_FW_AUTHENTICATION_STATUS NVSwitch[0-3]",
+        "check":{
+          "equal": "6"
+        }
+      },
+      "severity": "Critical",
+      "resolution": "eROT will try to recover AP by a reset/reboot. If there is still a problem, AP FW needs to be re-flashed.",
+      "trigger_count": 1,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": "",
+      "value_as_count": false
+    },
+    {
+      "event": "VR fault",
+      "device_type": "NVSwitch[0-3]",
+      "event_trigger": {},
+      "accessor": {
+        "type": "DeviceCoreAPI",
+        "property": "TBD"
+      },
+      "severity": "Critical",
+      "resolution": "Needs RMA",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": "",
+      "value_as_count": false
+    },
+    {
+      "event": "SPI flash error",
+      "device_type": "NVSwitch[0-3]",
+      "event_trigger": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/GpioStatusHandler",
+        "interface": "xyz.openbmc_project.GpioStatus",
+        "property": "I2C3_ALERT",
+        "check": { "equal": "true" }
+      },
+      "accessor": {
+        "type": "CMDLINE",
+        "executable": "mctp-vdm-util-wrapper",
+        "arguments": "AP0_SPI_READ_FAILURE NVSwitch[0-3]",
+        "check":{
+          "equal": "1"
+        }
+      },
+      "severity": "Critical",
+      "resolution": "Cordon HGX server from the cluster for RMA evaluation.",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": "",
+      "value_as_count": false
+    },
+    {
+      "event": "EROT recovery",
+      "device_type": "NVSwitch[0-3]",
+      "event_trigger": {},
+      "accessor": {
+        "type": "DeviceCoreAPI",
+        "property": "TBD"
+      },
+      "severity": "Critical",
+      "resolution": "Run recovery tools from BMC",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": "",
+      "value_as_count": false
+    },
+    {
+      "event": "MCTP runtime failures",
+      "device_type": "NVSwitch[0-3]",
+      "event_trigger": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/GpioStatusHandler",
+        "interface": "xyz.openbmc_project.GpioStatus",
+        "property": "I2C3_ALERT",
+        "check": { "equal": "true" }
+      },
+      "accessor": {
+        "type": "CMDLINE",
+        "executable": "mctp-vdm-util-wrapper",
+        "arguments": "download_log NVSwitch[0-3]",
+        "check":{
+          "bitmask": "0x00000001"
+        }
+      },
+      "severity": "Critical",
+      "resolution": "BaseBoard components will retry if encounters errors. If problem persists, analyze FPGA log or ERoT log.",
+      "trigger_count": 1,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": "",
+      "value_as_count": false
+    },
+    {
+      "event": "PLDM runtime failures",
+      "device_type": "NVSwitch[0-3]",
+      "event_trigger": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/GpioStatusHandler",
+        "interface": "xyz.openbmc_project.GpioStatus",
+        "property": "I2C3_ALERT",
+        "check": { "equal": "true" }
+      },
+      "accessor": {
+        "type": "CMDLINE",
+        "executable": "mctp-vdm-util-wrapper",
+        "arguments": "download_log NVSwitch[0-3]",
+        "check":{
+          "bitmask": "0x00000001"
+        }
+      },
+      "severity": "Critical",
+      "resolution": "BaseBoard components will retry if encounters errors. If problem persists, analyze FPGA log or ERoT log.",
+      "trigger_count": 1,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": "",
+      "value_as_count": false
     }
   ],
   "PCIeSwitch": [
@@ -1015,7 +1226,7 @@
       "accessor": {
         "type": "DeviceCoreAPI",
         "property": "pcieswitch.0V8.abnormalPowerChange",
-        "check": {"bitmask": "1"}
+        "check": {"bitmap": "1"}
       },
       "severity": "Critical",
       "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation.",
@@ -1044,7 +1255,7 @@
       "accessor": {
         "type": "DeviceCoreAPI",
         "property": "pcieswitch.thermal.temperature.overTemperatureInfo",
-        "check": {"bitmask": "1"}
+        "check": {"bitmap": "1"}
       },
       "severity": "Critical",
       "resolution": "Power off the BaseBoard within 1 second, the PCIe Switch will be held in reset. Check thermal environmental to ensure the PCIe Switch operates under UpperFatal threshold and power cycle the BaseBoard to recover. ",
@@ -1335,7 +1546,7 @@
       "accessor": {
         "type": "DeviceCoreAPI",
         "property": "pcieretimer.thermal.temperature.overTemperatureInfo",
-        "check": {"bitmask": "1"}
+        "check": {"bitmap": "1"}
       },
       "severity": "Critical",
       "resolution": "Power off the BaseBoard within 1 second, and the Retimer will be held in reset. Check thermal environmental to ensure the Retimer operates under UpperFatal threshold and power cycle the BaseBoard to recover. ",
@@ -1448,7 +1659,7 @@
       "accessor": {
         "type": "DeviceCoreAPI",
         "property": "hsc.power.abnormalPowerChange",
-        "check": {"bitmask": "1"}
+        "check": {"bitmap": "1"}
       },
       "severity": "Critical",
       "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation.",
@@ -1594,10 +1805,10 @@
       "value_as_count": false
     }
   ],
-  "Inlet Sensor": [
+  "InletSensor": [
     {
       "event": "Inlet Thermal Warning",
-      "device_type": "Inlet Sensor",
+      "device_type": "InletSensor",
       "event_trigger": {
         "type": "DBUS",
         "object": "/xyz/openbmc_project/GpioStatusHandler",
@@ -1608,7 +1819,7 @@
       "accessor": {
         "type": "DeviceCoreAPI",
         "property": "inletTemp.thermal.temperature.threshold.alert",
-        "check": {"bitmask": "1"}
+        "check": {"bitmap": "1"}
       },
       "severity": "Warning",
       "resolution": "Increase the BaseBoard cooling and check thermal environmental to ensure Inlet Temperature reading is under UpperCritical threshold. ",
@@ -1639,7 +1850,7 @@
       "accessor": {
         "type": "DeviceCoreAPI",
         "property": "baseboard.pcb.temperature.Alert",
-        "check": {"bitmask": "1"}
+        "check": {"bitmap": "1"}
       },
       "severity": "Warning",
       "resolution": "Increase the BaseBoard cooling and check thermal environmental to ensure Inlet Temperature reading is under UpperCritical threshold. ",
@@ -1658,38 +1869,6 @@
   ],
   "FPGA": [
     {
-      "event": "Boot completed failure",
-      "device_type": "FPGA",
-      "event_trigger": {
-        "type": "DBUS",
-        "object": "/xyz/openbmc_project/GpioStatusHandler",
-        "interface": "xyz.openbmc_project.GpioStatus",
-        "property": "I2C3_ALERT",
-        "check": { "equal": "true" }
-      },
-      "accessor": {
-        "type": "CMDLINE",
-        "executable": "mctp-vdm-util-wrapper",
-        "arguments": "AP0_BOOTCOMPLETE_TIMEOUT FPGA",
-        "check":{
-          "equal": "1"
-        }
-      },
-      "severity": "Critical",
-      "resolution": "eROT will try to recover AP by a reset/reboot. If there is still a problem, AP FW needs to be re-flashed.",
-      "trigger_count": 1,
-      "event_counter_reset": {
-        "type": "",
-        "metadata": ""
-      },
-      "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-      },
-      "telemetries": [],
-      "action": "",
-      "value_as_count": false
-    },
-    {
       "event": "PLDM runtime failures",
       "device_type": "FPGA",
       "event_trigger": {
@@ -1703,212 +1882,6 @@
         "type": "CMDLINE",
         "executable": "mctp-vdm-util-wrapper",
         "arguments": "download_log FPGA",
-        "check":{
-          "bitmask": "0x00000001"
-        }
-      },
-      "severity": "Critical",
-      "resolution": "BaseBoard components will retry if encounters errors. If problem persists, analyze FPGA log or ERoT log.",
-      "trigger_count": 1,
-      "event_counter_reset": {
-        "type": "",
-        "metadata": ""
-      },
-      "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-      },
-      "telemetries": [],
-      "action": "",
-      "value_as_count": false
-    }
-  ],
-  "NVSwitch": [
-    {
-      "event": "Boot completed failure",
-      "device_type": "NVSwitch[0-3]",
-      "event_trigger": {
-        "type": "DBUS",
-        "object": "/xyz/openbmc_project/GpioStatusHandler",
-        "interface": "xyz.openbmc_project.GpioStatus",
-        "property": "I2C3_ALERT",
-        "check": { "equal": "true" }
-      },
-      "accessor": {
-        "type": "CMDLINE",
-        "executable": "mctp-vdm-util-wrapper",
-        "arguments": "AP0_BOOTCOMPLETE_TIMEOUT NVSwitch[0-3]",
-        "check":{
-          "equal": "1"
-        }
-      },
-      "severity": "Critical",
-      "resolution": "eROT will try to recover AP by a reset/reboot. If there is still a problem, AP FW needs to be re-flashed.",
-      "trigger_count": 1,
-      "event_counter_reset": {
-        "type": "",
-        "metadata": ""
-      },
-      "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-      },
-      "telemetries": [],
-      "action": "",
-      "value_as_count": false
-    },
-    {
-      "event": "Secure boot failure",
-      "device_type": "NVSwitch[0-3]",
-      "event_trigger": {
-        "type": "DBUS",
-        "object": "/xyz/openbmc_project/GpioStatusHandler",
-        "interface": "xyz.openbmc_project.GpioStatus",
-        "property": "I2C3_ALERT",
-        "check": { "equal": "true" }
-      },
-      "accessor": {
-        "type": "CMDLINE",
-        "executable": "mctp-vdm-util-wrapper",
-        "arguments": "AP0_PRIMARY_FW_AUTHENTICATION_STATUS NVSwitch[0-3]",
-        "check":{
-          "equal": "6"
-        }
-      },
-      "severity": "Critical",
-      "resolution": "eROT will try to recover AP by a reset/reboot. If there is still a problem, AP FW needs to be re-flashed.",
-      "trigger_count": 1,
-      "event_counter_reset": {
-        "type": "",
-        "metadata": ""
-      },
-      "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-      },
-      "telemetries": [],
-      "action": "",
-      "value_as_count": false
-    },
-    {
-      "event": "VR fault",
-      "device_type": "NVSwitch[0-3]",
-      "event_trigger": {},
-      "accessor": {
-        "type": "DeviceCoreAPI",
-        "property": "TBD"
-      },
-      "severity": "Critical",
-      "resolution": "Needs RMA",
-      "trigger_count": 0,
-      "event_counter_reset": {
-        "type": "",
-        "metadata": ""
-      },
-      "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-      },
-      "telemetries": [],
-      "action": "",
-      "value_as_count": false
-    },
-    {
-      "event": "SPI flash error",
-      "device_type": "NVSwitch[0-3]",
-      "event_trigger": {
-        "type": "DBUS",
-        "object": "/xyz/openbmc_project/GpioStatusHandler",
-        "interface": "xyz.openbmc_project.GpioStatus",
-        "property": "I2C3_ALERT",
-        "check": { "equal": "true" }
-      },
-      "accessor": {
-        "type": "CMDLINE",
-        "executable": "mctp-vdm-util-wrapper",
-        "arguments": "AP0_SPI_READ_FAILURE NVSwitch[0-3]",
-        "check":{
-          "equal": "1"
-        }
-      },
-      "severity": "Critical",
-      "resolution": "Cordon HGX server from the cluster for RMA evaluation.",
-      "trigger_count": 0,
-      "event_counter_reset": {
-        "type": "",
-        "metadata": ""
-      },
-      "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-      },
-      "telemetries": [],
-      "action": "",
-      "value_as_count": false
-    },
-    {
-      "event": "EROT recovery",
-      "device_type": "NVSwitch[0-3]",
-      "event_trigger": {},
-      "accessor": {
-        "type": "DeviceCoreAPI",
-        "property": "TBD"
-      },
-      "severity": "Critical",
-      "resolution": "Run recovery tools from BMC",
-      "trigger_count": 0,
-      "event_counter_reset": {
-        "type": "",
-        "metadata": ""
-      },
-      "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-      },
-      "telemetries": [],
-      "action": "",
-      "value_as_count": false
-    },
-    {
-      "event": "MCTP runtime failures",
-      "device_type": "NVSwitch[0-3]",
-      "event_trigger": {
-        "type": "DBUS",
-        "object": "/xyz/openbmc_project/GpioStatusHandler",
-        "interface": "xyz.openbmc_project.GpioStatus",
-        "property": "I2C3_ALERT",
-        "check": { "equal": "true" }
-      },
-      "accessor": {
-        "type": "CMDLINE",
-        "executable": "mctp-vdm-util-wrapper",
-        "arguments": "download_log NVSwitch[0-3]",
-        "check":{
-          "bitmask": "0x00000001"
-        }
-      },
-      "severity": "Critical",
-      "resolution": "BaseBoard components will retry if encounters errors. If problem persists, analyze FPGA log or ERoT log.",
-      "trigger_count": 1,
-      "event_counter_reset": {
-        "type": "",
-        "metadata": ""
-      },
-      "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-      },
-      "telemetries": [],
-      "action": "",
-      "value_as_count": false
-    },
-    {
-      "event": "PLDM runtime failures",
-      "device_type": "NVSwitch[0-3]",
-      "event_trigger": {
-        "type": "DBUS",
-        "object": "/xyz/openbmc_project/GpioStatusHandler",
-        "interface": "xyz.openbmc_project.GpioStatus",
-        "property": "I2C3_ALERT",
-        "check": { "equal": "true" }
-      },
-      "accessor": {
-        "type": "CMDLINE",
-        "executable": "mctp-vdm-util-wrapper",
-        "arguments": "download_log NVSwitch[0-3]",
         "check":{
           "bitmask": "0x00000001"
         }
