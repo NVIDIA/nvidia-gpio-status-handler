@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Copyright (c) 2021, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2022, NVIDIA CORPORATION.  All rights reserved.
 #
 #  NVIDIA CORPORATION and its licensors retain all intellectual property
 #  and proprietary rights in and to this software, related documentation
@@ -9,33 +9,23 @@
 #  license agreement from NVIDIA CORPORATION is strictly prohibited.
 
 # Simple wrapper to 'mctp-vdm-util-wrapper' to map 'device name' to 'device id'
+# and prettier cmd support.
 
 set -o pipefail
 
-## Simple wrapper to call mctp-vdm-util
-##         which syntax is:  mctp-vdm-util -c comment -t deviceid
-##
-## wrapper syntax: $0 [-dry-run] <comment> <device-name>
-##
-##   just gets the device-id from device-name to call mctp-vdm-util
+APP_NAME="mctp-vdm-util-wrapper"
+APP_VER="0.1"
 
-DEVICENAME_EID_LIST="\
-FPGA:13
-HMC:14
-GPU0:15
-GPU1:16
-GPU2:17
-GPU3:18
-GPU4:19
-GPU5:20
-GPU6:21
-GPU7:22
-NVSwitch0:23
-NVSwitch1:24
-NVSwitch2:25
-NVSwitch3:26
-PCIeSwitch:27
-"
+# Platform dependent profile.
+# Use Case 1:
+# In OpenBMC recipe, replace DEVICENAME_EID_LIST with device_mctp_eid.csv
+# content.
+#
+# Use Case 2:
+# From cmdline, define DEV_EID_PROFILE=<path of device_mctp_eid.csv> before
+# calling this script.
+[ -z "$DEV_EID_PROFILE" ] && DEV_EID_PROFILE="device_mctp_eid.csv"
+DEVICENAME_EID_LIST=`cat "$DEV_EID_PROFILE"`
 
 getDeviceEid() #1=device name
 {
@@ -44,18 +34,160 @@ getDeviceEid() #1=device name
 
     for device_eid in $DEVICENAME_EID_LIST
     do
-        local name=$(echo $device_eid | cut -f1 -d:)
+        local name=$(echo $device_eid | cut -f1 -d,)
         ## comparing with ignorecase
         if [ "${name,,}" = "${device,,}" ]
         then
-            eid=$(echo $device_eid | cut -f2 -d:)
-            break
+            eid=$(echo $device_eid | cut -f2 -d,)
+            echo $eid
+            return 0
         fi
     done
-    echo  $eid
+    return 1
 }
 
+# Per
+# [Glacier Firmware Design Document](https://docs.google.com/document/d/12VnlI_eX4hvsMVXzOhS4SkwLsvUHZEl5-g-OEBJhGRw/edit#heading=h.yv8pagajiaef)
+#<pretty_cmd>:<mctp-vdm-util_cmd>,<output_bits>
+MCTP_CMD_LIST="
+query_boot_status:query_boot_status,0-63
+EC_TAG0_AUTH_ERROR:query_boot_status,0
+EC_TAG1_COPY_ERROR:query_boot_status,1
+EC_OTP_MISMATCH_ERROR:query_boot_status,2
+EC_SET_KEY_REVOKE:query_boot_status,3
+EC_SET_ROLLBACK_PROTECTION:query_boot_status,4
+EC_RECEIVE_AP0_BOOT_COMPLETE:query_boot_status,5
+AP0_PRIMARY_FW_AUTHENTICATION_STATUS:query_boot_status,8-11
+AP0_SECONDARY_FW_AUTHENTICATION_STATUS:query_boot_status,12-15
+AP0_RECOVERY_FW_AUTHENTICATION_STATUS:query_boot_status,16-19
+AP0_ACTIVE_SLOT:query_boot_status,20
+AP0_SPI_READ_FAILURE:query_boot_status,21
+AP0_POWER_GOOD:query_boot_status,22
+AP0_RESET_ON_HOLD:query_boot_status,23
+AP0_SPI_ACCESS_VIOLCATION_OPCODE:query_boot_status,24
+AP0_SPI_ACCESS_VIOLATION_RANGE:query_boot_status,25
+AP0_HEARTBEAT_TIMEOUT:query_boot_status,26
+AP0_BOOTCOMPLETE_TIMEOUT:query_boot_status,27
+"
+
+mctp_cmd_lookup() #(pretty_cmd) => <mctp_cmd>
+{
+    local target=$1;shift
+
+    local line
+    for line in $MCTP_CMD_LIST; do
+        [ -z "$line" ] && continue
+
+        local pretty_cmd=${line%:*}
+        [ "$pretty_cmd" = "$target" ] || continue
+        echo ${line#*:}
+        return 0
+    done
+    return 1
+}
+
+mctp_access() #(dev_eid, pretty_cmd) => <value>
+{
+    local dev_eid=$1;shift
+    local pretty_cmd=$1
+
+    [ -z "$dev_eid" ] && return 1
+    [ -z "$pretty_cmd" ] && return 1
+
+    local rc=0
+    local cmd_info;cmd_info=`mctp_cmd_lookup "$pretty_cmd"`;rc=$?
+    [ "$rc" -eq 0 ] || return $rc
+
+    local mctp_cmd=${cmd_info%,*}
+    [ -z "$mctp_cmd" ] && return 1
+
+    local bits=${cmd_info#*,}
+    [ -z "$bits" ] && return 1
+
+    local cmdline="mctp-vdm-util -c $mctp_cmd -t $dev_eid"
+    if [ "$DRY_RUN" -eq 1 ]; then
+        echo $cmdline
+        return 0
+    fi
+
+    local output;output=`$cmdline`;rc=$?
+    [ "$rc" -eq 0 ] || return $rc
+    output=`echo $output`
+
+    # output parsing
+    [[ $output =~ .*TX:(([ ][0-9A-Fa-f]{2})+)\ RX:(([ ][0-9A-Fa-f]{2})+) ]]
+    local tx=${BASH_REMATCH[1]}
+    local rx=${BASH_REMATCH[3]}
+
+    local dataInfo=${rx#${tx/80/00} } # remove tx data from rx
+    local retCode=${dataInfo%% *} # extract mctp return code
+    [ "$retCode" = "00" ] || return 1
+    local data=${dataInfo#* } # extract return data
+    local value=0x${data// /} # compose return data into hex
+
+    # verify the value based on bitmask
+    local bit_min=${bits%%-*}
+    local bit_max=${bits##*-}
+
+    local bitmask
+    for((i=${bit_min};i<=${bit_max};i++)); do
+        bitmask=${bitmask}1
+    done
+    bitmask=$((2#$bitmask))
+
+    value=$(($value >> $bit_min))
+
+    echo $(($value & $bitmask))
+    return 0
+}
+
+show_help()
+{
+    echo "A wrapper of mctp-vdm-util for prettier usage and output, ver=${APP_VER}."
+    echo "<usage>"
+    echo "  ${APP_NAME} [-dry-run] <prettier_mctp_cmd> <dev_name>"
+    echo
+    echo "<options>"
+    echo "  -dry-run          - Only print mctp-vdm-util cmdline."
+    echo
+    echo "  prettier_mctp_cmd - Available cmd list as below."
+    echo "  dev_name          - ERoT of the device by this. The list is at below."
+    echo
+    printf "=%.0s" {1..80};echo
+    printf "%-40s%-20s%s\n" "PrettierCmd" "MctpCmd" "Bits"
+    printf "=%.0s" {1..80};echo
+    local cmd
+    for cmd in ${MCTP_CMD_LIST}; do
+        [ -z "$cmd" ] && continue
+        local pcmd=${cmd%%:*}
+        local cmdInfo=${cmd#*:}
+        local mcmd=${cmdInfo%%,*}
+        local bits=${cmd##*,}
+
+        printf "%-40s%-20s%s\n" $pcmd $mcmd $bits
+    done
+    echo
+    printf "=%.0s" {1..80};echo
+    printf "%-20s%s\n" "DeviceName" "MctpEid"
+    printf "=%.0s" {1..80};echo
+    local dev
+    for dev in ${DEVICENAME_EID_LIST}; do
+        [ -z "$dev" ] && continue
+        local name=${dev%%,*}
+        local eid=${dev##*,}
+
+        printf "%-20s%s\n" $name $eid
+    done
+    echo
+}
+
+## MAIN
 DRY_RUN=0
+
+if [ ! -f "$DEV_EID_PROFILE" ]; then
+    >&2 echo "Error: [$DEV_EID_PROFILE] not found!"
+    exit 1
+fi
 
 ## -dry-run just prints the mctp-vdm-util command line
 if [ "$1"  = "-dry-run" ]; then
@@ -64,22 +196,23 @@ if [ "$1"  = "-dry-run" ]; then
 fi
 
 if [ $# -ne 2 ]; then
-    echo "syntax: $0 <comment> <device>"
+    show_help
     exit 1
 fi
 
-COMMENT="-c \"$1\""
+PCOMMAND="$1";shift
+DEVNAME="$1"
 
-device_id=`getDeviceEid $2` # $2=device-name, find the right device eid for it
-DEVICE="-t $device_id"
-CMD="mctp-vdm-util $COMMENT $DEVICE"
-status=0
-if [ $DRY_RUN -eq 0 ]; then
-    output=`eval $CMD`
-    status=$?
-else
-    output="$CMD"
+rc=0
+device_id=`getDeviceEid ${DEVNAME}`;rc=$? # Find the right device eid for it
+if [ $rc -ne 0 ]; then
+    >&2 echo "Error: EID of ${DEVNAME} not found, rc=$rc!"
+    exit $rc
+fi
+mctp_access $device_id $PCOMMAND;rc=$?
+if [ $rc -ne 0 ]; then
+    >&2 echo "Error: MCTP cmd for ${PCOMMAND} on ${device_id} failed, rc=$rc!"
+    exit $rc
 fi
 
-echo $output
-exit $status
+exit $rc

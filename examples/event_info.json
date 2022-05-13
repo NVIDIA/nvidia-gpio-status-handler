@@ -481,9 +481,9 @@
       "accessor": {
         "type": "CMDLINE",
         "executable": "mctp-vdm-util-wrapper",
-        "arguments": "query-boot-status GPU0[0-7]",
+        "arguments": "AP0_BOOTCOMPLETE_TIMEOUT GPU[0-7]",
         "check":{
-          "bitmask": "0x8000000"
+          "equal": "1"
         }
       },
       "severity": "Critical",
@@ -513,9 +513,9 @@
       "accessor": {
         "type": "CMDLINE",
         "executable": "mctp-vdm-util-wrapper",
-        "arguments": "query-boot-status GPU0[0-7]",
+        "arguments": "AP0_PRIMARY_FW_AUTHENTICATION_STATUS GPU[0-7]",
         "check":{
-          "bitmask": "0x00000600"
+          "equal": "6"
         }
       },
       "severity": "Critical",
@@ -545,9 +545,9 @@
       "accessor": {
         "type": "CMDLINE",
         "executable": "mctp-vdm-util-wrapper",
-        "arguments": "query-boot-status GPU[0-7]",
+        "arguments": "AP0_SPI_READ_FAILURE GPU[0-7]",
         "check":{
-          "bitmask": "0x02000000"
+          "equal": "1"
         }
       },
       "severity": "Critical",
@@ -1117,9 +1117,9 @@
       "accessor": {
         "type": "CMDLINE",
         "executable": "mctp-vdm-util-wrapper",
-        "arguments": "query-boot-status GPU0[0-7]",
+        "arguments": "AP0_BOOTCOMPLETE_TIMEOUT PCIeSwitch",
         "check":{
-          "bitmask": "0x8000000"
+          "equal": "1"
         }
       },
       "severity": "Critical",
@@ -1149,9 +1149,9 @@
       "accessor": {
         "type": "CMDLINE",
         "executable": "mctp-vdm-util-wrapper",
-        "arguments": "query-boot-status PCIeSwitch",
+        "arguments": "AP0_PRIMARY_FW_AUTHENTICATION_STATUS PCIeSwitch",
         "check":{
-          "bitmask": "0x00000600"
+          "equal": "6"
         }
       },
       "severity": "Critical",
@@ -1670,9 +1670,9 @@
       "accessor": {
         "type": "CMDLINE",
         "executable": "mctp-vdm-util-wrapper",
-        "arguments": "query-boot-status GPU0[0-7]",
+        "arguments": "AP0_BOOTCOMPLETE_TIMEOUT FPGA",
         "check":{
-          "bitmask": "0x8000000"
+          "equal": "1"
         }
       },
       "severity": "Critical",
@@ -1722,10 +1722,10 @@
       "value_as_count": false
     }
   ],
-  "LS10": [
+  "NVSwitch": [
     {
       "event": "Boot completed failure",
-      "device_type": "LS10[0-3]",
+      "device_type": "NVSwitch[0-3]",
       "event_trigger": {
         "type": "DBUS",
         "object": "/xyz/openbmc_project/GpioStatusHandler",
@@ -1736,9 +1736,9 @@
       "accessor": {
         "type": "CMDLINE",
         "executable": "mctp-vdm-util-wrapper",
-        "arguments": "query-boot-status LS10[0-3]",
+        "arguments": "AP0_BOOTCOMPLETE_TIMEOUT NVSwitch[0-3]",
         "check":{
-          "bitmask": "0x8000000"
+          "equal": "1"
         }
       },
       "severity": "Critical",
@@ -1757,7 +1757,7 @@
     },
     {
       "event": "Secure boot failure",
-      "device_type": "LS10[0-3]",
+      "device_type": "NVSwitch[0-3]",
       "event_trigger": {
         "type": "DBUS",
         "object": "/xyz/openbmc_project/GpioStatusHandler",
@@ -1768,9 +1768,9 @@
       "accessor": {
         "type": "CMDLINE",
         "executable": "mctp-vdm-util-wrapper",
-        "arguments": "query-boot-status LS10[0-3]",
+        "arguments": "AP0_PRIMARY_FW_AUTHENTICATION_STATUS NVSwitch[0-3]",
         "check":{
-          "bitmask": "0x00000600"
+          "equal": "6"
         }
       },
       "severity": "Critical",
@@ -1789,7 +1789,7 @@
     },
     {
       "event": "VR fault",
-      "device_type": "LS10[0-3]",
+      "device_type": "NVSwitch[0-3]",
       "event_trigger": {},
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -1811,7 +1811,7 @@
     },
     {
       "event": "SPI flash error",
-      "device_type": "LS10[0-3]",
+      "device_type": "NVSwitch[0-3]",
       "event_trigger": {
         "type": "DBUS",
         "object": "/xyz/openbmc_project/GpioStatusHandler",
@@ -1822,9 +1822,9 @@
       "accessor": {
         "type": "CMDLINE",
         "executable": "mctp-vdm-util-wrapper",
-        "arguments": "query-boot-status LS10[0-3]",
+        "arguments": "AP0_SPI_READ_FAILURE NVSwitch[0-3]",
         "check":{
-          "bitmask": "0x02000000"
+          "equal": "1"
         }
       },
       "severity": "Critical",
@@ -1843,7 +1843,7 @@
     },
     {
       "event": "EROT recovery",
-      "device_type": "LS10[0-3]",
+      "device_type": "NVSwitch[0-3]",
       "event_trigger": {},
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -1865,7 +1865,7 @@
     },
     {
       "event": "MCTP runtime failures",
-      "device_type": "LS10[0-3]",
+      "device_type": "NVSwitch[0-3]",
       "event_trigger": {
         "type": "DBUS",
         "object": "/xyz/openbmc_project/GpioStatusHandler",
@@ -1876,7 +1876,7 @@
       "accessor": {
         "type": "CMDLINE",
         "executable": "mctp-vdm-util-wrapper",
-        "arguments": "download_log LS10[0-3]",
+        "arguments": "download_log NVSwitch[0-3]",
         "check":{
           "bitmask": "0x00000001"
         }
@@ -1897,7 +1897,7 @@
     },
     {
       "event": "PLDM runtime failures",
-      "device_type": "LS10[0-3]",
+      "device_type": "NVSwitch[0-3]",
       "event_trigger": {
         "type": "DBUS",
         "object": "/xyz/openbmc_project/GpioStatusHandler",
@@ -1908,7 +1908,7 @@
       "accessor": {
         "type": "CMDLINE",
         "executable": "mctp-vdm-util-wrapper",
-        "arguments": "download_log LS10[0-3]",
+        "arguments": "download_log NVSwitch[0-3]",
         "check":{
           "bitmask": "0x00000001"
         }

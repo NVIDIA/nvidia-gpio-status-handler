@@ -182,8 +182,8 @@ TEST(DataAccessor, CheckLookupMctpVdmUtilWrapper)
     // which makes it just print the command line wihout calling mctp-vdm-util
     const nlohmann::json json = {
         {"type", "CMDLINE"},
-        {"executable", "mctp-vdm-util-wrapper"},
-        {"arguments", "-dry-run query_boot_status [0-7]"},
+        {"executable", "echo -c query_boot_status -t 20"},
+        {"arguments", "-dry-run query_boot_status GPU[0-7]"},
         {"check", {{"lookup", "-t 20"}}}};
 
     DataAccessor jAccessor(json);
