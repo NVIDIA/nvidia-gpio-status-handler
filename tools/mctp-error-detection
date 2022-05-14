@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+
+set -o pipefail
+
+APP_NAME="mctp-error-detection"
+APP_VER="0.1"
+
+show_help()
+{
+    echo "A wrapper for mctp-error-detection, ver=${APP_VER}."
+    echo "<usage>"
+    echo "  ${APP_NAME} [-dry-run] <dev_type>"
+    echo
+    echo "<options>"
+    echo "  -dry-run          - Only print mctp-error-detection cmdline."
+    echo
+    echo "  dev_type          - Device Types Supported: GPU, NVSwitch, PCIeSwitch"
+    echo
+}
+
+
+## MAIN
+
+DRY_RUN=0
+
+## -dry-run just prints the mctp-error-detection command line
+if [ "$1"  = "-dry-run" ]; then
+   DRY_RUN=1
+   shift
+fi
+
+if [ $# -ne 1 ]; then
+    show_help
+    exit 1
+fi
+
+cmdline="busctl call xyz.openbmc_project.GpuMgr /xyz/openbmc_project/GpuMgr xyz.openbmc_project.GpuMgr.Server PassthroughFpga iyyyau 0 0xb1 0x81 0 0"
+# Sample Output: (iau) 0 4 0 520126897 0 0
+
+if [ "$DRY_RUN" -eq 1 ]; then
+    echo $cmdline
+    return 0
+fi
+
+output=`$cmdline`;rc=$?
+[ "$rc" -eq 0 ] || return $rc
+# Cut on delimiter ' ' to get 5 index = 520126897
+output=`echo $output | cut -d ' ' -f 5`
+
+case $1 in
+
+  "GPU")
+    # Return Bits 0-7
+    bitmask=0xff
+    ;;
+
+  "NVSwitch")
+    # Return Bits 8-11
+    # Shift right by 8
+    output=$(( $output >> 8 ))
+    bitmask=0xf
+    ;;
+
+  "PCIeSwitch")
+    # Return Bit 12
+    # Shift right by 12
+    output=$(( $output >> 12 ))
+    bitmask=0x01
+    ;;
+
+  *)
+    exit -1
+    ;;
+esac
+
+echo $(( $bitmask & $output ))
+exit 0

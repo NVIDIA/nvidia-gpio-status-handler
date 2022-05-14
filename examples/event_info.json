@@ -36,31 +36,6 @@
       "value_as_count": false
     },
     {
-      "event": "Thermal Warning",
-      "device_type": "GPU[0-7]",
-      "event_trigger": {
-        "type": "DeviceCoreAPI",
-        "property": "gpu.thermal.alert"
-      },
-      "accessor": {
-        "type": "DeviceCoreAPI",
-        "property": "gpu.thermal.alert"
-      },
-      "severity": "Warning",
-      "resolution": "Increase system FAN speed",
-      "trigger_count": 0,
-      "event_counter_reset": {
-        "type": "",
-        "metadata": ""
-      },
-      "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-      },
-      "telemetries": [],
-      "action": "",
-      "value_as_count": false
-    },
-    {
       "event": "SRAM ECC uncorrectable error count",
       "device_type": "GPU[0-7]",
       "event_trigger": {},
@@ -172,259 +147,6 @@
       "value_as_count": false
     },
     {
-      "event": "Destination FLA Translation Error",
-      "device_type": "GPU[0-7]",
-      "event_trigger": {
-          "type": "DBUS",
-          "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
-          "interface": "xyz.openbmc_project.com.nvidia.Events.PendingRegister",
-          "property": "EventsPendingRegister",
-          "check": {"bitmask" : "1"}
-      },
-      "accessor": {
-        "type": "DeviceCoreAPI",
-        "property": "gpu.xid.event",
-        "check": {"lookup": "30"}
-      },
-      "severity": "Warning",
-      "resolution": "Restart application.  If the application continues to trigger the same event, investigate application changes and logs to investigate potential application problem.",
-      "trigger_count": 0,
-      "event_counter_reset": {
-        "type": "",
-        "metadata": ""
-      },
-      "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-      },
-      "telemetries": [],
-      "action": "",
-      "value_as_count": false
-    },
-    {
-      "event": "NVJPEG Error",
-      "device_type": "GPU[0-7]",
-      "event_trigger": {},
-      "accessor": {
-        "type": "DeviceCoreAPI",
-        "property": "gpu.xid.event"
-      },
-      "severity": "Warning",
-      "resolution": "Restart application.  If the application continues to trigger the same event, investigate application changes and logs to investigate potential application problem.",
-      "trigger_count": 0,
-      "event_counter_reset": {
-        "type": "",
-        "metadata": ""
-      },
-      "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-      },
-      "telemetries": [],
-      "action": "",
-      "value_as_count": false
-    },
-    {
-      "event": "OFA Error",
-      "device_type": "GPU[0-7]",
-      "event_trigger": {},
-      "accessor": {
-        "type": "DeviceCoreAPI",
-        "property": "gpu.xid.event"
-      },
-      "severity": "Warning",
-      "resolution": "Restart application.  If the application continues to trigger the same event, investigate application changes and logs to investigate potential application problem.",
-      "trigger_count": 0,
-      "event_counter_reset": {
-        "type": "",
-        "metadata": ""
-      },
-      "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-      },
-      "telemetries": [],
-      "action": "",
-      "value_as_count": false
-    },
-    {
-      "event": "Nvlink Error",
-      "device_type": "GPU[0-7]",
-      "event_trigger": {},
-      "accessor": {
-        "type": "DeviceCoreAPI",
-        "property": "nvswitch.nvlink.NVLinkState"
-      },
-      "severity": "Critical",
-      "resolution": "TBD",
-      "trigger_count": 0,
-      "event_counter_reset": {
-        "type": "",
-        "metadata": ""
-      },
-      "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-      },
-      "telemetries": [],
-      "action": "",
-      "value_as_count": false
-    },
-    {
-      "event": "PCIe link speed state change",
-      "device_type": "GPU[0-7]",
-      "event_trigger": {},
-      "accessor": {
-        "type": "DBUS",
-        "object": "TBD",
-        "interface": "TBD",
-        "property": "TBD"
-      },
-      "severity": "Critical",
-      "resolution": "Reset the GPU. If the problem affects multiple connections on the upstream PLX, consider GPU tray RMA.",
-      "trigger_count": 0,
-      "event_counter_reset": {
-        "type": "",
-        "metadata": ""
-      },
-      "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-      },
-      "telemetries": [],
-      "action": "",
-      "value_as_count": false
-    },
-    {
-      "event": "NVDEC Error",
-      "device_type": "GPU[0-7]",
-      "event_trigger": {},
-      "accessor": {
-        "type": "DeviceCoreAPI",
-        "property": "gpu.xid.event"
-      },
-      "severity": "Warning",
-      "resolution": "Likely application/software issue. Restart application.  If the application continues to trigger the same event, investigate application changes and logs to investigate potential application problem.",
-      "trigger_count": 0,
-      "event_counter_reset": {
-        "type": "",
-        "metadata": ""
-      },
-      "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-      },
-      "telemetries": [],
-      "action": "",
-      "value_as_count": false
-    },
-    {
-      "event": "Inforom Corruption",
-      "device_type": "GPU[0-7]",
-      "event_trigger": {},
-      "accessor": {
-        "type": "DeviceCoreAPI",
-        "property": "TBD"
-      },
-      "severity": "Critical",
-      "resolution": "nvflash can be used to restore deafult inforom.  Inforom corruption is generally an indication of a software failure, and should be investigated with NVIDIA.",
-      "trigger_count": 0,
-      "event_counter_reset": {
-        "type": "",
-        "metadata": ""
-      },
-      "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-      },
-      "telemetries": [],
-      "action": "",
-      "value_as_count": false
-    },
-    {
-      "event": "MMU Fault",
-      "device_type": "GPU[0-7]",
-      "event_trigger": {},
-      "accessor": {
-        "type": "DeviceCoreAPI",
-        "property": "gpu.xid.event"
-      },
-      "severity": "OK",
-      "resolution": "Restart application.  If the application continues to trigger the same event, investigate application changes and logs to investigate potential application problem.",
-      "trigger_count": 0,
-      "event_counter_reset": {
-        "type": "",
-        "metadata": ""
-      },
-      "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-      },
-      "telemetries": [],
-      "action": "",
-      "value_as_count": false
-    },
-    {
-      "event": "SM Warp Exception",
-      "device_type": "GPU[0-7]",
-      "event_trigger": {},
-      "accessor": {
-        "type": "DeviceCoreAPI",
-        "property": "gpu.xid.event"
-      },
-      "severity": "OK",
-      "resolution": "Restart application.  If the application continues to trigger the same event, investigate application changes and logs to investigate potential application problem.",
-      "trigger_count": 0,
-      "event_counter_reset": {
-        "type": "",
-        "metadata": ""
-      },
-      "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-      },
-      "telemetries": [],
-      "action": "",
-      "value_as_count": false
-    },
-    {
-      "event": "PWR BRAKE Asserted",
-      "device_type": "GPU[0-7]",
-      "event_trigger": {},
-      "accessor": {
-        "type": "DBUS",
-        "object": "TBD",
-        "interface": "TBD",
-        "property": "TBD"
-      },
-      "severity": "Warning",
-      "resolution": "Review power configuration and status",
-      "trigger_count": 0,
-      "event_counter_reset": {
-        "type": "",
-        "metadata": ""
-      },
-      "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-      },
-      "telemetries": [],
-      "action": "",
-      "value_as_count": false
-    },
-    {
-      "event": "VR Failure",
-      "device_type": "GPU[0-7]",
-      "event_trigger": {},
-      "accessor": {
-        "type": "DeviceCoreAPI",
-        "property": "TBD"
-      },
-      "severity": "Critical",
-      "resolution": "Power cycle the BaseBoard. If it does not recover the failure, it is permanant damage.",
-      "trigger_count": 0,
-      "event_counter_reset": {
-        "type": "",
-        "metadata": ""
-      },
-      "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-      },
-      "telemetries": [],
-      "action": "",
-      "value_as_count": false
-    },
-    {
       "event": "VR Failure",
       "device_type": "GPU[0-7]",
       "event_trigger": {
@@ -441,28 +163,6 @@
       },
       "severity": "Critical",
       "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation.",
-      "trigger_count": 0,
-      "event_counter_reset": {
-        "type": "",
-        "metadata": ""
-      },
-      "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-      },
-      "telemetries": [],
-      "action": "",
-      "value_as_count": false
-    },
-    {
-      "event": "Row-remapping pending",
-      "device_type": "GPU[0-7]",
-      "event_trigger": {},
-      "accessor": {
-        "type": "DeviceCoreAPI",
-        "metadata": "TBD"
-      },
-      "severity": "Warning",
-      "resolution": "No immediate recovery required. Reset the GPU at next service window.",
       "trigger_count": 0,
       "event_counter_reset": {
         "type": "",
@@ -572,28 +272,6 @@
       "value_as_count": false
     },
     {
-      "event": "EROT recovery",
-      "device_type": "GPU[0-7]",
-      "event_trigger": {},
-      "accessor": {
-        "type": "DeviceCoreAPI",
-        "metadata": "TBD"
-      },
-      "severity": "Critical",
-      "resolution": "Run recovery tools from BMC",
-      "trigger_count": 0,
-      "event_counter_reset": {
-        "type": "",
-        "metadata": ""
-      },
-      "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-      },
-      "telemetries": [],
-      "action": "",
-      "value_as_count": false
-    },
-    {
       "event": "MCTP runtime failures",
       "device_type": "GPU[0-7]",
       "event_trigger": {
@@ -605,11 +283,9 @@
       },
       "accessor": {
         "type": "CMDLINE",
-        "executable": "mctp-vdm-util-wrapper",
-        "arguments": "download_log GPU[0-7]",
-        "check":{
-          "bitmask": "0x00000001"
-        }
+        "executable": "mctp-error-detection",
+        "arguments": "GPU",
+        "check": {"bitmap": "1"}
       },
       "severity": "Critical",
       "resolution": "BaseBoard components will retry if encounters errors. If problem persists, analyze FPGA log or ERoT log.",
@@ -819,123 +495,7 @@
       "value_as_count": false
     },
     {
-      "event": "VR Fault VDD",
-      "device_type": "NVSwitch[0-3]",
-      "event_trigger": {
-        "type": "DBUS",
-        "object": "/xyz/openbmc_project/GpioStatusHandler",
-        "interface": "xyz.openbmc_project.GpioStatus",
-        "property": "I2C4_ALERT",
-        "check": {"equal": "true"}
-      },
-      "accessor": {
-        "type": "DeviceCoreAPI",
-        "property": "nvswitch.vdd.abnormalPowerChange",
-        "check": {"bitmap": "1"}
-      },
-      "severity": "Critical",
-      "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation.",
-      "trigger_count": 0,
-      "event_counter_reset": {
-        "type": "",
-        "metadata": ""
-      },
-      "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-      },
-      "telemetries": [],
-      "action": "",
-      "value_as_count": false
-    },
-    {
-      "event": "VR Fault DVDD",
-      "device_type": "NVSwitch[0-3]",
-      "event_trigger": {
-        "type": "DBUS",
-        "object": "/xyz/openbmc_project/GpioStatusHandler",
-        "interface": "xyz.openbmc_project.GpioStatus",
-        "property": "I2C4_ALERT",
-        "check": {"equal": "true"}
-      },
-      "accessor": {
-        "type": "DeviceCoreAPI",
-        "property": "nvswitch.dvdd.abnormalPowerChange",
-        "check": {"bitmap": "1"}
-      },
-      "severity": "Critical",
-      "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation.",
-      "trigger_count": 0,
-      "event_counter_reset": {
-        "type": "",
-        "metadata": ""
-      },
-      "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-      },
-      "telemetries": [],
-      "action": "",
-      "value_as_count": false
-    },
-    {
-      "event": "VR Fault HVDD",
-      "device_type": "NVSwitch[0-3]",
-      "event_trigger": {
-        "type": "DBUS",
-        "object": "/xyz/openbmc_project/GpioStatusHandler",
-        "interface": "xyz.openbmc_project.GpioStatus",
-        "property": "I2C4_ALERT",
-        "check": {"equal": "true"}
-      },
-      "accessor": {
-        "type": "DeviceCoreAPI",
-        "property": "nvswitch.hvdd.abnormalPowerChange",
-        "check": {"bitmap": "1"}
-      },
-      "severity": "Critical",
-      "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation.",
-      "trigger_count": 0,
-      "event_counter_reset": {
-        "type": "",
-        "metadata": ""
-      },
-      "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-      },
-      "telemetries": [],
-      "action": "",
-      "value_as_count": false
-    },
-    {
-      "event": "VR Fault 1.8V",
-      "device_type": "NVSwitch[0-3]",
-      "event_trigger": {
-        "type": "DBUS",
-        "object": "/xyz/openbmc_project/GpioStatusHandler",
-        "interface": "xyz.openbmc_project.GpioStatus",
-        "property": "I2C4_ALERT",
-        "check": {"equal": "true"}
-      },
-      "accessor": {
-        "type": "DeviceCoreAPI",
-        "property": "nvswitch.1V8.abnormalPowerChange",
-        "check": {"bitmap": "1"}
-      },
-      "severity": "Critical",
-      "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation.",
-      "trigger_count": 0,
-      "event_counter_reset": {
-        "type": "",
-        "metadata": ""
-      },
-      "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-      },
-      "telemetries": [],
-      "action": "",
-      "value_as_count": false
-    },
-    {
-      "event": "VR Fault Combined",
+      "event": "VR Fault",
       "device_type": "NVSwitch[0-3]",
       "event_trigger": {
         "type": "DBUS",
@@ -951,50 +511,6 @@
       },
       "severity": "Critical",
       "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation.",
-      "trigger_count": 0,
-      "event_counter_reset": {
-        "type": "",
-        "metadata": ""
-      },
-      "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-      },
-      "telemetries": [],
-      "action": "",
-      "value_as_count": false
-    },
-    {
-      "event": "Fallen off of bus",
-      "device_type": "NVSwitch[0-3]",
-      "event_trigger": {},
-      "accessor": {
-        "type": "DeviceCoreAPI",
-        "property": "TBD"
-      },
-      "severity": "Critical",
-      "resolution": "Reset of the affected device",
-      "trigger_count": 0,
-      "event_counter_reset": {
-        "type": "",
-        "metadata": ""
-      },
-      "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-      },
-      "telemetries": [],
-      "action": "",
-      "value_as_count": false
-    },
-    {
-      "event": "SMBPBI server unavailable",
-      "device_type": "NVSwitch[0-3]",
-      "event_trigger": {},
-      "accessor": {
-        "type": "DeviceCoreAPI",
-        "property": "TBD"
-      },
-      "severity": "Critical",
-      "resolution": "TBD",
       "trigger_count": 0,
       "event_counter_reset": {
         "type": "",
@@ -1072,28 +588,6 @@
       "value_as_count": false
     },
     {
-      "event": "VR fault",
-      "device_type": "NVSwitch[0-3]",
-      "event_trigger": {},
-      "accessor": {
-        "type": "DeviceCoreAPI",
-        "property": "TBD"
-      },
-      "severity": "Critical",
-      "resolution": "Needs RMA",
-      "trigger_count": 0,
-      "event_counter_reset": {
-        "type": "",
-        "metadata": ""
-      },
-      "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-      },
-      "telemetries": [],
-      "action": "",
-      "value_as_count": false
-    },
-    {
       "event": "SPI flash error",
       "device_type": "NVSwitch[0-3]",
       "event_trigger": {
@@ -1126,28 +620,6 @@
       "value_as_count": false
     },
     {
-      "event": "EROT recovery",
-      "device_type": "NVSwitch[0-3]",
-      "event_trigger": {},
-      "accessor": {
-        "type": "DeviceCoreAPI",
-        "property": "TBD"
-      },
-      "severity": "Critical",
-      "resolution": "Run recovery tools from BMC",
-      "trigger_count": 0,
-      "event_counter_reset": {
-        "type": "",
-        "metadata": ""
-      },
-      "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-      },
-      "telemetries": [],
-      "action": "",
-      "value_as_count": false
-    },
-    {
       "event": "MCTP runtime failures",
       "device_type": "NVSwitch[0-3]",
       "event_trigger": {
@@ -1159,11 +631,9 @@
       },
       "accessor": {
         "type": "CMDLINE",
-        "executable": "mctp-vdm-util-wrapper",
-        "arguments": "download_log NVSwitch[0-3]",
-        "check":{
-          "bitmask": "0x00000001"
-        }
+        "executable": "mctp-error-detection",
+        "arguments": "NVSwitch",
+        "check": {"bitmap": "1"}
       },
       "severity": "Critical",
       "resolution": "BaseBoard components will retry if encounters errors. If problem persists, analyze FPGA log or ERoT log.",
@@ -1213,6 +683,38 @@
     }
   ],
   "PCIeSwitch": [
+    {
+      "event": "SPI flash error",
+      "device_type": "PCIeSwitch",
+      "event_trigger": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/GpioStatusHandler",
+        "interface": "xyz.openbmc_project.GpioStatus",
+        "property": "I2C3_ALERT",
+        "check": { "equal": "true" }
+      },
+      "accessor": {
+        "type": "CMDLINE",
+        "executable": "mctp-vdm-util-wrapper",
+        "arguments": "AP0_SPI_READ_FAILURE PCIeSwitch",
+        "check":{
+          "equal": "1"
+        }
+      },
+      "severity": "Critical",
+      "resolution": "Cordon HGX server from the cluster for RMA evaluation.",
+      "trigger_count": 0,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+      },
+      "telemetries": [],
+      "action": "",
+      "value_as_count": false
+    },
     {
       "event": "VR Fault",
       "device_type": "PCIeSwitch",
@@ -1266,50 +768,6 @@
       },
       "redfish": {
         "message_id": "ResourceEvent.1.0.ResourceErrorThresholdExceeded"
-      },
-      "telemetries": [],
-      "action": "",
-      "value_as_count": false
-    },
-    {
-      "event": "PCIe link goes down",
-      "device_type": "PCIeSwitch",
-      "event_trigger": {},
-      "accessor": {
-        "type": "DeviceCoreAPI",
-        "property": "TBD"
-      },
-      "severity": "Critical",
-      "resolution": "1. Host CPU issues link retraining attempt 2. board reset",
-      "trigger_count": 0,
-      "event_counter_reset": {
-        "type": "",
-        "metadata": ""
-      },
-      "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-      },
-      "telemetries": [],
-      "action": "",
-      "value_as_count": false
-    },
-    {
-      "event": "Incorrect link speed",
-      "device_type": "PCIeSwitch",
-      "event_trigger": {},
-      "accessor": {
-        "type": "DeviceCoreAPI",
-        "property": "TBD"
-      },
-      "severity": "Critical",
-      "resolution": "1. Host CPU issues link retraining attempt 2. board reset",
-      "trigger_count": 0,
-      "event_counter_reset": {
-        "type": "",
-        "metadata": ""
-      },
-      "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
       },
       "telemetries": [],
       "action": "",
@@ -1380,28 +838,6 @@
       "value_as_count": false
     },
     {
-      "event": "EROT recovery",
-      "device_type": "PCIeSwitch",
-      "event_trigger": {},
-      "accessor": {
-        "type": "DeviceCoreAPI",
-        "property": "TBD"
-      },
-      "severity": "Critical",
-      "resolution": "Run recovery tools from BMC",
-      "trigger_count": 0,
-      "event_counter_reset": {
-        "type": "",
-        "metadata": ""
-      },
-      "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-      },
-      "telemetries": [],
-      "action": "",
-      "value_as_count": false
-    },
-    {
       "event": "MCTP runtime failures",
       "device_type": "PCIeSwitch",
       "event_trigger": {
@@ -1413,11 +849,9 @@
       },
       "accessor": {
         "type": "CMDLINE",
-        "executable": "mctp-vdm-util-wrapper",
-        "arguments": "download_log PCIeSwitch",
-        "check":{
-          "bitmask": "0x00000001"
-        }
+        "executable": "mctp-error-detection",
+        "arguments": "PCIeSwitch",
+        "check": {"equal": "1"}
       },
       "severity": "Critical",
       "resolution": "BaseBoard components will retry if encounters errors. If problem persists, analyze FPGA log or ERoT log.",
@@ -1490,28 +924,6 @@
       "value_as_count": false
     },
     {
-      "event": "VR Fault 1.2V",
-      "device_type": "Retimer[0-7]",
-      "event_trigger": {},
-      "accessor": {
-        "type": "DeviceCoreAPI",
-        "property": "TBD"
-      },
-      "severity": "Critical",
-      "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation",
-      "trigger_count": 0,
-      "event_counter_reset": {
-        "type": "",
-        "metadata": ""
-      },
-      "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-      },
-      "telemetries": [],
-      "action": "",
-      "value_as_count": false
-    },
-    {
       "event": "VR Fault 1.8V",
       "device_type": "Retimer[0-7]",
       "event_trigger": {},
@@ -1561,88 +973,6 @@
       "telemetries": [],
       "action": "",
       "value_as_count": false
-    },
-    {
-      "event": "I2C EEPROM Error",
-      "device_type": "Retimer[0-7]",
-      "event_trigger": {},
-      "accessor": {
-        "type": "DeviceCoreAPI",
-        "property": "TBD"
-      },
-      "severity": "Critical",
-      "resolution": "1. Device reset 2. Reflash or attest the EEPROM",
-      "trigger_count": 0,
-      "event_counter_reset": {
-        "type": "",
-        "metadata": ""
-      },
-      "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-      },
-      "telemetries": [],
-      "action": "",
-      "value_as_count": false
-    }
-  ],
-  "VR": [
-    {
-      "event": "System VR Fault SYS_3V3",
-      "device_type": "VR",
-      "event_trigger": {
-        "type": "DBUS",
-        "object": "/xyz/openbmc_project/GpioStatusHandler",
-        "interface": "xyz.openbmc_project.GpioStatus",
-        "property": "I2C4_ALERT",
-        "check": {"equal": "true"}
-      },
-      "accessor": {
-        "type": "DeviceCoreAPI",
-        "property": "sysvr3v3.power.abnormalPowerChange",
-        "check": {"bitmask": "1"}
-      },
-      "severity": "Critical",
-      "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation.",
-      "trigger_count": 0,
-      "event_counter_reset": {
-        "type": "",
-        "metadata": ""
-      },
-      "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-      },
-      "telemetries": [],
-      "action": "",
-      "value_as_count": false
-    },
-    {
-      "event": "System VR Fault SYS_1V8",
-      "device_type": "VR",
-      "event_trigger": {
-        "type": "DBUS",
-        "object": "/xyz/openbmc_project/GpioStatusHandler",
-        "interface": "xyz.openbmc_project.GpioStatus",
-        "property": "I2C4_ALERT",
-        "check": {"equal": "true"}
-      },
-      "accessor": {
-        "type": "DeviceCoreAPI",
-        "property": "sysvr1v8.power.abnormalPowerChange",
-        "check": {"bitmask": "1"}
-      },
-      "severity": "Critical",
-      "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation.",
-      "trigger_count": 0,
-      "event_counter_reset": {
-        "type": "",
-        "metadata": ""
-      },
-      "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-      },
-      "telemetries": [],
-      "action": "",
-      "value_as_count": false
     }
   ],
   "HSC": [
@@ -1677,101 +1007,6 @@
     }
   ],
   "HMC": [
-    {
-      "event": "OverTemp",
-      "device_type": "HMC",
-      "event_trigger": {
-        "type": "DBUS",
-        "object": "/xyz/openbmc_project/GpioStatusHandler",
-        "interface": "xyz.openbmc_project.GpioStatus",
-        "property": "THERM_OVERT",
-        "check": { "equal": "true" }
-      },
-      "accessor": {
-        "type": "DeviceCoreAPI",
-        "property": "TBD",
-        "check": {"bitmask": "1"}
-      },
-      "severity": "Critical",
-      "resolution": "System shutdown",
-      "trigger_count": 0,
-      "event_counter_reset": {
-        "type": "",
-        "metadata": ""
-      },
-      "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-      },
-      "telemetries": [],
-      "action": "",
-      "value_as_count": false
-    },
-    {
-      "event": "Redfish service not available",
-      "device_type": "HMC",
-      "event_trigger": {},
-      "accessor": {
-        "type": "DeviceCoreAPI",
-        "property": "TBD"
-      },
-      "severity": "Critical",
-      "resolution": "Power cycle the baseboard.",
-      "trigger_count": 0,
-      "event_counter_reset": {
-        "type": "",
-        "metadata": ""
-      },
-      "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-      },
-      "telemetries": [],
-      "action": "",
-      "value_as_count": false
-    },
-    {
-      "event": "USB network not accessible",
-      "device_type": "HMC",
-      "event_trigger": {},
-      "accessor": {
-        "type": "DeviceCoreAPI",
-        "property": "TBD"
-      },
-      "severity": "Critical",
-      "resolution": "Power cycle the baseboard.",
-      "trigger_count": 0,
-      "event_counter_reset": {
-        "type": "",
-        "metadata": ""
-      },
-      "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-      },
-      "telemetries": [],
-      "action": "",
-      "value_as_count": false
-    },
-    {
-      "event": "USB connection not available",
-      "device_type": "HMC",
-      "event_trigger": {},
-      "accessor": {
-        "type": "DeviceCoreAPI",
-        "property": "TBD"
-      },
-      "severity": "Critical",
-      "resolution": "Power cycle the baseboard.",
-      "trigger_count": 0,
-      "event_counter_reset": {
-        "type": "",
-        "metadata": ""
-      },
-      "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-      },
-      "telemetries": [],
-      "action": "",
-      "value_as_count": false
-    },
     {
       "event": "PLDM runtime failures",
       "device_type": "HMC",
