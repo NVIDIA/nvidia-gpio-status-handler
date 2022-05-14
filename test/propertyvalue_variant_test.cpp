@@ -69,7 +69,7 @@ TEST(PropertyValue, Bitmask32Bits)
     EXPECT_EQ(prop.getInt64(), 0x1001);
     EXPECT_EQ(prop.bitmask(0x01), true);   // bit 0
     EXPECT_EQ(prop.bitmask(0x1000), true); // bit 12
-    EXPECT_EQ(prop.bitmask(0x03), false);  // bits 1 and 2
+    EXPECT_NE(prop.bitmask(0x02), true);   // bit 2 not set
 }
 
 TEST(PropertyValue, Bitmask64Bits)
@@ -80,7 +80,7 @@ TEST(PropertyValue, Bitmask64Bits)
     EXPECT_EQ(prop.getInt64(), 0x100001);
     EXPECT_EQ(prop.bitmask(0x01), true);     // bit 0
     EXPECT_EQ(prop.bitmask(0x100000), true); // bit 20
-    EXPECT_EQ(prop.bitmask(0x03), false);    // bits 1 and 2
+    EXPECT_EQ(prop.bitmask(0x02), false);    // bit 2 not set
 }
 
 TEST(PropertyValue, Bitmask2Properties)
@@ -98,9 +98,9 @@ TEST(PropertyValue, Bitmask2Properties)
     PropertyValue propBit20{variantBit20};
     EXPECT_EQ(prop.bitmask(propBit20), true);
 
-    PropertyVariant variantBit3 = 0x3;
-    PropertyValue propBit3{variantBit3};
-    EXPECT_EQ(prop.bitmask(propBit3), false);
+    PropertyVariant variantBit2 = 0x2;
+    PropertyValue propBit2{variantBit2};
+    EXPECT_EQ(prop.bitmask(propBit2), false);
 }
 
 TEST(PropertyValue, CheckNegativeBitmaskEmptyPropertyValue)

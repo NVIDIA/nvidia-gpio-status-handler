@@ -25,8 +25,10 @@ using PropertyVariant =
 using CheckDefinitionMap = std::map<std::string, std::string>;
 
 constexpr auto bitmaskKey = "bitmask";
+constexpr auto bitmapKey = "bitmap";
 constexpr auto lookupKey = "lookup";
 constexpr auto equalKey = "equal";
+constexpr auto notEqualKey = "not_equal";
 
 /**
  * @brief Variant2String
@@ -145,6 +147,7 @@ class PropertyValueDataHelper
             data->strValue = std::get<std::string>(varVar);
             data->value64 = 0;
             data->valid = false;
+            return true;
         }
         return false;
     }

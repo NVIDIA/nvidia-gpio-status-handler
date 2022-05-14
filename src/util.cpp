@@ -64,6 +64,33 @@ bool existsRange(const std::string& str)
     return ret;
 }
 
+std::string removeRange(const std::string& str)
+{
+    std::string ret{str};
+    if (str.empty() == false)
+    {
+        std::string matched = matchedRegx(ret, RANGE_REGX_STR);
+        auto pos = std::string::npos;
+        if (matched.empty() == true)
+        {
+            matched = matchedRegx(ret, DEVICE_RANGE_REGX);
+            if (matched.empty() == false)
+            {
+                pos = ret.find_last_of(matched);
+            }
+        }
+        else
+        {
+            pos = ret.find(matched);
+        }
+        if (pos != std::string::npos)
+        {
+            ret.erase(pos, matched.size());
+        }
+    }
+    return ret;
+}
+
 int getDeviceId(const std::string& deviceName, const std::string& range)
 {
     std::string validRange{range};
@@ -152,9 +179,21 @@ std::string replaceRangeByMatchedValue(const std::string& regxValue,
                 {
                     auto rangeStr = std::get<std::string>(info);
                     auto rangePosition = regxValue.find(rangeStr);
-                    newString.replace(rangePosition, rangeStr.size(),
-                                      matchedValue);
-                    break;
+                    if (rangePosition != std::string::npos)
+                    {
+                        if (rangePosition == 0 ||
+                                regxValue.at(rangePosition -1) == ' ')
+                        {
+                            newString.replace(rangePosition, rangeStr.size(),
+                                              matchedValue);
+                        }
+                        else
+                        {
+                            newString.replace(rangePosition, rangeStr.size(),
+                                              rangeDigit);
+                        }
+                        break;
+                    }
                 }
             }
         }
@@ -207,6 +246,40 @@ void printThreadId(const char* funcName)
 {
     std::thread::id this_id = std::this_thread::get_id();
     std::cout << funcName << " thread id: " << this_id << std::endl;
+}
+
+/**
+ * @brief Determine device name from DBus object path.
+ *
+ * @param objPath
+ * @param devType
+ * @return std::string
+ */
+std::string determineDeviceName(const std::string& objPath,
+                                const std::string& devType)
+{
+    std::string name{objPath};
+    if (objPath.empty() == false && devType.empty() == false)
+    {
+        // device_type sometimes has range, remove it if that exists
+        auto deviceType = util::removeRange(devType);
+        const std::regex r{".*(" + deviceType + "[0-9]+).*"}; // TODO: fixme
+        std::smatch m;
+
+        if (std::regex_search(objPath.begin(), objPath.end(), m, r))
+        {
+            name = m[1]; // the 2nd field is the matched substring.
+        }
+        else
+        {
+           // name =  expandDeviceRange(devType)[0];
+        }
+    }
+#ifdef ENABLE_LOGS
+        std::cout << "determineDeviceName() objPath"  << objPath <<
+                     " devType:" << devType << " Devname: " << name << "\n.";
+#endif
+    return name;
 }
 
 } // namespace util

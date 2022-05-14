@@ -192,7 +192,7 @@ class DataAccessor
      */
     bool check(const DataAccessor& otherAcc,
                const PropertyVariant& redefCriteria = PropertyVariant(),
-               const std::string& device = std::string{""}) const;
+               const std::string& deviceType = std::string{""}) const;
 
     /**
      * @brief [overloaded] with inverted order of device and redefCriteria
@@ -216,22 +216,6 @@ class DataAccessor
      *                           empty device
      */
     bool check() const;
-
-    /**
-     * @brief performs a @sa check() against thisData and against other
-     *
-     *        This is usually a 'event trigger' Accessor
-     *
-     * @param accData  Accessor which was created when Propety has changed
-     *
-     * @param other     Accessor which will check iself in device loop
-     *
-     * @param eventType The device type which is used to expand device names
-     *
-     * @return a list of device names that check matches
-     */
-    bool check(const DataAccessor& accData, const DataAccessor& other,
-               const std::string& eventType);
 
     /**
      * @brief Access accessor just like do it on json
@@ -289,12 +273,12 @@ class DataAccessor
     }
 
     /**
-     * @brief checks if _acc["check"]["bitmask"] exists
+     * @brief checks if _acc["check"]["bitmap"] exists
      * @return true if that exists, otherwise false
      */
-    bool existsCheckBitmask() const
+    bool existsCheckBitmap() const
     {
-        return existsCheckKey() && _acc[checkKey].count(bitmaskKey) != 0;
+        return existsCheckKey() && _acc[checkKey].count(bitmapKey) != 0;
     }
 
     /**
@@ -362,6 +346,33 @@ class DataAccessor
     inline util::DeviceIdMap getAssertedDeviceNames() const
     {
         return _latestAssertedDevices;
+    }
+
+    /**
+     * @brief just a part of the @sa check() logic, it intends for testing
+     *        It should be when  otherAcc already has data (after @sa read())
+     *
+     * @param accData
+     * @param other
+     * @param eventType
+     * @return
+     */
+    bool subCheck(const DataAccessor& otherAcc,
+                  const PropertyVariant& redefCriteria,
+                  const std::string& range, const std::string& dev2Read) const;
+
+    /**
+     * @brief helper function to get the Dbus Object Path
+     * @return
+     */
+    std::string getDbusObjectPath() const
+    {
+        std::string ret{""};
+        if (isValidDbusAccessor() == true)
+        {
+            ret = _acc[objectKey].get<std::string>();
+        }
+        return ret;
     }
 
   private:
@@ -537,6 +548,18 @@ class DataAccessor
      */
     std::string findDeviceName(const DataAccessor& other,
                                const std::string& device) const;
+
+    /**
+     * @brief creates fills the _latestAssertedDevices from accData
+     *               with a single deviceName
+     *
+     * @param accData     the DataAcessor to fill
+     * @param realDevice  the device name
+     * @param devType     the device type which can contain range specification
+     */
+    void buildSingleAssertedDeviceName(DataAccessor& accData,
+                                       const std::string& realDevice,
+                                       const std::string& devType) const;
 
   private:
     /**

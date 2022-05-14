@@ -41,6 +41,8 @@ bool existsRange(const std::string& str);
 std::tuple<std::vector<int>, std::string>
     getMinMaxRange(const std::string& rgx);
 
+std::string removeRange(const std::string& str);
+
 /**
  * @brief checks if name is not empty and it is not regular expression
  * @param name   an object path such as /xyz/path/deviceName
@@ -88,4 +90,13 @@ DeviceIdMap expandDeviceRange(const std::string& deviceRegx);
 std::string replaceRangeByMatchedValue(const std::string& regxValue,
                                        const std::string& matchedValue);
 
+/**
+ * @brief determine device name from DBus object path.
+ *
+ * @param objPath
+ * @param devType
+ * @return std::string
+ */
+std::string determineDeviceName(const std::string& objPath,
+                                const std::string& devType);
 } // namespace util

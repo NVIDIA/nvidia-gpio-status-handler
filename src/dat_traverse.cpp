@@ -234,6 +234,12 @@ void DATTraverse::parentTraverse(
         return;
     }
 
+    if (dat.count(device) == 0)
+    {
+        std::cerr << __PRETTY_FUNCTION__ << " device:" << device <<
+                  " not found in dat.json" << std::endl;
+        return;
+    }
     dat_traverse::Device& dev = dat.at(device);
 
     dat_traverse::Status status;

@@ -56,54 +56,24 @@ bool DataAccessor::contains(const DataAccessor& other) const
 
 bool DataAccessor::check(const DataAccessor& otherAcc,
                          const PropertyVariant& redefCriteria,
-                         const std::string& device) const
+                         const std::string& deviceType) const
 {
     bool ret = true; // defaults to true if accessor["check"] does not exist
+    std::string deviceToRead = findDeviceName(otherAcc, deviceType);
+    DataAccessor& accNonConst = const_cast<DataAccessor&>(otherAcc);
     if (existsCheckKey() == true)
     {
-        bool deviceHasRange = util::existsRange(device);
-        std::string deviceToRead = findDeviceName(otherAcc, device);
-        DataAccessor& accNonConst = const_cast<DataAccessor&>(otherAcc);
+        accNonConst._latestAssertedDevices.clear();
         accNonConst.read(deviceToRead);
         if ((ret = accNonConst.hasData()) == true)
         {
-            auto checkMap = _acc[checkKey].get<CheckDefinitionMap>();
-            /**
-             * special logic for bitmask
-             * --------------------------
-             *   bitmask should match for deviceId present in either:
-             *    1. deviceToRead and there is no regex in device
-             *    2. device is regex, i.e, comes from 'event.device_type'
-             */
-            bool hasDevice = deviceHasRange || deviceToRead.empty() == false;
-            bool bitM = existsCheckBitmask();
-            bool bitmaskNoRedefined = redefCriteria.index() == 0;
-            if (hasDevice == true && bitM == true && bitmaskNoRedefined == true)
-            {
-                ret = false; // set to false
-                util::DeviceIdMap devices =
-                    (deviceHasRange == true)
-                        ? util::expandDeviceRange(device)
-                        : util::expandDeviceRange(deviceToRead);
-                // now walk thuru devices
-                for (auto& deviceItem : devices)
-                {
-                    auto devId = deviceItem.first;
-                    PropertyVariant bitmask(uint64_t(1 << devId));
-                    if (otherAcc._dataValue->check(checkMap, bitmask) == true)
-                    {
-                        const auto& deviceName = deviceItem.second;
-                        ret = true; // true if at least one device
-                        accNonConst._latestAssertedDevices[devId] = deviceName;
-                    }
-                }
-            }
-            else // common case
-            {
-                ret = otherAcc._dataValue->check(checkMap, redefCriteria);
-            }
+            ret = subCheck(otherAcc, redefCriteria, deviceType, deviceToRead);
         }
     } // existsCheckKey() == true
+    if (ret == true && accNonConst._latestAssertedDevices.empty() == true)
+    {
+        buildSingleAssertedDeviceName(accNonConst, deviceToRead, deviceType);
+    }
     return ret;
 }
 
@@ -131,23 +101,55 @@ bool DataAccessor::check() const
     return check(*this, PropertyVariant(), std::string{""});
 }
 
-bool DataAccessor::check(const DataAccessor& accData, const DataAccessor& other,
-                         const std::string& eventType)
+bool DataAccessor::subCheck(const DataAccessor& otherAcc,
+                            const PropertyVariant& redefCriteria,
+                            const std::string& deviceType,
+                            const std::string& dev2Read = std::string{""}) const
 {
-    bool ret = check(accData, eventType); // first event_trigger check
-    if (ret == true && other.existsCheckKey() == true)
+    bool ret = false;
+    DataAccessor& accNonConst = const_cast<DataAccessor&>(otherAcc);
+    auto checkMap = _acc[checkKey].get<CheckDefinitionMap>();
+    /**
+     * special logic for bitmask
+     * --------------------------
+     *   bitmask should match for deviceId present in either:
+     *    1. deviceToRead and there is no regex in device
+     *    2. device is regex, i.e, comes from 'event.device_type'
+     */
+    bool deviceHasRange = util::existsRange(deviceType);
+    PropertyValue bitmapValue; // index is zero
+    if (existsCheckBitmap() == true)
     {
-        ret = other.check(eventType);
+        bitmapValue =
+            redefCriteria.index() != 0 // valid index
+                ? PropertyValue(redefCriteria)
+                : PropertyValue(_acc[checkKey][bitmapKey].get<std::string>());
+    }
+    if (bitmapValue.isValid() == true)
+    {
+        util::DeviceIdMap devices = (deviceHasRange == true)
+                                        ? util::expandDeviceRange(deviceType)
+                                        : util::expandDeviceRange(dev2Read);
+        // now walk thuru devices
+        for (auto& deviceItem : devices)
+        {
+            auto devId = deviceItem.first;
+            PropertyVariant bitmask(bitmapValue.getInt64() << devId);
+            if (otherAcc._dataValue->check(checkMap, bitmask) == true)
+            {
+                const auto& deviceName = deviceItem.second;
+                ret = true; // true if at least one device
+                accNonConst._latestAssertedDevices[devId] = deviceName;
+            }
+        }
+    }
+    else // common case
+    {
+        ret = otherAcc._dataValue->check(checkMap, redefCriteria);
         if (ret == true)
         {
-            auto latestCheckedDevices = other._latestAssertedDevices;
-            if (latestCheckedDevices.empty() == false)
-            {
-                DataAccessor& accNonConst = const_cast<DataAccessor&>(accData);
-                DataAccessor& otherNonConst = const_cast<DataAccessor&>(other);
-                otherNonConst._latestAssertedDevices.clear();
-                accNonConst._latestAssertedDevices = latestCheckedDevices;
-            }
+            // it allows using subCheck() in UT
+            buildSingleAssertedDeviceName(accNonConst, dev2Read, deviceType);
         }
     }
     return ret;
@@ -196,6 +198,7 @@ bool DataAccessor::runCommandLine(const std::string& device)
                   << "cmd: " << cmd << std::endl;
 #endif
         std::string result{""};
+        uint64_t processExitCode = 0;
         try
         {
             std::string line{""};
@@ -208,6 +211,7 @@ bool DataAccessor::runCommandLine(const std::string& device)
                 result += line;
             }
             process.wait();
+            processExitCode = static_cast<uint64_t>(process.exit_code());
         }
         catch (const std::exception& error)
         {
@@ -219,8 +223,9 @@ bool DataAccessor::runCommandLine(const std::string& device)
         // ok lets store the output
         if (ret == true)
         {
-            _dataValue =
-                std::make_shared<PropertyValue>(PropertyString(result));
+
+            _dataValue = std::make_shared<PropertyValue>(
+                PropertyValue(result, processExitCode));
         }
     }
     return ret;
@@ -274,6 +279,20 @@ std::string DataAccessor::findDeviceName(const DataAccessor& other,
         deviceName = util::getDeviceName(_acc[objectKey].get<std::string>());
     }
     return deviceName;
+}
+
+void
+DataAccessor::buildSingleAssertedDeviceName(DataAccessor& accData,
+                                             const std::string& realDevice,
+                                             const std::string& devType)const
+{
+    auto deviceName = util::determineDeviceName(realDevice, devType);
+    if (deviceName.empty() == false)
+    {
+        util::DeviceIdMap map;
+        map[0] = deviceName;
+        accData._latestAssertedDevices = map;
+    }
 }
 
 } // namespace data_accessor

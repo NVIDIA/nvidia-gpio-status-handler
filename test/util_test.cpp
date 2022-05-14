@@ -18,6 +18,16 @@ TEST(Util, GetDeviceId)
     EXPECT_EQ(getDeviceId("GPU9", "GPU[0-7]"), -1);
 }
 
+TEST(Util, RemoveRange)
+{
+    EXPECT_EQ(removeRange("LS101"), std::string{"LS10"});
+    EXPECT_EQ(removeRange("GPU5"), std::string{"GPU"});
+    EXPECT_EQ(removeRange("GPU[0-3]"), std::string{"GPU"});
+    EXPECT_EQ(removeRange("GPU6-ERoT"), std::string{"GPU-ERoT"});
+    EXPECT_EQ(removeRange("GPU[1-6]-ERoT"), std::string{"GPU-ERoT"});
+    EXPECT_EQ(removeRange("PCIeSwitch"), std::string{"PCIeSwitch"});
+}
+
 TEST(UtilExpandDeviceRange, OnlyRange)
 {
     auto devMap = expandDeviceRange("[0-1]");
@@ -36,6 +46,19 @@ TEST(UtilExpandDeviceRange, RangeAtEnd)
     EXPECT_EQ(devMap.count(1), 1);
     EXPECT_EQ(devMap.at(0), "begin0");
     EXPECT_EQ(devMap.at(1), "begin1");
+}
+
+TEST(UtilExpandDeviceRange, LS10)
+{
+    auto devMap = expandDeviceRange("LS10[0-3]");
+    EXPECT_EQ(devMap.size(), 4);
+    EXPECT_EQ(devMap.count(0), 1);
+    EXPECT_EQ(devMap.count(1), 1);
+    EXPECT_EQ(devMap.count(2), 1);
+    EXPECT_EQ(devMap.at(0), "LS100");
+    EXPECT_EQ(devMap.at(1), "LS101");
+    EXPECT_EQ(devMap.at(2), "LS102");
+    EXPECT_EQ(devMap.at(3), "LS103");
 }
 
 TEST(UtilExpandDeviceRange, RangeAtBeginning)
@@ -80,7 +103,7 @@ TEST(UtilExpandDeviceRange, Empty)
     EXPECT_EQ(devMap.size(), 0);
 }
 
-TEST(UtilreplaceRangeByMatchedValue, IsolatedRangeMathedAtEnd)
+TEST(UtilreplaceRangeByMatchedValue, IsolatedRangeAtEnd)
 {
     auto ret = replaceRangeByMatchedValue("begin [0-7]", "GPU6");
     EXPECT_EQ(ret, "begin GPU6");
@@ -104,4 +127,10 @@ TEST(UtilreplaceRangeByMatchedValue, IsolatedRangeMathedAtEnd)
     EXPECT_EQ(ret, "begin [2-7]");
     ret = replaceRangeByMatchedValue("begin [2-7]", "GPU1");
     EXPECT_EQ(ret, "begin [2-7]");
+}
+
+TEST(UtilreplaceRangeByMatchedValue, DeviceRange)
+{
+    auto ret = replaceRangeByMatchedValue("GPU[0-7]", "GPU6");
+    EXPECT_EQ(ret, "GPU6");
 }

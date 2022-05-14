@@ -80,7 +80,7 @@ bool PropertyValue::check(const CheckDefinitionMap& map,
     for (auto& accessorCheck : map)
     {
         auto& key = accessorCheck.first;
-        if (key == bitmaskKey)
+        if (key == bitmaskKey || key == bitmapKey)
         {
             ret = bitmask(criteria::getValueFromCriteria(redefCriteria,
                                                          accessorCheck.second));
@@ -96,6 +96,12 @@ bool PropertyValue::check(const CheckDefinitionMap& map,
                                                          accessorCheck.second);
             ret = value._data.strValue == _data.strValue;
         }
+        else if (key == notEqualKey)
+        {
+            auto value = criteria::getStringFromCriteria(redefCriteria,
+                                                         accessorCheck.second);
+            ret = value._data.strValue != _data.strValue;
+        }
         if (ret == false)
         {
             // perhaps there will be more pairs in the future
@@ -107,7 +113,13 @@ bool PropertyValue::check(const CheckDefinitionMap& map,
 
 bool PropertyValue::bitmask(const uint64_t mask) const
 {
-    return isValid() == true && (_data.value64 & mask) == mask;
+    bool ret = isValid();
+    if (ret == true)
+    {
+        uint64_t result = _data.value64 & mask;
+        ret = (result == mask);
+    }
+    return ret;
 }
 
 bool PropertyValue::bitmask(const PropertyValue& otherMask) const

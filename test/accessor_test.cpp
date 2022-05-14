@@ -176,21 +176,6 @@ TEST(DataAccessor, CheckNegativeLookupForDeviceName)
     EXPECT_NE(jAccessor.check(device, redefineLookup), true);
 }
 
-TEST(DataAccessor, CheckLookupMctpVdmUtilWrapper)
-{
-    // the wrapper contains the option -dry-run
-    // which makes it just print the command line wihout calling mctp-vdm-util
-    const nlohmann::json json = {
-        {"type", "CMDLINE"},
-        {"executable", "echo -c query_boot_status -t 20"},
-        {"arguments", "-dry-run query_boot_status GPU[0-7]"},
-        {"check", {{"lookup", "-t 20"}}}};
-
-    DataAccessor jAccessor(json);
-    const std::string device{"GPU5"};
-    EXPECT_EQ(jAccessor.check(device), true);
-}
-
 TEST(DataAccessor, EqualPositiveRegexAgainstNoRegex)
 {
     const nlohmann::json jsonFile = {
@@ -406,7 +391,7 @@ TEST(DataAccessor, EventTriggerForOverTemperature)
     const nlohmann::json accessor = {
         {"type", "DeviceCoreAPI"},
         {"property", "gpu.thermal.temperature.overTemperatureInfo"},
-        {"check", {{"bitmask", "1"}}}};
+        {"check", {{"bitmap", "1"}}}};
 
     DataAccessor triggerAccessor{eventTrigger};
     DataAccessor accessorAccessor{accessor};
@@ -416,7 +401,7 @@ TEST(DataAccessor, EventTriggerForOverTemperature)
                                     "GPU[0-7]");
     EXPECT_EQ(ok, true);
 
-    auto devices = dataForEventTrigger.getLatestCheckedDeviceNames();
+    auto devices = dataForEventTrigger.getAssertedDeviceNames();
     EXPECT_EQ(devices.empty(), false);
 }
 
@@ -427,7 +412,7 @@ TEST(DataAccessor, EventTriggerForDestinationFlaTranslationError)
         {"object", "/xyz/openbmc_project/inventory/system/chassis/GPU0"},
         {"interface", "xyz.openbmc_project.com.nvidia.Events.PendingRegister"},
         {"property", "EventsPendingRegister"},
-        {"check", {{"bitmask", "1"}}}};
+        {"check", {{"bitmask", "4"}}}};
 
     const nlohmann::json accessor = {{"type", "DeviceCoreAPI"},
                                      {"property", "gpu.xid.event"},
@@ -436,17 +421,93 @@ TEST(DataAccessor, EventTriggerForDestinationFlaTranslationError)
     DataAccessor triggerAccessor{eventTrigger};
     DataAccessor accessorAccessor{accessor};
 
-    // 0x0c = 12 decimal which  matches GPU2 and GPU3
-    const int gpu2id = 2;
-    const int gpu3id = 3;
-    DataAccessor dataForEventTrigger(PropertyVariant(uint64_t(0x0c)));
+    const std::string deviceType{"GPUDRAM[0-7]"};
+    DataAccessor dataForEventTrigger(PropertyVariant(uint64_t(0x04)));
 
-    auto ok = triggerAccessor.check(dataForEventTrigger, accessorAccessor,
-                                    "GPU[0-7]");
+    auto ok = triggerAccessor.check(dataForEventTrigger, deviceType);
     EXPECT_EQ(ok, true);
-    auto devices = dataForEventTrigger.getLatestCheckedDeviceNames();
-    EXPECT_EQ(devices.size(), 2);
-    EXPECT_EQ(devices.count(gpu2id), 1);
-    EXPECT_EQ(devices.count(gpu3id), 1);
+
+    ok = accessorAccessor.check(deviceType);
+    EXPECT_EQ(ok, true);
+
+    auto devices = dataForEventTrigger.getAssertedDeviceNames();
+    if (devices.empty() == true)
+    {
+        devices = dataForEventTrigger.getAssertedDeviceNames();
+    }
+    EXPECT_EQ(devices.size(), 1);
+    EXPECT_EQ(devices.count(0), 1);
+    EXPECT_EQ(devices[0], "GPU0");
 }
 #endif
+
+TEST(DataAccessor, BitmaskWithValueTwo)
+{
+    const nlohmann::json eventTrigger = {
+        {"type", "DBUS"},
+        {"object", "/xyz/openbmc_project/inventory/system/chassis/GPU0"},
+        {"interface", "xyz.openbmc_project.com.nvidia.Events.PendingRegister"},
+        {"property", "EventsPendingRegister"},
+        {"check", {{"bitmask", "2"}}}};
+
+    DataAccessor accessorValue2(eventTrigger);
+    DataAccessor accessorData(PropertyVariant(uint64_t(0x02)));
+
+    const PropertyVariant invalid;
+    const std::string deviceType{"GPUDRAM[0-7]"};
+    bool ok =
+        accessorValue2.subCheck(accessorData, invalid, deviceType, "GPU0");
+    EXPECT_EQ(ok, true);
+    auto devices = accessorData.getAssertedDeviceNames();
+    if (devices.empty() == false)
+    {
+        EXPECT_EQ(devices.size(), 1);
+        const int gpu0id = 0;
+        EXPECT_EQ(devices.count(gpu0id), 1);
+        EXPECT_EQ(devices[0], "GPU0");
+    }
+    else
+    {
+        auto deviceName = util::determineDeviceName("GPU0", "GPUDRAM[0-7]");
+        EXPECT_EQ(deviceName, "GPU0");
+    }
+}
+
+TEST(DataAccessor,  BitmapWithoutRangeInDeviceType)
+{
+    const nlohmann::json triggerJson = {
+        {"type", "DBUS"},
+        {"object", "/xyz/openbmc_project/GpioStatusHandler"},
+        {"interface", "xyz.openbmc_project.GpioStatus"},
+        {"property", "I2C4_ALERT"},
+        {"check", {{"equal", "true"}}}};
+
+    const std::string deviceType{"PCIeSwitch"};
+
+    DataAccessor triggerAccessor(triggerJson);
+    DataAccessor dataTriggerAccessor(PropertyVariant(std::string{"true"}));
+
+    const nlohmann::json jsonAccessor = {
+        {"type", "DeviceCoreAPI"},
+        {"property", "pcieswitch.0V8.abnormalPowerChange"},
+        {"check", {{"bitmap", "1"}}}};
+
+    DataAccessor accessorFromJson(jsonAccessor);
+    DataAccessor dataAccessorAccessor(PropertyVariant(uint64_t(0x01)));
+
+    auto ok = triggerAccessor.check(dataTriggerAccessor, deviceType);
+    EXPECT_EQ(ok, true);
+
+    ok = accessorFromJson.subCheck(dataAccessorAccessor, PropertyVariant(),
+                                   deviceType, deviceType);
+    EXPECT_EQ(ok, true);
+
+    auto devices = dataTriggerAccessor.getAssertedDeviceNames();
+    if (devices.empty() == true)
+    {
+        devices = dataAccessorAccessor.getAssertedDeviceNames();
+    }
+    EXPECT_EQ(devices.size(), 1);
+    EXPECT_EQ(devices.count(0), 1);
+    EXPECT_EQ(devices[0], "PCIeSwitch");
+}

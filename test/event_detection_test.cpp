@@ -116,9 +116,9 @@ TEST(EventLookupTest, TriggerAccessor)
     j5["type"] = "DBUS";
     data_accessor::DataAccessor accessorNil(j5);
 
-    EXPECT_NE(eventDetection.LookupEventFrom(accessor), nullptr);
-    EXPECT_NE(eventDetection.LookupEventFrom(accessorTrigger), nullptr);
-    EXPECT_EQ(eventDetection.LookupEventFrom(accessorNil), nullptr);
+    EXPECT_NE(eventDetection.LookupEventFrom(accessor).empty(), true);
+    EXPECT_NE(eventDetection.LookupEventFrom(accessorTrigger).empty(), true);
+    EXPECT_EQ(eventDetection.LookupEventFrom(accessorNil).empty(), true);
 }
 
 TEST(EventDetectionTest, TID_1_triggers_instantly)

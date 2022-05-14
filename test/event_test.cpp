@@ -3,6 +3,7 @@
 #include "event_info.hpp"
 #include "message_composer.hpp"
 #include "nlohmann/json.hpp"
+#include "util.hpp"
 
 #include "gmock/gmock.h"
 
@@ -59,8 +60,7 @@ TEST(DevNameTest, MakeCall)
 {
     auto objPath = "/xyz/openbmc_project/inventory/system/chassis/GPU12";
     auto devType = "GPU";
-    auto name =
-        event_detection::EventDetection::DetermineDeviceName(objPath, devType);
+    auto name = util::determineDeviceName(objPath, devType);
     EXPECT_EQ(name, "GPU12");
 }
 

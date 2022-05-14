@@ -99,44 +99,48 @@ void EventDetection::dbusEventHandlerCallback(sdbusplus::message::message& msg)
         j[data_accessor::accessorTypeKeys[type][1]] = msgInterface;
         j[data_accessor::accessorTypeKeys[type][2]] = eventProperty;
         data_accessor::DataAccessor accessor(j);
-        auto candidate = eventDetectionPtr->LookupEventFrom(accessor);
-        if (candidate == nullptr)
+        auto eventsList = eventDetectionPtr->LookupEventFrom(accessor);
+        if (eventsList.empty() == true)
         {
 #ifdef ENABLE_LOGS
             std::cout << "No event found in the supporting list.\n";
 #endif
             continue;
         }
-        auto assertedDeviceNames = accessor.getAssertedDeviceNames();
-        if (assertedDeviceNames.empty() == true)
+        for (auto candidate : eventsList)
         {
-            // just use deviceId 0
-            assertedDeviceNames[0] =
-                DetermineDeviceName(objectPath, candidate->deviceType);
-        }
-        event_info::EventNode event = *candidate;
-        int eventValue = invalidIntParam;
-        if (candidate->valueAsCount)
-        {
-#ifdef ENABLE_LOGS
-            std::cout << "event value for event " << candidate->event << ": "
-                      << *variant << "\n";
-#endif
-            eventValue = int(*variant);
-        }
-        for (const auto& device : assertedDeviceNames)
-        {
-            event.device = device.second;
-#ifdef ENABLE_LOGS
-            std::cout << __func__ << "device: " << event.device
-                      << " Throw out an eventHdlrMgr.\n";
-#endif
-            if (eventDetectionPtr->IsEvent(*candidate, eventValue))
+            event_info::EventNode& event = candidate;
+            int eventValue = invalidIntParam;
+            if (candidate.valueAsCount)
             {
-                eventDetectionPtr->RunEventHandlers(event);
+                eventValue = int(*variant);
+            }
+            // this is the case when the "check" operation is not 'bitmap'
+            //   that means, the check does not loop over device range
+            if (candidate.assertedDeviceNames.empty() == true)
+            {
+                std::cerr << __FILE__ << ":" << __LINE__ << " event: " <<
+                          event.event << " no assertedDeviceNames, exiting..."
+                          << std::endl;
+                continue;
+            }
+            // now loop thru candidate.assertedDeviceNames
+            for (const auto& device : candidate.assertedDeviceNames)
+            {
+                event.device = device.second;
+#ifdef ENABLE_LOGS
+                std::cout << __FILE__ << ":" << __LINE__
+                          << " Throw out an eventHdlrMgr."
+                          << " device: " << event.device
+                          << " event: " << event.event << std::endl;
+#endif
+                if (eventDetectionPtr->IsEvent(candidate, eventValue))
+                {
+                    eventDetectionPtr->RunEventHandlers(event);
+                }
             }
         }
-    }
+    } // end for (auto& pc : propertiesChanged)
 }
 
 DbusEventHandlerList EventDetection::startEventDetection(

@@ -62,14 +62,17 @@ class EventDetection : public object::Object
                             std::shared_ptr<sdbusplus::asio::connection> conn);
 
     /**
-     * @brief Lookup EventNode per the accessor info
+     * @brief Lookup EventNode per the accessor info, which list all the
+     *       asserted EventNode per device instance.
      *
      * @param acc
      * @return event_info::EventNode*
      */
-    event_info::EventNode*
+
+    std::vector<event_info::EventNode>
         LookupEventFrom(const data_accessor::DataAccessor& acc)
     {
+        std::vector<event_info::EventNode> eventList;
         for (auto& eventPerDevType : *this->_eventMap)
         {
             for (auto& event : eventPerDevType.second)
@@ -88,19 +91,50 @@ class EventDetection : public object::Object
                  */
                 if (event.trigger.isEmpty() == false && event.trigger == acc)
                 {
-                    bool ret = event.trigger.check(acc, event.accessor,
-                                                   event.deviceType);
-                    return (ret == true) ? &event : nullptr;
+                    if (event.trigger.check(acc, event.deviceType) == true)
+                    {
+                        if (event.accessor.check(event.deviceType) == true)
+                        {
+                            /**
+                             * the assertedDeviceNames can be in either
+                             * event.accessor (most of the times)
+                             * or in acc which is the DBUS accessor
+                             */
+                            event.assertedDeviceNames =
+                                event.accessor.getAssertedDeviceNames();
+                            if (event.assertedDeviceNames.empty() == true)
+                            {
+                                event.assertedDeviceNames =
+                                    acc.getAssertedDeviceNames();
+                            }
+                            eventList.push_back(event);
+                            continue;
+                        }
+                    }
                 }
-
-                if (event.accessor == acc)
+                else if (event.accessor == acc)
                 {
-                    bool ret = event.accessor.check(acc, event.deviceType);
-                    return (ret == true) ? &event : nullptr;
+                    if (event.accessor.check(acc, event.deviceType) == true)
+                    {
+                        // DataAccessorDBUS property change contains devices
+                        event.assertedDeviceNames =
+                            acc.getAssertedDeviceNames();
+                        eventList.push_back(event);
+                        continue;
+                    }
                 }
+#ifdef ENABLE_LOGS
+                std::cout << __PRETTY_FUNCTION__
+                          << " skipping event :" << event.event << std::endl;
+#endif
             }
         }
-        return nullptr;
+
+#ifdef ENABLE_LOGS
+        std::cout << __PRETTY_FUNCTION__
+                  << " got total events :" << eventList.size() << std::endl;
+#endif
+        return eventList;
     }
 
     /**
@@ -148,7 +182,7 @@ class EventDetection : public object::Object
         auto thread = std::make_unique<std::thread>([this, event]() mutable {
 #ifdef ENABLE_LOGS
             std::cout << "calling hdlrMgr: " << this->_hdlrMgr->getName()
-                      << "\n";
+                      << " event: " << event.event << "\n";
 #endif
             auto hdlrMgr = *this->_hdlrMgr;
             hdlrMgr.RunAllHandlers(event);
@@ -164,30 +198,6 @@ class EventDetection : public object::Object
             std::cout << "Create thread to process event failed!\n";
 #endif
         }
-    }
-
-    /**
-     * @brief Determine device name from DBus object path.
-     *
-     * @param objPath
-     * @param devType
-     * @return std::string
-     */
-    static std::string DetermineDeviceName(const std::string& objPath,
-                                           const std::string& devType)
-    {
-        const std::regex r{".*(" + devType + "[0-9]+).*"}; // TODO: fixme
-        std::smatch m;
-
-        if (std::regex_search(objPath.begin(), objPath.end(), m, r))
-        {
-            auto name = m[1]; // the 2nd field is the matched substring.
-#ifdef ENABLE_LOGS
-            std::cout << "Devname: " << name << "\n.";
-#endif
-            return name;
-        }
-        return "";
     }
 
   private:
