@@ -159,7 +159,7 @@
       "accessor": {
         "type": "DeviceCoreAPI",
         "property": "gpu.interrupt.powerGoodAbnormalChange",
-        "check": {"bitmask": "1"}
+        "check": {"bitmap": "1"}
       },
       "severity": "Critical",
       "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation.",
@@ -286,38 +286,6 @@
         "executable": "mctp-error-detection",
         "arguments": "GPU",
         "check": {"bitmap": "1"}
-      },
-      "severity": "Critical",
-      "resolution": "BaseBoard components will retry if encounters errors. If problem persists, analyze FPGA log or ERoT log.",
-      "trigger_count": 1,
-      "event_counter_reset": {
-        "type": "",
-        "metadata": ""
-      },
-      "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-      },
-      "telemetries": [],
-      "action": "",
-      "value_as_count": false
-    },
-    {
-      "event": "PLDM runtime failures",
-      "device_type": "GPU[0-7]",
-      "event_trigger": {
-        "type": "DBUS",
-        "object": "/xyz/openbmc_project/GpioStatusHandler",
-        "interface": "xyz.openbmc_project.GpioStatus",
-        "property": "I2C3_ALERT",
-        "check": { "equal": "true" }
-      },
-      "accessor": {
-        "type": "CMDLINE",
-        "executable": "mctp-vdm-util-wrapper",
-        "arguments": "download_log GPU[0-7]",
-        "check":{
-          "bitmask": "0x00000001"
-        }
       },
       "severity": "Critical",
       "resolution": "BaseBoard components will retry if encounters errors. If problem persists, analyze FPGA log or ERoT log.",
@@ -648,38 +616,6 @@
       "telemetries": [],
       "action": "",
       "value_as_count": false
-    },
-    {
-      "event": "PLDM runtime failures",
-      "device_type": "NVSwitch[0-3]",
-      "event_trigger": {
-        "type": "DBUS",
-        "object": "/xyz/openbmc_project/GpioStatusHandler",
-        "interface": "xyz.openbmc_project.GpioStatus",
-        "property": "I2C3_ALERT",
-        "check": { "equal": "true" }
-      },
-      "accessor": {
-        "type": "CMDLINE",
-        "executable": "mctp-vdm-util-wrapper",
-        "arguments": "download_log NVSwitch[0-3]",
-        "check":{
-          "bitmask": "0x00000001"
-        }
-      },
-      "severity": "Critical",
-      "resolution": "BaseBoard components will retry if encounters errors. If problem persists, analyze FPGA log or ERoT log.",
-      "trigger_count": 1,
-      "event_counter_reset": {
-        "type": "",
-        "metadata": ""
-      },
-      "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-      },
-      "telemetries": [],
-      "action": "",
-      "value_as_count": false
     }
   ],
   "PCIeSwitch": [
@@ -866,38 +802,6 @@
       "telemetries": [],
       "action": "",
       "value_as_count": false
-    },
-    {
-      "event": "PLDM runtime failures",
-      "device_type": "PCIeSwitch",
-      "event_trigger": {
-        "type": "DBUS",
-        "object": "/xyz/openbmc_project/GpioStatusHandler",
-        "interface": "xyz.openbmc_project.GpioStatus",
-        "property": "I2C3_ALERT",
-        "check": { "equal": "true" }
-      },
-      "accessor": {
-        "type": "CMDLINE",
-        "executable": "mctp-vdm-util-wrapper",
-        "arguments": "download_log PCIeSwitch",
-        "check":{
-          "bitmask": "0x00000001"
-        }
-      },
-      "severity": "Critical",
-      "resolution": "BaseBoard components will retry if encounters errors. If problem persists, analyze FPGA log or ERoT log.",
-      "trigger_count": 1,
-      "event_counter_reset": {
-        "type": "",
-        "metadata": ""
-      },
-      "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-      },
-      "telemetries": [],
-      "action": "",
-      "value_as_count": false
     }
   ],
   "Retimer": [
@@ -1006,40 +910,6 @@
       "value_as_count": false
     }
   ],
-  "HMC": [
-    {
-      "event": "PLDM runtime failures",
-      "device_type": "HMC",
-      "event_trigger": {
-        "type": "DBUS",
-        "object": "/xyz/openbmc_project/GpioStatusHandler",
-        "interface": "xyz.openbmc_project.GpioStatus",
-        "property": "I2C3_ALERT",
-        "check": { "equal": "true" }
-      },
-      "accessor": {
-        "type": "CMDLINE",
-        "executable": "mctp-vdm-util-wrapper",
-        "arguments": "download_log HMC",
-        "check":{
-          "bitmask": "0x00000001"
-        }
-      },
-      "severity": "Critical",
-      "resolution": "BaseBoard components will retry if encounters errors. If problem persists, analyze FPGA log or ERoT log.",
-      "trigger_count": 1,
-      "event_counter_reset": {
-        "type": "",
-        "metadata": ""
-      },
-      "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-      },
-      "telemetries": [],
-      "action": "",
-      "value_as_count": false
-    }
-  ],
   "InletSensor": [
     {
       "event": "Inlet Thermal Warning",
@@ -1090,40 +960,6 @@
       "severity": "Warning",
       "resolution": "Increase the BaseBoard cooling and check thermal environmental to ensure Inlet Temperature reading is under UpperCritical threshold. ",
       "trigger_count": 0,
-      "event_counter_reset": {
-        "type": "",
-        "metadata": ""
-      },
-      "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
-      },
-      "telemetries": [],
-      "action": "",
-      "value_as_count": false
-    }
-  ],
-  "FPGA": [
-    {
-      "event": "PLDM runtime failures",
-      "device_type": "FPGA",
-      "event_trigger": {
-        "type": "DBUS",
-        "object": "/xyz/openbmc_project/GpioStatusHandler",
-        "interface": "xyz.openbmc_project.GpioStatus",
-        "property": "I2C3_ALERT",
-        "check": { "equal": "true" }
-      },
-      "accessor": {
-        "type": "CMDLINE",
-        "executable": "mctp-vdm-util-wrapper",
-        "arguments": "download_log FPGA",
-        "check":{
-          "bitmask": "0x00000001"
-        }
-      },
-      "severity": "Critical",
-      "resolution": "BaseBoard components will retry if encounters errors. If problem persists, analyze FPGA log or ERoT log.",
-      "trigger_count": 1,
       "event_counter_reset": {
         "type": "",
         "metadata": ""
