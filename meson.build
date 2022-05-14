@@ -173,6 +173,11 @@ bindir = get_option('prefix') + '/' + get_option('bindir')
 install_data('tools/mctp-vdm-util-wrapper',
              install_dir : bindir)
 
+## install mctp-error-detection tool
+install_data('tools/mctp-error-detection',
+             install_dir : bindir)
+
+
 if(get_option('tests').enabled())
     # generate the test executable
     ut_bin = executable(
