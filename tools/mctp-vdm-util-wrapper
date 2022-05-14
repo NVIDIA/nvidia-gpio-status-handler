@@ -50,7 +50,6 @@ getDeviceEid() #1=device name
 # [Glacier Firmware Design Document](https://docs.google.com/document/d/12VnlI_eX4hvsMVXzOhS4SkwLsvUHZEl5-g-OEBJhGRw/edit#heading=h.yv8pagajiaef)
 #<pretty_cmd>:<mctp-vdm-util_cmd>,<output_bits>
 MCTP_CMD_LIST="
-query_boot_status:query_boot_status,0-63
 EC_TAG0_AUTH_ERROR:query_boot_status,0
 EC_TAG1_COPY_ERROR:query_boot_status,1
 EC_OTP_MISMATCH_ERROR:query_boot_status,2
@@ -83,6 +82,9 @@ mctp_cmd_lookup() #(pretty_cmd) => <mctp_cmd>
         echo ${line#*:}
         return 0
     done
+
+    # Passthrough the unknown cmd but indicate that by rc.
+    echo $target
     return 1
 }
 
@@ -94,9 +96,10 @@ mctp_access() #(dev_eid, pretty_cmd) => <value>
     [ -z "$dev_eid" ] && return 1
     [ -z "$pretty_cmd" ] && return 1
 
+    local skip_bitmask=0
     local rc=0
     local cmd_info;cmd_info=`mctp_cmd_lookup "$pretty_cmd"`;rc=$?
-    [ "$rc" -eq 0 ] || return $rc
+    [ "$rc" -eq 0 ] || skip_bitmask=1
 
     local mctp_cmd=${cmd_info%,*}
     [ -z "$mctp_cmd" ] && return 1
@@ -124,6 +127,11 @@ mctp_access() #(dev_eid, pretty_cmd) => <value>
     [ "$retCode" = "00" ] || return 1
     local data=${dataInfo#* } # extract return data
     local value=0x${data// /} # compose return data into hex
+
+    if [ "$skip_bitmask" -eq 1 ]; then
+        echo $(($value)) # to decimal
+        return 0
+    fi
 
     # verify the value based on bitmask
     local bit_min=${bits%%-*}
@@ -216,3 +224,4 @@ if [ $rc -ne 0 ]; then
 fi
 
 exit $rc
+
