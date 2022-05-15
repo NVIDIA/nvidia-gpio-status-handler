@@ -133,10 +133,20 @@ aml::RcCode Selftest::perform(const dat_traverse::Device& dev,
     auto fillTpRes = [](selftest::TestPointResult& tp,
                         const std::string& expVal, const std::string& readVal,
                         const std::string& name) {
-        tp.valRead = readVal;
-        tp.valExpected = expVal;
-        tp.result = tp.valRead == tp.valExpected;
         tp.targetName = name;
+        tp.valExpected = expVal;
+        //TODO: clean dependency of "123" return on read fail
+        if (readVal == "123")
+        {
+            tp.valRead = "Error - TP read failed.";
+            tp.result = false;
+        }
+        else
+        {
+            tp.valRead = readVal;
+            // in case of empty expected value default to positive result
+            tp.result = (expVal.size() == 0) ? true : readVal == expVal;
+        }
     };
 
     auto& availableLayers = dev.test;
@@ -157,6 +167,13 @@ aml::RcCode Selftest::perform(const dat_traverse::Device& dev,
             if (acc.isValidDeviceAccessor())
             {
                 const std::string& devName = acc.read();
+                if (this->_dat.count(devName) == 0)
+                {
+                    std::cerr << "Error: invalid device key: " << devName <<
+                        " in nested tp in selftest perform" << std::endl;
+                    return aml::RcCode::error;
+                }
+
                 auto& devNested = this->_dat.at(devName);
                 aml::RcCode stRes = aml::RcCode::succ;
                 if (!isDeviceCached(devName, reportRes))
@@ -218,7 +235,7 @@ static std::string getTimestampString(void)
     return stream.str();
 }
 
-void Report::generateReport(ReportResult& reportRes)
+bool Report::generateReport(ReportResult& reportRes)
 {
     const std::map<std::string, std::string> layerToKeyLut = {
         {"power_rail", "power-rail-status"},
@@ -246,6 +263,13 @@ void Report::generateReport(ReportResult& reportRes)
 
         for (auto& layer : dev.second.layer)
         {
+            if (layerToKeyLut.count(layer.first) == 0)
+            {
+                std::cerr << "Error: generate report invalid layer key: " << 
+                        layer.first << std::endl;
+                return false;
+            }
+
             const auto layerKey = layerToKeyLut.at(layer.first);
             auto layerPassOrFail = true;
             jdev[layerKey]["test-points"] = nlohmann::json::array();
@@ -276,6 +300,8 @@ void Report::generateReport(ReportResult& reportRes)
 
     this->_report["header"]["summary"]["test-case-total"] = tpTotal;
     this->_report["header"]["summary"]["test-case-failed"] = tpFailed;
+
+    return true;
 }
 
 const nlohmann::json& Report::getReport(void)
@@ -314,8 +340,10 @@ aml::RcCode
     RootCauseTracer::process([[maybe_unused]] event_info::EventNode& event)
 {
     std::string problemDevice = event.device;
-    if (problemDevice.length() == 0)
+    if ((problemDevice.length() == 0) || (_dat.count(problemDevice) == 0))
     {
+        std::cerr << "Error: rootCauseTracer device: [" << problemDevice << 
+                "] is invalid key - cannot process rootCause" << std::endl;
         return aml::RcCode::error;
     }
 
@@ -325,9 +353,18 @@ aml::RcCode
 
     for (auto& devName : devsToTest)
     {
+        if (_dat.count(devName) == 0)
+        {
+            std::cerr << "Error: rootCauseTracer device: " << devName << 
+                " is an invalid key!" << std::endl;
+            return aml::RcCode::error;
+        }
+
         auto& devTest = _dat.at(devName);
         if (selftester.perform(devTest, completeReportRes) != aml::RcCode::succ)
         {
+            std::cerr << "Error: rootCauseTracer failed to perform selftest " <<
+                "for device " << devName << std::endl;
             return aml::RcCode::error;
         }
 
@@ -339,7 +376,13 @@ aml::RcCode
     }
 
     selftest::Report reportGenerator;
-    reportGenerator.generateReport(completeReportRes);
+    if (!reportGenerator.generateReport(completeReportRes))
+    {
+        std::cerr << "Error: rootCauseTracer failed to generate report!" << 
+                std::endl;
+        return aml::RcCode::error;
+    }
+
     event.selftestReport = reportGenerator.getReport();
 
     return aml::RcCode::succ;

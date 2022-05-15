@@ -72,7 +72,7 @@ static nlohmann::json
     static int template_id = 0;
     nlohmann::json j;
     j["name"] = "TP" + std::to_string(template_id++) + "_" + tp_name;
-    j["expected_value"] = "123";
+    j["expected_value"] = "some_data";
 
     if (is_accessor_device)
     {
@@ -81,12 +81,9 @@ static nlohmann::json
         return j;
     }
 
-    j["accessor"]["type"] = "DBUS";
-    j["accessor"]["object"] =
-        "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]";
-    j["accessor"]["interface"] =
-        "xyz.openbmc_project.Inventory.Decorator.Dimension";
-    j["accessor"]["propperty"] = "Depth";
+    j["accessor"]["type"] = "TEST";
+    j["accessor"]["test_value"] = "some_data";
+
     return j;
 }
 
@@ -344,14 +341,16 @@ TEST(selftestTest, doProcess)
     EXPECT_EQ(selftest.process(event), aml::RcCode::error);
 
     event.device = "trash_device";
-    EXPECT_ANY_THROW(selftest.process(event));
+    aml::RcCode result = aml::RcCode::succ;
+    EXPECT_NO_THROW(result = selftest.process(event));
+    EXPECT_EQ(result, aml::RcCode::error);
 }
 
 TEST(selftestTest, wrongDeviceTestpoint)
 {
     /* Device_A: (dummy TP's) + TP pointing to wrong device,
        which is not present in DAT map.
-       Expected: exception is thrown. */
+       Expected: no exception is thrown but the result is aml::RcCode::error */
     nlohmann::json jdat;
     nlohmann::json jgpu0;
     nlohmann::json jvr0;
@@ -392,7 +391,9 @@ TEST(selftestTest, wrongDeviceTestpoint)
     // dat_traverse::Device::printTree(datMap);
     selftest::Selftest selftest("selftestObj", datMap);
     selftest::ReportResult rep_res;
-    EXPECT_ANY_THROW(selftest.perform(datMap.at("GPU0"), rep_res));
+    aml::RcCode result = aml::RcCode::succ;
+    EXPECT_NO_THROW(result = selftest.perform(datMap.at("GPU0"), rep_res));
+    EXPECT_EQ(result, aml::RcCode::error);
 }
 
 TEST(selftestTest, cachesReports)
@@ -708,7 +709,7 @@ TEST(selftestReportTest, generateReport)
 
     /* When */
     selftest::Report reportGenerator;
-    reportGenerator.generateReport(reportResult);
+    EXPECT_EQ(true, reportGenerator.generateReport(reportResult));
 
     /* Then */
     nlohmann::json j = reportGenerator.getReport();
@@ -832,6 +833,8 @@ TEST(rootCauseTraceTest, test1)
     EXPECT_LE(event.selftestReport["tests"].size(), 1);
     EXPECT_EQ(dat.at("GPU0").healthStatus.originOfCondition, "GPU0");
 
+    aml::RcCode result = aml::RcCode::succ;
     event.device = "trash_device";
-    EXPECT_ANY_THROW(rootCauseTracer.process(event));
+    EXPECT_NO_THROW(result = rootCauseTracer.process(event));
+    EXPECT_EQ(result, aml::RcCode::error);
 }

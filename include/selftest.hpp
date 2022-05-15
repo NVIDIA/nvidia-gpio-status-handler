@@ -79,8 +79,10 @@ class Report
      * @brief Generates internal json report.
      *
      * @param[in] reportRes
+     * 
+     * @return true when report successfuly generated, otherwise false
      */
-    void generateReport(ReportResult& reportRes);
+    bool generateReport(ReportResult& reportRes);
 
     /**
      * @brief Returns internal json report object.
@@ -152,6 +154,13 @@ class Selftest : public event_handler::EventHandler
      */
     aml::RcCode process([[maybe_unused]] event_info::EventNode& event) override
     {
+        if (_dat.count(event.device) == 0)
+        {
+            std::cerr << "Error: device: " << event.device << 
+                " is an invalid key!" << std::endl;
+            return aml::RcCode::error;
+        }
+
         ReportResult rep;
         const dat_traverse::Device& dev = _dat.at(event.device);
 

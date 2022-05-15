@@ -31,6 +31,7 @@ constexpr auto propertyKey = "property";
 constexpr auto executableKey = "executable";
 constexpr auto argumentsKey = "arguments";
 constexpr auto deviceNameKey = "device_name";
+constexpr auto testValueKey = "test_value";
 
 static std::map<std::string, std::vector<std::string>> accessorTypeKeys = {
     {"DBUS", {"object", "interface", "property"}},
@@ -306,6 +307,10 @@ class DataAccessor
         {
             readDeviceCoreApi(device);
         }
+        else if (isTypeTest() == true)
+        {
+            return _acc[testValueKey];
+        }
 
         if (_dataValue != nullptr)
         {
@@ -406,6 +411,16 @@ class DataAccessor
     inline bool isTypeDevice() const
     {
         return isValid(_acc) == true && _acc[typeKey] == "DEVICE";
+    }
+
+    /**
+     * @brief isTypeTest()
+     *
+     * @return  true if acccessor["type"] exists and it is TEST
+     */
+    inline bool isTypeTest() const
+    {
+        return isValid(_acc) == true && _acc[typeKey] == "TEST";
     }
 
     /**

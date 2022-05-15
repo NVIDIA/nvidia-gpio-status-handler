@@ -187,7 +187,12 @@ int main(int argc, char* argv[])
     }
 
     selftest::Report reportGenerator;
-    reportGenerator.generateReport(reportResult);
+    if (!reportGenerator.generateReport(reportResult))
+    {
+        std::cerr << "Error: failed to generate report!" << std::endl;
+        return -1;
+    }
+
     std::ofstream ofile(configuration.report);
     ofile << reportGenerator;
 

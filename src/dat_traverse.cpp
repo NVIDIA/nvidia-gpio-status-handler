@@ -120,7 +120,8 @@ Device::Device(const std::string& name, const json& j)
         {
             dat_traverse::TestPoint tp;
             tp.accessor = point["accessor"];
-            tp.expectedValue = point["expected_value"].get<std::string>();
+            tp.expectedValue = (point.count("expected_value") == 0) ? 
+                        "" : point["expected_value"].get<std::string>();
             std::string name = point["name"].get<std::string>();
             testPoints.insert(
                 std::pair<std::string, dat_traverse::TestPoint>(name, tp));
