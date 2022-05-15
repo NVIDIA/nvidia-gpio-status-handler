@@ -169,7 +169,6 @@ bool DataAccessor::subCheck(const DataAccessor& otherAcc,
      *    1. deviceToRead and there is no regex in device
      *    2. device is regex, i.e, comes from 'event.device_type'
      */
-    bool deviceHasRange = util::existsRange(deviceType);
     PropertyValue bitmapValue; // index is zero
     if (existsCheckBitmap() == true)
     {
@@ -180,9 +179,7 @@ bool DataAccessor::subCheck(const DataAccessor& otherAcc,
     }
     if (bitmapValue.isValid() == true)
     {
-        util::DeviceIdMap devices = (deviceHasRange == true)
-                                        ? util::expandDeviceRange(deviceType)
-                                        : util::expandDeviceRange(dev2Read);
+        util::DeviceIdMap devices = util::expandDeviceRange(deviceType);
         // now walk thuru devices
         for (auto& deviceItem : devices)
         {

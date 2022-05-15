@@ -787,7 +787,7 @@
         "type": "CMDLINE",
         "executable": "mctp-error-detection",
         "arguments": "PCIeSwitch",
-        "check": {"equal": "1"}
+        "check": {"bitmap": "1"}
       },
       "severity": "Critical",
       "resolution": "BaseBoard components will retry if encounters errors. If problem persists, analyze FPGA log or ERoT log.",
@@ -808,10 +808,17 @@
     {
       "event": "VR Fault 0.9V",
       "device_type": "Retimer[0-7]",
-      "event_trigger": {},
+      "event_trigger": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/GpioStatusHandler",
+        "interface": "xyz.openbmc_project.GpioStatus",
+        "property": "I2C4_ALERT",
+        "check": { "equal": "true" }
+      },
       "accessor": {
         "type": "DeviceCoreAPI",
-        "property": "pcieretimer.0V9.abnormalPowerChange"
+        "property": "pcieretimer.0V9.abnormalPowerChange",
+        "check": {"bitmap": "1"}
       },
       "severity": "Critical",
       "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation",
@@ -830,10 +837,17 @@
     {
       "event": "VR Fault 1.8V",
       "device_type": "Retimer[0-7]",
-      "event_trigger": {},
+      "event_trigger": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/GpioStatusHandler",
+        "interface": "xyz.openbmc_project.GpioStatus",
+        "property": "I2C4_ALERT",
+        "check": { "equal": "true" }
+      },
       "accessor": {
         "type": "DeviceCoreAPI",
-        "property": "pcieretimer.1V8VDD.abnormalPowerChange"
+        "property": "pcieretimer.1V8VDD.abnormalPowerChange",
+        "check": {"bitmap": "1"}
       },
       "severity": "Critical",
       "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation",
