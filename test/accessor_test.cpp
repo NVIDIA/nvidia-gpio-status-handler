@@ -152,30 +152,6 @@ TEST(DataAccessor, CheckPositiveLookupRedefinition)
     EXPECT_NE(jAccessor.check(PropertyVariant(std::string{"zz"})), true);
 }
 
-TEST(DataAccessor, CheckPositiveLookupForDeviceName)
-{
-    const nlohmann::json json = {{"type", "CMDLINE"},
-                                 {"executable", "/bin/echo"},
-                                 {"arguments", "query_boot_status [0-7]"},
-                                 {"check", {{"lookup", "GPU0"}}}};
-    DataAccessor jAccessor(json);
-    const std::string device{"GPU0"};
-    EXPECT_EQ(jAccessor.check(device), true);
-}
-
-TEST(DataAccessor, CheckNegativeLookupForDeviceName)
-{
-    const nlohmann::json json = {{"type", "CMDLINE"},
-                                 {"executable", "/bin/echo"},
-                                 {"arguments", "query_boot_status [0-7]"},
-                                 {"check", {{"lookup", "GPU0"}}}};
-    DataAccessor jAccessor(json);
-    const std::string device{"GPU0"};
-
-    PropertyVariant redefineLookup{std::string{"GPU1"}};
-    EXPECT_NE(jAccessor.check(device, redefineLookup), true);
-}
-
 TEST(DataAccessor, EqualPositiveRegexAgainstNoRegex)
 {
     const nlohmann::json jsonFile = {
@@ -473,7 +449,7 @@ TEST(DataAccessor, BitmaskWithValueTwo)
     }
 }
 
-TEST(DataAccessor,  BitmapWithoutRangeInDeviceType)
+TEST(DataAccessor, BitmapWithoutRangeInDeviceType)
 {
     const nlohmann::json triggerJson = {
         {"type", "DBUS"},
@@ -510,4 +486,17 @@ TEST(DataAccessor,  BitmapWithoutRangeInDeviceType)
     EXPECT_EQ(devices.size(), 1);
     EXPECT_EQ(devices.count(0), 1);
     EXPECT_EQ(devices[0], "PCIeSwitch");
+}
+
+TEST(DataAccessor, CmdLineRegexExpansion)
+{
+    const nlohmann::json jsonCMDLINE = {
+        {"type", "CMDLINE"},
+        {"executable", "/bin/echo"},
+        {"arguments", "AP0_BOOTCOMPLETE_TIMEOUT GPU[0-7]"},
+        {"check", {{"lookup", "AP0_BOOTCOMPLETE_TIMEOUT GPU1"}}}};
+
+    DataAccessor cmdAccessor{jsonCMDLINE};
+    const std::string deviceType{"GPU[0-7]"};
+    EXPECT_EQ(cmdAccessor.check(cmdAccessor, deviceType), true);
 }

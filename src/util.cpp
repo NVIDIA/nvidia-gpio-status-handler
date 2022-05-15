@@ -182,7 +182,7 @@ std::string replaceRangeByMatchedValue(const std::string& regxValue,
                     if (rangePosition != std::string::npos)
                     {
                         if (rangePosition == 0 ||
-                                regxValue.at(rangePosition -1) == ' ')
+                            regxValue.at(rangePosition - 1) == ' ')
                         {
                             newString.replace(rangePosition, rangeStr.size(),
                                               matchedValue);
@@ -272,14 +272,43 @@ std::string determineDeviceName(const std::string& objPath,
         }
         else
         {
-           // name =  expandDeviceRange(devType)[0];
+            // name =  expandDeviceRange(devType)[0];
         }
     }
 #ifdef ENABLE_LOGS
-        std::cout << "determineDeviceName() objPath"  << objPath <<
-                     " devType:" << devType << " Devname: " << name << "\n.";
+    std::cout << "determineDeviceName() objPath" << objPath
+              << " devType:" << devType << " Devname: " << name << "\n.";
 #endif
     return name;
+}
+
+RangeInformation getRangeInformation(const std::string& str)
+{
+    SizeString sizeString{0};
+    StringPosition stringPosition{std::string::npos};
+    std::string fullRegxString{""};
+    std::vector<int> minMax;
+    std::string matchedRegex =
+        (str.find_first_of("[") == 0 && str.find_last_of("]") == str.size() - 1)
+            ? str
+            : matchedRegx(str, RANGE_REGX_STR);
+    if (matchedRegex.empty() == false)
+    {
+        auto auxPosition = str.find(matchedRegex);
+        if (auxPosition != std::string::npos)
+        {
+            while (auxPosition-- && str.at(auxPosition) != ' ')
+                ;
+            stringPosition = ++auxPosition;
+            while (auxPosition < str.size() && str.at(auxPosition) != ' ')
+            {
+                sizeString++;
+                auxPosition++;
+            }
+            fullRegxString = str.substr(stringPosition, sizeString);
+        }
+    }
+    return std::make_tuple(sizeString, stringPosition, fullRegxString);
 }
 
 } // namespace util

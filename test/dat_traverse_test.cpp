@@ -70,7 +70,9 @@ TEST(DatTraverseTest, FullTraversal)
     }
     else
     {
-        std::cerr << "Error: deviceName:" << "GPU0" << "is an invalid key!" << std::endl;
+        std::cerr << "Error: deviceName:"
+                  << "GPU0"
+                  << "is an invalid key!" << std::endl;
         return;
     }
 
@@ -83,18 +85,22 @@ TEST(DatTraverseTest, FullTraversal)
     }
     else
     {
-        std::cerr << "Error: deviceName:" << "Retimer0" << "is an invalid key!" << std::endl;
+        std::cerr << "Error: deviceName:"
+                  << "Retimer0"
+                  << "is an invalid key!" << std::endl;
         return;
     }
 
-    if (dat.count("GPU0") > 0) 
+    if (dat.count("GPU0") > 0)
     {
         EXPECT_EQ(dat.at("GPU0").healthStatus.triState, "Error");
         EXPECT_EQ(dat.at("GPU0").healthStatus.originOfCondition, hsc8.name);
     }
     else
     {
-        std::cerr << "Error: deviceName:" << "GPU0" << "is an invalid key!" << std::endl;
+        std::cerr << "Error: deviceName:"
+                  << "GPU0"
+                  << "is an invalid key!" << std::endl;
         return;
     }
 
@@ -105,7 +111,9 @@ TEST(DatTraverseTest, FullTraversal)
     }
     else
     {
-        std::cerr << "Error: deviceName:" << "Retimer0" << "is an invalid key!" << std::endl;
+        std::cerr << "Error: deviceName:"
+                  << "Retimer0"
+                  << "is an invalid key!" << std::endl;
         return;
     }
 
@@ -115,9 +123,10 @@ TEST(DatTraverseTest, FullTraversal)
     }
     else
     {
-        std::cerr << "Error: deviceName:" << "HSC8" << "is an invalid key!" << std::endl;
+        std::cerr << "Error: deviceName:"
+                  << "HSC8"
+                  << "is an invalid key!" << std::endl;
     }
-
 }
 
 TEST(DatTraverseTest, gettingAssociations)

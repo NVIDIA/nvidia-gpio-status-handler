@@ -119,9 +119,9 @@ void EventDetection::dbusEventHandlerCallback(sdbusplus::message::message& msg)
             //   that means, the check does not loop over device range
             if (candidate.assertedDeviceNames.empty() == true)
             {
-                std::cerr << __FILE__ << ":" << __LINE__ << " event: " <<
-                          event.event << " no assertedDeviceNames, exiting..."
-                          << std::endl;
+                std::cerr << __FILE__ << ":" << __LINE__
+                          << " event: " << event.event
+                          << " no assertedDeviceNames, exiting..." << std::endl;
                 continue;
             }
             // now loop thru candidate.assertedDeviceNames

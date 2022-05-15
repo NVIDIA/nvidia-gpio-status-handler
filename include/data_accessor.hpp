@@ -576,6 +576,27 @@ class DataAccessor
                                        const std::string& realDevice,
                                        const std::string& devType) const;
 
+    /**
+     * @brief  returns range infomation from arguments in accessor type CMDLINE
+     *
+     *        "accessor": {
+     *          "type": "CMDaLINE",
+     *          "executable": "mctp-vdm-util-wrapper",
+     *          "arguments": "bla GPU[0-7]",
+     *
+     *  the 'range infomation' is suitable to replace the full range string
+     *       considering the example above, it would be:
+     *          sizeString=8
+     *          position=5
+     *          string=GPU[0-7]
+     *
+     * @return information with sizeString > 0 if type is CMDLINE
+     *                                   and arguments is present
+     *                                   and argument has range
+     *         otherwise sizeString will be 0
+     */
+    util::RangeInformation getCmdLineRangeInformationInArguments() const;
+
   private:
     /**
      * @brief hold json data for the accessor.

@@ -21,6 +21,22 @@ namespace util
 
 using DeviceIdMap = std::map<int, std::string>;
 
+using StringPosition = size_t;
+using SizeString = size_t;
+using RangeInformation = std::tuple<SizeString, StringPosition, std::string>;
+
+/**
+ * @brief it parses a string, and if it has a range returns its information
+ * @param str
+ *
+ * @example
+ *    "0123 GPU[0-3]" SizeString=8, StringPosition=5 string=GPU[0-3]
+ *    "01GPU[0-3] end" SizeString=10, StringPosition=0 string=GPU[0-3]
+ *    "0 GPU[0-7]-ERoT end" SizeString=13 stringPosition=2 string=GPU[0-7]-ERoT
+ * @return
+ */
+RangeInformation getRangeInformation(const std::string& str);
+
 void printThreadId(const char* funcName);
 
 /**
@@ -59,7 +75,7 @@ std::string getDeviceName(const std::string& name);
  *           getDeviceId("GPU6-ERoT") should return 6
  *           getDeviceId("GPU0") should return 0
  *           getDeviceId("PCIeSwitch") should return 0
- *           getDeviceId"GPU6-ERoT", "GPU[0-7]-ERoT") should return 6
+ *           getDeviceId("GPU6-ERoT", "GPU[0-7]-ERoT") should return 6
  *           getDeviceId("GPU9", "GPU[0-7]") should return -1
  *
  *  @return the ID when found otherwise (-1 if range is specified or 0 if not)

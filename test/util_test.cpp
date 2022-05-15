@@ -134,3 +134,32 @@ TEST(UtilreplaceRangeByMatchedValue, DeviceRange)
     auto ret = replaceRangeByMatchedValue("GPU[0-7]", "GPU6");
     EXPECT_EQ(ret, "GPU6");
 }
+
+TEST(Util, GetRangeInformation)
+{
+    auto info = getRangeInformation("");
+    EXPECT_EQ(std::get<0>(info), 0);
+
+    info = getRangeInformation("none");
+    EXPECT_EQ(std::get<0>(info), 0);
+
+    info = getRangeInformation("[0-2]");
+    EXPECT_EQ(std::get<0>(info), 5); // size
+    EXPECT_EQ(std::get<1>(info), 0); // position
+    EXPECT_EQ(std::get<2>(info), "[0-2]");
+
+    info = getRangeInformation("0123 GPU[0-3]");
+    EXPECT_EQ(std::get<0>(info), 8); // size
+    EXPECT_EQ(std::get<1>(info), 5); // position
+    EXPECT_EQ(std::get<2>(info), "GPU[0-3]");
+
+    info = getRangeInformation("0 GPU[0-7]-ERoT end");
+    EXPECT_EQ(std::get<0>(info), 13); // size
+    EXPECT_EQ(std::get<1>(info), 2);  // position
+    EXPECT_EQ(std::get<2>(info), "GPU[0-7]-ERoT");
+
+    info = getRangeInformation("01GPU[0-3] end");
+    EXPECT_EQ(std::get<0>(info), 10); // size
+    EXPECT_EQ(std::get<1>(info), 0);  // position
+    EXPECT_EQ(std::get<2>(info), "01GPU[0-3]");
+}

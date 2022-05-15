@@ -63,10 +63,59 @@ bool DataAccessor::check(const DataAccessor& otherAcc,
     DataAccessor& accNonConst = const_cast<DataAccessor&>(otherAcc);
     if (existsCheckKey() == true)
     {
+        ret = false;
         accNonConst._latestAssertedDevices.clear();
-        accNonConst.read(deviceToRead);
-        if ((ret = accNonConst.hasData()) == true)
+        /*
+         * check accessor type CMDLINE with range in arguments
+         * if so, is necessary to expand devices range and check() each device
+         */
+        auto cmdLineRange = getCmdLineRangeInformationInArguments();
+        auto sizeRangeString = std::get<0>(cmdLineRange);
+        if (sizeRangeString > 0)
         {
+            // final assertedDeviceNames output from the loop
+            util::DeviceIdMap cmdlineAssertedDevices;
+            auto postionRangeSring = std::get<1>(cmdLineRange);
+            auto rangeString = std::get<2>(cmdLineRange);
+            // devRange is expanded to 0=GPU0, 1=GPU1, ...
+            auto devRange = util::expandDeviceRange(rangeString);
+#ifdef ENABLE_LOGS
+            std::cout << __FILE__ << ":" << __LINE__
+                      << " assertedDeviceNames CMDLINE: " << rangeString
+                      << std::endl;
+#endif
+            for (auto& arg : devRange)
+            {
+                DataAccessor cmdlineAcc = *this;
+                std::string arguments = cmdlineAcc._acc[argumentsKey];
+                arguments.replace(postionRangeSring, sizeRangeString,
+                                  arg.second);
+                cmdlineAcc._acc[argumentsKey] = arguments;
+                cmdlineAcc.read();
+                if (cmdlineAcc.subCheck(cmdlineAcc, redefCriteria, rangeString,
+                                        arg.second) == true)
+                {
+                    ret = true;
+                    // insert the asserteDeviceName from cmdlineAcc into
+                    //  return map, it should always come as devId 0
+                    if (cmdlineAcc._latestAssertedDevices.count(0) != 0)
+                    {
+                        auto& devId = arg.first;
+                        cmdlineAssertedDevices[devId] =
+                            cmdlineAcc._latestAssertedDevices[0];
+                    }
+                }
+            }
+            if (ret == true)
+            {
+                // the final assertedDeviceNames for CMDLINE with range in args
+                accNonConst._latestAssertedDevices = cmdlineAssertedDevices;
+                return ret; // work done
+            }
+        }
+        else // not CMDLINE with range in arguments
+        {
+            accNonConst.read(deviceToRead);
             ret = subCheck(otherAcc, redefCriteria, deviceType, deviceToRead);
         }
     } // existsCheckKey() == true
@@ -106,6 +155,10 @@ bool DataAccessor::subCheck(const DataAccessor& otherAcc,
                             const std::string& deviceType,
                             const std::string& dev2Read = std::string{""}) const
 {
+    if (otherAcc.hasData() == false)
+    {
+        return false; // without data nothing to do
+    }
     bool ret = false;
     DataAccessor& accNonConst = const_cast<DataAccessor&>(otherAcc);
     auto checkMap = _acc[checkKey].get<CheckDefinitionMap>();
@@ -212,6 +265,15 @@ bool DataAccessor::runCommandLine(const std::string& device)
             }
             process.wait();
             processExitCode = static_cast<uint64_t>(process.exit_code());
+            if (processExitCode != 0)
+            {
+                ret = false;
+                std::string error("return code = ");
+                error += std::to_string(processExitCode);
+                std::cerr << "[E]"
+                          << "Error running the command \'" << cmd << "\' "
+                          << error << std::endl;
+            }
         }
         catch (const std::exception& error)
         {
@@ -223,9 +285,7 @@ bool DataAccessor::runCommandLine(const std::string& device)
         // ok lets store the output
         if (ret == true)
         {
-
-            _dataValue = std::make_shared<PropertyValue>(
-                PropertyValue(result, processExitCode));
+            _dataValue = std::make_shared<PropertyValue>(result);
         }
     }
     return ret;
@@ -281,10 +341,9 @@ std::string DataAccessor::findDeviceName(const DataAccessor& other,
     return deviceName;
 }
 
-void
-DataAccessor::buildSingleAssertedDeviceName(DataAccessor& accData,
-                                             const std::string& realDevice,
-                                             const std::string& devType)const
+void DataAccessor::buildSingleAssertedDeviceName(
+    DataAccessor& accData, const std::string& realDevice,
+    const std::string& devType) const
 {
     auto deviceName = util::determineDeviceName(realDevice, devType);
     if (deviceName.empty() == false)
@@ -293,6 +352,17 @@ DataAccessor::buildSingleAssertedDeviceName(DataAccessor& accData,
         map[0] = deviceName;
         accData._latestAssertedDevices = map;
     }
+}
+
+util::RangeInformation
+    DataAccessor::getCmdLineRangeInformationInArguments() const
+{
+    if (isTypeCmdline() == true && _acc.count(argumentsKey) != 0)
+    {
+        return util::getRangeInformation(_acc[argumentsKey].get<std::string>());
+    }
+    // returns empty information
+    return util::getRangeInformation(std::string{""});
 }
 
 } // namespace data_accessor
