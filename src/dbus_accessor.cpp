@@ -24,6 +24,34 @@ namespace dbus
 
 using namespace phosphor::logging;
 
+static std::string errorMsg(const std::string& description,
+                            const std::string& objpath,
+                            const std::string& interface,
+                            const std::string& property = std::string{""},
+                            const char* eWhat = nullptr)
+{
+    std::string msg{"[E] "};
+    msg += description;
+    if (objpath.empty() == false)
+    {
+        msg += " Objectpath=" + objpath;
+    }
+    if (interface.empty() == false)
+    {
+        msg += " Interface=" + interface;
+    }
+    if (property.empty() == false)
+    {
+        msg += " Property=" + property;
+    }
+    if (eWhat != nullptr)
+    {
+        msg += " Error: ";
+        msg += eWhat;
+    }
+    return msg;
+}
+
 std::string getService(const std::string& objectPath,
                        const std::string& interface)
 {
@@ -47,26 +75,29 @@ std::string getService(const std::string& objectPath,
     auto method = bus.new_method_call(mapperBusBame, mapperObjectPath,
                                       mapperInterface, "GetObject");
     method.append(objectPath, std::vector<std::string>({interface}));
+    std::string ret{""};
     try
     {
         auto reply = bus.call(method);
         reply.read(response);
+        if (response.empty() == false)
+        {
+            ret = response.begin()->first;
+        }
+        else
+        {
+            std::cerr << errorMsg("getService(): Service not found for",
+                                  objectPath, interface)
+                      << std::endl;
+        }
     }
     catch (const sdbusplus::exception::exception& e)
     {
-        log<level::ERR>("D-Bus call exception",
-                        entry("OBJPATH={%s}", objectPath.c_str()),
-                        entry("INTERFACE={%s}", interface.c_str()),
-                        entry("SDBUSERR=%s", e.what()));
-
-        throw std::runtime_error("Service name is not found");
+        std::cerr << errorMsg("getService(): DBus error for", objectPath,
+                              interface, e.what())
+                  << std::endl;
     }
-
-    if (response.empty())
-    {
-        throw std::runtime_error("Service name response is empty");
-    }
-    return response.begin()->first;
+    return ret;
 }
 
 RetCoreApi deviceGetCoreAPI(const int devId, const std::string& property)
@@ -84,6 +115,8 @@ RetCoreApi deviceGetCoreAPI(const int devId, const std::string& property)
     method.append(property);
     method.append(accMode);
 
+    uint64_t value = 0;
+    std::string valueStr = "";
     std::tuple<int, std::string, std::vector<uint32_t>> response;
     try
     {
@@ -92,20 +125,13 @@ RetCoreApi deviceGetCoreAPI(const int devId, const std::string& property)
     }
     catch (const sdbusplus::exception::SdBusError& e)
     {
-        std::string msg{callName};
-        msg += "(\'" + property + "\') Failed to make call";
-        std::cout << " " << msg;
-        std::cout << std::endl;
-        std::cout << std::endl;
-        log<level::ERR>(msg.c_str(),
-                        entry("property=(%s[%d])", property.c_str(), devId),
-                        entry("SDBUSERR=%s", e.what()));
+        std::cerr << errorMsg("deviceGetCoreAPI(): DBus error for",
+                              std::string{""}, std::string{""}, interface,
+                              e.what())
+                  << std::endl;
 
-        throw std::runtime_error(msg);
+        return std::make_tuple(-1, valueStr, value);
     }
-
-    uint64_t value = 0;
-    std::string valueStr = "";
 
     // response example:
     // (isau) 0 "Baseboard GPU over temperature info : 0001" 2 1 0
@@ -113,9 +139,10 @@ RetCoreApi deviceGetCoreAPI(const int devId, const std::string& property)
 
     if (rc != 0)
     {
-        log<level::ERR>("Failed to get value of ",
-                        entry("property=(%s[%d])", property.c_str(), devId),
-                        entry("rc=%d", rc));
+        std::cerr << errorMsg("deviceGetCoreAPI(): bad return for",
+                              std::string{""}, std::string{""}, object,
+                              interface)
+                  << std::endl;
     }
     else
     {
@@ -142,25 +169,30 @@ int deviceClearCoreAPI(const int devId, const std::string& property)
     method.append(devId);
     method.append(property);
 
-    int rc = 0;
+    int rc = -1;
+    std::string dbusError{""};
     try
     {
         auto reply = bus.call(method);
         reply.read(rc);
     }
-    catch (const sdbusplus::exception::SdBusError& e)
+    catch (const sdbusplus::exception::SdBusError& error)
     {
-        log<level::ERR>("Failed to make call for ",
-                        entry("property=(%s[%d])", property.c_str(), devId),
-                        entry("SDBUSERR=%s", e.what()));
-        throw std::runtime_error("Clear device call is not found!");
+        if (rc == 0)
+        {
+            rc = -1; // just in case reply.read() failed but set rc = 0
+        }
+        dbusError = " DBus failed, ";
+        dbusError += error.what();
     }
 
     if (rc != 0)
     {
-        log<level::ERR>("Failed to get value of ",
-                        entry("property=(%s[%d])", property.c_str(), devId),
-                        entry("rc=%d", rc));
+        std::string msg{"deviceClearCoreAPI() Failed "};
+        msg += "devId:" + std::to_string(devId);
+        std::cerr << errorMsg(msg, std::string{""}, std::string{""}, property,
+                              dbusError.c_str())
+                  << std::endl;
     }
 
     return rc;
@@ -174,16 +206,21 @@ PropertyVariant readDbusProperty(const std::string& objPath,
     PropertyVariant value;
     if (util::existsRange(objPath) == true)
     {
-        log<level::ERR>("PATH is invalid, with has range specification ",
-                        entry("path=(%s)", objPath.c_str()),
-                        entry("interface=(%s)", interface.c_str()),
-                        entry("property=(%s)", property.c_str()));
+        std::cerr << errorMsg("readDbusProperty(): PATH with range", objPath,
+                              interface, property)
+                  << std::endl;
+        return value;
+    }
+
+    auto service = getService(objPath, interface);
+    if (service.empty() == true)
+    {
+        // getService() already printed error message
         return value;
     }
 
     try
     {
-        auto service = getService(objPath, interface);
         auto bus = sdbusplus::bus::new_default();
         auto method = bus.new_method_call(service.c_str(), objPath.c_str(),
                                           freeDesktopInterface, getCall);
@@ -191,15 +228,11 @@ PropertyVariant readDbusProperty(const std::string& objPath,
         auto reply = bus.call(method);
         reply.read(value);
     }
-    // sdbusplus::exception::SdBusError inherits std::exception
-    catch (const std::exception& error)
+    catch (const std::exception& e)
     {
-        log<level::ERR>("Failed to get property ",
-                        entry("path=(%s)", objPath.c_str()),
-                        entry("interface=(%s)", interface.c_str()),
-                        entry("property=(%s)", property.c_str()),
-                        entry("error: %s", error.what()));
-        throw error;
+        std::cerr << errorMsg("readDbusProperty() Failed to get property",
+                              objPath, interface, property, e.what())
+                  << std::endl;
     }
     return value;
 }

@@ -211,19 +211,16 @@ bool DataAccessor::readDbus()
     bool ret = isValidDbusAccessor();
     if (ret == true)
     {
-        //
-        // TBD: https://nvbugs/3647390
-        // Better handling needed
-        //
-        try {
-            auto propVariant = dbus::readDbusProperty(
-                _acc[objectKey], _acc[interfaceKey], _acc[propertyKey]);
-            ret = setDataValueFromVariant(propVariant);
-        }
-        catch (const std::exception& error)
-        {
-            return false;
-        }
+        /*
+         * readDbusProperty() returns empty variant for the following cases:
+         *     1. bad return from getService() -> empty service
+         *     2. object path with range specification
+         * readDbusProperty() forwards an exception when receives it from Dbus
+         */
+        auto propVariant = dbus::readDbusProperty(
+                    _acc[objectKey], _acc[interfaceKey], _acc[propertyKey]);
+        // setDataValueFromVariant returns false in case variant is invalid
+        ret = setDataValueFromVariant(propVariant);
     }
 #ifdef ENABLE_LOGS
     std::cout << __PRETTY_FUNCTION__ << "(): "
