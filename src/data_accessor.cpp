@@ -211,9 +211,19 @@ bool DataAccessor::readDbus()
     bool ret = isValidDbusAccessor();
     if (ret == true)
     {
-        auto propVariant = dbus::readDbusProperty(
-            _acc[objectKey], _acc[interfaceKey], _acc[propertyKey]);
-        ret = setDataValueFromVariant(propVariant);
+        //
+        // TBD: https://nvbugs/3647390
+        // Better handling needed
+        //
+        try {
+            auto propVariant = dbus::readDbusProperty(
+                _acc[objectKey], _acc[interfaceKey], _acc[propertyKey]);
+            ret = setDataValueFromVariant(propVariant);
+        }
+        catch (const std::exception& error)
+        {
+            return false;
+        }
     }
 #ifdef ENABLE_LOGS
     std::cout << __PRETTY_FUNCTION__ << "(): "
