@@ -180,6 +180,8 @@ int main(int argc, char* argv[])
     event_handler::DATTraverse datTraverser("DatTraverser1");
     datTraverser.setDAT(aml::profile::datMap);
 
+    datTraverser.datToDbusAssociation();
+
     event_handler::ClearEvent clearEvent;
     event_handler::EventHandlerManager eventHdlrMgr("EventHandlerManager");
     event_handler::RootCauseTracer rootCauseTracer("RootCauseTracer",

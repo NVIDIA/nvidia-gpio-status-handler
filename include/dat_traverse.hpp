@@ -152,6 +152,49 @@ class DATTraverse : public event_handler::EventHandler
      */
     void setDAT(const std::map<std::string, dat_traverse::Device>& dat);
 
+    /**
+     *  @brief Return the list of all devices reachable by
+     *  "association" relation.
+     *
+     *  @param[in] dat The device Association Tree the
+     *  @rootDevice is part of.
+     *
+     *  @param[in] rootDevice The device from which to start the
+     *  @dat traversal.
+     *
+     *  @return Vector of device names (keys from @dat map)
+     *  reachable from @rootDevice, excluding the @rootDevice
+     */
+    std::vector<std::string>
+        getAssociationConnectedDevices(const std::string& rootDevice);
+
+    /**
+     * @brief Populate 'Associations' property of the devices in dbus with
+     * "health_rollup" entries.
+     *
+     * For each device 'D' found among the descendant of
+     * '/xyz/openbmc_project/inventory/system/chassis/' in
+     * 'xyz.openbmc_project.ObjectMapper' populate the 'Associations' property
+     * of the 'xyz.openbmc_project.Association.Definitions' interface through
+     * the manager service 'M' for this device (more on it later), with entries
+     * of the form:
+     *
+     *   ("health_rollup", "", d)
+     *
+     * where 'd' is every device reachable from 'D' in a device association tree
+     * given in @ref this->dat (excluding 'D' itself), for which there exists
+     * the corresponding object path in 'xyz.openbmc_project.ObjectMapper'
+     * ('d' is actually that path itself, not the mere name of the device, eg.
+     * '/xyz/openbmc_project/inventory/system/processors/GPU0' instead of
+     * 'GPU0').
+     *
+     * Obtain the managing service 'M' for the given device 'D' by querying
+     * object '/xyz/openbmc_project/object_mapper' of the
+     * 'xyz.openbmc_project.ObjectMapper' service using method 'GetObject' (eg.
+     * 'xyz.openbmc_project.GpuMgr').
+     */
+    void datToDbusAssociation();
+
     //  private:
 
     /**
@@ -167,13 +210,28 @@ class DATTraverse : public event_handler::EventHandler
                            const std::string& device);
 
     /**
-     * @brief Fully traverses a device and stops if comparator
+     * @brief Fully traverses a device and stops if predicate
      *        detects an issue in which case action function
      *        will update originOfCondition
      *
+     * Walk Device Association Tree @dat starting at @device in a
+     * depth-first manner, where the children of @device are taken
+     * from its @association field. Apply every function in @action
+     * vector to the @dat and currently visited device, respectively
+     * (including the starting @device). Use @predicate to determine
+     * whether to explore its children: @true - yes, @false - no.
+     *
+     * Keep track of the visited devices. @predicate will never be
+     * called more than once on a device, and neither any of the
+     * functions in @action.
+     *
+     * Return the list of names of visited devices, in the order of
+     * visiting. It will always contain the @device as the first
+     * element.
+     *
      * @param dat
      * @param device
-     * @param comparator
+     * @param predicate
      * @param action
      *
      * @return vector of devices which we saw an issue with
@@ -181,8 +239,7 @@ class DATTraverse : public event_handler::EventHandler
     std::vector<std::string> childTraverse(
         std::map<std::string, dat_traverse::Device>& dat,
         const std::string& device,
-        const std::function<bool(const dat_traverse::Device& device)>
-            comparator,
+        const std::function<bool(const dat_traverse::Device& device)> predicate,
         const std::vector<
             std::function<void(std::map<std::string, dat_traverse::Device>& dat,
                                const dat_traverse::Device& device)>>& action);

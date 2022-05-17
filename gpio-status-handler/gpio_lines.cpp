@@ -68,61 +68,70 @@ bool GpioLines::openGpioLines(
     {
         string pinName = it.key();
 
-        // assert(dbusPropMapChipObj.contains(pinName));
-        // ^ satisfied by 'openGpioChips'
-        gpiod_chip_t* chip = dbusPropMapChipObj.at(pinName);
-
-        unsigned gpioChipNum = it.value()[GpioJsonConfig::configKeyGpioChip];
-        unsigned pinNum = it.value()[GpioJsonConfig::configKeyGpioPin];
-
-        pair<unsigned, unsigned> p(gpioChipNum, pinNum);
-        if (!gpioLineIds.contains(p))
+        if (!dbusPropMapChipObj.contains(pinName))
         {
-            // In general 'gpiod_chip_get_line' may or may not
-            // result in the allocation of memory. For the
-            // different 'chip' object, however, the memory is
-            // always allocated (source: lib source). So together
-            // with (101) this call will always return a new
-            // object which satisfies (102).
+            allLinesOpenable = false;
+        }
+        else // ! !dbusPropMapChipObj.contains(pinName)
+        {
+            // assert(dbusPropMapChipObj.contains(pinName));
+            // ^ satisfied by 'openGpioChips'
+            gpiod_chip_t* chip = dbusPropMapChipObj.at(pinName);
+
+            unsigned gpioChipNum =
+                it.value()[GpioJsonConfig::configKeyGpioChip];
+            unsigned pinNum = it.value()[GpioJsonConfig::configKeyGpioPin];
+
+            pair<unsigned, unsigned> p(gpioChipNum, pinNum);
+            if (!gpioLineIds.contains(p))
+            {
+                // In general 'gpiod_chip_get_line' may or may not
+                // result in the allocation of memory. For the
+                // different 'chip' object, however, the memory is
+                // always allocated (source: lib source). So together
+                // with (101) this call will always return a new
+                // object which satisfies (102).
+                {
+                    stringstream ss;
+                    string chipName = gpiod_chip_name(chip);
+                    ss << "Opening line <" << chipName << " " << pinNum << ">"
+                       << " (by '" << pinName << "')" << endl;
+                    logPinOperation<level::INFO>(ss.str().c_str(), pinName,
+                                                 chipName, pinNum);
+                }
+                gpiod_line_t* line = gpiod_chip_get_line(chip, pinNum);
+                if (line != NULL)
+                {
+                    // assert(!dbusPropMapLineObj.contains(pinName));
+                    // ^ Satisfied by (1) and keys uniqueness in 'jsonConfig'
+                    dbusPropMapLineObj[pinName] = line;
+                    gpioLineIds[p] = pinName;
+                }
+                else // ! line
+                {
+                    lastErrno = errno;
+                    string chipName = gpiod_chip_name(chip);
+                    stringstream ss;
+                    ss << "gpiod_chip_get_line(\"" << chipName << "\", "
+                       << pinNum << ")";
+                    logLibgpioCallError(ss, (int)NULL, lastErrno, pinName,
+                                        chipName, pinNum);
+                    allLinesOpenable = false;
+                }
+            }
+            else // ! !gpioLineIds.contains(p)
             {
                 stringstream ss;
                 string chipName = gpiod_chip_name(chip);
-                ss << "Opening line <" << chipName << " " << pinNum << ">"
-                   << " (by '" << pinName << "')" << endl;
-                logPinOperation<level::INFO>(ss.str().c_str(), pinName,
-                                             chipName, pinNum);
-            }
-            gpiod_line_t* line = gpiod_chip_get_line(chip, pinNum);
-            if (line != NULL)
-            {
-                // assert(!dbusPropMapLineObj.contains(pinName));
-                // ^ Satisfied by (1) and keys uniqueness in 'jsonConfig'
-                dbusPropMapLineObj[pinName] = line;
-                gpioLineIds[p] = pinName;
-            }
-            else // ! line
-            {
-                lastErrno = errno;
-                string chipName = gpiod_chip_name(chip);
-                stringstream ss;
-                ss << "gpiod_chip_get_line(\"" << chipName << "\", " << pinNum
-                   << ")";
-                logLibgpioCallError(ss, (int)NULL, lastErrno, pinName, chipName,
-                                    pinNum);
+                ss << "Pin number " << pinNum << " on the gpio chip '"
+                   << chipName << "' associated with the DBus property '"
+                   << pinName
+                   << "' has already been associated with the property '"
+                   << gpioLineIds[p] << "'";
+                log<level::ERR>(ss.str().c_str(), pinNameEntry(pinName),
+                                chipEntry(chipName), pinNumEntry(pinNum));
                 allLinesOpenable = false;
             }
-        }
-        else // ! !gpioLineIds.contains(p)
-        {
-            stringstream ss;
-            string chipName = gpiod_chip_name(chip);
-            ss << "Pin number " << pinNum << " on the gpio chip '" << chipName
-               << "' associated with the DBus property '" << pinName
-               << "' has already been associated with the property '"
-               << gpioLineIds[p] << "'";
-            log<level::ERR>(ss.str().c_str(), pinNameEntry(pinName),
-                            chipEntry(chipName), pinNumEntry(pinNum));
-            allLinesOpenable = false;
         }
     }
     if (!allLinesOpenable)
