@@ -1284,7 +1284,7 @@
       "VR",
       "HSC8",
       "NVSwitch0-ERoT",
-      "PCIeSwitch"
+      "PCIeSwitch0"
     ],
     "power_rail": [
       {
@@ -1364,7 +1364,7 @@
       "VR",
       "HSC8",
       "NVSwitch1-ERoT",
-      "PCIeSwitch"
+      "PCIeSwitch0"
     ],
     "power_rail": [{
       "name": "test point name",
@@ -1442,7 +1442,7 @@
       "VR",
       "HSC9",
       "NVSwitch2-ERoT",
-      "PCIeSwitch"
+      "PCIeSwitch0"
     ],
     "power_rail": [
       {
@@ -1522,7 +1522,7 @@
       "VR",
       "HSC9",
       "NVSwitch3-ERoT",
-      "PCIeSwitch"
+      "PCIeSwitch0"
     ],
     "power_rail": [
       {
@@ -2213,7 +2213,7 @@
       }
     ]
   },
-  "PCIeSwitch": {
+  "PCIeSwitch0": {
     "association": [
       "HSC_STBY",
       "PCIeSwitch-ERoT"

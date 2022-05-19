@@ -14,7 +14,7 @@ show_help()
     echo "<options>"
     echo "  -dry-run          - Only print mctp-error-detection cmdline."
     echo
-    echo "  dev_type          - Device Types Supported: GPU, NVSwitch, PCIeSwitch"
+    echo "  dev_type          - Device Types Supported: GPU, NVSwitch, PCIeSwitch0"
     echo
 }
 
@@ -61,7 +61,7 @@ case $1 in
     bitmask=0xf
     ;;
 
-  "PCIeSwitch")
+  "PCIeSwitch0")
     # Return Bit 12
     # Shift right by 12
     output=$(( $output >> 12 ))

@@ -618,10 +618,10 @@
       "value_as_count": false
     }
   ],
-  "PCIeSwitch": [
+  "PCIeSwitch0": [
     {
       "event": "SPI flash error",
-      "device_type": "PCIeSwitch",
+      "device_type": "PCIeSwitch0",
       "event_trigger": {
         "type": "DBUS",
         "object": "/xyz/openbmc_project/GpioStatusHandler",
@@ -632,7 +632,7 @@
       "accessor": {
         "type": "CMDLINE",
         "executable": "mctp-vdm-util-wrapper",
-        "arguments": "AP0_SPI_READ_FAILURE PCIeSwitch",
+        "arguments": "AP0_SPI_READ_FAILURE PCIeSwitch0",
         "check":{
           "equal": "1"
         }
@@ -653,7 +653,7 @@
     },
     {
       "event": "VR Fault",
-      "device_type": "PCIeSwitch",
+      "device_type": "PCIeSwitch0",
       "event_trigger": {
         "type": "DBUS",
         "object": "/xyz/openbmc_project/GpioStatusHandler",
@@ -682,7 +682,7 @@
     },
     {
       "event": "OverTemp",
-      "device_type": "PCIeSwitch",
+      "device_type": "PCIeSwitch0",
       "event_trigger": {
         "type": "DBUS",
         "object": "/xyz/openbmc_project/GpioStatusHandler",
@@ -711,7 +711,7 @@
     },
     {
       "event": "Boot completed failure",
-      "device_type": "PCIeSwitch",
+      "device_type": "PCIeSwitch0",
       "event_trigger": {
         "type": "DBUS",
         "object": "/xyz/openbmc_project/GpioStatusHandler",
@@ -722,7 +722,7 @@
       "accessor": {
         "type": "CMDLINE",
         "executable": "mctp-vdm-util-wrapper",
-        "arguments": "AP0_BOOTCOMPLETE_TIMEOUT PCIeSwitch",
+        "arguments": "AP0_BOOTCOMPLETE_TIMEOUT PCIeSwitch0",
         "check":{
           "equal": "1"
         }
@@ -743,7 +743,7 @@
     },
     {
       "event": "Secure boot failure",
-      "device_type": "PCIeSwitch",
+      "device_type": "PCIeSwitch0",
       "event_trigger": {
         "type": "DBUS",
         "object": "/xyz/openbmc_project/GpioStatusHandler",
@@ -754,7 +754,7 @@
       "accessor": {
         "type": "CMDLINE",
         "executable": "mctp-vdm-util-wrapper",
-        "arguments": "AP0_PRIMARY_FW_AUTHENTICATION_STATUS PCIeSwitch",
+        "arguments": "AP0_PRIMARY_FW_AUTHENTICATION_STATUS PCIeSwitch0",
         "check":{
           "equal": "6"
         }
@@ -775,7 +775,7 @@
     },
     {
       "event": "MCTP runtime failures",
-      "device_type": "PCIeSwitch",
+      "device_type": "PCIeSwitch0",
       "event_trigger": {
         "type": "DBUS",
         "object": "/xyz/openbmc_project/GpioStatusHandler",
@@ -786,7 +786,7 @@
       "accessor": {
         "type": "CMDLINE",
         "executable": "mctp-error-detection",
-        "arguments": "PCIeSwitch",
+        "arguments": "PCIeSwitch0",
         "check": {"bitmap": "1"}
       },
       "severity": "Critical",
