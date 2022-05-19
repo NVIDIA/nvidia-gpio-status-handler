@@ -6,6 +6,7 @@
 #pragma once
 
 #include "aml.hpp"
+#include "dat_traverse.hpp"
 #include "data_accessor.hpp"
 #include "event_handler.hpp"
 #include "event_info.hpp"
@@ -28,8 +29,11 @@ namespace message_composer
 class MessageComposer : public event_handler::EventHandler
 {
   public:
-    MessageComposer(const std::string& name = __PRETTY_FUNCTION__) :
-        event_handler::EventHandler(name)
+    MessageComposer(const std::map<std::string, dat_traverse::Device> datMap,
+                    const std::string& name = __PRETTY_FUNCTION__) :
+        event_handler::EventHandler(name),
+        dat(datMap)
+
     {}
     ~MessageComposer();
 
@@ -57,32 +61,32 @@ class MessageComposer : public event_handler::EventHandler
      * @param event
      * @return std::string&
      */
-    static std::string getDeviceDBusPath(const event_info::EventNode& event)
+    static std::string getDeviceDBusPath(const std::string& device)
     {
 
         auto bus = sdbusplus::bus::new_default_system();
         auto method = bus.new_method_call("xyz.openbmc_project.ObjectMapper",
                                           "/xyz/openbmc_project/object_mapper",
                                           "xyz.openbmc_project.ObjectMapper",
-                                          "GetSubTree");
-        method.append("/xyz/openbmc_project/inventory/system", 2,
+                                          "GetSubTreePaths");
+        int depth = 6;
+        method.append("/xyz/openbmc_project", depth,
                       std::vector<std::string>());
-
-        using GetSubTreeType = std::vector<std::pair<
-            std::string,
-            std::vector<std::pair<std::string, std::vector<std::string>>>>>;
-
         auto reply = bus.call(method);
-        GetSubTreeType subtree;
-        reply.read(subtree);
+        std::vector<std::string> dbusPaths;
+        reply.read(dbusPaths);
 
-        for (auto& objPath : subtree)
+        for (auto& objPath : dbusPaths)
         {
-            if (boost::algorithm::ends_with(objPath.first, "/" + event.device))
+            if (boost::algorithm::ends_with(objPath, "/" + device) ||
+                boost::algorithm::ends_with(objPath, "_" + device))
             {
-                return objPath.first;
+                return objPath;
             }
         }
+
+        std::cerr << "Found no path in ObjectMapper ending with device: "
+                  << device << "\n";
         return "";
     }
 
@@ -133,6 +137,8 @@ class MessageComposer : public event_handler::EventHandler
      * @return boolean for whether or not it was a success
      */
     bool createLog(event_info::EventNode& event);
+
+    std::map<std::string, dat_traverse::Device> dat;
 };
 
 } // namespace message_composer

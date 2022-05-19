@@ -1,4 +1,5 @@
 #include "aml.hpp"
+#include "dat_traverse.hpp"
 #include "event_detection.hpp"
 #include "event_info.hpp"
 #include "message_composer.hpp"
@@ -52,7 +53,8 @@ TEST(MsgCompTest, MakeCall)
     j["value_as_count"] = false;
     event_info::EventNode event("test event");
     event.loadFrom(j);
-    message_composer::MessageComposer mc("Test Msg Composer");
+    std::map<std::string, dat_traverse::Device> dat;
+    message_composer::MessageComposer mc(dat, "Test Msg Composer");
     EXPECT_EQ(mc.getName(), "Test Msg Composer");
 }
 

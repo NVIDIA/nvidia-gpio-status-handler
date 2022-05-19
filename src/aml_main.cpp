@@ -142,7 +142,7 @@ int main(int argc, char* argv[])
 {
     int rc = 0;
 #if 0
-    message_composer::MessageComposer mc("MsgComp1");
+    message_composer::MessageComposer mc(aml::profile::datMap, "MsgComp1");
     event_info::EventNode ev("OverT");
     ev.device = "GPU0";
     ev.messageRegistry.messageId = "ResourceEvent.1.0.ResourceErrorsDetected";
@@ -176,7 +176,8 @@ int main(int argc, char* argv[])
                                       aml::configuration.dat);
 
     // Register event handlers
-    message_composer::MessageComposer msgComposer("MsgComp1");
+    message_composer::MessageComposer msgComposer(aml::profile::datMap,
+                                                  "MsgComp1");
     event_handler::DATTraverse datTraverser("DatTraverser1");
     datTraverser.setDAT(aml::profile::datMap);
 

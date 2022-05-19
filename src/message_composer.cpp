@@ -43,9 +43,24 @@ bool MessageComposer::createLog(event_info::EventNode& event)
 
     auto messageArgs = createMessageArgs(event);
     auto telemetries = collectDiagData(event);
-    auto originOfCondition = getDeviceDBusPath(event);
+
+    std::string oocDevice;
+    if (dat.count(event.device) > 0)
+    {
+        oocDevice = dat.at(event.device).healthStatus.originOfCondition;
+    }
+    else
+    {
+        std::cerr << "Device does not exist in DAT: " << event.device
+                  << std::endl;
+        return false;
+    }
+
+    auto originOfCondition = getDeviceDBusPath(oocDevice);
 
     // TODO: auto telemetries = Compression(telemetries);
+    
+    std::cerr << "OOC device for " << event.device << " is " << originOfCondition << " !!!!\n";
 
     method.append(std::array<std::pair<std::string, std::string>, 6>(
         {{{"xyz.openbmc_project.Logging.Entry.Resolution",
@@ -59,7 +74,6 @@ bool MessageComposer::createLog(event_info::EventNode& event)
     try
     {
         auto reply = bus.call(method);
-
         return true;
     }
     catch (const sdbusplus::exception::SdBusError& e)
