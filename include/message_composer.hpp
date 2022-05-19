@@ -29,7 +29,7 @@ namespace message_composer
 class MessageComposer : public event_handler::EventHandler
 {
   public:
-    MessageComposer(const std::map<std::string, dat_traverse::Device> datMap,
+    MessageComposer(std::map<std::string, dat_traverse::Device>& datMap,
                     const std::string& name = __PRETTY_FUNCTION__) :
         event_handler::EventHandler(name),
         dat(datMap)
@@ -138,7 +138,7 @@ class MessageComposer : public event_handler::EventHandler
      */
     bool createLog(event_info::EventNode& event);
 
-    std::map<std::string, dat_traverse::Device> dat;
+    std::map<std::string, dat_traverse::Device>& dat;
 };
 
 } // namespace message_composer
