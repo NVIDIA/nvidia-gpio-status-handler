@@ -362,39 +362,38 @@ std::string dbusGetManagerServiceName(const std::string& devicePath)
 {
     using namespace sdbusplus;
     using namespace std;
-    auto theBus = bus::new_default_system();
-    auto method =
-        theBus.new_method_call("xyz.openbmc_project.ObjectMapper",
-                               "/xyz/openbmc_project/object_mapper",
-                               "xyz.openbmc_project.ObjectMapper", "GetObject");
-
-    string assocIntf = "xyz.openbmc_project.Association.Definitions";
-
-    method.append(devicePath);
-    vector<string> interfaces = {assocIntf};
-    method.append(interfaces);
-
-    auto reply = theBus.call(method);
-
     map<string, vector<string>> dbusResult;
-    reply.read(dbusResult);
+    auto theBus = bus::new_default_system();
+    try
+    {
+        auto method = theBus.new_method_call(
+            "xyz.openbmc_project.ObjectMapper",
+            "/xyz/openbmc_project/object_mapper",
+            "xyz.openbmc_project.ObjectMapper", "GetObject");
 
-    string result;
-    if (reply.is_method_error())
+        string assocIntf = "xyz.openbmc_project.Association.Definitions";
+
+        method.append(devicePath);
+        vector<string> interfaces = {assocIntf};
+        method.append(interfaces);
+        auto reply = theBus.call(method);
+        reply.read(dbusResult);
+    }
+    catch (const sdbusplus::exception::exception& e)
     {
-        cout << "Error in dbusGetManagerServiceName property" << endl;
+        std::cerr << "[E] " << __PRETTY_FUNCTION__
+                  << " Dbus Error: " << e.what() << std::endl;
+        throw std::runtime_error(e.what());
+    }
+
+    if (dbusResult.empty())
+    {
+        std::cerr << "No manager associated with the device '" << devicePath
+                  << "'" << std::endl;
         return "";
     }
-    else if (dbusResult.empty())
-    {
-        cout << "No manager associated with the device '" << devicePath << "'"
-             << endl;
-        return "";
-    }
-    else
-    {
-        return dbusResult.begin()->first;
-    }
+
+    return dbusResult.begin()->first;
 }
 
 /**
@@ -438,24 +437,25 @@ std::vector<std::tuple<std::string, std::string, std::string>>
 {
 
     using namespace sdbusplus;
-    auto theBus = bus::new_default_system();
-    auto method =
-        theBus.new_method_call(manager.c_str(), devicePath.c_str(),
-                               "org.freedesktop.DBus.Properties", "Get");
-    method.append("xyz.openbmc_project.Association.Definitions");
-    method.append("Associations");
-    auto reply = theBus.call(method);
     std::variant<PropertyType> dbusResult;
-    reply.read(dbusResult);
-    if (reply.is_method_error())
+    auto theBus = bus::new_default_system();
+    try
     {
-        std::cout << "Error in dbusGetDeviceAssociations" << std::endl;
-        return {};
+        auto method =
+            theBus.new_method_call(manager.c_str(), devicePath.c_str(),
+                                   "org.freedesktop.DBus.Properties", "Get");
+        method.append("xyz.openbmc_project.Association.Definitions");
+        method.append("Associations");
+        auto reply = theBus.call(method);
+        reply.read(dbusResult);
     }
-    else
+    catch (const sdbusplus::exception::exception& e)
     {
-        return std::get<PropertyType>(dbusResult);
+        std::cerr << "[E] " << __PRETTY_FUNCTION__
+                  << " Dbus Error: " << e.what() << std::endl;
+        throw std::runtime_error(e.what());
     }
+    return std::get<PropertyType>(dbusResult);
 }
 
 /**
@@ -483,18 +483,23 @@ void dbusSetDeviceAssociations(
     using namespace sdbusplus;
     using namespace std;
     auto theBus = bus::new_default_system();
-    auto method =
-        theBus.new_method_call(manager.c_str(), devicePath.c_str(),
-                               "org.freedesktop.DBus.Properties", "Set");
-    method.append("xyz.openbmc_project.Association.Definitions");
-    method.append("Associations");
-    variant<vector<tuple<string, string, string>>> variantValues = values;
-    method.append(variantValues);
-    auto reply = theBus.call(method);
-    // TODO:
-    if (reply.is_method_error())
+    try
     {
-        cout << "Error in dbusSetDeviceAssociations" << endl;
+        auto method =
+            theBus.new_method_call(manager.c_str(), devicePath.c_str(),
+                                   "org.freedesktop.DBus.Properties", "Set");
+        method.append("xyz.openbmc_project.Association.Definitions");
+        method.append("Associations");
+        variant<vector<tuple<string, string, string>>> variantValues = values;
+        method.append(variantValues);
+        auto reply = theBus.call(method);
+    }
+    catch (const sdbusplus::exception::exception& e)
+    {
+        // TODO:
+        std::cerr << "[E] " << __PRETTY_FUNCTION__
+                  << " Dbus Error: " << e.what() << std::endl;
+        throw std::runtime_error(e.what());
     }
 }
 
@@ -596,35 +601,34 @@ std::vector<std::string> dbusGetDeviceObjectPaths()
 {
 
     using namespace sdbusplus;
-    auto theBus = bus::new_default_system();
-
-    auto method = theBus.new_method_call("xyz.openbmc_project.ObjectMapper",
-                                         "/xyz/openbmc_project/object_mapper",
-                                         "xyz.openbmc_project.ObjectMapper",
-                                         "GetSubTreePaths");
-
-    std::string assocIntf = "xyz.openbmc_project.Association.Definitions";
-    std::string rootObject = "/xyz/openbmc_project/inventory/system/chassis/";
-
-    method.append(rootObject);
-    method.append(0);
-    std::vector<std::string> interfaces = {assocIntf};
-    method.append(interfaces);
-
-    auto reply = theBus.call(method);
-
     std::vector<std::string> result;
-    reply.read(result);
+    auto theBus = bus::new_default_system();
+    try
+    {
+        auto method = theBus.new_method_call(
+            "xyz.openbmc_project.ObjectMapper",
+            "/xyz/openbmc_project/object_mapper",
+            "xyz.openbmc_project.ObjectMapper", "GetSubTreePaths");
 
-    if (reply.is_method_error())
-    {
-        std::cout << "Error in setPcapEnabled property" << std::endl;
-        return {};
+        std::string assocIntf = "xyz.openbmc_project.Association.Definitions";
+        std::string rootObject =
+            "/xyz/openbmc_project/inventory/system/chassis/";
+
+        method.append(rootObject);
+        method.append(0);
+        std::vector<std::string> interfaces = {assocIntf};
+        method.append(interfaces);
+        auto reply = theBus.call(method);
+        reply.read(result);
     }
-    else
+    catch (const sdbusplus::exception::exception& e)
     {
-        return result;
+        std::cerr << "[E] " << __PRETTY_FUNCTION__
+                  << " Dbus Error: " << e.what() << std::endl;
+        throw std::runtime_error(e.what());
     }
+
+    return result;
 }
 
 /**

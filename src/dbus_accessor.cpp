@@ -70,14 +70,14 @@ std::string getService(const std::string& objectPath,
     }
 #endif
 
+    std::string ret{""};
     std::vector<std::pair<std::string, std::vector<std::string>>> response;
     auto bus = sdbusplus::bus::new_default();
-    auto method = bus.new_method_call(mapperBusBame, mapperObjectPath,
-                                      mapperInterface, "GetObject");
-    method.append(objectPath, std::vector<std::string>({interface}));
-    std::string ret{""};
     try
     {
+        auto method = bus.new_method_call(mapperBusBame, mapperObjectPath,
+                                          mapperInterface, "GetObject");
+        method.append(objectPath, std::vector<std::string>({interface}));
         auto reply = bus.call(method);
         reply.read(response);
         if (response.empty() == false)
@@ -106,20 +106,18 @@ RetCoreApi deviceGetCoreAPI(const int devId, const std::string& property)
     constexpr auto object = "/xyz/openbmc_project/GpuMgr";
     constexpr auto interface = "xyz.openbmc_project.GpuMgr.Server";
     constexpr auto callName = "DeviceGetData";
-
     constexpr auto accMode = 1; // Calling in Passthrough Mode. Blocked call.
-
-    auto bus = sdbusplus::bus::new_default();
-    auto method = bus.new_method_call(service, object, interface, callName);
-    method.append(devId);
-    method.append(property);
-    method.append(accMode);
 
     uint64_t value = 0;
     std::string valueStr = "";
     std::tuple<int, std::string, std::vector<uint32_t>> response;
+    auto bus = sdbusplus::bus::new_default();
     try
     {
+        auto method = bus.new_method_call(service, object, interface, callName);
+        method.append(devId);
+        method.append(property);
+        method.append(accMode);
         auto reply = bus.call(method);
         reply.read(response);
     }
@@ -164,15 +162,14 @@ int deviceClearCoreAPI(const int devId, const std::string& property)
     constexpr auto interface = "xyz.openbmc_project.GpuMgr.Server";
     constexpr auto callName = "DeviceClearData";
 
-    auto bus = sdbusplus::bus::new_default();
-    auto method = bus.new_method_call(service, object, interface, callName);
-    method.append(devId);
-    method.append(property);
-
     int rc = -1;
     std::string dbusError{""};
+    auto bus = sdbusplus::bus::new_default();
     try
     {
+        auto method = bus.new_method_call(service, object, interface, callName);
+        method.append(devId);
+        method.append(property);
         auto reply = bus.call(method);
         reply.read(rc);
     }
@@ -218,17 +215,16 @@ PropertyVariant readDbusProperty(const std::string& objPath,
         // getService() already printed error message
         return value;
     }
-
+    auto bus = sdbusplus::bus::new_default();
     try
     {
-        auto bus = sdbusplus::bus::new_default();
         auto method = bus.new_method_call(service.c_str(), objPath.c_str(),
                                           freeDesktopInterface, getCall);
         method.append(interface, property);
         auto reply = bus.call(method);
         reply.read(value);
     }
-    catch (const std::exception& e)
+    catch (const sdbusplus::exception::exception& e)
     {
         std::cerr << errorMsg("readDbusProperty() Failed to get property",
                               objPath, interface, property, e.what())
@@ -273,8 +269,10 @@ DbusPropertyChangedHandler
         }
 #endif
     };
-    DbusPropertyChangedHandler propertyHandler =
-        std::make_unique<sdbusplus::bus::match_t>(
+    DbusPropertyChangedHandler propertyHandler;
+    try
+    {
+        propertyHandler = std::make_unique<sdbusplus::bus::match_t>(
             bus,
             sdbusplus::bus::match::rules::type::signal() +
                 sdbusplus::bus::match::rules::sender(service) +
@@ -282,7 +280,16 @@ DbusPropertyChangedHandler
                 sdbusplus::bus::match::rules::interface(
                     "org.freedesktop.DBus.Properties"),
             std::move(lambdaCallbackHandler));
-
+    }
+    catch (const sdbusplus::exception::SdBusError& e)
+    {
+        std::string msg{__func__};
+        msg += "(): " + service +
+               " service Failed to registry for PropertiesChanged Error: ";
+        msg += e.what();
+        std::cerr << msg << std::endl;
+        throw std::runtime_error(e.what());
+    }
     return propertyHandler;
 }
 
