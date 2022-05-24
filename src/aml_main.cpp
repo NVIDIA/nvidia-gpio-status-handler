@@ -188,6 +188,8 @@ int main(int argc, char* argv[])
     event_handler::RootCauseTracer rootCauseTracer("RootCauseTracer",
                                                    aml::profile::datMap);
 
+    /* Event handlers registration order is important - msgComposer uses data
+    acquired by previous handlers; handlers are used in registration order. */
     eventHdlrMgr.RegisterHandler(&datTraverser);
     eventHdlrMgr.RegisterHandler(&rootCauseTracer);
     eventHdlrMgr.RegisterHandler(&msgComposer);

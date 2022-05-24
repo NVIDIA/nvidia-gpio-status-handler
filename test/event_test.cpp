@@ -94,8 +94,15 @@ TEST(EventTelemtries, MakeCall)
     event_info::EventNode event("test event");
     event.loadFrom(j);
 
-    auto expected = "{\"power\":\"123\",\"temperature\":\"123\"}";
     auto telemetries =
         message_composer::MessageComposer::collectDiagData(event);
-    EXPECT_EQ(telemetries, expected);
+
+    /*  deserialize object, check content;
+        selftest report is expected to be empty in this case as there were none 
+        performed. */
+    nlohmann::json jCollected = nlohmann::json::parse(telemetries);
+    EXPECT_EQ(jCollected.size(), 3);
+    EXPECT_EQ(jCollected["power"], "123");
+    EXPECT_EQ(jCollected["temperature"], "123");
+    EXPECT_EQ(jCollected["selftest"].size(), 0);
 }

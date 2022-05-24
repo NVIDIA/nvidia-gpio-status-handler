@@ -111,7 +111,8 @@ class MessageComposer : public event_handler::EventHandler
     }
 
     /**
-     * @brief Collect event related telemetries values as diag data.
+     * @brief Use stored in event node data; Collect event related telemetries
+     *        values as diag data.
      *
      * @param event
      * @return std::string&
@@ -119,6 +120,8 @@ class MessageComposer : public event_handler::EventHandler
     static std::string collectDiagData(const event_info::EventNode& event)
     {
         nlohmann::json output;
+        output["selftest"] = event.selftestReport;
+
         for (auto telemetry : event.telemetries)
         {
             std::string telemetryName = telemetry[data_accessor::nameKey];
