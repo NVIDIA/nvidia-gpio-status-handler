@@ -41,7 +41,9 @@ static int threadsExitCode;
 
 void stopService(int exitCode)
 {
+#ifdef ENABLE_GSH_LOGS
     log<level::INFO>("Stopping service");
+#endif
     threadsExitCode = exitCode;
     runThreads = false;
     io.stop();
@@ -54,6 +56,10 @@ bool setDBusProperty(shared_ptr<sdbusplus::asio::dbus_interface> dbusInterface,
     bool success = false;
     {
         lock_guard<mutex> lock(setDBusPropMutex);
+#ifdef ENABLE_GSH_LOGS
+        /* TODO: this log message is notice only - it should not be called always,
+            but only if verbosity level is set to level notice at least.
+            Additionally, it should be called only if the pin value is changed. */
         {
             stringstream ss;
             ss << "Setting '" << dbusInterfaceName << "." << pinName << "' <- "
@@ -61,6 +67,7 @@ bool setDBusProperty(shared_ptr<sdbusplus::asio::dbus_interface> dbusInterface,
             logPinOperation<level::INFO>(ss.str().c_str(), pinName, chipName,
                                          pinNum);
         }
+#endif
         try
         {
             dbusInterface->set_property(pinName, pinValue);
@@ -224,11 +231,13 @@ void finishThreads(vector<thread>& threads)
 {
     for (auto i = 0u; i < threads.size(); ++i)
     {
+#ifdef ENABLE_GSH_LOGS
         {
             stringstream ss;
             ss << "Waiting for thread #" << i << endl;
             log<level::INFO>(ss.str().c_str());
         }
+#endif
         threads[i].join();
     }
 }
@@ -248,7 +257,9 @@ void startThreads(vector<thread>& threads,
                   const map<string, gpiod_line_t*>& dbusPropMapLineObj,
                   const GpioJsonConfig& gpioConfig)
 {
+#ifdef ENABLE_GSH_LOGS
     log<level::INFO>("Starting gpio pins monitoring threads");
+#endif
     runThreads = true;
     if (!dbusPropMapLineObj.empty())
     {
@@ -266,6 +277,7 @@ void startThreads(vector<thread>& threads,
             uint64_t readPeriodTicks =
                 max((uint64_t)1,
                     (uint64_t)(readPeriodSec * 1e9 / lineEventWaitTimeoutNs));
+#ifdef ENABLE_GSH_LOGS
             {
                 stringstream ss;
                 ss << "Setting up thread for:" << endl;
@@ -280,10 +292,13 @@ void startThreads(vector<thread>& threads,
                 logPinOperation<level::INFO>(ss.str().c_str(), pinName,
                                              chipName, pinNum);
             }
+#endif
             threads.push_back(thread(syncAlertGpioPin, dbusInterface, line,
                                      chipName, pinName, pinNum,
                                      readPeriodTicks));
+#ifdef ENABLE_GSH_LOGS
             log<level::INFO>("Thread started");
+#endif
         }
     }
     else // ! !dbusPropMapLineObj.empty()
@@ -307,11 +322,13 @@ shared_ptr<sdbusplus::asio::dbus_interface>
                      const GpioJsonConfig& gpioConfig)
 {
     auto conn = make_shared<sdbusplus::asio::connection>(io);
+#ifdef ENABLE_GSH_LOGS
     {
         stringstream ss;
         ss << "Registering DBus name '" << dbusServiceName << "'";
         log<level::INFO>(ss.str().c_str());
     }
+#endif
     conn->request_name(dbusServiceName);
     auto server = sdbusplus::asio::object_server(conn);
     auto dbusInterface =
@@ -477,9 +494,13 @@ int main(int argc, char* argv[])
             // between could be closed gracefully.
             try
             {
+#ifdef ENABLE_GSH_LOGS
                 log<level::INFO>("Starting DBus server");
+#endif
                 io.run();
+#ifdef ENABLE_GSH_LOGS
                 log<level::INFO>("DBus server closed");
+#endif
             }
             catch (const std::exception& e)
             {
@@ -489,7 +510,9 @@ int main(int argc, char* argv[])
                 stopService(1);
             }
 
+#ifdef ENABLE_GSH_LOGS
             log<level::INFO>("Waiting for gpio monitoring threads to finish");
+#endif
             finishThreads(threads);
             showLastThreadException();
             mainResult = threadsExitCode;

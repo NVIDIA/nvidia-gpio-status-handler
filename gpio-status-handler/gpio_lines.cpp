@@ -91,6 +91,7 @@ bool GpioLines::openGpioLines(
                 // always allocated (source: lib source). So together
                 // with (101) this call will always return a new
                 // object which satisfies (102).
+#ifdef ENABLE_GSH_LOGS
                 {
                     stringstream ss;
                     string chipName = gpiod_chip_name(chip);
@@ -99,6 +100,7 @@ bool GpioLines::openGpioLines(
                     logPinOperation<level::INFO>(ss.str().c_str(), pinName,
                                                  chipName, pinNum);
                 }
+#endif
                 gpiod_line_t* line = gpiod_chip_get_line(chip, pinNum);
                 if (line != NULL)
                 {
@@ -146,11 +148,13 @@ void GpioLines::closeGpioLines() noexcept
     for (auto it = dbusPropMapLineObj.cbegin(); it != dbusPropMapLineObj.cend();
          ++it)
     {
+#ifdef ENABLE_GSH_LOGS
         {
             stringstream ss;
             ss << "Closing gpio line requested by '" << it->first << "'";
             logPinOperation<level::INFO>(ss.str().c_str(), it->first);
         }
+#endif
         gpiod_line_release(it->second);
     }
     dbusPropMapLineObj.clear();
@@ -172,6 +176,7 @@ bool GpioLines::requestBothEdgesEvents(int& lastErrno) noexcept
     {
         string pinName = it->first;
         gpiod_line_t* line = it->second;
+#ifdef ENABLE_GSH_LOGS
         {
             stringstream ss;
             int pinNum = gpiod_line_offset(line);
@@ -181,6 +186,7 @@ bool GpioLines::requestBothEdgesEvents(int& lastErrno) noexcept
             logPinOperation<level::INFO>(ss.str().c_str(), pinName, chipName,
                                          pinNum);
         }
+#endif
         int requestResult =
             gpiod_line_request_both_edges_events(line, pinName.c_str());
         if (requestResult != 0)

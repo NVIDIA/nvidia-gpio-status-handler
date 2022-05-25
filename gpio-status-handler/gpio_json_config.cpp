@@ -217,11 +217,13 @@ GpioConfigError::GpioConfigError(const char* message) :
 
 GpioJsonConfig::GpioJsonConfig(const string& fileName)
 {
+#ifdef ENABLE_GSH_LOGS
     {
         stringstream ss;
         ss << "Reading json file '" << fileName << "'";
         log<level::INFO>(ss.str().c_str(), entry("FILE=%s", fileName.c_str()));
     }
+#endif
 
     ifstream jsonFile(fileName);
     if (jsonFile.good())

@@ -40,6 +40,7 @@ void GpioChips::closeGpioChips() noexcept
          ++it)
     {
         gpiod_chip_t* chip = it->second;
+#ifdef ENABLE_GSH_LOGS
         {
             stringstream ss;
             ss << "Closing chip '" << gpiod_chip_name(chip) << "' "
@@ -47,6 +48,7 @@ void GpioChips::closeGpioChips() noexcept
             log<level::INFO>(ss.str().c_str(), chipEntry(gpiod_chip_name(chip)),
                              pinNameEntry(it->first));
         }
+#endif
         gpiod_chip_close(chip);
     }
     dbusPropMapChipObj.clear();
@@ -88,15 +90,18 @@ bool GpioChips::openGpioChips(const json& jsonConfig, int& lastErrno) noexcept
         // successful, always results in the allocation of new
         // object (source: lib source). (101)
 
+#ifdef ENABLE_GSH_LOGS
         {
             stringstream ss;
             ss << "Opening chip " << gpioChipNum << " (by '" << pinName << "')"
                << endl;
             log<level::INFO>(ss.str().c_str(), pinNameEntry(pinName));
         }
+#endif
         gpiod_chip_t* gpioChip = gpiod_chip_open_by_number(gpioChipNum);
         if (gpioChip != NULL)
         {
+#ifdef ENABLE_GSH_LOGS
             {
                 stringstream ss;
                 ss << "Chip '" << gpiod_chip_name(gpioChip) << "' opened";
@@ -104,6 +109,7 @@ bool GpioChips::openGpioChips(const json& jsonConfig, int& lastErrno) noexcept
                                  chipEntry(gpiod_chip_name(gpioChip)),
                                  pinNameEntry(pinName));
             }
+#endif
             // assert(!dbusPropMapChipObj.contains(pinName));
             // ^ Satisfied by (1) and keys uniqueness in 'jsonConfig'
             dbusPropMapChipObj[pinName] = gpioChip;
