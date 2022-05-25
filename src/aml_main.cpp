@@ -32,11 +32,20 @@
 #include <string>
 #include <vector>
 
+#include <unistd.h>
+
 using namespace std;
 using namespace phosphor::logging;
 
 const auto APPNAME = "oobamld";
 const auto APPVER = "0.1";
+
+/**
+ * @brief RETRY_DBUS_INFO_COUNTER and RETRY_SLEEP are used to wait for other
+ *        services populate their data on DBus
+ */
+constexpr int RETRY_DBUS_INFO_COUNTER = 60;
+constexpr int RETRY_SLEEP = 5;
 
 log_init;
 
@@ -181,7 +190,28 @@ int main(int argc, char* argv[])
     event_handler::DATTraverse datTraverser("DatTraverser1");
     datTraverser.setDAT(aml::profile::datMap);
 
-    datTraverser.datToDbusAssociation();
+    int retryGettingDbusInfo = 0;
+    bool error =  true;
+    while (error == true && retryGettingDbusInfo < RETRY_DBUS_INFO_COUNTER)
+    {
+        try
+        {
+            datTraverser.datToDbusAssociation();
+            error = false; // stop the loop
+        }
+        catch (const std::exception& e)
+        {
+            if (++retryGettingDbusInfo < RETRY_DBUS_INFO_COUNTER)
+            {
+                 std::cerr << "[W] waiting Dbus information ..." << std::endl;
+                 ::sleep(RETRY_SLEEP);
+                 continue;
+            }
+            std::cerr << "[E] " <<
+                      "HealthRollup & OriginOfCondition can't be supported "
+                      << "at the moment due to Dbus Error." << std::endl;
+        }
+    }
 
     event_handler::ClearEvent clearEvent;
     event_handler::EventHandlerManager eventHdlrMgr("EventHandlerManager");
@@ -231,6 +261,7 @@ int main(int argc, char* argv[])
         return rc;
     }
 
+    std::cerr << "NVIDIA OOB AML daemon is ready.\n";
     io->run();
 
     return 0;
