@@ -8,7 +8,7 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "THERM_OVERT",
-        "check": { "equal": "true" }
+        "check": { "equal": "false" }
       },
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -125,7 +125,7 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "I2C3_ALERT",
-        "check": {"equal": "true"}
+        "check": {"equal": "false"}
       },
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -154,7 +154,7 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "I2C3_ALERT",
-        "check": {"equal": "true"}
+        "check": {"equal": "false"}
       },
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -183,7 +183,7 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "I2C3_ALERT",
-        "check": { "equal": "true" }
+        "check": { "equal": "false" }
       },
       "accessor": {
         "type": "CMDLINE",
@@ -215,7 +215,7 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "I2C3_ALERT",
-        "check": { "equal": "true" }
+        "check": { "equal": "false" }
       },
       "accessor": {
         "type": "CMDLINE",
@@ -247,7 +247,7 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "I2C3_ALERT",
-        "check": { "equal": "true" }
+        "check": { "equal": "false" }
       },
       "accessor": {
         "type": "CMDLINE",
@@ -279,7 +279,7 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "I2C3_ALERT",
-        "check": { "equal": "true" }
+        "check": { "equal": "false" }
       },
       "accessor": {
         "type": "CMDLINE",
@@ -311,7 +311,7 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "THERM_OVERT",
-        "check": {"equal": "true"}
+        "check": {"equal": "false"}
       },
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -340,7 +340,7 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "I2C4_ALERT",
-        "check": {"equal": "true"}
+        "check": {"equal": "false"}
       },
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -369,7 +369,7 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "I2C4_ALERT",
-        "check": {"equal": "true"}
+        "check": {"equal": "false"}
       },
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -470,7 +470,7 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "I2C4_ALERT",
-        "check": {"equal": "true"}
+        "check": {"equal": "false"}
       },
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -499,7 +499,7 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "I2C3_ALERT",
-        "check": { "equal": "true" }
+        "check": { "equal": "false" }
       },
       "accessor": {
         "type": "CMDLINE",
@@ -531,7 +531,7 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "I2C3_ALERT",
-        "check": { "equal": "true" }
+        "check": { "equal": "false" }
       },
       "accessor": {
         "type": "CMDLINE",
@@ -563,7 +563,7 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "I2C3_ALERT",
-        "check": { "equal": "true" }
+        "check": { "equal": "false" }
       },
       "accessor": {
         "type": "CMDLINE",
@@ -595,7 +595,7 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "I2C3_ALERT",
-        "check": { "equal": "true" }
+        "check": { "equal": "false" }
       },
       "accessor": {
         "type": "CMDLINE",
@@ -627,7 +627,7 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "I2C3_ALERT",
-        "check": { "equal": "true" }
+        "check": { "equal": "false" }
       },
       "accessor": {
         "type": "CMDLINE",
@@ -659,7 +659,7 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "I2C4_ALERT",
-        "check": {"equal": "true"}
+        "check": {"equal": "false"}
       },
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -688,7 +688,7 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "THERM_OVERT",
-        "check": { "equal": "true" }
+        "check": { "equal": "false" }
       },
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -717,7 +717,7 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "I2C3_ALERT",
-        "check": { "equal": "true" }
+        "check": { "equal": "false" }
       },
       "accessor": {
         "type": "CMDLINE",
@@ -749,7 +749,7 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "I2C3_ALERT",
-        "check": { "equal": "true" }
+        "check": { "equal": "false" }
       },
       "accessor": {
         "type": "CMDLINE",
@@ -781,7 +781,7 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "I2C3_ALERT",
-        "check": { "equal": "true" }
+        "check": { "equal": "false" }
       },
       "accessor": {
         "type": "CMDLINE",
@@ -813,7 +813,7 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "I2C4_ALERT",
-        "check": { "equal": "true" }
+        "check": { "equal": "false" }
       },
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -842,7 +842,7 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "I2C4_ALERT",
-        "check": { "equal": "true" }
+        "check": { "equal": "false" }
       },
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -871,7 +871,7 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "THERM_OVERT",
-        "check": { "equal": "true" }
+        "check": { "equal": "false" }
       },
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -902,7 +902,7 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "I2C4_ALERT",
-        "check": {"equal": "true"}
+        "check": {"equal": "false"}
       },
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -933,7 +933,7 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "I2C4_ALERT",
-        "check": {"equal": "true"}
+        "check": {"equal": "false"}
       },
       "accessor": {
         "type": "DeviceCoreAPI",
@@ -964,7 +964,7 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "I2C4_ALERT",
-        "check": {"equal": "true"}
+        "check": {"equal": "false"}
       },
       "accessor": {
         "type": "DeviceCoreAPI",
