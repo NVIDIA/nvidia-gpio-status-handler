@@ -179,9 +179,12 @@ class InjectorScriptBase(abc.ABC):
         key_list = list(data.keys())
         if len(key_list) > 0:
             self.create_script_file()
-        for device in key_list:
-            data_dict = data[device]
-            self.generate_device_busctl_commands(device, data_dict)
+            size_key_list = len(key_list)
+            for index in range(size_key_list):
+                device = key_list[index]
+                data_dict = data[device]
+                com.CURRENT_JSON_DEVICE_INDEX = index
+                self.generate_device_busctl_commands(device, data_dict)
         if len(key_list) > 0:
             self.close_script_file()
 
@@ -212,5 +215,6 @@ class InjectorScriptBase(abc.ABC):
             self.generate_busctl_command_from_json_dict(device, data)
         else:
             for index, device_data in enumerate(data):
+                com.DEVICE_HW  = device
                 device_name = device+str(index)
                 self.generate_busctl_command_from_json_dict(device_name, device_data)

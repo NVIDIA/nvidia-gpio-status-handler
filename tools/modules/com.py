@@ -16,12 +16,13 @@ REDFISH_MESSAGE_ARGS  = "REDFISH_MESSAGE_ARGS"
 
 # Not all fields from Json files are handled, two lists below:
 JSON_MANDATORY_FIELDS  = ["redfish", "severity", "event"]
-JSON_ADDITIONAL_FIELDS = ["resolution", "accessor"]
+JSON_ADDITIONAL_FIELDS = ["resolution", "accessor", "event_trigger"]
 
 
 # Keys used in dicts
 KEY_MESSAGE_ID = "MessageId"
 KEY_SEVERITY = 'Severity'
+
 KEY_ACCESSOR = "Accessor"
 KEY_ACCESSOR_TYPE      = KEY_ACCESSOR + ".Type"
 KEY_ACCESSOR_OBJECT    = KEY_ACCESSOR + ".Object"
@@ -30,12 +31,34 @@ KEY_ACCESSOR_PROPERTY  = KEY_ACCESSOR + ".Property"
 KEY_ACCESSOR_CHECK     = KEY_ACCESSOR + ".Check"
 KEY_ACCESSOR_CHECK_BITMASK = KEY_ACCESSOR_CHECK + ".Bitmask"
 KEY_ACCESSOR_CHECK_LOOKUP  = KEY_ACCESSOR_CHECK + ".Lookup"
+KEY_ACCESSOR_DEP           = KEY_ACCESSOR + ".Dependency"
+KEY_ACCESSOR_DEP_TYPE      = KEY_ACCESSOR_DEP + ".Type"
+KEY_ACCESSOR_DEP_PROPERTY  = KEY_ACCESSOR_DEP + ".Property"
 
-# common constants
-ACCESSOR_TYPE_DBUS     = "DBUS"
-LOGGING_ENTRY_STR     = "xyz.openbmc_project.Logging.Entry"
-LOGGING_ENTRY_DOT_STR = f"{LOGGING_ENTRY_STR}."
+KEY_EVENT_TRIGGER = "Event_trigger"
+KEY_EVENT_TRIGGER_TYPE      = KEY_EVENT_TRIGGER + ".Type"
+KEY_EVENT_TRIGGER_OBJECT    = KEY_EVENT_TRIGGER + ".Object"
+KEY_EVENT_TRIGGER_INTERFACE = KEY_EVENT_TRIGGER + ".Interface"
+KEY_EVENT_TRIGGER_PROPERTY  = KEY_EVENT_TRIGGER + ".Property"
+KEY_EVENT_TRIGGER_CHECK     = KEY_EVENT_TRIGGER + ".Check"
+KEY_EVENT_TRIGGER_CHECK_BITMASK = KEY_EVENT_TRIGGER_CHECK + ".Bitmask"
+KEY_EVENT_TRIGGER_CHECK_LOOKUP  = KEY_EVENT_TRIGGER_CHECK + ".Lookup"
 
+## current device being handled
+DEVICE_HW = ""
+
+# common constants, it is used for both KEY_ACCESSOR AND KEY_EVENT_TRIGGER
+ACCESSOR_TYPE_DBUS      = "DBUS"
+ACCESSOR_TYPE_DBUS_CALL = "DBUS CALL"
+ACCESSOR_TYPE_DEVICE_CORE_API = "DEVICECOREAPI"
+
+LOGGING_ENTRY_STR       = "xyz.openbmc_project.Logging.Entry"
+LOGGING_ENTRY_DOT_STR   = f"{LOGGING_ENTRY_STR}."
+
+
+## this the index of the device defined in the input json file such as
+##   "GPU": [ .. ]  -> GPU0, GPU1, ...  index= 0, 1, ...
+CURRENT_JSON_DEVICE_INDEX = 0
 
 # index in busctl_info
 INDEX_DEVICE_NAME     = 0
@@ -176,22 +199,22 @@ def __compare_event_data_and_redfish_data(key_list, mandatory_flag, injected_dic
             exist_both_keys = injected_key in injected_dict and key in redfish_dict
             if exist_both_keys is False:
                 if mandatory_flag is True:
-                    return False  # both dicts must have the key value
+                    print(f"\tError: Key '{key}' does not exist in redfish entry")
+                    ret =  False  # both dicts must have the key value
                 continue          # ok if the key information misses in one or both dicts
             # performs the comparing
             if key == KEY_SEVERITY: # special Severity cheking
                 sub_severity_key = redfish_dict[key].lower()
                 if injected_dict[injected_key] not in SEVERITYDBUSTOREDFISH[sub_severity_key]:
                     ret = False
-                    break
                 continue  ## Severity field OK
             ## filds comparing
             if isinstance(redfish_dict[key], list):
                 injected_list_value = re.split(r',\s*', injected_dict[injected_key])
                 if lists_are_equal(redfish_dict[key], injected_list_value):
                     continue
+                print(f"\tError: the content of the lists of Key '{key}' does not match, redfish={redfish_dict[key]} injected={injected_list_value}")
                 ret = False
-                break
             value_injected = injected_dict[injected_key]
             value_redfish = redfish_dict[key]
             ## compare strings without spaces, this works around some event creation problems
@@ -200,8 +223,8 @@ def __compare_event_data_and_redfish_data(key_list, mandatory_flag, injected_dic
             if isinstance(value_redfish, str):
                 value_redfish = ''.join(value_redfish.split())
             if  value_injected != value_redfish:
+                print(f"\tError: the value of Key '{key}' does not match, redfish={value_redfish} injected={value_injected}")
                 ret = False
-                break
     except Exception as error:
         raise error
     return ret

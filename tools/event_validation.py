@@ -92,7 +92,7 @@ available_options = [
         'args': [ '--bmcweb-port'],
         'kwargs': {
             'type': int,
-            'default': 2443,
+            'default': 2080,
             'help': '''Specify Port to connect to BMCWeb.'''
         }
     },
@@ -231,7 +231,7 @@ class InjectTest:
         Uses key 'Member@odata.count' to get the current count.
         Cache the redfish API response if argument "cache" is set to "True"
         """
-        event_log_entries_api= f"https://{BMCWEB_IP}:{BMCWEB_PORT}/{com.EVENT_LOG_URI}"
+        event_log_entries_api= f"http://{BMCWEB_IP}:{BMCWEB_PORT}/{com.EVENT_LOG_URI}"
         try: # Call the API
             response = get(event_log_entries_api, verify=False,
                                     auth = HTTPBasicAuth(QEMU_USER, QEMU_PASS))
@@ -284,7 +284,7 @@ class InjectTest:
             self._ssh_cmd.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             # Connect the SSH client to QEMU
             self._ssh_cmd.connect(QEMU_IP, username=QEMU_USER, port=QEMU_PORT, \
-                              password=QEMU_PASS, timeout=5)
+                              password=QEMU_PASS, timeout=60)
         except Exception as error:
             msg = f"Exception occurred while connecting to {BMCWEB_IP} {QEMU_PORT}"
             raise Exception(f"{msg}: {str(error)}") from error
@@ -366,6 +366,11 @@ class InjectTest:
                     self.events_injected[current_log_number] = []
                 # Create a temp dictionary to fill in the info
                 temp_dict = {}
+                temp_str = event_split[com.BUSCTL_MSG_IDX]
+                temp_str.replace('\"', "");
+                words = temp_str.split(' ')
+                temp_dict['device'] = words.pop(0)
+                temp_dict['event']  = ' '.join(words)
                 temp_dict[com.KEY_SEVERITY]  = event_split[com.BUSCTL_SEVERITY_IDX]
                 additional_data_idx = com.BUSCTL_ADDITIONALDATA_IDX
                 while additional_data_idx < len(event_split):
@@ -470,6 +475,7 @@ class InjectTest:
 
         out = ""
         # Iterate over all the log entries
+        print(f"\nComparing injections with redfish logs, fields: {com.MANDATORY_EVENT_KEYS} {com.OPTIONAL_EVENT_KEYS}\n...\n")
         for member in self.log_cache.get('Members', []):
             try:
                 # Check if log entry number is greater than the initial logs count before injection
@@ -477,6 +483,10 @@ class InjectTest:
                     log_id = int(member['Id'])
                     temp_dict = self.events_injected[log_id]
                     # Compare all the fields
+                    if 'MessageArgs' in member:
+                         print("entryId=%03d device=%-14s event='%-50s' MessageArgs=%s" % (log_id, temp_dict['device'], temp_dict['event'], member['MessageArgs']))
+                    else:
+                        print("entryId=%03d device=%-14s event='%-50s'" % (log_id, temp_dict['device'], temp_dict['event']))
                     mandatory_fields_match = com.compare_mandatory_event_fields(temp_dict, member)
                     optional_fields_match = com.compare_optional_event_fields(temp_dict, member)
                     if mandatory_fields_match is True and optional_fields_match is True:
