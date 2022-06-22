@@ -11,16 +11,13 @@
 
 #pragma once
 
+#include "property_variant.hpp"
+
 #include <map>
 #include <string>
-#include <variant>
 
 namespace data_accessor
 {
-
-using PropertyVariant =
-    std::variant<std::monostate, bool, uint8_t, int16_t, uint16_t, int32_t,
-                 uint32_t, int64_t, uint64_t, double, std::string>;
 
 using CheckDefinitionMap = std::map<std::string, std::string>;
 
@@ -29,13 +26,6 @@ constexpr auto bitmapKey = "bitmap";
 constexpr auto lookupKey = "lookup";
 constexpr auto equalKey = "equal";
 constexpr auto notEqualKey = "not_equal";
-
-/**
- * @brief Variant2String
- * @param variantVar
- * @return a std::string from the variant
- */
-std::string Variant2String(const PropertyVariant& variantVar);
 
 /**
  * @brief PropertyValueData represents any Data with 64 bit integer
@@ -279,7 +269,7 @@ class PropertyValue
     /**
      * @brief getPropertyDataFromVariant
      *
-     *  Having a valid value stored in std::variant (no std::monostate )
+     *  Having a valid value stored in std::variant
      *    If it is any integer/float/double, this value is just casted into
      *       64 bits integer and sets valid=true.
      *    When this value is a string, calls string2Uint64()

@@ -21,6 +21,8 @@
 #include "message_composer.hpp"
 #include "selftest.hpp"
 
+#include <unistd.h>
+
 #include <boost/container/flat_map.hpp>
 #include <phosphor-logging/log.hpp>
 #include <sdbusplus/asio/object_server.hpp>
@@ -31,8 +33,6 @@
 #include <queue>
 #include <string>
 #include <vector>
-
-#include <unistd.h>
 
 using namespace std;
 using namespace phosphor::logging;
@@ -191,7 +191,7 @@ int main(int argc, char* argv[])
     datTraverser.setDAT(aml::profile::datMap);
 
     int retryGettingDbusInfo = 0;
-    bool error =  true;
+    bool error = true;
     while (error == true && retryGettingDbusInfo < RETRY_DBUS_INFO_COUNTER)
     {
         try
@@ -203,12 +203,12 @@ int main(int argc, char* argv[])
         {
             if (++retryGettingDbusInfo < RETRY_DBUS_INFO_COUNTER)
             {
-                 std::cerr << "[W] waiting Dbus information ..." << std::endl;
-                 ::sleep(RETRY_SLEEP);
-                 continue;
+                std::cerr << "[W] waiting Dbus information ..." << std::endl;
+                ::sleep(RETRY_SLEEP);
+                continue;
             }
-            std::cerr << "[E] " <<
-                      "HealthRollup & OriginOfCondition can't be supported "
+            std::cerr << "[E] "
+                      << "HealthRollup & OriginOfCondition can't be supported "
                       << "at the moment due to Dbus Error." << std::endl;
         }
     }

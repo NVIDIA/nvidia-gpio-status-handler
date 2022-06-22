@@ -154,9 +154,8 @@ DbusEventHandlerList EventDetection::startEventDetection(
     DbusEventHandlerList handlerList;
     for (auto& service : dbusServiceList)
     {
-        handlerList.push_back(
-            data_accessor::dbus::registerServicePropertyChanged(
-                conn, service, genericHandler));
+        handlerList.push_back(dbus::registerServicePropertyChanged(
+            conn, service, genericHandler));
     }
 #ifdef ENABLE_LOGS
     std::cout << "dbusEventHandlerMatcher created.\n";

@@ -157,7 +157,7 @@ bool PropertyValue::lookup(const PropertyValue& otherLookup,
 void PropertyValue::getPropertyDataFromVariant(const PropertyVariant& varVar)
 {
     bool done = false;
-    if (varVar.index() != 0) // != std::monostate, has a valid value
+    if (isValidVariant(varVar) == true)
     {
         done =
             PropertyValueDataHelper<std::string>::setString(varVar, &_data) ||
@@ -234,8 +234,7 @@ namespace criteria
 PropertyString getStringFromCriteria(const PropertyVariant& redefCriteria,
                                      const std::string& accessorValue)
 {
-    // index() != 0 means not std::monostate
-    PropertyString value = redefCriteria.index() != 0
+    PropertyString value = isValidVariant(redefCriteria) == true
                                ? PropertyString(redefCriteria)
                                : PropertyString(accessorValue);
 
@@ -245,8 +244,7 @@ PropertyString getStringFromCriteria(const PropertyVariant& redefCriteria,
 PropertyValue getValueFromCriteria(const PropertyVariant& redefCriteria,
                                    const std::string& accessorValue)
 {
-    // index() != 0 means not std::monostate
-    PropertyValue value = redefCriteria.index() != 0
+    PropertyValue value = isValidVariant(redefCriteria) == true
                               ? PropertyValue(redefCriteria)
                               : PropertyValue(accessorValue);
 

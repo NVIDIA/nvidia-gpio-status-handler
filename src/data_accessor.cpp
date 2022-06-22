@@ -173,7 +173,7 @@ bool DataAccessor::subCheck(const DataAccessor& otherAcc,
     if (existsCheckBitmap() == true)
     {
         bitmapValue =
-            redefCriteria.index() != 0 // valid index
+            isValidVariant(redefCriteria) == true
                 ? PropertyValue(redefCriteria)
                 : PropertyValue(_acc[checkKey][bitmapKey].get<std::string>());
     }
@@ -218,7 +218,7 @@ bool DataAccessor::readDbus()
          * readDbusProperty() forwards an exception when receives it from Dbus
          */
         auto propVariant = dbus::readDbusProperty(
-                    _acc[objectKey], _acc[interfaceKey], _acc[propertyKey]);
+            _acc[objectKey], _acc[interfaceKey], _acc[propertyKey]);
         // setDataValueFromVariant returns false in case variant is invalid
         ret = setDataValueFromVariant(propVariant);
     }
@@ -298,8 +298,7 @@ bool DataAccessor::runCommandLine(const std::string& device)
 bool DataAccessor::setDataValueFromVariant(const PropertyVariant& propVariant)
 {
     clearData();
-    bool ret = propVariant.index() != 0;
-    // index not zero, not std::monostate that means valid data
+    bool ret = isValidVariant(propVariant);
     if (ret == true)
     {
         _dataValue =

@@ -79,7 +79,7 @@ class Report
      * @brief Generates internal json report.
      *
      * @param[in] reportRes
-     * 
+     *
      * @return true when report successfuly generated, otherwise false
      */
     bool generateReport(ReportResult& reportRes);
@@ -156,8 +156,8 @@ class Selftest : public event_handler::EventHandler
     {
         if (_dat.count(event.device) == 0)
         {
-            std::cerr << "Error: device: " << event.device << 
-                " is an invalid key!" << std::endl;
+            std::cerr << "Error: device: " << event.device
+                      << " is an invalid key!" << std::endl;
             return aml::RcCode::error;
         }
 

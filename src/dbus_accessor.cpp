@@ -16,9 +16,6 @@
 #include <phosphor-logging/elog.hpp>
 #include <sdbusplus/exception.hpp>
 
-namespace data_accessor
-{
-
 namespace dbus
 {
 
@@ -293,6 +290,37 @@ DbusPropertyChangedHandler
     return propertyHandler;
 }
 
-} // namespace dbus
+bool setDbusProperty(const std::string& objPath, const std::string& interface,
+                     const std::string& property, const PropertyVariant& val)
+{
+    return setDbusProperty(getService(objPath, interface), objPath, interface,
+                           property, val);
+}
 
-} // namespace data_accessor
+bool setDbusProperty(const std::string& service, const std::string& objPath,
+                     const std::string& interface, const std::string& property,
+                     const PropertyVariant& val)
+{
+    auto bus = sdbusplus::bus::new_default();
+    bool ret = false;
+    try
+    {
+        auto method = bus.new_method_call(service.c_str(), objPath.c_str(),
+                                          freeDesktopInterface, setCall);
+        method.append(interface, property, val);
+        ret = true;
+        if (!bus.call(method))
+        {
+            ret = false;
+        }
+    }
+    catch (const sdbusplus::exception::exception& e)
+    {
+        std::cerr << errorMsg("setDbusProperty() Failed to set property",
+                              objPath, interface, property, e.what())
+                  << std::endl;
+    }
+    return ret;
+}
+
+} // namespace dbus

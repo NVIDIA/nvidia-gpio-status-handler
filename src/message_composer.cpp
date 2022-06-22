@@ -61,7 +61,8 @@ bool MessageComposer::createLog(event_info::EventNode& event)
     // TODO: auto telemetries = Compression(telemetries);
 
 #ifdef ENABLE_LOGS
-    std::cerr << "OOC device for " << event.device << " is " << originOfCondition << " !!!!\n";
+    std::cerr << "OOC device for " << event.device << " is "
+              << originOfCondition << " !!!!\n";
 #endif
 
     method.append(std::array<std::pair<std::string, std::string>, 6>(

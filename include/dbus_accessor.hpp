@@ -26,14 +26,12 @@
 #include <tuple>
 #include <vector>
 
-namespace data_accessor
-{
-
 namespace dbus
 {
 
 constexpr auto freeDesktopInterface = "org.freedesktop.DBus.Properties";
 constexpr auto getCall = "Get";
+constexpr auto setCall = "Set";
 
 using DbusPropertyChangedHandler = std::unique_ptr<sdbusplus::bus::match_t>;
 using CallbackFunction = sdbusplus::bus::match::match::callback_t;
@@ -90,6 +88,29 @@ PropertyVariant readDbusProperty(const std::string& objPath,
                                  const std::string& interface,
                                  const std::string& property);
 
-} // namespace dbus
+/**
+ * @brief setDbusProperty() sets a value for a Dbus property
+ * @param service
+ * @param objPath
+ * @param interface
+ * @param property
+ * @param val the new value to be set
+ * @return true if could set this the value from 'val', false otherwise
+ */
+bool setDbusProperty(const std::string& service, const std::string& objPath,
+                     const std::string& interface, const std::string& property,
+                     const PropertyVariant& val);
 
-} // namespace data_accessor
+/**
+ * @brief setDbusProperty() just an overload function that calls getService()
+ *                          to get the service for objPath and interface
+ * @param objPath
+ * @param interface
+ * @param property
+ * @param val the new value to be set
+ * @return true if could set this the value from 'val', false otherwise
+ */
+bool setDbusProperty(const std::string& objPath, const std::string& interface,
+                     const std::string& property, const PropertyVariant& val);
+
+} // namespace dbus

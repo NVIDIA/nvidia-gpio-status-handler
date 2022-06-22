@@ -5,6 +5,8 @@
 
 #include "selftest.hpp"
 
+#include "dbus_accessor.hpp"
+
 #include <boost/algorithm/string.hpp>
 #include <boost/asio.hpp>
 #include <phosphor-logging/log.hpp>
@@ -49,41 +51,26 @@ void Selftest::updateDeviceHealth(const std::string& device,
         GetSubTreeType subtree;
         reply.read(subtree);
 
-        boost::asio::io_context ioc;
-        auto conn = sdbusplus::asio::connection(ioc);
-
         for (auto& objPath : subtree)
         {
             if (boost::algorithm::ends_with(objPath.first, "/" + device))
             {
-#ifdef ENABLE_LOGS
-                std::cout << "Setting Health Property for: " << objPath.first
-                          << "\n";
-#endif
-
-                std::string&& healthState =
+                std::string healthState =
                     "xyz.openbmc_project.State.Decorator.Health.HealthType." +
                     health;
-
-                sdbusplus::asio::setProperty(
-                    conn, "xyz.openbmc_project.GpuMgr", objPath.first,
+#ifdef ENABLE_LOGS
+                std::cout << "Setting Health Property for: " << objPath.first
+                          << " healthState: " << healthState << "\n";
+#endif
+                bool ok = dbus::setDbusProperty(objPath.first,
                     "xyz.openbmc_project.State.Decorator.Health", "Health",
-                    healthState, [this](const boost::system::error_code& ec) {
-                        if (ec)
-                        {
+                    PropertyVariant(healthState));
+                if (ok == true)
+                {
 #ifdef ENABLE_LOGS
-                            std::cout
-                                << "Error: it supposed to be ok to change health property "
-                                << ec << "\n";
+                    std::cout << "Changed health property as expected\n";
 #endif
-                            return;
-                        }
-#ifdef ENABLE_LOGS
-                        std::cout << "Changed health property as expected\n";
-#endif
-                    });
-
-                ioc.poll();
+                } // else setDbusProperty() prints message on std::cerr
             }
         }
     }
@@ -135,7 +122,7 @@ aml::RcCode Selftest::perform(const dat_traverse::Device& dev,
                         const std::string& name) {
         tp.targetName = name;
         tp.valExpected = expVal;
-        //TODO: clean dependency of "123" return on read fail
+        // TODO: clean dependency of "123" return on read fail
         if (readVal == "123")
         {
             tp.valRead = "Error - TP read failed.";
@@ -169,8 +156,9 @@ aml::RcCode Selftest::perform(const dat_traverse::Device& dev,
                 const std::string& devName = acc.read();
                 if (this->_dat.count(devName) == 0)
                 {
-                    std::cerr << "Error: invalid device key: " << devName <<
-                        " in nested tp in selftest perform" << std::endl;
+                    std::cerr << "Error: invalid device key: " << devName
+                              << " in nested tp in selftest perform"
+                              << std::endl;
                     return aml::RcCode::error;
                 }
 
@@ -265,8 +253,8 @@ bool Report::generateReport(ReportResult& reportRes)
         {
             if (layerToKeyLut.count(layer.first) == 0)
             {
-                std::cerr << "Error: generate report invalid layer key: " << 
-                        layer.first << std::endl;
+                std::cerr << "Error: generate report invalid layer key: "
+                          << layer.first << std::endl;
                 return false;
             }
 
@@ -342,8 +330,8 @@ aml::RcCode
     std::string problemDevice = event.device;
     if ((problemDevice.length() == 0) || (_dat.count(problemDevice) == 0))
     {
-        std::cerr << "Error: rootCauseTracer device: [" << problemDevice << 
-                "] is invalid key - cannot process rootCause" << std::endl;
+        std::cerr << "Error: rootCauseTracer device: [" << problemDevice
+                  << "] is invalid key - cannot process rootCause" << std::endl;
         return aml::RcCode::error;
     }
 
@@ -355,16 +343,16 @@ aml::RcCode
     {
         if (_dat.count(devName) == 0)
         {
-            std::cerr << "Error: rootCauseTracer device: " << devName << 
-                " is an invalid key!" << std::endl;
+            std::cerr << "Error: rootCauseTracer device: " << devName
+                      << " is an invalid key!" << std::endl;
             return aml::RcCode::error;
         }
 
         auto& devTest = _dat.at(devName);
         if (selftester.perform(devTest, completeReportRes) != aml::RcCode::succ)
         {
-            std::cerr << "Error: rootCauseTracer failed to perform selftest " <<
-                "for device " << devName << std::endl;
+            std::cerr << "Error: rootCauseTracer failed to perform selftest "
+                      << "for device " << devName << std::endl;
             return aml::RcCode::error;
         }
 
@@ -378,8 +366,8 @@ aml::RcCode
     selftest::Report reportGenerator;
     if (!reportGenerator.generateReport(completeReportRes))
     {
-        std::cerr << "Error: rootCauseTracer failed to generate report!" << 
-                std::endl;
+        std::cerr << "Error: rootCauseTracer failed to generate report!"
+                  << std::endl;
         return aml::RcCode::error;
     }
 
