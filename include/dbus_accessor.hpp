@@ -37,14 +37,34 @@ using DbusPropertyChangedHandler = std::unique_ptr<sdbusplus::bus::match_t>;
 using CallbackFunction = sdbusplus::bus::match::match::callback_t;
 using DbusAsioConnection = std::shared_ptr<sdbusplus::asio::connection>;
 
+/**
+ * @brief register for receiving signals from Dbus PropertyChanged
+ *
+ * @param conn        connection std::shared_ptr<sdbusplus::asio::connection>
+ * @param objectPath  Dbus object path
+ * @param interface   Dbus interface
+ * @param callback    the callback function
+ * @return the match_t register information which cannot be destroyed
+ *         while receiving these Dbus signals
+ */
 DbusPropertyChangedHandler
     registerServicePropertyChanged(DbusAsioConnection conn,
-                                   const std::string& service,
+                                   const std::string& objectPath,
+                                   const std::string& interface,
                                    CallbackFunction callback);
 
+/**
+ * @brief overloaded function
+ * @param bus       the bus type sdbusplus::bus::bus&
+ * @param objectPath
+ * @param interface
+ * @param callback
+ * @return
+ */
 DbusPropertyChangedHandler
     registerServicePropertyChanged(sdbusplus::bus::bus& bus,
-                                   const std::string& service,
+                                   const std::string& objectPath,
+                                   const std::string& interface,
                                    CallbackFunction callback);
 
 /**

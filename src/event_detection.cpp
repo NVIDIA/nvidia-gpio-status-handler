@@ -23,12 +23,6 @@ using namespace std;
 namespace event_detection
 {
 
-constexpr auto dbusServiceList = {
-    "xyz.openbmc_project.GpuMgr",
-    "xyz.openbmc_project.GpioStatusHandler",
-    "xyz.openbmc_project.Tsm",
-};
-
 /**
  * @brief keeps the main EventDetection pointer received by startEventDetection
  */
@@ -152,15 +146,64 @@ DbusEventHandlerList EventDetection::startEventDetection(
     auto genericHandler = std::bind(&EventDetection::dbusEventHandlerCallback,
                                     std::placeholders::_1);
     DbusEventHandlerList handlerList;
-    for (auto& service : dbusServiceList)
+    // helper map to make sure a object-path+interface is registered just once
+    RegisteredObjectInterfaceMap uniqueRegisterMap;
+    // this maps interface and list of objects that will be registered to
+    // receive PropertyChanged signal from Dbus
+    data_accessor::InterfaceObjectsMap toRegister;
+    // this first loop just populate the toRegister map
+    for (const auto& dev : *this->_eventMap)
     {
-        handlerList.push_back(dbus::registerServicePropertyChanged(
-            conn, service, genericHandler));
+        for (auto& event : dev.second)
+        {
+            // getAccDbusTriggers() checks if an objec-path + interface is
+            // already in the uniqueRegisterMap map, if so returns an empty map
+            auto dbData = getAccDbusTriggers(event.trigger, uniqueRegisterMap);
+            if (dbData.empty() == false)
+            {
+                toRegister[dbData.begin()->first] = dbData.begin()->second;
+            }
+            dbData = getAccDbusTriggers(event.accessor, uniqueRegisterMap);
+            if (dbData.empty() == false)
+            {
+                toRegister[dbData.begin()->first] = dbData.begin()->second;
+            }
+        }
+    }
+    // now register for receiving Dbus PropertyChanged signal
+    for (const auto& intfObjects : toRegister)
+    {
+        const auto& interface = intfObjects.first;
+        for (const auto& object : intfObjects.second)
+        {
+            handlerList.push_back(
+                        dbus::registerServicePropertyChanged(
+                              conn, object, interface, genericHandler));
+        }
     }
 #ifdef ENABLE_LOGS
     std::cout << "dbusEventHandlerMatcher created.\n";
 #endif
     return handlerList;
+}
+
+data_accessor::InterfaceObjectsMap
+EventDetection::getAccDbusTriggers(const data_accessor::DataAccessor& acc,
+                                   RegisteredObjectInterfaceMap& map)
+{
+    data_accessor::InterfaceObjectsMap ret;
+    auto dbusInfo = acc.getDbusInterfaceObjectsMap();
+    if (dbusInfo.empty() == false)
+    {
+        const auto& interface = dbusInfo.begin()->first;
+        auto key = dbusInfo.begin()->second.at(0) + interface;
+        if (map.count(key) == 0)
+        {
+            map[key] = 1; // just indicate it is alreqady mapped
+            ret[interface] = dbusInfo.begin()->second;
+        }
+    }
+    return ret;
 }
 
 #if 0

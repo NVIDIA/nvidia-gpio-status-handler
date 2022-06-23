@@ -22,6 +22,11 @@
 namespace data_accessor
 {
 
+/**
+ *   Map Dbus Interface and a list of objects
+ */
+using InterfaceObjectsMap = std::map<std::string, std::vector<std::string>>;
+
 constexpr auto typeKey = "type";
 constexpr auto nameKey = "name";
 constexpr auto checkKey = "check";
@@ -370,7 +375,7 @@ class DataAccessor
      * @brief helper function to get the Dbus Object Path
      * @return
      */
-    std::string getDbusObjectPath() const
+    inline std::string getDbusObjectPath() const
     {
         std::string ret{""};
         if (isValidDbusAccessor() == true)
@@ -379,6 +384,29 @@ class DataAccessor
         }
         return ret;
     }
+
+    /**
+     * @brief helper function to get the Dbus Interface
+     * @return
+     */
+    inline std::string getDbusInterface() const
+    {
+        std::string ret{""};
+        if (isValidDbusAccessor() == true)
+        {
+            ret = _acc[interfaceKey].get<std::string>();
+        }
+        return ret;
+    }
+
+    /**
+     * @brief returns a map of interface and a list objects-path expanded
+     *
+     *        A object path like : /xyz/blabla/GPU[0-7] generates a list of 8
+     *          objects.
+     * @return
+     */
+    InterfaceObjectsMap getDbusInterfaceObjectsMap() const;
 
   private:
     /**

@@ -205,6 +205,23 @@ bool DataAccessor::subCheck(const DataAccessor& otherAcc,
     return ret;
 }
 
+InterfaceObjectsMap DataAccessor::getDbusInterfaceObjectsMap() const
+{
+    InterfaceObjectsMap ret;
+    auto interface = getDbusInterface();
+    if (interface.empty() == false)
+    {
+        std::vector<std::string> list;
+        auto deviceList = util::expandDeviceRange(getDbusObjectPath());
+        for (const auto& device : deviceList)
+        {
+            list.push_back(device.second);
+        }
+        ret[interface] = list;
+    }
+    return ret;
+}
+
 bool DataAccessor::readDbus()
 {
     clearData();

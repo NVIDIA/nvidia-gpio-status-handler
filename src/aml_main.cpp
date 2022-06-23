@@ -248,8 +248,8 @@ int main(int argc, char* argv[])
 
     event_detection::EventDetection eventDetection(
         "EventDetection1", &aml::profile::eventMap, &eventHdlrMgr);
-    auto eventMatcher = event_detection::EventDetection::startEventDetection(
-        &eventDetection, sdbusp);
+    auto eventMatcher = eventDetection.startEventDetection(&eventDetection,
+                                                           sdbusp);
 
     iface->initialize();
 

@@ -232,57 +232,40 @@ PropertyVariant readDbusProperty(const std::string& objPath,
 
 DbusPropertyChangedHandler
     registerServicePropertyChanged(DbusAsioConnection conn,
-                                   const std::string& service,
+                                   const std::string& objectPath,
+                                   const std::string& interface,
                                    CallbackFunction callback)
 {
     return registerServicePropertyChanged(
-        static_cast<sdbusplus::bus::bus&>(*conn), service, callback);
+      static_cast<sdbusplus::bus::bus&>(*conn), objectPath, interface,callback);
 }
 
 DbusPropertyChangedHandler
     registerServicePropertyChanged(sdbusplus::bus::bus& bus,
-                                   const std::string& service,
+                                   const std::string& objectPath,
+                                   const std::string& interface,
                                    CallbackFunction callback)
 {
-    auto lambdaCallbackHandler = [service,
-                                  callback](sdbusplus::message::message& msg) {
-        if (getService(msg.get_path(), msg.get_interface()) == service)
-        {
-#ifdef ENABLE_LOGS
-            std::cout << "registerServicePropertyChanged()"
-                      << " calling service:" << service
-                      << "\n\t path:" << msg.get_path()
-                      << " interface:" << msg.get_interface() << std::endl;
-#endif
-            callback(msg);
-        }
-#ifdef ENABLE_LOGS
-        else
-        {
-            std::cout << "registerServicePropertyChanged()"
-                      << " service:" << service
-                      << "\n\tdiscarding path:" << msg.get_path()
-                      << " interface:" << msg.get_interface() << std::endl;
-        }
-#endif
-    };
+
     DbusPropertyChangedHandler propertyHandler;
     try
     {
-        propertyHandler = std::make_unique<sdbusplus::bus::match_t>(
-            bus,
-            sdbusplus::bus::match::rules::type::signal() +
-                sdbusplus::bus::match::rules::sender(service) +
-                sdbusplus::bus::match::rules::member("PropertiesChanged") +
-                sdbusplus::bus::match::rules::interface(
-                    "org.freedesktop.DBus.Properties"),
-            std::move(lambdaCallbackHandler));
+        auto subscribeStr = sdbusplus::bus::match::rules::propertiesChanged(
+                    objectPath, interface);
+
+#if ENABLE_LOGS
+        std::cout << __func__ << "(): subscribeStr: " << subscribeStr
+                  << std::endl;
+#endif
+        propertyHandler = std::make_unique<sdbusplus::bus::match_t>(bus,
+             subscribeStr, callback);
+
     }
     catch (const sdbusplus::exception::SdBusError& e)
     {
         std::string msg{__func__};
-        msg += "(): " + service +
-               " service Failed to registry for PropertiesChanged Error: ";
+        msg += "(): " + objectPath + " " + interface +
+               " Failed to registry for PropertiesChanged Error: ";
         msg += e.what();
         std::cerr << msg << std::endl;
         throw std::runtime_error(e.what());

@@ -26,6 +26,16 @@ using DbusEventHandlerList =
     std::vector<std::unique_ptr<sdbusplus::bus::match_t>>;
 
 /**
+ *   A map to check if a pair object-path + interface has already been
+ *    registered for receiving PropertyChange signal from dbus
+ *
+ *   if a object-path + interface is registred more than once, more than once
+ *    message will arrive.
+ */
+using  RegisteredObjectInterfaceMap = std::map<const std::string, int>;
+
+
+/**
  * @class EventDetection
  * @brief Responsible for catching D-Bus signals and GPIO state change
  * conditions.
@@ -57,8 +67,7 @@ class EventDetection : public object::Object
      * @param iface
      * @return a list of std::unique_ptr<sdbusplus::bus::match_t>
      */
-    static DbusEventHandlerList
-        startEventDetection(EventDetection* evtDet,
+    DbusEventHandlerList startEventDetection(EventDetection* evtDet,
                             std::shared_ptr<sdbusplus::asio::connection> conn);
 
     /**
@@ -69,6 +78,11 @@ class EventDetection : public object::Object
      * @return event_info::EventNode*
      */
 
+    /**
+     * @brief LookupEventFrom
+     * @param acc
+     * @return
+     */
     std::vector<event_info::EventNode>
         LookupEventFrom(const data_accessor::DataAccessor& acc)
     {
@@ -199,6 +213,17 @@ class EventDetection : public object::Object
 #endif
         }
     }
+
+  private:
+    /**
+     * @brief gets the event list of Interfaces+objectPaths to register in DBUS
+     * @param event
+     * @param map
+     * @return
+     */
+    data_accessor::InterfaceObjectsMap
+    getAccDbusTriggers(const data_accessor::DataAccessor& acc,
+                        RegisteredObjectInterfaceMap& map);
 
   private:
     /**
