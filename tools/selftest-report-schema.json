@@ -59,7 +59,8 @@
           "pin-status",
           "interface-status",
           "protocol-status",
-          "firmware-status"
+          "firmware-status",
+          "data-dump"
         ],
         "additionalProperties": false,
         "properties" : {
@@ -92,13 +93,7 @@
             "$ref" : "#/$defs/layer-status-report"
           },
           "data-dump" : {
-            "type" : "object",
-            "patternProperties" : {
-              ".*" : {
-                "type" : "string",
-                "contentEncoding" : "base64"
-              }
-            }
+            "$ref" : "#/$defs/layer-status-report"
           }
         }
       }
@@ -129,9 +124,7 @@
             "type" : "object",
             "required": [
               "name",
-              "value",
-              "value-expected",
-              "result"
+              "value"
             ],
             "additionalProperties": false,
             "properties" : {

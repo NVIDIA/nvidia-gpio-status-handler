@@ -206,6 +206,17 @@ Selftest::Selftest(const std::string& name,
 
 /* ========================= report ========================= */
 
+static std::map<std::string, std::string> layerToKeyLut = 
+{
+    {"power_rail", "power-rail-status"},
+    {"erot_control", "erot-control-status"},
+    {"pin_status", "pin-status"},
+    {"interface_status", "interface-status"},
+    {"firmware_status", "firmware-status"},
+    {"protocol_status", "protocol-status"},
+    {"data_dump", "data-dump"}
+};
+
 std::ostream& operator<<(std::ostream& os, const Report& rpt)
 {
     os << rpt._report.dump(4);
@@ -219,82 +230,118 @@ static std::string getTimestampString(void)
     std::tm* tm = std::localtime(&time);
 
     std::stringstream stream;
-    stream << std::put_time(tm, "%Y-%m-%d %H:%M:%SZ");
+    stream << std::put_time(tm, "%Y-%m-%dT%H:%M:%SZ");
     return stream.str();
 }
 
-bool Report::generateReport(ReportResult& reportRes)
+bool Report::processLayer(nlohmann::ordered_json& jdev, 
+                          const std::string& layerName,
+                          std::vector<selftest::TestPointResult>& testpoints)
 {
-    const std::map<std::string, std::string> layerToKeyLut = {
-        {"power_rail", "power-rail-status"},
-        {"erot_control", "erot-control-status"},
-        {"pin_status", "pin-status"},
-        {"interface_status", "interface-status"},
-        {"firmware_status", "firmware-status"},
-        {"protocol_status", "protocol-status"}};
-
-    auto tpTotal = 0;
-    auto tpFailed = 0;
-    auto currentTimestamp = getTimestampString();
-
-    this->_report["header"]["name"] = "Self test report";
-    this->_report["header"]["version"] = "1.0";
-    this->_report["header"]["timestamp"] = currentTimestamp;
-    this->_report["tests"] = nlohmann::json::array();
-
-    for (auto& dev : reportRes)
+    if (layerToKeyLut.count(layerName) == 0)
     {
-        nlohmann::json jdev;
-        jdev["device-name"] = dev.first;
-        jdev["firmware-version"] = "<todo>";
-        jdev["timestamp"] = currentTimestamp;
-
-        for (auto& layer : dev.second.layer)
-        {
-            if (layerToKeyLut.count(layer.first) == 0)
-            {
-                std::cerr << "Error: generate report invalid layer key: "
-                          << layer.first << std::endl;
-                return false;
-            }
-
-            const auto layerKey = layerToKeyLut.at(layer.first);
-            auto layerPassOrFail = true;
-            jdev[layerKey]["test-points"] = nlohmann::json::array();
-
-            for (auto& tp : layer.second)
-            {
-                tpTotal++;
-
-                if (!tp.result)
-                {
-                    tpFailed++;
-                    layerPassOrFail = false;
-                }
-
-                auto resStr = tp.result ? reportResultPass : reportResultFail;
-                jdev[layerKey]["test-points"] +=
-                    {{"name", tp.targetName},
-                     {"value", tp.valRead},
-                     {"value-expected", tp.valExpected},
-                     {"result", resStr}};
-            }
-            jdev[layerKey]["result"] =
-                layerPassOrFail ? reportResultPass : reportResultFail;
-        }
-
-        this->_report["tests"] += jdev;
+        std::cerr << "Error: generate report invalid layer key: "
+                          << layerName << std::endl;
+        return false;
     }
 
-    this->_report["header"]["summary"]["test-case-total"] = tpTotal;
-    this->_report["header"]["summary"]["test-case-failed"] = tpFailed;
+    const auto layerKey = layerToKeyLut.at(layerName);
+    auto layerPassOrFail = true;
+    jdev[layerKey]["test-points"] = nlohmann::json::array();
+
+    for (auto& tp : testpoints)
+    {
+        this->tpTotal++;
+        if (!tp.result)
+        {
+            this->tpFailed++;
+            layerPassOrFail = false;
+        }
+
+        if (tp.valExpected.size() == 0)
+        {
+            jdev[layerKey]["test-points"] +=
+                {{"name", tp.targetName}, {"value", tp.valRead}};
+        }
+        else
+        {
+            auto resStr = tp.result ? reportResultPass : reportResultFail;
+            jdev[layerKey]["test-points"] +=
+                {{"name", tp.targetName},
+                {"value", tp.valRead},
+                {"value-expected", tp.valExpected},
+                {"result", resStr}};
+        }
+    }
+
+    jdev[layerKey]["result"] = 
+                    layerPassOrFail ? reportResultPass : reportResultFail;
 
     return true;
 }
 
-const nlohmann::json& Report::getReport(void)
+bool Report::generateReport(ReportResult& reportRes)
+{
+    auto currentTimestamp = getTimestampString();
+    this->tpTotal = 0;
+    this->tpFailed = 0;
+
+    /* preinsert primary keys to force keys order */
+    this->_report["header"] = nlohmann::ordered_json::object();
+    this->_report["tests"] = nlohmann::ordered_json::array();
+
+    for (auto& dev : reportRes)
+    {
+        auto& devTestLayers = dev.second.layer;
+        nlohmann::ordered_json jdev;
+        jdev["device-name"] = dev.first;
+        jdev["firmware-version"] = "<todo>";
+        jdev["timestamp"] = currentTimestamp;
+
+        for (auto& layer : devTestLayers)
+        {
+            /* to keep this key last, skip here and handle explicitly last */
+            if (layer.first == "data_dump")
+            {
+                continue; 
+            }
+
+            if (!processLayer(jdev, layer.first, layer.second))
+            {
+                return false;
+            }
+        }
+
+        auto dataDumpLayer = devTestLayers.find("data_dump");
+        if (dataDumpLayer != devTestLayers.end())
+        {
+            if (!processLayer(jdev, dataDumpLayer->first, 
+                                    dataDumpLayer->second))
+            {
+                return false;
+            }
+        }
+
+        this->_report["tests"] += (nlohmann::ordered_json)jdev;
+    }
+
+    this->writeSummaryHeader();
+
+    return true;
+}
+
+const nlohmann::ordered_json& Report::getReport(void)
 {
     return this->_report;
+}
+
+void Report::writeSummaryHeader(void)
+{
+    this->_report["header"]["name"] = "Self test report";
+    this->_report["header"]["version"] = "1.0";
+    this->_report["header"]["timestamp"] = getTimestampString();
+    this->_report["header"]["summary"]["test-case-total"] = this->tpTotal;
+    this->_report["header"]["summary"]["test-case-failed"] = this->tpFailed;
 }
 
 /* ========================= free function todo ========================= */
@@ -306,6 +353,8 @@ aml::RcCode DoSelftest([[maybe_unused]] const dat_traverse::Device& dev,
 }
 
 } // namespace selftest
+
+/* ========================= RootCauseTracer ========================= */
 
 namespace event_handler
 {

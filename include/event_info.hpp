@@ -113,7 +113,7 @@ class EventNode : public object::Object
     bool valueAsCount;
 
     /** @brief Report of selftest **/
-    nlohmann::json selftestReport;
+    nlohmann::ordered_json selftestReport;
 };
 
 using EventMap = std::map<std::string, std::vector<event_info::EventNode>>;

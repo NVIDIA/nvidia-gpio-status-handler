@@ -58,14 +58,20 @@ class Device
     /** @brief Upstream devices **/
     std::vector<std::string> parents;
 
-    /** @brief 6-layer accessor info for this event **/
-    std::map<std::string, std::vector<data_accessor::DataAccessor*>> status;
-
     /** @brief Struct containing health properties of device **/
     Status healthStatus;
 
     /** @brief Map of test layers  for device **/
     std::map<std::string, TestLayer> test;
+
+    /**
+     * @brief Outputs device data to verify content
+     *
+     * @param os
+     * @param device
+     * @return std::ostream&
+     */
+    friend std::ostream& operator<<(std::ostream& os, const Device& device);
 
     /** @brief Prints out DAT structure to verify population
      *

@@ -56,6 +56,42 @@ void Device::populateMap(std::map<std::string, dat_traverse::Device>& dat,
     }
 }
 
+std::ostream& operator<<(std::ostream& os, const Device& device)
+{
+    os << "\tname:\t" << device.name << "\n";
+    
+    os << "\tchildren:" ;
+    for (auto& assoc : device.association)
+    {
+        os << "\t" << assoc;
+    }
+    
+    os << "\n\tparents:" ;
+    for (auto& par : device.parents)
+    {
+        os << "\t" << par;
+    }
+
+    os << "\n\thealth status:";
+    os << "\t[" << device.healthStatus.health;
+    os << "]\t[" << device.healthStatus.healthRollup;
+    os << "]\t[" << device.healthStatus.originOfCondition;
+    os << "]\t[" << device.healthStatus.triState << "]\n";
+
+    for (auto& layer : device.test)
+    {
+        os << "\ttest layer [" << layer.first <<"]\n";
+        for (auto& tp : layer.second.testPoints)
+        {
+            os << "\t\tTP [" << tp.first << "]";
+            os << "\t" << tp.second.accessor;
+            os << "\t" << tp.second.expectedValue << "\n";
+        }
+    }
+
+    return os;
+}
+
 void Device::printTree(const std::map<std::string, dat_traverse::Device>& m)
 {
     std::queue<std::string> fringe;
@@ -108,6 +144,11 @@ Device::Device(const std::string& name, const json& j)
     std::list<std::string> layers = {"power_rail",      "erot_control",
                                      "pin_status",      "interface_status",
                                      "protocol_status", "firmware_status"};
+    /* add optional data_dump field */
+    if (j.count("data_dump") > 0)
+    {
+        layers.push_back("data_dump");
+    }
 
     std::map<std::string, dat_traverse::TestLayer> test;
 

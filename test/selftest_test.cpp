@@ -712,7 +712,7 @@ TEST(selftestReportTest, generateReport)
     EXPECT_EQ(true, reportGenerator.generateReport(reportResult));
 
     /* Then */
-    nlohmann::json j = reportGenerator.getReport();
+    auto j = reportGenerator.getReport();
     EXPECT_EQ(j["header"]["name"], "Self test report");
     EXPECT_EQ(j["header"]["summary"]["test-case-failed"], 6);
     EXPECT_EQ(j["header"]["summary"]["test-case-total"], 12);
@@ -733,6 +733,92 @@ TEST(selftestReportTest, generateReport)
 
     // std::cout << reportGenerator;
 }
+
+TEST(selftestReportTest, fieldOrder)
+{
+    /* Generate dummy report, expect that:
+        1. header key is first and test key is second
+        2. inside every device key: layer keys are preceeding datadump key 
+        3. TP result without expected value is simplified to name and read 
+            fields only */
+    
+    /* Given */
+    selftest::ReportResult reportResult;
+    struct selftest::TestPointResult dummyTpExp =   {.targetName = "expValTp",
+                                                    .valRead = "dummy read",
+                                                    .valExpected = "OK",
+                                                    .result = false};
+
+    struct selftest::TestPointResult dummyTpNoExp = {.targetName = "noExpValTp",
+                                                    .valRead = "dummy read",
+                                                    .valExpected = "",
+                                                    .result = true};
+
+    std::vector<struct selftest::TestPointResult> tpVec;
+    tpVec.insert(tpVec.end(), dummyTpExp);
+    tpVec.insert(tpVec.end(), dummyTpNoExp);
+
+    struct selftest::DeviceResult dummyDevice;
+    dummyDevice.layer["power_rail"] = tpVec;
+    dummyDevice.layer["erot_control"] = tpVec;
+    dummyDevice.layer["pin_status"] = tpVec;
+    dummyDevice.layer["interface_status"] = tpVec;
+    dummyDevice.layer["firmware_status"] = tpVec;
+    dummyDevice.layer["protocol_status"] = tpVec;
+    dummyDevice.layer["data_dump"] = tpVec;
+
+    reportResult["GPU0"] = dummyDevice;
+
+    /* When */
+    selftest::Report reportGenerator;
+    EXPECT_EQ(true, reportGenerator.generateReport(reportResult));
+
+    /* Then */
+    auto j = reportGenerator.getReport();
+    auto idx = 0;
+
+    /* check 1. requirement */
+    const std::vector<std::string> mainKeyOrderLut = {"header", "tests"};
+    idx = 0;
+    for (auto& el : j.items())
+    {
+        EXPECT_EQ(el.key(), mainKeyOrderLut.at(idx));
+        idx++;
+    }
+
+    /* check 2. requirement */
+    const std::vector<std::string> deviceKeysOrderLut = { 
+    "device-name", "firmware-version", "timestamp", "erot-control-status",
+    "firmware-status", "interface-status", "pin-status", "power-rail-status",
+    "protocol-status", "data-dump"};
+    idx = 0;
+
+    for (auto& el : j.at("tests").at(0).items())
+    {
+        EXPECT_EQ(el.key(), deviceKeysOrderLut.at(idx));
+        idx++;
+    }
+
+    /* check 3. requirement */
+    auto TPs = j["tests"][0]["data-dump"]["test-points"];
+    EXPECT_EQ(TPs[0].count("name"), 1);
+    EXPECT_EQ(TPs[0]["name"], dummyTpExp.targetName);
+    EXPECT_EQ(TPs[0].count("value"), 1);
+    EXPECT_EQ(TPs[0]["value"], dummyTpExp.valRead);
+    EXPECT_EQ(TPs[0].count("value-expected"), 1);
+    EXPECT_EQ(TPs[0]["value-expected"], dummyTpExp.valExpected);
+    EXPECT_EQ(TPs[0].count("result"), 1);
+    EXPECT_EQ(TPs[0]["result"], dummyTpExp.result ? "Pass" : "Fail");
+    
+    EXPECT_EQ(TPs[1].count("name"), 1);
+    EXPECT_EQ(TPs[1]["name"], dummyTpNoExp.targetName);
+    EXPECT_EQ(TPs[1].count("value"), 1);
+    EXPECT_EQ(TPs[1]["value"], dummyTpNoExp.valRead);
+    EXPECT_EQ(TPs[1].count("value-expected"), 0);
+    EXPECT_EQ(TPs[1].count("result"), 0);
+}
+
+/* ===================== rootCauseTracer tests ============================ */
 
 TEST(rootCauseTraceTest, test1)
 {

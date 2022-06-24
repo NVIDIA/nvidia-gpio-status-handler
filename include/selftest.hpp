@@ -89,7 +89,7 @@ class Report
      *
      * @return json
      */
-    const nlohmann::json& getReport(void);
+   const nlohmann::ordered_json& getReport(void);
 
     /**
      * @brief Output internal json report. Has to be generated first.
@@ -101,8 +101,33 @@ class Report
     friend std::ostream& operator<<(std::ostream& os, const Report& rpt);
 
   private:
+    /**
+     * @brief Writes header data during report generation. Must be called in 
+     *        the end of report generation.
+     */
+    void writeSummaryHeader(void);
+
+    /**
+     * @brief used to process a layer's testpoints for a given device
+     *
+     * @param[out] jdev device to write given layer report piece to
+     * @param[in] layerName layer key name (its support is validated internally)
+     * @param[in] testpoints TPs results of given layer to process
+     * 
+     * @return returns true on success, false on unsupported layer key
+     */
+bool processLayer(nlohmann::ordered_json& jdev, 
+                          const std::string& layerName,
+                          std::vector<selftest::TestPointResult>& testpoints);
+
     /** @brief Internal report storage. **/
-    nlohmann::json _report;
+    nlohmann::ordered_json _report;
+
+    /** @brief Total test points number (counted during report generation) **/
+    uint32_t tpTotal;
+
+    /** @brief Failed test points count (counted during report generation) **/
+    uint32_t tpFailed;
 };
 
 /**
