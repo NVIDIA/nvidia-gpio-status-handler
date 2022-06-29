@@ -16,6 +16,7 @@ Event Inject tests
 # distribution of this software and related documentation without an express
 # license agreement from NVIDIA CORPORATION is strictly prohibited.
 import sys
+import tempfile
 import os
 
 from getpass import getpass
@@ -51,6 +52,9 @@ QEMU_USER=""
 QEMU_PASS=""
 QEMU_PORT=None
 
+JSON_REMOTE_PATHNAME="/usr/share/oobaml/event_info.json"
+JSON_REMOTE_FILE=f"<QEMU_USER>@<QEMU_IP>:<QEMU_PORT>{JSON_REMOTE_PATHNAME}"
+
 # Global variables to access event injector script
 EVENT_INJ_SCRIPT_PATH="/home/root/event_injector.bash"
 EVENT_INJ_SCRIPT_ARGS=""
@@ -62,16 +66,6 @@ TEST_MODE=TEST_MODE_EVENTS_LOGGING
 NOT_GENERATE_MESSAGE_ARGS = False
 
 available_options = [
-     {
-        'args': [ '-m', '--mode'],
-        'kwargs': {
-            'type': int,
-            'default': 1,
-            'help': '''Test Mode to perform; 1=insert event logs; 2=change device status
-                    (which should insert event logs)
-                    '''
-        }
-    },
     {
         'args': [ '-p', '--passwd'],
         'kwargs': {
@@ -81,11 +75,21 @@ available_options = [
         }
     },
     {
+        'args': [ '-m', '--mode'],
+        'kwargs': {
+            'type': int,
+            'default': 2,
+            'help': '''[optional] Test Mode to perform; 1=insert event logs; 2=change device status, requires AML daemon
+                    (which should insert event logs)
+                    '''
+        }
+    },
+    {
         'args': [ '--bmcweb-ip'],
         'kwargs': {
             'type': str,
             'default': '127.0.0.1',
-            'help': '''Specify IP address to connect to BMCWeb.'''
+            'help': '''[optional] Specify IP address to connect to BMCWeb.'''
         }
     },
     {
@@ -93,7 +97,7 @@ available_options = [
         'kwargs': {
             'type': int,
             'default': 2080,
-            'help': '''Specify Port to connect to BMCWeb.'''
+            'help': '''[optional] Specify Port to connect to BMCWeb.'''
         }
     },
     {
@@ -101,7 +105,7 @@ available_options = [
         'kwargs': {
             'type': str,
             'default': '127.0.0.1',
-            'help': '''Specify IP address to connect to QEMU.'''
+            'help': '''[optional] Specify IP address to connect to QEMU.'''
         }
     },
     {
@@ -109,7 +113,7 @@ available_options = [
         'kwargs': {
             'type': int,
             'default': 2222,
-            'help': '''Specify Port to connect to QEMU.'''
+            'help': '''[optional] Specify Port to connect to QEMU.'''
         }
     },
     {
@@ -117,22 +121,22 @@ available_options = [
         'kwargs': {
             'type': str,
             'default': 'root',
-            'help': '''Specify Username to be used for QEMU and BMCWeb login.'''
+            'help': '''[optional] Specify Username to be used for QEMU and BMCWeb login.'''
         }
     },
     {
         'args': [ '-j', '--json' ],
         'kwargs': {
             'type': str,
-            'default': '../examples/event_info.json',
-            'help': '''A json file with events to be injected'''
+            'default': JSON_REMOTE_FILE,
+            'help': '''[optional] A json file with events to be injected'''
         }
     },
     {
         'args': [ '--dry-run' ],
         'kwargs': {
             'action': 'store_true',
-            'help': '''If this option is specified, no event will be injected.'''
+            'help': '''[optional] If this option is specified, no event will be injected.'''
         }
     },
 ]
@@ -223,6 +227,7 @@ class InjectTest:
         self.final_log_count=0
         self._ssh_cmd = None
         self.log_cache=None
+        self.unverified_events = 0
 
 
     def current_log_count(self, cache=False):
@@ -267,7 +272,7 @@ class InjectTest:
         """
         Fetch current number of logs.
         """
-        print("Fetching current logs....")
+        print("\nFetching current logs....")
         try:
             self.initial_log_count = self.current_log_count()
         except Exception as error:
@@ -396,7 +401,8 @@ class InjectTest:
         Sets self.total_events
         """
         current_log_number = self.initial_log_count # number of logs found before injection
-        supposed_injected_events = event_logs_script.get_accessor_dbus_expected_events_list()
+        self.supposed_injected_events = event_logs_script.get_accessor_dbus_expected_events_list()
+        self.total_events = len(self.supposed_injected_events);
         for line in result_stdout:
             # failed    -> "[debug: 63/100] failed EVENT='VR Fault DVDD' : 'busctl command failed'
             # successful-> "[debug: 61/100] injected EVENT='PCIe link error' : 'created EventLogId [ 28 ]"
@@ -410,9 +416,50 @@ class InjectTest:
                             event_id = int(words[counter+2])
                             break
                         counter += 1
-                    self.events_injected[event_id] = supposed_injected_events[index_event]
-                    self.total_events  += 1
+                    self.events_injected[event_id] = self.supposed_injected_events[index_event]
                     current_log_number += 1
+        # difference are those not injected
+        self.unverified_events =  self.total_events - len(self.events_injected)
+
+
+    def generate_script_from_json(self):
+        """
+        Generates the script, uses the Json file passed in command line or gets
+         from QEMU using sftp
+        """
+        global JSON_EVENTS_FILE, JSON_REMOTE_FILE
+        json_filename = JSON_EVENTS_FILE
+        fd_temp = 0
+        is_remote = 0
+        if JSON_EVENTS_FILE == JSON_REMOTE_FILE:
+            try:
+                is_remote = 1
+                JSON_EVENTS_FILE=f"{QEMU_USER}@{QEMU_IP}:{QEMU_PORT}{JSON_REMOTE_PATHNAME}"
+                sftp =  self._ssh_cmd.open_sftp()
+                fd_temp, file_temp = tempfile.mkstemp()
+                os.close(fd_temp)
+                fd_temp = open(file_temp, 'w', encoding="utf-8")
+                sftp.get(JSON_REMOTE_PATHNAME, file_temp);
+                sftp.close()
+                json_filename = file_temp
+            except Exception as error:
+                msg = f"Unable to get jon file from ${JSON_REMOTE_PATHNAME} "
+                raise Exception(f"{msg}:  {str(error)}") from error
+
+        msg  = f"Parsing Json file {JSON_EVENTS_FILE} and generating event injector "
+        msg += f"bash script for mode={TEST_MODE}...."
+        print(f"...\n\n{msg}")
+
+        event_logs_script = EventLogsInjectorScript(json_filename, NOT_GENERATE_MESSAGE_ARGS) \
+            if TEST_MODE == TEST_MODE_EVENTS_LOGGING else \
+                EventAccessorInjectorScript(json_filename)
+        event_logs_script.generate_script_from_json()
+
+        if fd_temp != 0 and is_remote != 0:
+            os.unlink(json_filename)
+
+        return event_logs_script
+
 
     def inject_events(self):
         """
@@ -421,17 +468,10 @@ class InjectTest:
         *  Read all the busctl commands injected by the script and
             cache useful data in dictionaries
         """
-        event_logs_script = EventLogsInjectorScript(JSON_EVENTS_FILE, NOT_GENERATE_MESSAGE_ARGS) \
-            if TEST_MODE == TEST_MODE_EVENTS_LOGGING else \
-                EventAccessorInjectorScript(JSON_EVENTS_FILE)
-        msg  = f"Parsing Json file {JSON_EVENTS_FILE} and generating event injector "
-        msg += f"bash script for mode={TEST_MODE}...."
-        print(f"...\n\n{msg}")
-        event_logs_script.generate_script_from_json()
-
         try:
             # Create the SSH client
             self.create_ssh_session()
+            event_logs_script = self.generate_script_from_json()
             self.sftp_script_to_emulator(event_logs_script.script_file())
             result_stdout = self.execute_remote_script_and_get_stdout()
             # reads the last output line which should have a 'Successful Injections: 23'
@@ -507,6 +547,7 @@ class InjectTest:
             for key in event_key_list:
                 if len(self.events_injected[key]) > 0:
                     out = f"{out}\t* {key}\n"
+                    self.unverified_events += 1
             raise Exception(f"Exception occurred: {out}")
 
 
@@ -528,10 +569,10 @@ class InjectTest:
         color = 'red' if self.events_injected_count < self.total_events else 'green'
         print("\tEvents injected: ", colored(f"{self.events_injected_count}", color))
 
-        color = 'red' if len(self.events_injected) else 'green'
-        print("\tUnverified events: ", colored(f"{len(self.events_injected)}", color))
+        color = 'red' if self.unverified_events > 0 else 'green'
+        print("\tUnverified events: ", colored(f"{self.unverified_events}", color))
 
-        return color
+        return self.unverified_events
 
 
 def main():
@@ -560,8 +601,10 @@ def main():
         main_rc = -1
         raise error
     finally:
-        if main_rc == os.EX_OK and inject_test.print_summary() == 'green':
+        if main_rc == os.EX_OK and inject_test.print_summary() == 0:
             main_rc = os.EX_OK
+        else:
+            main_rc = -1
 
     return main_rc
 
