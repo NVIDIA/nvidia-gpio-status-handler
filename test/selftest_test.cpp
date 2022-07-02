@@ -186,14 +186,15 @@ TEST(selftestTest, doPerform)
         Device_B: (N dummy TP's).
         Expected: report of 2 devices, where report of Dev_A
         consists of N TP reports and one device_Device_B TP
-        and Dev_B report */
+        and Dev_B report.
+        Expected: a failed tp in *child* device causes corresponding 
+        tp in *parent* device to be failed too. */
     nlohmann::json jdat;
     nlohmann::json jgpu0;
     nlohmann::json jvr0;
     nlohmann::json jbaseboard;
     jgpu0 = json_device_template("GPU0", "VR0");
     jgpu0["power_rail"] += json_testpoint_template("PGOOD", true, "VR0");
-    jgpu0["power_rail"] += json_testpoint_template("PGOOD", false);
     jgpu0["erot_control"] = {json_testpoint_template()};
     jgpu0["pin_status"] = {json_testpoint_template()};
     jgpu0["interface_status"] = {json_testpoint_template()};
@@ -236,6 +237,15 @@ TEST(selftestTest, doPerform)
         EXPECT_EQ(rep_res["VR0"].layer[layer].size(), jvr0[layer].size());
     }
     // std::cout << rep_res;
+
+    /* purposely fail single TP in child device (VR0) of parent device (GPU0),
+       check if parent device (GPU0) has a failed result in VR0 testpoint */
+    selftest::ReportResult otherRep;
+    auto tp = datMap.at("VR0").test["power_rail"].testPoints.begin();
+    tp->second.expectedValue = "force_test_to_fail";
+    EXPECT_EQ(selftest.perform(datMap.at("GPU0"), otherRep), aml::RcCode::succ);
+    EXPECT_EQ(otherRep["VR0"].layer["power_rail"][0].result, false);
+    EXPECT_EQ(otherRep["GPU0"].layer["power_rail"][0].result, false);
 }
 
 TEST(selftestTest, doPerformEntireTree)

@@ -81,18 +81,28 @@ void Selftest::updateDeviceHealth(const std::string& device,
                         entry("SDBUSERR=%s", e.what()));
     }
 }
+    
+bool Selftest::evaluateDevice(const DeviceResult& deviceResult)
+{
+    for (auto& layer : deviceResult.layer)
+    {
+        if (std::any_of(layer.second.begin(), layer.second.end(),
+                        [](auto tp) { return !tp.result; }))
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
 
 bool Selftest::evaluateTestReport(const ReportResult& reportRes)
 {
     for (auto& dev : reportRes)
     {
-        for (auto& layer : dev.second.layer)
+        if (!evaluateDevice(dev.second))
         {
-            if (std::any_of(layer.second.begin(), layer.second.end(),
-                            [](auto tp) { return !tp.result; }))
-            {
-                return false;
-            }
+            return false;
         }
     }
     return true;
@@ -163,15 +173,18 @@ aml::RcCode Selftest::perform(const dat_traverse::Device& dev,
                 }
 
                 auto& devNested = this->_dat.at(devName);
-                aml::RcCode stRes = aml::RcCode::succ;
+                aml::RcCode selftestRes = aml::RcCode::succ;
                 if (!isDeviceCached(devName, reportRes))
                 {
-                    stRes = this->perform(devNested, reportRes);
+                    selftestRes = this->perform(devNested, reportRes);
                 }
+
+                bool devEvalRes = (selftestRes == aml::RcCode::succ) && 
+                                    evaluateDevice(reportRes[devName]);
+
                 fillTpRes(tmpTestPointResult, testPoint.expectedValue,
-                          (stRes == aml::RcCode::succ) ? testPoint.expectedValue
-                                                       : reportResultFail,
-                          devName);
+                         (devEvalRes) ? testPoint.expectedValue
+                                      : reportResultFail, devName);
             }
             else
             {

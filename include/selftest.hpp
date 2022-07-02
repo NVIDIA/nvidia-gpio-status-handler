@@ -224,6 +224,14 @@ class Selftest : public event_handler::EventHandler
     aml::RcCode performEntireTree(ReportResult& reportRes);
 
   private:
+    /**
+     * @brief Checks selftest result of particular device -> testpoints
+     *
+     * @param[in] deviceResult
+     * @return true - all TP in *device* passed, false - any TP failed
+     */
+    bool evaluateDevice(const DeviceResult& deviceResult);
+
     /** @brief Internal DAT reference. **/
     const std::map<std::string, dat_traverse::Device>& _dat;
 };
