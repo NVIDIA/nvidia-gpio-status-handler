@@ -78,7 +78,19 @@ bool DataAccessor::check(const DataAccessor& otherAcc,
             auto postionRangeSring = std::get<1>(cmdLineRange);
             auto rangeString = std::get<2>(cmdLineRange);
             // devRange is expanded to 0=GPU0, 1=GPU1, ...
-            auto devRange = util::expandDeviceRange(rangeString);
+            decltype (util::expandDeviceRange(rangeString)) devRange;
+            /** check for empty brackets like {"arguments", "AP0_BOOT []"},
+             *  size will be 2 even there were spaces (were ignored) between the
+             *  brackets, then use deviceType which must have range
+             */
+            if (sizeRangeString == 2 && util::existsRange(deviceType))
+            {
+                devRange = util::expandDeviceRange(deviceType);
+            }
+            else
+            {
+                devRange = util::expandDeviceRange(rangeString);
+            }
 #ifdef ENABLE_LOGS
             std::cout << __FILE__ << ":" << __LINE__
                       << " assertedDeviceNames CMDLINE: " << rangeString

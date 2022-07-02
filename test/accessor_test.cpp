@@ -498,5 +498,20 @@ TEST(DataAccessor, CmdLineRegexExpansion)
 
     DataAccessor cmdAccessor{jsonCMDLINE};
     const std::string deviceType{"GPU[0-7]"};
+    // if the "lookup" worked then the expansion is fine
+    EXPECT_EQ(cmdAccessor.check(cmdAccessor, deviceType), true);
+}
+
+TEST(DataAccessor, CmdLineEmptyRegexExpansionUseDevicetypeInstead)
+{
+    const nlohmann::json jsonCMDLINE = {
+        {"type", "CMDLINE"},
+        {"executable", "/bin/echo"},
+        {"arguments", "AP0_BOOTCOMPLETE_TIMEOUT []"},
+        {"check", {{"lookup", "AP0_BOOTCOMPLETE_TIMEOUT GPU1"}}}};
+
+    DataAccessor cmdAccessor{jsonCMDLINE};
+    const std::string deviceType{"GPU[0-7]"};
+    // if the "lookup" worked then the expansion is fine
     EXPECT_EQ(cmdAccessor.check(cmdAccessor, deviceType), true);
 }

@@ -288,10 +288,44 @@ RangeInformation getRangeInformation(const std::string& str)
     StringPosition stringPosition{std::string::npos};
     std::string fullRegxString{""};
     std::vector<int> minMax;
-    std::string matchedRegex =
-        (str.find_first_of("[") == 0 && str.find_last_of("]") == str.size() - 1)
-            ? str
-            : matchedRegx(str, RANGE_REGX_STR);
+    std::string matchedRegex = matchedRegx(str, RANGE_REGX_STR);
+
+    // std::regex_search does not work for str="blabla []" nor for str="[0-9]"
+    if (matchedRegex.empty() == true)
+    {
+        auto openBracketsPos = str.find_first_of("[");
+        if (openBracketsPos != std::string::npos)
+        {
+            auto closeBrackets = str.find_last_of("]");
+            if (closeBrackets != std::string::npos)
+            {
+                // first case regex is the string itself, i.e, str = [0-9]
+                if (openBracketsPos == 0 && closeBrackets == (str.size() - 1))
+                {
+                    matchedRegex = str;
+                }
+                else  // check for empty brackets
+                {
+                    std::string auxRange{"["};
+                    while (++openBracketsPos <= closeBrackets)
+                    {
+                        if (str.at(openBracketsPos) == ']')
+                        {
+                            auxRange.push_back(str.at(openBracketsPos));
+                            // empty brackets, size = 2
+                            matchedRegex = auxRange;
+                            break;
+                        }
+                        else if (isspace(str.at(openBracketsPos)) == 0 )
+                        {
+                            break; // not empty brackets
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     if (matchedRegex.empty() == false)
     {
         auto auxPosition = str.find(matchedRegex);
