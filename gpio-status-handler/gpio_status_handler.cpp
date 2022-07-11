@@ -31,7 +31,7 @@ constexpr auto dbusInterfaceName = "xyz.openbmc_project.GpioStatus";
  * Specifies also the maximal resolution of the
  * @GpioJsonConfig::configKeyReadPeriod parameter given in the config file.
  */
-constexpr uint64_t lineEventWaitTimeoutNs = 1e6l; // [nanoseconds]
+constexpr uint64_t lineEventWaitTimeoutNs = 1e8l; // [nanoseconds]
 
 static boost::asio::io_context io;
 static volatile bool runThreads;
@@ -57,9 +57,10 @@ bool setDBusProperty(shared_ptr<sdbusplus::asio::dbus_interface> dbusInterface,
     {
         lock_guard<mutex> lock(setDBusPropMutex);
 #ifdef ENABLE_GSH_LOGS
-        /* TODO: this log message is notice only - it should not be called always,
-            but only if verbosity level is set to level notice at least.
-            Additionally, it should be called only if the pin value is changed. */
+        /* TODO: this log message is notice only - it should not be called
+           always, but only if verbosity level is set to level notice at least.
+            Additionally, it should be called only if the pin value is changed.
+         */
         {
             stringstream ss;
             ss << "Setting '" << dbusInterfaceName << "." << pinName << "' <- "
