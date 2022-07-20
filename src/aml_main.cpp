@@ -237,32 +237,32 @@ int main(int argc, char* argv[])
              << "\n";
 #endif
     }
-
-    auto io = std::make_shared<boost::asio::io_context>();
-    auto sdbusp = std::make_shared<sdbusplus::asio::connection>(*io, aml::bus);
-
-    sdbusp->request_name(oob_aml::SERVICE_BUSNAME);
-    auto server = sdbusplus::asio::object_server(sdbusp);
-    auto iface =
-        server.add_interface(oob_aml::TOP_OBJPATH, oob_aml::SERVICE_IFCNAME);
-
-    event_detection::EventDetection eventDetection(
-        "EventDetection1", &aml::profile::eventMap, &eventHdlrMgr);
-    auto eventMatcher = eventDetection.startEventDetection(&eventDetection,
-                                                           sdbusp);
-
-    iface->initialize();
-
     try
-    {}
+    {
+        auto io = std::make_shared<boost::asio::io_context>();
+        auto sdbusp = 
+            std::make_shared<sdbusplus::asio::connection>(*io, aml::bus);
+
+        sdbusp->request_name(oob_aml::SERVICE_BUSNAME);
+        auto server = sdbusplus::asio::object_server(sdbusp);
+        auto iface = server.add_interface(oob_aml::TOP_OBJPATH, 
+                                          oob_aml::SERVICE_IFCNAME);
+
+        event_detection::EventDetection eventDetection(
+            "EventDetection1", &aml::profile::eventMap, &eventHdlrMgr);
+        auto eventMatcher = eventDetection.startEventDetection(&eventDetection,
+                                                                sdbusp);
+
+        iface->initialize();
+
+        std::cerr << "NVIDIA OOB AML daemon is ready.\n";
+        io->run();
+    }
     catch (const std::exception& e)
     {
         std::cerr << "[E]" << e.what() << "\n";
-        return rc;
+        return -1;
     }
-
-    std::cerr << "NVIDIA OOB AML daemon is ready.\n";
-    io->run();
 
     return 0;
 }

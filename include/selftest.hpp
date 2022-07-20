@@ -71,7 +71,7 @@ using ReportResult = std::map<std::string, DeviceResult>;
 class Report
 {
   public:
-    Report() = default;
+    Report() : tpTotal(0), tpFailed(0) {}
     ~Report() = default;
 
   public:
@@ -116,7 +116,7 @@ class Report
      * 
      * @return returns true on success, false on unsupported layer key
      */
-bool processLayer(nlohmann::ordered_json& jdev, 
+    bool processLayer(nlohmann::ordered_json& jdev, 
                           const std::string& layerName,
                           std::vector<selftest::TestPointResult>& testpoints);
 
