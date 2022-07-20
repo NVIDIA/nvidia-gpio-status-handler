@@ -223,15 +223,15 @@ class Selftest : public event_handler::EventHandler
      */
     aml::RcCode performEntireTree(ReportResult& reportRes);
 
-  private:
     /**
      * @brief Checks selftest result of particular device -> testpoints
      *
      * @param[in] deviceResult
      * @return true - all TP in *device* passed, false - any TP failed
      */
-    bool evaluateDevice(const DeviceResult& deviceResult);
+    static bool evaluateDevice(const DeviceResult& deviceResult);
 
+  private:
     /** @brief Internal DAT reference. **/
     const std::map<std::string, dat_traverse::Device>& _dat;
 };
@@ -240,6 +240,18 @@ class Selftest : public event_handler::EventHandler
 
 namespace event_handler
 {
+
+/**
+ * @brief estimates if a device is implemented (in dbus)
+ * @note TODO: to refactor, uses duplicated function from message composer
+ *
+ * @param[in] device - device name to check presence
+ *
+ * @return true when device possibly exists and is implemented in dbus,
+ * otherwise false
+ */
+bool checkDeviceDBus(const std::string& device);
+
 /**
  * @brief A class for finding the potential root cause of problem when an event
  * is received, it tests device and it associated devices through device
@@ -250,9 +262,11 @@ class RootCauseTracer : public EventHandler
 {
   public:
     RootCauseTracer(const std::string& name,
-                    std::map<std::string, dat_traverse::Device>& dat) :
+                    std::map<std::string, dat_traverse::Device>& dat,
+                    std::function<bool(const std::string&)> checkDeviceExists) :
         EventHandler(name),
-        _dat(dat)
+        _dat(dat),
+        checkDeviceExists(checkDeviceExists)
     {}
 
     ~RootCauseTracer() = default;
@@ -260,7 +274,7 @@ class RootCauseTracer : public EventHandler
   public:
     /**
      * @brief does selftest on device taken from event and associated devices;
-     * stops on first faulty device and updates health and origin of condition
+     * finds root cause of failure and updates health and origin of condition
      * of event device. Writes back test report to event.
      *
      * @param[in out] event - shall carry problematic device name; gets written
@@ -274,18 +288,37 @@ class RootCauseTracer : public EventHandler
 
   private:
     /**
-     * @brief called internally when found device that fails selftest
+     * @brief updates device root cause of failure
      *
      * @param[out] dev  - device to update health and origin of condition
      * @param[in] rootCauseDevice - device which failed selftest
      * @param[in] selftester - self test object
      */
-    void handleFault(dat_traverse::Device& dev,
-                     dat_traverse::Device& rootCauseDevice,
-                     selftest::Selftest& selftester);
+    void updateRootCause(dat_traverse::Device& dev,
+                        dat_traverse::Device& rootCauseDevice,
+                        selftest::Selftest& selftester);
+
+    /**
+     * @brief finds most nested device that caused the problem
+     *
+     * @param[in] triggeringDevice - device that root cause search started from
+     * @param[in] report - report result of selftest performed on 
+     * @triggeringDevice
+     * @param[out] rootCauseDevice - returns failed device name if found,
+     * otherwise empty
+     * 
+     * @return true when found root cause, otherwise false (whole report correct)
+     */
+    bool findRootCause(const std::string& triggeringDevice, 
+                      const selftest::ReportResult& report,
+                      std::string& rootCauseDevice);
 
     /** @brief Internal DAT reference. **/
     std::map<std::string, dat_traverse::Device>& _dat;
+    
+    /** @brief Used to check if device exists and is implemented and is present
+     * on DBUS. **/
+    std::function<bool(const std::string&)> checkDeviceExists;
 };
 
 } // namespace event_handler

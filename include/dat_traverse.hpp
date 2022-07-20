@@ -206,14 +206,17 @@ class DATTraverse : public event_handler::EventHandler
     /**
      * @brief searches for vector of associated subdevices
      *
-     * @param dat
-     * @param device
+     * @param dat device association tree in memory
+     * @param device device to return associations
+     * @param doTraverseTestpoints should return all associations by testpoints
+     * or by explicit association key (default) of DAT?
      *
      * @return vector of associated devices to device argument
      */
     static std::vector<std::string>
         getSubAssociations(std::map<std::string, dat_traverse::Device>& dat,
-                           const std::string& device);
+                           const std::string& device,
+                           const bool doTraverseTestpoints = false);
 
     /**
      * @brief Fully traverses a device and stops if predicate

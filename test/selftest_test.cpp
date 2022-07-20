@@ -194,7 +194,7 @@ TEST(selftestTest, doPerform)
     nlohmann::json jvr0;
     nlohmann::json jbaseboard;
     jgpu0 = json_device_template("GPU0", "VR0");
-    jgpu0["power_rail"] += json_testpoint_template("PGOOD", true, "VR0");
+    jgpu0["power_rail"] = {json_testpoint_template("PGOOD", true, "VR0")};
     jgpu0["erot_control"] = {json_testpoint_template()};
     jgpu0["pin_status"] = {json_testpoint_template()};
     jgpu0["interface_status"] = {json_testpoint_template()};
@@ -830,6 +830,11 @@ TEST(selftestReportTest, fieldOrder)
 
 /* ===================== rootCauseTracer tests ============================ */
 
+bool isDevicePresentMock([[maybe_unused]] const std::string& dev)
+{
+    return true;
+}
+
 TEST(rootCauseTraceTest, test1)
 {
     /*  Associations:
@@ -854,6 +859,9 @@ TEST(rootCauseTraceTest, test1)
     nlohmann::json jgpu0 = jTemplateDevice;
     jgpu0["name"] = "GPU0";
     jgpu0["association"] = {"HSC0", "GPU0-ERoT", "Retimer0"};
+    jgpu0["power_rail"] = {json_testpoint_template("nestedHSC", true, "HSC0")};
+    jgpu0["erot_control"] = {json_testpoint_template("nestedEROT", true, "GPU0-ERoT")};
+    jgpu0["interface_status"] = {json_testpoint_template("nestRETIMER", true, "Retimer0")};
     dat_traverse::Device gpu0("GPU0", jgpu0);
 
     nlohmann::json jhsc0 = jTemplateDevice;
@@ -869,6 +877,7 @@ TEST(rootCauseTraceTest, test1)
     nlohmann::json jretimer0 = jTemplateDevice;
     jretimer0["name"] = "Retimer0";
     jretimer0["association"] = {"HSC8"};
+    jretimer0["power_rail"] = {json_testpoint_template("nestedHSC", true, "HSC8")};
     dat_traverse::Device retimer0("Retimer0", jretimer0);
 
     nlohmann::json jhsc8 = jTemplateDevice;
@@ -885,49 +894,53 @@ TEST(rootCauseTraceTest, test1)
         std::pair<std::string, dat_traverse::Device>(retimer0.name, retimer0));
     dat.insert(std::pair<std::string, dat_traverse::Device>(hsc8.name, hsc8));
 
-    event_handler::RootCauseTracer rootCauseTracer("testTracer", dat);
+    event_handler::RootCauseTracer rootCauseTracer(
+                                        "testTracer", dat, isDevicePresentMock);
     event_info::EventNode event("test event");
     event.device = "GPU0";
 
     EXPECT_EQ(rootCauseTracer.process(event), aml::RcCode::succ);
     EXPECT_EQ(event.selftestReport["header"]["summary"]["test-case-failed"], 0);
-    EXPECT_LE(event.selftestReport["tests"].size(), 5);
+    EXPECT_EQ(event.selftestReport["tests"].size(), 5);
     EXPECT_EQ(dat.at("GPU0").healthStatus.healthRollup, "OK");
     EXPECT_EQ(dat.at("GPU0").healthStatus.health, "OK");
     EXPECT_EQ(dat.at("GPU0").healthStatus.triState, "Active");
     EXPECT_EQ(dat.at("GPU0").healthStatus.originOfCondition, "");
 
-    /* fail nested HSC8, check if GPU0 gets OOC set as HSC8 */
-    dat.at("HSC8").test["power_rail"].testPoints.begin()->second.expectedValue =
+    /* fail least nested GPU0 */
+    dat.at("GPU0").test["pin_status"].testPoints.begin()->second.expectedValue =
         "force_test_to_fail";
 
     EXPECT_EQ(rootCauseTracer.process(event), aml::RcCode::succ);
     EXPECT_EQ(event.selftestReport["header"]["summary"]["test-case-failed"], 1);
-    EXPECT_LE(event.selftestReport["tests"].size(), 5);
-    EXPECT_EQ(dat.at("GPU0").healthStatus.healthRollup, "Critical");
-    EXPECT_EQ(dat.at("GPU0").healthStatus.health, "OK");
-    EXPECT_EQ(dat.at("GPU0").healthStatus.triState, "Error");
-    EXPECT_EQ(dat.at("GPU0").healthStatus.originOfCondition, "HSC8");
+    EXPECT_EQ(event.selftestReport["tests"].size(), 5);
+    EXPECT_EQ(dat.at("GPU0").healthStatus.originOfCondition, "GPU0");
 
     /* fail nested Retimer0, check if GPU0 gets OOC set as Retimer0 */
     dat.at("Retimer0")
-        .test["power_rail"]
+        .test["pin_status"]
         .testPoints.begin()
         ->second.expectedValue = "force_test_to_fail";
 
     EXPECT_EQ(rootCauseTracer.process(event), aml::RcCode::succ);
-    EXPECT_EQ(event.selftestReport["header"]["summary"]["test-case-failed"], 1);
-    EXPECT_LE(event.selftestReport["tests"].size(), 4);
+    /*  test case failed count is a sum of purposely failed GPU0 above +
+        + GPU0 nested device TP (retimer) also failed + retimer's single 
+        failed TP, 3 in total */
+    EXPECT_EQ(event.selftestReport["header"]["summary"]["test-case-failed"], 3);
+    EXPECT_EQ(event.selftestReport["tests"].size(), 5);
     EXPECT_EQ(dat.at("GPU0").healthStatus.originOfCondition, "Retimer0");
 
-    /* fail stright away GPU0 */
-    dat.at("GPU0").test["power_rail"].testPoints.begin()->second.expectedValue =
+    /* fail nested HSC8, check if GPU0 gets OOC set as HSC8 */
+    dat.at("HSC8").test["pin_status"].testPoints.begin()->second.expectedValue =
         "force_test_to_fail";
 
     EXPECT_EQ(rootCauseTracer.process(event), aml::RcCode::succ);
-    EXPECT_EQ(event.selftestReport["header"]["summary"]["test-case-failed"], 1);
-    EXPECT_LE(event.selftestReport["tests"].size(), 1);
-    EXPECT_EQ(dat.at("GPU0").healthStatus.originOfCondition, "GPU0");
+    EXPECT_EQ(event.selftestReport["header"]["summary"]["test-case-failed"], 5);
+    EXPECT_EQ(event.selftestReport["tests"].size(), 5);
+    EXPECT_EQ(dat.at("GPU0").healthStatus.healthRollup, "Critical");
+    EXPECT_EQ(dat.at("GPU0").healthStatus.health, "OK");
+    EXPECT_EQ(dat.at("GPU0").healthStatus.triState, "Error");
+    EXPECT_EQ(dat.at("GPU0").healthStatus.originOfCondition, "HSC8");
 
     aml::RcCode result = aml::RcCode::succ;
     event.device = "trash_device";

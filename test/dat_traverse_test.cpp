@@ -144,9 +144,27 @@ TEST(DatTraverseTest, gettingAssociations)
     j["firmware_status"] = nlohmann::json::array();
     j["protocol_status"] = nlohmann::json::array();
 
+    nlohmann::json jDevTp;
+    jDevTp["name"] = "";
+    jDevTp["expected_value"] = "pass";
+    jDevTp["accessor"]["type"] = "DEVICE";
+    jDevTp["accessor"]["device_name"] = "";
+
     nlohmann::json jgpu0 = j;
     jgpu0["name"] = "GPU0";
     jgpu0["association"] = {"HSC0", "GPU0-ERoT", "Retimer0"};
+ 
+    jDevTp["name"] = "1";
+    jDevTp["accessor"]["device_name"] = "HSC0";
+    jgpu0["power_rail"] += jDevTp;
+
+    jDevTp["name"] = "2";
+    jDevTp["accessor"]["device_name"] = "GPU0-ERoT";
+    jgpu0["power_rail"] += jDevTp;
+
+    jDevTp["name"] = "3";
+    jDevTp["accessor"]["device_name"] = "Retimer0";
+    jgpu0["power_rail"] += jDevTp;
     dat_traverse::Device gpu0("GPU0", jgpu0);
 
     nlohmann::json jhsc0 = j;
@@ -162,6 +180,9 @@ TEST(DatTraverseTest, gettingAssociations)
     nlohmann::json jretimer0 = j;
     jretimer0["name"] = "Retimer0";
     jretimer0["association"] = {"HSC8"};
+    jDevTp["name"] = "1";
+    jDevTp["accessor"]["device_name"] = "HSC8";
+    jretimer0["power_rail"] += jDevTp;
     dat_traverse::Device retimer0("Retimer0", jretimer0);
 
     nlohmann::json jhsc8 = j;
@@ -180,12 +201,23 @@ TEST(DatTraverseTest, gettingAssociations)
 
     event_handler::DATTraverse datTraverser("DatTraverser1");
 
-    std::vector<std::string> childVec =
+    std::vector<std::string> childVecAssoc =
         datTraverser.getSubAssociations(dat, gpu0.name);
 
-    EXPECT_EQ(childVec[0], gpu0.name);
-    EXPECT_EQ(childVec[1], hsc0.name);
-    EXPECT_EQ(childVec[2], gpu0erot.name);
-    EXPECT_EQ(childVec[3], retimer0.name);
-    EXPECT_EQ(childVec[4], hsc8.name);
+    EXPECT_EQ(childVecAssoc.size(), 5);
+    EXPECT_EQ(childVecAssoc[0], gpu0.name);
+    EXPECT_EQ(childVecAssoc[1], hsc0.name);
+    EXPECT_EQ(childVecAssoc[2], gpu0erot.name);
+    EXPECT_EQ(childVecAssoc[3], retimer0.name);
+    EXPECT_EQ(childVecAssoc[4], hsc8.name);
+
+    std::vector<std::string> childVecTps =
+    datTraverser.getSubAssociations(dat, gpu0.name, true);
+
+    EXPECT_EQ(childVecTps.size(), 5);
+    EXPECT_EQ(childVecTps[0], gpu0.name);
+    EXPECT_EQ(childVecTps[1], hsc0.name);
+    EXPECT_EQ(childVecTps[2], gpu0erot.name);
+    EXPECT_EQ(childVecTps[3], retimer0.name);
+    EXPECT_EQ(childVecTps[4], hsc8.name);
 }

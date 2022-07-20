@@ -78,8 +78,7 @@ class MessageComposer : public event_handler::EventHandler
 
         for (auto& objPath : dbusPaths)
         {
-            if (boost::algorithm::ends_with(objPath, "/" + device) ||
-                boost::algorithm::ends_with(objPath, "_" + device))
+            if (boost::algorithm::ends_with(objPath, "/" + device))
             {
                 return objPath;
             }

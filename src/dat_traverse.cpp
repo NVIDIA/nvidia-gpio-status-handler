@@ -234,7 +234,8 @@ void DATTraverse::setOriginOfCondition(dat_traverse::Device& targetDevice,
 }
 
 std::vector<std::string> DATTraverse::getSubAssociations(
-    std::map<std::string, dat_traverse::Device>& dat, const std::string& device)
+    std::map<std::string, dat_traverse::Device>& dat, const std::string& device,
+    const bool doTraverseTestpoints)
 {
     std::queue<std::string> fringe;
     std::vector<std::string> childVec;
@@ -252,12 +253,31 @@ std::vector<std::string> DATTraverse::getSubAssociations(
                       << "is an invalid key!" << std::endl;
             continue;
         }
-        const dat_traverse::Device& node = dat.at(deviceName);
 
-        for (const auto& child : node.association)
+        if (doTraverseTestpoints)
         {
-            fringe.push(child);
-            childVec.push_back(child);
+            dat_traverse::Device& node = dat.at(deviceName);
+            for (auto& layer : node.test)
+            {
+                for (auto& tp : layer.second.testPoints)
+                {
+                    if (tp.second.accessor.isValidDeviceAccessor())
+                    {
+                        auto child = tp.second.accessor.read();
+                        fringe.push(child);
+                        childVec.push_back(child);
+                    }
+                }
+            }
+        }
+        else
+        {
+            const dat_traverse::Device& node = dat.at(deviceName);
+            for (const auto& child : node.association)
+            {
+                fringe.push(child);
+                childVec.push_back(child);
+            }
         }
     }
 

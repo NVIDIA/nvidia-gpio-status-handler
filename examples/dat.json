@@ -1384,7 +1384,7 @@
   "NVSwitch0": {
     "association": [
       "VR",
-      "HSC8",
+      "HSC0",
       "ERoT_NVSwitch0",
       "PCIeSwitch0"
     ],
@@ -1577,7 +1577,7 @@
   "NVSwitch1": {
     "association": [
       "VR",
-      "HSC8",
+      "HSC1",
       "ERoT_NVSwitch1",
       "PCIeSwitch0"
     ],
@@ -1770,7 +1770,7 @@
   "NVSwitch2": {
     "association": [
       "VR",
-      "HSC9",
+      "HSC2",
       "ERoT_NVSwitch2",
       "PCIeSwitch0"
     ],
@@ -1963,7 +1963,7 @@
   "NVSwitch3": {
     "association": [
       "VR",
-      "HSC9",
+      "HSC3",
       "ERoT_NVSwitch3",
       "PCIeSwitch0"
     ],

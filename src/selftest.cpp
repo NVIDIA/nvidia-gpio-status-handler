@@ -18,6 +18,7 @@
 #include <chrono>
 #include <iostream>
 #include <variant>
+#include <queue>
 
 namespace selftest
 {
@@ -105,8 +106,9 @@ bool Selftest::evaluateTestReport(const ReportResult& reportRes)
             return false;
         }
     }
+    
     return true;
-};
+}
 
 bool Selftest::isDeviceCached(const std::string& devName,
                               const ReportResult& reportRes)
@@ -372,9 +374,80 @@ aml::RcCode DoSelftest([[maybe_unused]] const dat_traverse::Device& dev,
 namespace event_handler
 {
 
-void RootCauseTracer::handleFault(dat_traverse::Device& dev,
-                                  dat_traverse::Device& rootCauseDevice,
-                                  selftest::Selftest& selftester)
+/* TODO: cleanup, this method duplicated here and in message composer 
+    used to check if device exists (present on dbus) */
+static std::string getDeviceDBusPath(const std::string& device)
+{
+
+    auto bus = sdbusplus::bus::new_default_system();
+    auto method = bus.new_method_call("xyz.openbmc_project.ObjectMapper",
+                                        "/xyz/openbmc_project/object_mapper",
+                                        "xyz.openbmc_project.ObjectMapper",
+                                        "GetSubTreePaths");
+    int depth = 6;
+    method.append("/xyz/openbmc_project", depth,
+                    std::vector<std::string>());
+    auto reply = bus.call(method);
+    std::vector<std::string> dbusPaths;
+    reply.read(dbusPaths);
+
+    for (auto& objPath : dbusPaths)
+    {
+        if (boost::algorithm::ends_with(objPath, "/" + device))
+        {
+            return objPath;
+        }
+    }
+
+    std::cerr << "Found no path in ObjectMapper ending with device: "
+                << device << "\n";
+    return "";
+}
+
+bool checkDeviceDBus(const std::string& device)
+{
+    auto devPath = getDeviceDBusPath(device);
+    return !devPath.empty();
+}
+
+bool RootCauseTracer::findRootCause(const std::string& triggeringDevice, 
+                                    const selftest::ReportResult& report,
+                                    std::string& rootCauseDevice)
+{
+    rootCauseDevice.clear();
+
+#if ROOT_CAUSE_TRACER_USE_ONLY_ASSOCIATION_KEY_TRAVERSAL
+    auto childVec = DATTraverse::getSubAssociations(_dat, triggeringDevice);
+#else // use DAT testpoints traversal
+    auto childVec = DATTraverse::getSubAssociations(_dat, triggeringDevice, 
+                                                    true);
+#endif// #if ROOT_CAUSE_TRACER_USE_ONLY_ASSOCIATION_KEY_TRAVERSAL
+
+    /* test every device in order from most nested to least; 
+    ignore devices not yet implemented in DBUS (other logic dependence);
+    first failed device is the root cause of condition for device triggering the
+    tracing */
+    for (auto it = childVec.rbegin(); it != childVec.rend(); it++)
+    {
+        if (!checkDeviceExists(*it))
+        {
+//            std::cout << "device " << *it << " not found on dbus" << "\n";
+            continue;
+        }
+
+        if (!selftest::Selftest::evaluateDevice(report.at(*it)))
+        {
+            rootCauseDevice = *it;
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+void RootCauseTracer::updateRootCause(dat_traverse::Device& dev,
+                                dat_traverse::Device& rootCauseDevice,
+                                selftest::Selftest& selftester)
 {
     dat_traverse::Status status;
     status.health = "Critical";
@@ -397,32 +470,21 @@ aml::RcCode
         return aml::RcCode::error;
     }
 
-    auto devsToTest = DATTraverse::getSubAssociations(_dat, problemDevice);
     selftest::ReportResult completeReportRes;
     selftest::Selftest selftester("rootCauseSelftester", _dat);
+    std::string rootCauseCandidateName {};
 
-    for (auto& devName : devsToTest)
+    if (selftester.perform(_dat.at(problemDevice), completeReportRes) != aml::RcCode::succ)
     {
-        if (_dat.count(devName) == 0)
-        {
-            std::cerr << "Error: rootCauseTracer device: " << devName
-                      << " is an invalid key!" << std::endl;
-            return aml::RcCode::error;
-        }
+        std::cerr << "Error: rootCauseTracer failed to perform selftest "
+                    << "for device " << problemDevice << std::endl;
+        return aml::RcCode::error;
+    }
 
-        auto& devTest = _dat.at(devName);
-        if (selftester.perform(devTest, completeReportRes) != aml::RcCode::succ)
-        {
-            std::cerr << "Error: rootCauseTracer failed to perform selftest "
-                      << "for device " << devName << std::endl;
-            return aml::RcCode::error;
-        }
-
-        if (!selftester.evaluateTestReport(completeReportRes))
-        {
-            handleFault(_dat.at(problemDevice), devTest, selftester);
-            break;
-        }
+    if (findRootCause(problemDevice, completeReportRes, rootCauseCandidateName))
+    {
+        updateRootCause(_dat.at(problemDevice), _dat.at(rootCauseCandidateName), 
+                        selftester);
     }
 
     selftest::Report reportGenerator;
