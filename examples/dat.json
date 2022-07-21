@@ -1384,16 +1384,16 @@
   "NVSwitch0": {
     "association": [
       "VR",
-      "HSC0",
+      "HSC8",
       "ERoT_NVSwitch0",
       "PCIeSwitch0"
     ],
     "power_rail": [
       {
-        "name": "HSC0",
+        "name": "HSC8",
         "accessor": {
           "type": "DEVICE",
-          "device_name": "HSC0"
+          "device_name": "HSC8"
         },
         "expected_value": "PASS"
       }
@@ -1577,16 +1577,16 @@
   "NVSwitch1": {
     "association": [
       "VR",
-      "HSC1",
+      "HSC8",
       "ERoT_NVSwitch1",
       "PCIeSwitch0"
     ],
     "power_rail": [
       {
-        "name": "HSC1",
+        "name": "HSC8",
         "accessor": {
           "type": "DEVICE",
-          "device_name": "HSC1"
+          "device_name": "HSC8"
         },
         "expected_value": "PASS"
       }
@@ -1770,16 +1770,16 @@
   "NVSwitch2": {
     "association": [
       "VR",
-      "HSC2",
+      "HSC9",
       "ERoT_NVSwitch2",
       "PCIeSwitch0"
     ],
     "power_rail": [
       {
-        "name": "HSC2",
+        "name": "HSC9",
         "accessor": {
           "type": "DEVICE",
-          "device_name": "HSC2"
+          "device_name": "HSC9"
         },
         "expected_value": "PASS"
       }
@@ -1963,16 +1963,16 @@
   "NVSwitch3": {
     "association": [
       "VR",
-      "HSC3",
+      "HSC9",
       "ERoT_NVSwitch3",
       "PCIeSwitch0"
     ],
     "power_rail": [
       {
-        "name": "HSC3",
+        "name": "HSC9",
         "accessor": {
           "type": "DEVICE",
-          "device_name": "HSC3"
+          "device_name": "HSC9"
         },
         "expected_value": "PASS"
       }
