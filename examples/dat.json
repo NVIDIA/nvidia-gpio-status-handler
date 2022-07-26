@@ -2925,156 +2925,24 @@
     "association": [
       "HSC_STBY"
     ],
-    "power_rail": [
-      {
-        "name": "test point name",
-        "accessor": {
-            "type": "accessor type",
-            "object": "object path",
-            "interface": "interface path",
-            "property": "property name"
-        },
-        "expected_value": "OK"
-      }
-    ],
-    "erot_control": [
-      {
-        "name": "test point name",
-        "accessor": {
-            "type": "accessor type",
-            "object": "object path",
-            "interface": "interface path",
-            "property": "property name"
-        },
-        "expected_value": "OK"
-      }
-    ],
-    "pin_status": [
-      {
-        "name": "test point name",
-        "accessor": {
-            "type": "accessor type",
-            "object": "object path",
-            "interface": "interface path",
-            "property": "property name"
-        },
-        "expected_value": "OK"
-      }
-    ],
-    "interface_status": [
-      {
-        "name": "test point name",
-        "accessor": {
-            "type": "accessor type",
-            "object": "object path",
-            "interface": "interface path",
-            "property": "property name"
-        },
-        "expected_value": "OK"
-      }
-    ],
-    "protocol_status": [
-      {
-        "name": "test point name",
-        "accessor": {
-            "type": "accessor type",
-            "object": "object path",
-            "interface": "interface path",
-            "property": "property name"
-        },
-        "expected_value": "OK"
-      }
-    ],
-    "firmware_status": [
-      {
-        "name": "test point name",
-        "accessor": {
-            "type": "accessor type",
-            "object": "object path",
-            "interface": "interface path",
-            "property": "property name"
-        },
-        "expected_value": "OK"
-      }
-    ]
+    "power_rail": [],
+    "erot_control": [],
+    "pin_status": [],
+    "interface_status": [],
+    "protocol_status": [],
+    "firmware_status": []
   },
   "HMC": {
     "association": [
       "HSC_STBY",
       "ERoT_HMC"
     ],
-    "power_rail": [
-      {
-        "name": "test point name",
-        "accessor": {
-            "type": "accessor type",
-            "object": "object path",
-            "interface": "interface path",
-            "property": "property name"
-        },
-        "expected_value": "OK"
-      }
-    ],
-    "erot_control": [
-      {
-        "name": "test point name",
-        "accessor": {
-            "type": "accessor type",
-            "object": "object path",
-            "interface": "interface path",
-            "property": "property name"
-        },
-        "expected_value": "OK"
-      }
-    ],
-    "pin_status": [
-      {
-        "name": "test point name",
-        "accessor": {
-            "type": "accessor type",
-            "object": "object path",
-            "interface": "interface path",
-            "property": "property name"
-        },
-        "expected_value": "OK"
-      }
-    ],
-    "interface_status": [
-      {
-        "name": "test point name",
-        "accessor": {
-            "type": "accessor type",
-            "object": "object path",
-            "interface": "interface path",
-            "property": "property name"
-        },
-        "expected_value": "OK"
-      }
-    ],
-    "protocol_status": [
-      {
-        "name": "test point name",
-        "accessor": {
-            "type": "accessor type",
-            "object": "object path",
-            "interface": "interface path",
-            "property": "property name"
-        },
-        "expected_value": "OK"
-      }
-    ],
-    "firmware_status": [
-      {
-        "name": "test point name",
-        "accessor": {
-            "type": "accessor type",
-            "object": "object path",
-            "interface": "interface path",
-            "property": "property name"
-        },
-        "expected_value": "OK"
-      }
-    ]
+    "power_rail": [],
+    "erot_control": [],
+    "pin_status": [],
+    "interface_status": [],
+    "protocol_status": [],
+    "firmware_status": []
   },
   "ERoT_GPU0": {
     "association": [
@@ -4275,77 +4143,11 @@
   },
   "VR": {
     "association": [],
-    "power_rail": [
-      {
-        "name": "test point name",
-        "accessor": {
-            "type": "accessor type",
-            "object": "object path",
-            "interface": "interface path",
-            "property": "property name"
-        },
-        "expected_value": "OK"
-      }
-    ],
-    "erot_control": [
-      {
-        "name": "test point name",
-        "accessor": {
-            "type": "accessor type",
-            "object": "object path",
-            "interface": "interface path",
-            "property": "property name"
-        },
-        "expected_value": "OK"
-      }
-    ],
-    "pin_status": [
-      {
-        "name": "test point name",
-        "accessor": {
-            "type": "accessor type",
-            "object": "object path",
-            "interface": "interface path",
-            "property": "property name"
-        },
-        "expected_value": "OK"
-      }
-    ],
-    "interface_status": [
-      {
-        "name": "test point name",
-        "accessor": {
-            "type": "accessor type",
-            "object": "object path",
-            "interface": "interface path",
-            "property": "property name"
-        },
-        "expected_value": "OK"
-      }
-    ],
-    "protocol_status": [
-      {
-        "name": "test point name",
-        "accessor": {
-            "type": "accessor type",
-            "object": "object path",
-            "interface": "interface path",
-            "property": "property name"
-        },
-        "expected_value": "OK"
-      }
-    ],
-    "firmware_status": [
-      {
-        "name": "test point name",
-        "accessor": {
-            "type": "accessor type",
-            "object": "object path",
-            "interface": "interface path",
-            "property": "property name"
-        },
-        "expected_value": "OK"
-      }
-    ]
+    "power_rail": [],
+    "erot_control": [],
+    "pin_status": [],
+    "interface_status": [],
+    "protocol_status": [],
+    "firmware_status": []
   }
 }
