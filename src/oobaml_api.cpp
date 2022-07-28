@@ -5,6 +5,9 @@
 
 #include "oobaml_api.hpp"
 
+#include "log.hpp"
+log_init;
+
 namespace oobaml_api
 {
 

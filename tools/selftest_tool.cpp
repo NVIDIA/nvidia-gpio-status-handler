@@ -11,7 +11,6 @@
 #include "aml.hpp"
 #include "cmd_line.hpp"
 #include "dat_traverse.hpp"
-#include "log.hpp"
 #include "selftest.hpp"
 
 #include <phosphor-logging/log.hpp>
@@ -139,7 +138,7 @@ int main(int argc, char* argv[])
     }
     catch (const std::exception& e)
     {
-        std::cerr << "[E]" << e.what() << "\n";
+        logs_err("%s\n",  e.what());
         show_help({});
         return rc;
     }

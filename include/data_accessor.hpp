@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include "aml.hpp"
 #include "dbus_accessor.hpp"
 #include "property_accessor.hpp"
 #include "util.hpp"
@@ -58,9 +59,9 @@ class DataAccessor
     explicit DataAccessor(const nlohmann::json& acc) :
         _acc(acc), _dataValue(nullptr)
     {
-#ifdef ENABLE_LOGS
-        std::cout << "Const.: _acc: " << _acc << "\n";
-#endif
+        std::stringstream ss;
+        ss << "Const.: _acc: " << _acc;
+        log_dbg("%s\n", ss.str().c_str());
     }
 
     /**
@@ -85,9 +86,9 @@ class DataAccessor
     {
         if (!isValid(acc))
         {
-#ifdef ENABLE_LOGS
-            std::cout << "not valid: acc = " << acc << "\n";
-#endif
+            std::stringstream ss;
+            ss << "not valid: acc = " << acc;
+            log_dbg("%s\n", ss.str().c_str());
             return _acc;
         }
 
@@ -129,11 +130,10 @@ class DataAccessor
                 }
             }
         }
-#ifdef ENABLE_LOGS
-        std::cout << __PRETTY_FUNCTION__ << "\n\tThis: " << _acc
-                  << "\n\tOther: " << other._acc << "\n\treturn: " << ret
-                  << std::endl;
-#endif
+        std::stringstream ss;
+        ss << "\n\tThis: " << _acc
+                  << "\n\tOther: " << other._acc << "\n\treturn: " << ret;
+        log_dbg("%s\n", ss.str().c_str());
         return ret;
     }
 
@@ -321,10 +321,7 @@ class DataAccessor
         {
             ret = _dataValue->getString();
         }
-#ifdef ENABLE_LOGS
-        std::cout << __PRETTY_FUNCTION__ << "(): "
-                  << "ret=" << ret << std::endl;
-#endif
+        log_dbg(" ret=%s\n", ret.c_str());
         return ret;
     }
 

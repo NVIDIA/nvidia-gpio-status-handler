@@ -7,7 +7,6 @@
 
 #include "aml.hpp"
 #include "event_info.hpp"
-#include "log.hpp"
 #include "object.hpp"
 
 #include <memory>
@@ -79,8 +78,7 @@ class EventHandlerManager : public object::Object
     void RegisterHandler(EventHandler* hdlr)
     {
         _handlers.emplace_back(hdlr);
-        // causing compilation errors: look into this
-        // log_dbg("handlers(%s) registered.\n", hdlr->getName().c_str());
+        log_dbg("handlers(%s) registered.\n", hdlr->getName().c_str());
     }
 
     /**
@@ -93,24 +91,17 @@ class EventHandlerManager : public object::Object
     {
         for (auto& hdlr : _handlers)
         {
-            // log_dbg("running handler(%s) on event(%s).\n",
-            //         hdlr->getName().c_str(), event.getName().c_str());
-#ifdef ENABLE_LOGS
-            std::cout << "calling hdlr: " << hdlr->getName() << "\n";
-#endif
+            log_dbg("running handler(%s) on event(%s).\n",
+                     hdlr->getName().c_str(), event.getName().c_str());
+            log_dbg("calling hdlr: %s\n", hdlr->getName().c_str());
 
             auto rc = hdlr->process(event);
 
             if (rc != aml::RcCode::succ)
             {
-#ifdef ENABLE_LOGS
-                std::cout << "Error: Handler " << hdlr->getName()
-                          << " on event " << event.getName()
-                          << " failed, rc = " << aml::to_integer(rc) << "\n";
-#endif
-                // log_err("handler(%s) on event(%s) failed, rc = %d!\n",
-                //         hdlr->getName().c_str(), event.getName().c_str(),
-                //         aml::to_integer(rc));
+                log_err("handler(%s) on event(%s) failed, rc = %d!\n",
+                        hdlr->getName().c_str(), event.getName().c_str(),
+                        aml::to_integer(rc));
 
                 // return on first failure.
                 // TODO: add option for continue on failure if needed.

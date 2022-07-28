@@ -91,12 +91,12 @@ class EventDetection : public object::Object
         {
             for (auto& event : eventPerDevType.second)
             {
-#ifdef ENABLE_LOGS
-                std::cout << __PRETTY_FUNCTION__
-                          << "\n\tevent.accessor: " << event.accessor
-                          << "\n\tevent.trigger: " << event.trigger
-                          << "\n\tacc: " << acc << "\n";
-#endif
+                std::stringstream ss;
+                ss << "\n\tevent.accessor: " << event.accessor
+                    << "\n\tevent.trigger: " << event.trigger
+                    << "\n\tacc: " << acc;
+                log_dbg("%s\n", ss.str().c_str());
+                
                 /**
                  * event.trigger is compared first, when it macthes:
                  *   1. event.trigger performs a check against the data from acc
@@ -137,17 +137,14 @@ class EventDetection : public object::Object
                         continue;
                     }
                 }
-#ifdef ENABLE_LOGS
-                std::cout << __PRETTY_FUNCTION__
-                          << " skipping event :" << event.event << std::endl;
-#endif
+                ss.str(std::string()); // Clear the stream
+                ss << "skipping event :" << event.event;
+                log_dbg("%s\n", ss.str().c_str());
             }
         }
-
-#ifdef ENABLE_LOGS
-        std::cout << __PRETTY_FUNCTION__
-                  << " got total events :" << eventList.size() << std::endl;
-#endif
+        std::stringstream ss;
+        ss << "got total events :" << eventList.size();
+        log_dbg("%s\n", ss.str().c_str());
         return eventList;
     }
 
@@ -194,10 +191,10 @@ class EventDetection : public object::Object
     void RunEventHandlers(event_info::EventNode& event)
     {
         auto thread = std::make_unique<std::thread>([this, event]() mutable {
-#ifdef ENABLE_LOGS
-            std::cout << "calling hdlrMgr: " << this->_hdlrMgr->getName()
-                      << " event: " << event.event << "\n";
-#endif
+            std::stringstream ss;
+            ss << "calling hdlrMgr: " << this->_hdlrMgr->getName()
+                      << " event: " << event.event;
+            log_dbg("%s\n", ss.str().c_str());
             auto hdlrMgr = *this->_hdlrMgr;
             hdlrMgr.RunAllHandlers(event);
         });
@@ -208,9 +205,7 @@ class EventDetection : public object::Object
         }
         else
         {
-#ifdef ENABLE_LOGS
-            std::cout << "Create thread to process event failed!\n";
-#endif
+            log_dbg("Create thread to process event failed!\n");
         }
     }
 

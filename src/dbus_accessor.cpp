@@ -10,7 +10,7 @@
 */
 
 #include "dbus_accessor.hpp"
-
+#include "log.hpp"
 #include "util.hpp"
 
 #include <phosphor-logging/elog.hpp>
@@ -27,7 +27,7 @@ static std::string errorMsg(const std::string& description,
                             const std::string& property = std::string{""},
                             const char* eWhat = nullptr)
 {
-    std::string msg{"[E] "};
+    std::string msg{};
     msg += description;
     if (objpath.empty() == false)
     {
@@ -83,16 +83,14 @@ std::string getService(const std::string& objectPath,
         }
         else
         {
-            std::cerr << errorMsg("getService(): Service not found for",
-                                  objectPath, interface)
-                      << std::endl;
+            logs_err("%s\n", errorMsg("getService(): Service not found for",
+                                  objectPath, interface));
         }
     }
     catch (const sdbusplus::exception::exception& e)
     {
-        std::cerr << errorMsg("getService(): DBus error for", objectPath,
-                              interface, e.what())
-                  << std::endl;
+        logs_err("%s\n", errorMsg("getService(): DBus error for", objectPath,
+                              interface, e.what()));
     }
     return ret;
 }
@@ -120,10 +118,9 @@ RetCoreApi deviceGetCoreAPI(const int devId, const std::string& property)
     }
     catch (const sdbusplus::exception::SdBusError& e)
     {
-        std::cerr << errorMsg("deviceGetCoreAPI(): DBus error for",
+        logs_err("%s\n", errorMsg("deviceGetCoreAPI(): DBus error for",
                               std::string{""}, std::string{""}, interface,
-                              e.what())
-                  << std::endl;
+                              e.what()));
 
         return std::make_tuple(-1, valueStr, value);
     }
@@ -134,10 +131,9 @@ RetCoreApi deviceGetCoreAPI(const int devId, const std::string& property)
 
     if (rc != 0)
     {
-        std::cerr << errorMsg("deviceGetCoreAPI(): bad return for",
+        logs_err("%s\n", errorMsg("deviceGetCoreAPI(): bad return for",
                               std::string{""}, std::string{""}, object,
-                              interface)
-                  << std::endl;
+                              interface));
     }
     else
     {
@@ -184,9 +180,8 @@ int deviceClearCoreAPI(const int devId, const std::string& property)
     {
         std::string msg{"deviceClearCoreAPI() Failed "};
         msg += "devId:" + std::to_string(devId);
-        std::cerr << errorMsg(msg, std::string{""}, std::string{""}, property,
-                              dbusError.c_str())
-                  << std::endl;
+        logs_err("%s\n", errorMsg(msg, std::string{""}, std::string{""}, property,
+                              dbusError.c_str()));
     }
 
     return rc;
@@ -200,9 +195,8 @@ PropertyVariant readDbusProperty(const std::string& objPath,
     PropertyVariant value;
     if (util::existsRange(objPath) == true)
     {
-        std::cerr << errorMsg("readDbusProperty(): PATH with range", objPath,
-                              interface, property)
-                  << std::endl;
+        logs_err("%s\n", errorMsg("readDbusProperty(): PATH with range", objPath,
+                              interface, property));
         return value;
     }
 
@@ -223,9 +217,8 @@ PropertyVariant readDbusProperty(const std::string& objPath,
     }
     catch (const sdbusplus::exception::exception& e)
     {
-        std::cerr << errorMsg("readDbusProperty() Failed to get property",
-                              objPath, interface, property, e.what())
-                  << std::endl;
+        logs_err("%s\n", errorMsg("readDbusProperty() Failed to get property",
+                              objPath, interface, property, e.what()));
     }
     return value;
 }
@@ -252,11 +245,10 @@ DbusPropertyChangedHandler
     {
         auto subscribeStr = sdbusplus::bus::match::rules::propertiesChanged(
                     objectPath, interface);
-
-#if ENABLE_LOGS
-        std::cout << __func__ << "(): subscribeStr: " << subscribeStr
-                  << std::endl;
-#endif
+        
+        std::stringstream ss;
+        ss << __func__ << "(): subscribeStr:" << subscribeStr;
+        logs_dbg("%s\n", ss.str().c_str());
         propertyHandler = std::make_unique<sdbusplus::bus::match_t>(bus,
              subscribeStr, callback);
 
@@ -299,9 +291,8 @@ bool setDbusProperty(const std::string& service, const std::string& objPath,
     }
     catch (const sdbusplus::exception::exception& e)
     {
-        std::cerr << errorMsg("setDbusProperty() Failed to set property",
-                              objPath, interface, property, e.what())
-                  << std::endl;
+        logs_err("%s\n", errorMsg("setDbusProperty() Failed to set property",
+                              objPath, interface, property, e.what()));
     }
     return ret;
 }

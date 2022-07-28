@@ -50,7 +50,7 @@ namespace logging
 
 /**
  * Debug Level Definition
- * 0 : Log disabled
+ * 0 : Log disabled 
  * 1 : Error log only (default)
  * 2 : Error & Warning logs
  * 3 : Error & Warning & Debug logs
@@ -97,7 +97,6 @@ class Log
 
     void setLevel(CtrlType desiredLevel = DEF_DBG_LEVEL)
     {
-        std::lock_guard<std::mutex> logGuard(lMutex);
         setCtrlLevel(desiredLevel);
     }
 
@@ -108,6 +107,8 @@ class Log
 
     void setLogFile(const std::string& file)
     {
+        std::lock_guard<std::mutex> logGuard(lMutex);
+
         closeLogFile();
         logFile = file;
         openLogFile();
@@ -115,46 +116,38 @@ class Log
 
     void log(int desiredLevel, const char* fmt, ...)
     {
-        if (!isReady)
+        if (!isReady
+            || getLogLevel(getLevel()) < getLogLevel(desiredLevel))
         {
+            // Should not print anything as log is not ready anyways
             return;
         }
-        if (getLogLevel(getLevel()) >= getLogLevel(desiredLevel))
-        {
-            std::stringstream ss;
-            if (!(getLogControl(desiredLevel) & LogLevel::dataonly))
+
+        std::lock_guard<std::mutex> logGuard(lMutex);
+        std::stringstream ss;
+        if (!(getLogControl(desiredLevel) & LogLevel::dataonly))
+        {   
+            // Timestamp
+            ss << timestampString();
+
+            // Severity
+            switch (getLogLevel(desiredLevel))
             {
-                // Timestamp
-                struct timespec ts;
-                clock_gettime(CLOCK_REALTIME, &ts);
-                char buf[100] = {0};
-                strftime(buf, sizeof(buf), "%D %T", gmtime(&ts.tv_sec));
-
-                // ss << seq++; // Debug purpose only to check if any log
-                // missing
-
-                ss << "[" << buf << "." << std::setfill('0') << std::setw(9)
-                   << ts.tv_nsec << "]";
-
-                // Severity
-                switch (getLogLevel(desiredLevel))
-                {
-                    case LogLevel::error:
-                        ss << "E";
-                        break;
-                    case LogLevel::warning:
-                        ss << "W";
-                        break;
-                    case LogLevel::debug:
-                        ss << "D";
-                        break;
-                    case LogLevel::information:
-                        ss << "I";
-                        break;
-                    default:
-                        ss << "O";
-                        break;
-                }
+                case LogLevel::error:
+                    ss << "E";
+                    break;
+                case LogLevel::warning:
+                    ss << "W";
+                    break;
+                case LogLevel::debug:
+                    ss << "D";
+                    break;
+                case LogLevel::information:
+                    ss << "I";
+                    break;
+                default:
+                    ss << "O";
+                    break;
             }
 
             // Message
@@ -173,69 +166,71 @@ class Log
     void log_raw(int desiredLevel, const char* msg,
                  const std::vector<uint8_t>& array, size_t size)
     {
-        if (!isReady)
+        if (!isReady
+            || getLogLevel(getLevel()) < getLogLevel(desiredLevel))
         {
+            // Should not print anything as log is not ready anyways
             return;
         }
-        if (getLogLevel(getLevel()) >= getLogLevel(desiredLevel))
+
+        std::lock_guard<std::mutex> logGuard(lMutex);
+        std::stringstream ss;
+        // Timestamp
+        ss << timestampString();
+
+        // Severity
+        ss << "I";
+
+        ss << "[raw]:";
+
+        // Prompt
+        ss << msg;
+
+        // Raw data
+        ss << "(" << size << ") ";
+        for (size_t i = 0; i < size; i++)
         {
-            std::stringstream ss;
-            // Timestamp
-            ss << timestampString();
-
-            // Severity
-            ss << "I";
-
-            ss << "[raw]:";
-
-            // Prompt
-            ss << msg;
-
-            // Raw data
-            ss << "(" << size << ") ";
-            for (size_t i = 0; i < size; i++)
-            {
-                ss << std::setfill('0') << std::setw(2) << std::hex
-                   << int(array[i]) << " ";
-            }
-            ss << "\n";
-
-            outputLog(ss.str());
+            ss << std::setfill('0') << std::setw(2) << std::hex
+                << int(array[i]) << " ";
         }
+        ss << "\n";
+
+        outputLog(ss.str());
     }
 
     void log_raw(int desiredLevel, const char* msg,
                  const std::vector<uint32_t>& array, size_t size)
     {
-        if (!isReady)
+        if (!isReady
+            || getLogLevel(getLevel()) < getLogLevel(desiredLevel))
         {
+            // Should not print anything as log is not ready anyways
             return;
         }
-        if (getLogLevel(getLevel()) >= getLogLevel(desiredLevel))
+
+        std::lock_guard<std::mutex> logGuard(lMutex);
+        std::stringstream ss;
+        // Timestamp
+        ss << timestampString();
+
+        // Severity
+        ss << "I";
+
+        ss << "[raw]:";
+
+        // Prompt
+        ss << msg;
+
+        // Raw data
+        ss << "(" << size << ") ";
+        for (size_t i = 0; i < size; i++)
         {
-            std::stringstream ss;
-            // Timestamp
-            ss << timestampString();
-
-            // Severity
-            ss << "I";
-
-            ss << "[raw]:";
-
-            // Prompt
-            ss << msg;
-
-            // Raw data
-            ss << "(" << size << ") ";
-            for (size_t i = 0; i < size; i++)
-            {
-                ss << std::setfill('0') << std::setw(8) << std::hex
-                   << int(array[i]) << " ";
-            }
-            ss << "\n";
-
-            outputLog(ss.str());
+            ss << std::setfill('0') << std::setw(8) << std::hex
+                << int(array[i]) << " ";
         }
+        ss << "\n";
+
+        outputLog(ss.str());
     }
 
     void log_raw(int desiredLevel, const char* msg, const uint8_t* array,
@@ -305,15 +300,13 @@ class Log
 
     void outputLog(const std::string& msg)
     {
-        std::lock_guard<std::mutex> logGuard(lMutex);
         if (logStream.is_open())
         {
             logStream << msg;
         }
         else
         {
-            // don't allow to print to console
-            // std::cout << msg;
+            std::cout << msg;
         }
     }
 
@@ -324,8 +317,6 @@ class Log
         clock_gettime(CLOCK_REALTIME, &ts);
         char buf[100] = {0};
         strftime(buf, sizeof(buf), "%D %T", gmtime(&ts.tv_sec));
-
-        // ss << seq++; // Debug purpose only to check if any log missing
 
         ss << "[" << buf << "." << std::setfill('0') << std::setw(9)
            << ts.tv_nsec << "]";

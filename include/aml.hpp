@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "log.hpp"
+
 #include <type_traits>
 
 namespace aml

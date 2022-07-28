@@ -19,9 +19,9 @@ namespace event_info
 
 void loadFromFile(EventMap& eventMap, const std::string& file)
 {
-#ifdef ENABLE_LOGS
-    std::cout << "loadFromFile func (" << file << ").\n";
-#endif
+    std::stringstream ss;
+    ss << "loadFromFile func (" << file << ").";
+    logs_dbg("%s\n", ss.str().c_str());
     std::ifstream i(file);
     json j;
     i >> j;
@@ -30,26 +30,27 @@ void loadFromFile(EventMap& eventMap, const std::string& file)
     {
         auto deviceType = el.key();
         std::vector<event_info::EventNode> v = {};
-#ifdef ENABLE_LOGS
-        std::cout << "new device type: " << deviceType << "\r\n";
-#endif
+        ss.str(std::string()); // Clearing the stream first
+        ss << "new device type: " << deviceType << "\r\n";
+        logs_dbg("%s", ss.str().c_str()) ;
 
         for (const auto& event : el.value())
         {
-#ifdef ENABLE_LOGS
-            std::cout << "\tcreate event (" << event["event"] << ").\n";
-#endif
+            
+            ss.str(std::string()); // Clearing the stream first
+            ss << "\tcreate event (" << event["event"] << ").\n";
+            logs_dbg("%s", ss.str().c_str()) ;
 
             event_info::EventNode eventNode(event["event"]);
 
-#ifdef ENABLE_LOGS
-            std::cout << "\tload event (" << event["event"] << ").\n";
-#endif
+            ss.str(std::string()); // Clearing the stream first
+            ss << "\tload event (" << event["event"] << ").\n";
+            logs_dbg("%s", ss.str().c_str()) ;
             eventNode.loadFrom(event);
 
-#ifdef ENABLE_LOGS
-            std::cout << "\tpush event (" << event["event"] << ").\n";
-#endif
+            ss.str(std::string()); // Clearing the stream first
+            ss << "\tpush event (" << event["event"] << ").\n";
+            logs_dbg("%s", ss.str().c_str()) ;
 
             v.push_back(eventNode);
         }
@@ -98,60 +99,62 @@ void EventNode::loadFrom(const json& j)
                              {j["severity"], j["resolution"]}};
 
     this->accessor = j["accessor"];
-
-#ifdef ENABLE_LOGS
-    std::cout << "Loaded accessor: " << this->accessor << ", j: " << j << "\n";
-#endif
+    
+    std::stringstream ss;
+    ss << "Loaded accessor: " << this->accessor << ", j: " << j;
+    log_dbg("%s\n", ss.str().c_str());
 
     this->valueAsCount =
         j.contains("value_as_count") ? j["value_as_count"].get<bool>() : false;
 }
 
-static void
-    print_accessor([[maybe_unused]] const data_accessor::DataAccessor& acc)
-{
-    /* todo */
-    return;
-}
+// Not used anymore - may get rid of it later
+// static void
+//     print_accessor([[maybe_unused]] const data_accessor::DataAccessor& acc)
+// {
+//     /* todo */
+//     return;
+// }
+
 
 static void print_node(const EventNode& n)
 {
-    print_accessor(n.accessor);
-#ifdef ENABLE_LOGS
-    std::cout << "\tDumping event     " << n.event << "\n";
+    std::stringstream ss;
+    ss << n.accessor << "\n";
+    ss << "\tDumping event     " << n.event << "\n";
 
-    std::cout << "\t\tdeviceType      " << n.deviceType << "\n";
-    std::cout << "\t\teventTrigger    " << n.eventTrigger << "\n";
-    std::cout << "\t\taccessor        "
+    ss << "\t\tdeviceType      " << n.deviceType << "\n";
+    ss << "\t\teventTrigger    " << n.eventTrigger << "\n";
+    ss << "\t\taccessor        "
               << "todo"
               << "\n";
-    print_accessor(n.accessor);
+    ss << n.accessor << "\n";
 
-    std::cout << "\t\tcount(map)      " << n.count.size() << "\n";
+    ss << "\t\tcount(map)      " << n.count.size() << "\n";
     for (auto& p : n.count)
     {
-        std::cout << "\t\t\t[" << p.first << "] = " << p.second << "\n";
+        ss << "\t\t\t[" << p.first << "] = " << p.second << "\n";
     }
 
-    std::cout << "\t\ttriggerCount    " << n.triggerCount << "\n";
-    std::cout << "\t\tcounterReset    "
+    ss << "\t\ttriggerCount    " << n.triggerCount << "\n";
+    ss << "\t\tcounterReset    "
               << "todo"
               << "\n";
-    print_accessor(n.counterReset);
+    ss << n.counterReset << "\n";
 
-    std::cout << "\t\tmessageRegistry " << n.messageRegistry.messageId << "\n";
-    std::cout << "\t\t\t" << n.messageRegistry.message.severity << "\n";
-    std::cout << "\t\t\t" << n.messageRegistry.message.resolution << "\n";
+    ss << "\t\tmessageRegistry " << n.messageRegistry.messageId << "\n";
+    ss << "\t\t\t" << n.messageRegistry.message.severity << "\n";
+    ss << "\t\t\t" << n.messageRegistry.message.resolution << "\n";
 
-    std::cout << "\t\ttelemetries     " << n.telemetries.size() << "\n";
+    ss << "\t\ttelemetries     " << n.telemetries.size() << "\n";
     for (auto& v : n.telemetries)
     {
-        std::cout << "\t\t\t" << v << "\n";
+        ss << "\t\t\t" << v << "\n";
     }
 
-    std::cout << "\t\taction          " << n.action << "\n";
-    std::cout << "\t\tdevice          " << n.device << "\n";
-#endif
+    ss << "\t\taction          " << n.action << "\n";
+    ss << "\t\tdevice          " << n.device << "\n";
+    logs_dbg("%s", ss.str().c_str());
 }
 
 void EventNode::print(const EventNode& n) const

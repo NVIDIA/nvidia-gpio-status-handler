@@ -8,7 +8,7 @@
  license agreement from NVIDIA CORPORATION is strictly prohibited.
 *
 */
-
+#include "log.hpp"
 #include "util.hpp"
 
 #include <boost/algorithm/string.hpp>
@@ -275,10 +275,7 @@ std::string determineDeviceName(const std::string& objPath,
             // name =  expandDeviceRange(devType)[0];
         }
     }
-#ifdef ENABLE_LOGS
-    std::cout << "determineDeviceName() objPath" << objPath
-              << " devType:" << devType << " Devname: " << name << "\n.";
-#endif
+    logs_dbg("determineDeviceName() objPath %s devType:%s Devname: %s\n.", objPath, devType, name);
     return name;
 }
 

@@ -2,8 +2,7 @@
  *
  */
 #include "data_accessor.hpp"
-
-#include "util.hpp"
+#include "log.hpp"
 
 #include <boost/process.hpp>
 
@@ -17,16 +16,15 @@ namespace data_accessor
 bool DataAccessor::contains(const DataAccessor& other) const
 {
     bool ret = isValid(other._acc);
+    std::stringstream ss;
     if (ret == true)
     {
         for (auto& [key, val] : other._acc.items())
         {
             if (_acc.count(key) == 0)
             {
-#ifdef ENABLE_LOGS
-                std::cout << __PRETTY_FUNCTION__ << "(): "
-                          << "key=" << key << " not found in _acc" << std::endl;
-#endif
+                ss << "key=" << key << " not found in _acc";
+                log_dbg("%s\n", ss.str().c_str());
                 ret = false;
                 break;
             }
@@ -37,20 +35,17 @@ bool DataAccessor::contains(const DataAccessor& other) const
             auto values_match = std::regex_match(val_string, reg_value);
             if (values_match == false)
             {
-#ifdef ENABLE_LOGS
-                std::cout << __PRETTY_FUNCTION__ << "(): "
-                          << " values do not match key=" << key
-                          << " value=" << val << std::endl;
-#endif
+                ss.str(std::string()); // Clearing the stream first
+                ss << "values do not match key=" << key << " value=" << val;
+                log_dbg("%s\n", ss.str().c_str());
                 ret = false;
                 break;
             }
         }
     }
-#ifdef ENABLE_LOGS
-    std::cout << __PRETTY_FUNCTION__ << "(): "
-              << "ret=" << ret << std::endl;
-#endif
+    ss.str(std::string()); // Clearing the stream first
+    ss << "ret=" << ret;
+    log_dbg("%s\n", ss.str().c_str());
     return ret;
 }
 
@@ -91,11 +86,7 @@ bool DataAccessor::check(const DataAccessor& otherAcc,
             {
                 devRange = util::expandDeviceRange(rangeString);
             }
-#ifdef ENABLE_LOGS
-            std::cout << __FILE__ << ":" << __LINE__
-                      << " assertedDeviceNames CMDLINE: " << rangeString
-                      << std::endl;
-#endif
+            log_dbg("%s:%s assertedDeviceNames CMDLINE: %s\n", __FILE__, __LINE__, rangeString.c_str());
             for (auto& arg : devRange)
             {
                 DataAccessor cmdlineAcc = *this;
@@ -251,10 +242,9 @@ bool DataAccessor::readDbus()
         // setDataValueFromVariant returns false in case variant is invalid
         ret = setDataValueFromVariant(propVariant);
     }
-#ifdef ENABLE_LOGS
-    std::cout << __PRETTY_FUNCTION__ << "(): "
-              << "ret=" << ret << std::endl;
-#endif
+    std::stringstream ss;
+    ss << "ret=" << ret;
+    log_dbg("%s\n", ss.str().c_str());
     return ret;
 }
 
@@ -279,10 +269,9 @@ bool DataAccessor::runCommandLine(const std::string& device)
             }
             cmd += ' ' + args;
         }
-#ifdef ENABLE_LOGS
-        std::cout << "[D] " << __PRETTY_FUNCTION__ << "() "
-                  << "cmd: " << cmd << std::endl;
-#endif
+        std::stringstream ss;
+        ss << "cmd: " << cmd;
+        log_dbg("%s\n", ss.str().c_str());
         std::string result{""};
         uint64_t processExitCode = 0;
         try
@@ -303,17 +292,19 @@ bool DataAccessor::runCommandLine(const std::string& device)
                 ret = false;
                 std::string error("return code = ");
                 error += std::to_string(processExitCode);
-                std::cerr << "[E]"
-                          << "Error running the command \'" << cmd << "\' "
-                          << error << std::endl;
+                ss.str(std::string()); // Clear the stream
+                ss << "Error running the command \'" << cmd << "\' "
+                    << error;
+                log_err("%s\n", ss.str().c_str());
             }
         }
         catch (const std::exception& error)
         {
             ret = false;
-            std::cerr << "[E]"
-                      << "Error running the command \'" << cmd << "\' "
-                      << error.what() << std::endl;
+            ss.str(std::string()); // Clear the stream
+            ss << "Error running the command \'" << cmd << "\' "
+                << error.what();
+            log_err("%s\n", ss.str().c_str());
         }
         // ok lets store the output
         if (ret == true)

@@ -24,10 +24,10 @@ selftestlib = shared_library('selftest',
                         selftestlib_sources,
                         include_directories : inc,
                         dependencies : [
-			    declare_dependency(link_with : amllib),
-			    sdbusplus_dep,
-			    phosphor_logging_dep
-			  ],
+                                        declare_dependency(link_with : amllib),
+                                        sdbusplus_dep,
+                                        phosphor_logging_dep
+                                      ],
                         version : '0.0.0',
                         install : true,
                         install_dir : get_option('libdir'))

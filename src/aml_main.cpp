@@ -8,16 +8,12 @@
  * license agreement from NVIDIA CORPORATION is strictly prohibited.
  */
 
-#include "aml_main.hpp"
-
 #include "aml.hpp"
 #include "aml_main.hpp"
 #include "cmd_line.hpp"
 #include "dat_traverse.hpp"
 #include "event_detection.hpp"
-#include "event_handler.hpp"
 #include "event_info.hpp"
-#include "log.hpp"
 #include "message_composer.hpp"
 #include "selftest.hpp"
 
@@ -47,8 +43,6 @@ const auto APPVER = "0.1";
 constexpr int RETRY_DBUS_INFO_COUNTER = 60;
 constexpr int RETRY_SLEEP = 5;
 
-log_init;
-
 namespace aml
 {
 namespace profile
@@ -71,10 +65,7 @@ int loadDAT(cmd_line::ArgFuncParamType params)
 {
     if (params[0].size() == 0)
     {
-#ifdef ENABLE_LOGS
-        cout << "Need a parameter!"
-             << "\n";
-#endif
+        logs_dbg("Need a parameter!\n");
         return -1;
     }
 
@@ -95,10 +86,7 @@ int loadEvents(cmd_line::ArgFuncParamType params)
 {
     if (params[0].size() == 0)
     {
-#ifdef ENABLE_LOGS
-        cout << "Need a parameter!"
-             << "\n";
-#endif
+        logs_dbg("Need a parameter!\n");
         return -1;
     }
 
@@ -113,6 +101,32 @@ int loadEvents(cmd_line::ArgFuncParamType params)
     return 0;
 }
 
+int setLogLevel(cmd_line::ArgFuncParamType params)
+{
+    int newLvl = std::stoi(params[0]);
+
+    if (newLvl < 0 || newLvl > 5)
+    {
+        throw std::runtime_error("Level of our range[0-4]!");
+    }
+
+    log_set_level(newLvl);
+
+    return 0;
+}
+
+int setLogFile(cmd_line::ArgFuncParamType params)
+{
+    if (!params[0].size())
+    {
+        throw std::runtime_error("Need a file name!");
+    }
+
+    log_set_file(params[0].c_str());
+
+    return 0;
+}
+
 int show_help([[maybe_unused]] cmd_line::ArgFuncParamType params);
 
 cmd_line::CmdLineArgs cmdLineArgs = {
@@ -123,6 +137,11 @@ cmd_line::CmdLineArgs cmdLineArgs = {
      loadDAT},
     {"-e", "", cmd_line::OptFlag::overwrite, "<file>",
      cmd_line::ActFlag::normal, "Event Info List filename.", loadEvents},
+    {"-l", "", cmd_line::OptFlag::overwrite, "<level>",
+     cmd_line::ActFlag::normal, "Debug Log Level [0-4].", setLogLevel},
+    {"-L", "", cmd_line::OptFlag::overwrite, "<file>",
+     cmd_line::ActFlag::normal, "Debug Log file. Use stdout if omitted.",
+     setLogFile},
 };
 
 int show_help([[maybe_unused]] cmd_line::ArgFuncParamType params)
@@ -161,6 +180,7 @@ int main(int argc, char* argv[])
 
     return 0;
 #endif
+    logs_info("Default log level: %d. Current log level: %d\n", DEF_DBG_LEVEL, getLogLevel(logger.getLevel()));
     try
     {
         cmd_line::CmdLine cmdLine(argc, argv, aml::cmdLineArgs);
@@ -169,12 +189,12 @@ int main(int argc, char* argv[])
     }
     catch (const std::exception& e)
     {
-        std::cerr << "[E]" << e.what() << "\n";
+        logs_err("%s\n", e.what());
         aml::show_help({});
         return rc;
     }
 
-    std::cerr << "Trying to load Events from file\n";
+    logs_err("Trying to load Events from file\n");
 
     // Initialization
     event_info::loadFromFile(aml::profile::eventMap, aml::configuration.event);
@@ -203,13 +223,12 @@ int main(int argc, char* argv[])
         {
             if (++retryGettingDbusInfo < RETRY_DBUS_INFO_COUNTER)
             {
-                std::cerr << "[W] waiting Dbus information ..." << std::endl;
+                logs_wrn("waiting Dbus information ...\n");
+                
                 ::sleep(RETRY_SLEEP);
                 continue;
             }
-            std::cerr << "[E] "
-                      << "HealthRollup & OriginOfCondition can't be supported "
-                      << "at the moment due to Dbus Error." << std::endl;
+            logs_err("HealthRollup & OriginOfCondition can't be supported at the moment due to Dbus Error.\n");
         }
     }
 
@@ -225,17 +244,12 @@ int main(int argc, char* argv[])
     eventHdlrMgr.RegisterHandler(&msgComposer);
     eventHdlrMgr.RegisterHandler(&clearEvent);
 
-#ifdef ENABLE_LOGS
-    cout << "Creating " << oob_aml::SERVICE_BUSNAME << "\n";
-#endif
+    logs_dbg("Creating %s\n", oob_aml::SERVICE_BUSNAME);
 
     rc = sd_bus_default_system(&aml::bus);
     if (rc < 0)
     {
-#ifdef ENABLE_LOGS
-        cout << "Failed to connect to system bus"
-             << "\n";
-#endif
+        logs_dbg("Failed to connect to system bus\n");
     }
     try
     {
@@ -260,7 +274,7 @@ int main(int argc, char* argv[])
     }
     catch (const std::exception& e)
     {
-        std::cerr << "[E]" << e.what() << "\n";
+        logs_err("%s\n", e.what());
         return -1;
     }
 

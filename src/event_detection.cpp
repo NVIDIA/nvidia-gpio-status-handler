@@ -2,12 +2,10 @@
 /*
  *
  */
-#include "event_detection.hpp"
-
 #include "aml.hpp"
 #include "aml_main.hpp"
 #include "data_accessor.hpp"
-#include "log.hpp"
+#include "event_detection.hpp"
 
 #include <boost/container/flat_map.hpp>
 #include <nlohmann/json.hpp>
@@ -39,17 +37,11 @@ void EventDetection::dbusEventHandlerCallback(sdbusplus::message::message& msg)
 
     std::string signalSignature = msg.get_signature();
 
-#ifdef ENABLE_LOGS
-    std::cout << "objectPath:" << objectPath << "\n";
-    std::cout << "signalSignature:" << signalSignature << "\n";
-    std::cout << "msgInterface:" << msgInterface << "\n";
-#endif
+    logs_dbg("objectPath:%s\nsignalSignature:%s\nmsgInterface:%s\n", objectPath, signalSignature, msgInterface);
 
     if (propertiesChanged.empty())
     {
-#ifdef ENABLE_LOGS
-        std::cout << "empty propertiesChanged, return.\n";
-#endif
+        logs_dbg("empty propertiesChanged, return.\n");
         return;
     }
 
@@ -75,16 +67,11 @@ void EventDetection::dbusEventHandlerCallback(sdbusplus::message::message& msg)
 
         if (eventProperty.empty() || nullptr == variant)
         {
-#ifdef ENABLE_LOGS
-            std::cout << "empty eventProperty, skip.\n";
-#endif
+            logs_dbg("empty eventProperty, skip.\n");
             continue;
         }
 
-#ifdef ENABLE_LOGS
-        cout << "Path: " << objectPath << " Property: " << eventProperty
-             << ", Variant: " << variant << "\n";
-#endif
+        logs_dbg("Path: %s, Property: %s, Variant: %s\n", objectPath, eventProperty, variant);
 
         const std::string type = "DBUS";
         nlohmann::json j;
@@ -96,9 +83,7 @@ void EventDetection::dbusEventHandlerCallback(sdbusplus::message::message& msg)
         auto eventsList = eventDetectionPtr->LookupEventFrom(accessor);
         if (eventsList.empty() == true)
         {
-#ifdef ENABLE_LOGS
-            std::cout << "No event found in the supporting list.\n";
-#endif
+            logs_dbg("No event found in the supporting list.\n");
             continue;
         }
         for (auto candidate : eventsList)
@@ -122,12 +107,8 @@ void EventDetection::dbusEventHandlerCallback(sdbusplus::message::message& msg)
             for (const auto& device : candidate.assertedDeviceNames)
             {
                 event.device = device.second;
-#ifdef ENABLE_LOGS
-                std::cout << __FILE__ << ":" << __LINE__
-                          << " Throw out an eventHdlrMgr."
-                          << " device: " << event.device
-                          << " event: " << event.event << std::endl;
-#endif
+                logs_dbg("%s:%s Throw out an eventHdlrMgr. device: %s event: %s",
+                            __FILE__, __LINE__, event.device, event.event);
                 if (eventDetectionPtr->IsEvent(candidate, eventValue))
                 {
                     eventDetectionPtr->RunEventHandlers(event);
@@ -181,9 +162,7 @@ DbusEventHandlerList EventDetection::startEventDetection(
                               conn, object, interface, genericHandler));
         }
     }
-#ifdef ENABLE_LOGS
-    std::cout << "dbusEventHandlerMatcher created.\n";
-#endif
+    log_dbg("dbusEventHandlerMatcher created.\n");
     return handlerList;
 }
 
@@ -211,10 +190,7 @@ void EventDetection::identifyEventCandidate(const std::string& objPath,
                                             const std::string& signature,
                                             const std::string& property)
 {
-#ifdef ENABLE_LOGS
-    cout << "dbus([" << objPath << "]/[" << signature << "]/[" << property
-         << "]).\n";
-#endif
+    logs_info("dbus([%s]/[%s]/[%s]).\n" << objPath, signature, property);
     std::regex rgx("obj=\"(.+?)\"");
     std::smatch match;
 
@@ -233,29 +209,20 @@ void EventDetection::identifyEventCandidate(const std::string& objPath,
 
                 if (objPath.find(eventPath) != std::string::npos)
                 {
-#ifdef ENABLE_LOGS
-                    cout << "Matched event: " << objPath << " " << eventPath
-                         << "\n";
-#endif
+                    log_dbg("Matched event: %s %s\n", objPath.c_str(), eventPath.c_str());
                     goto exit;
                 }
             }
             else
             {
-#ifdef ENABLE_LOGS
-                cout << "Regex Issue";
-#endif
+                log_err("Regex Issue\n");
                 goto exit;
             }
         }
-        std::cerr << "\n";
     }
 exit:
 
-#ifdef ENABLE_LOGS
-    cout << "Exit"
-         << "\n";
-#endif
+    log_err("Exit\n");
 }
 #endif
 // void EventDetection::~EventDetection()

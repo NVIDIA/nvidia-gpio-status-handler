@@ -36,7 +36,6 @@ Mode | `Project options` | Possible Values | Description
 API Stubs | `api_stubs` | [enabled, disabled, auto] | Build this modeule using stub APIs included in directory,
 *src/stubs*
 Sandbox | `sandbox_mode` | [enabled, disabled, auto] | Build this module for the host CPU architecture, so as to develop & debug & verify without burning code into BMC with real hardware.
-Default Debug Log Level | `debug_log=n` | >=0, <=4 | Log level `n` definition is [here](#tabledbgloglevel).
  
  ### How to Clean
 To clean build cache,
@@ -87,14 +86,13 @@ $ meson configure
 Project options                Current Value                    Possible Values                  Description
   ---------------                -------------                    ---------------                  -----------
   api_stubs                      auto                             [enabled, disabled, auto]        Manager API stubs enablement
-  debug_log_level                0                                >=0, <=4                         Enable debug log LEVEL [0|1|2|3|4]
   sandbox_mode                   enabled                          [enabled, disabled, auto]        Sandbox mode enablement
 ```
 
 Options can be edited,
 ``` shell
 $ cd builddir # If not already
-$ meson configure -Dapi_stubs=enabled -Ddebug_log=1
+$ meson configure -Dapi_stubs=enabled
 ```
 
 ### Debug Logging Level Control
@@ -112,17 +110,20 @@ debug | 3
 info | 4
 |
  
-By default, the logging level is 1 - error. To change it before building, e.g. to 3 - debug,
-``` shell
-$ ./configure --enable-debug-log=3
-$ make clean && make
+By default, the logging level is 1 - error. To change the default log level before building, e.g. to 3 - debug, in openbmc repo, modify meta-nvidia/recipes-nvidia/oobaml/nvidia-oobaml_git.bb by changing the following line,
+``` markdown
+EXTRA_OEMESON += "-Ddebug_log=1"
 ```
  
-To change the logging level during runtime, e.g. to 3 - debug,
-``` shell
-$ tools/log_cmd 3
+To change the logging level during runtime, e.g. to 3 - debug, we need to pass following command line argument.
+``` markdown
+-l <level> 0 - None; 1 - +Error; 2 - +Warning; 3 - +Info
 ```
->**NOTE: log_cmd could be installed into the target firmware filesystem.**
+
+To change the target for log output during runtime, e.g. to /tmp/aml_debug.log, we need to pass following command line argument.
+``` markdown
+-L <log_file> where to output the log. Output to screen if the arg not present.
+```
 
 ### Docker Image for Building & Debugging
 :warning: **Not maintained!** May need extensive work to work as described. 

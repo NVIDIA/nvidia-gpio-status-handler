@@ -1,12 +1,5 @@
-install_headers ('oobaml_api.hpp')
-#install_headers('object.hpp',
-#                'config_parser.hpp',
-#                'dat_traverse.hpp',
-#                'data_accessor.hpp',
-#                'event_detection.hpp',
-#                'event_handler.hpp',
-#                'event_info.hpp',
-#                'log.hpp',
-#                'message_composer.hpp',
-#                'message_dispatcher.hpp',
-#                'oobaml_api.hpp')
+# List of header files that get installed alongside the binary when you do a build install.
+# If you are building a binary, that list will be blank.
+# If you are building a library, headers that a user would include to call the library functions would be in that list.
+
+install_headers ()

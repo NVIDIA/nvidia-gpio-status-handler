@@ -27,7 +27,7 @@ endif
 ## Fetch all the project options and set the project arguments
 debug_log_level = get_option('debug_log')
 if debug_log_level != 0
-    add_project_arguments('-DDEF_DBG_LEVEL=debug_log_level', language : lang)
+    add_project_arguments('-DDEF_DBG_LEVEL=' + debug_log_level.to_string(), language : lang)
 endif
 if get_option('sandbox_mode').enabled()
     add_project_arguments('-DSANDBOX_MODE', language : lang)
@@ -37,7 +37,6 @@ endif
 ## create a MAP of  "options : feature_flag"
 
 feature_map = {
-  'enable-debug-log'                            : '-DENABLE_LOGS',
 }
 
 # Get the options status and build a project summary to show which flags are
@@ -156,8 +155,8 @@ amllib_sources = [
                 'src/dat_traverse.cpp',
                 'src/data_accessor.cpp',
                 'src/property_accessor.cpp',
-		'src/dbus_accessor.cpp',
-		'src/util.cpp',
+                'src/dbus_accessor.cpp',
+                'src/util.cpp',
                 'src/event_detection.cpp',
                 'src/event_handler.cpp',
                 'src/event_info.cpp',

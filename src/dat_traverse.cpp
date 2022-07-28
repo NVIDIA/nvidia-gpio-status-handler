@@ -442,8 +442,7 @@ std::string dbusGetManagerServiceName(const std::string& devicePath)
     }
     catch (const sdbusplus::exception::exception& e)
     {
-        std::cerr << "[E] " << __PRETTY_FUNCTION__
-                  << " Dbus Error: " << e.what() << std::endl;
+        logs_err(" Dbus Error: %s\n", e.what());
         throw std::runtime_error(e.what());
     }
 
@@ -512,8 +511,7 @@ std::vector<std::tuple<std::string, std::string, std::string>>
     }
     catch (const sdbusplus::exception::exception& e)
     {
-        std::cerr << "[E] " << __PRETTY_FUNCTION__
-                  << " Dbus Error: " << e.what() << std::endl;
+        logs_err(" Dbus Error: %s\n", e.what());
         throw std::runtime_error(e.what());
     }
     return std::get<PropertyType>(dbusResult);
@@ -557,9 +555,7 @@ void dbusSetDeviceAssociations(
     }
     catch (const sdbusplus::exception::exception& e)
     {
-        // TODO:
-        std::cerr << "[E] " << __PRETTY_FUNCTION__
-                  << " Dbus Error: " << e.what() << std::endl;
+        logs_err(" Dbus Error: %s\n", e.what());
         throw std::runtime_error(e.what());
     }
 }
@@ -684,8 +680,7 @@ std::vector<std::string> dbusGetDeviceObjectPaths()
     }
     catch (const sdbusplus::exception::exception& e)
     {
-        std::cerr << "[E] " << __PRETTY_FUNCTION__
-                  << " Dbus Error: " << e.what() << std::endl;
+        logs_err(" Dbus Error: %s\n", e.what());
         throw std::runtime_error(e.what());
     }
 

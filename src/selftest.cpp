@@ -59,18 +59,14 @@ void Selftest::updateDeviceHealth(const std::string& device,
                 std::string healthState =
                     "xyz.openbmc_project.State.Decorator.Health.HealthType." +
                     health;
-#ifdef ENABLE_LOGS
-                std::cout << "Setting Health Property for: " << objPath.first
-                          << " healthState: " << healthState << "\n";
-#endif
+                    
+                log_dbg("Setting Health Property for: %s healthState: %s\n", objPath.first, healthState);
                 bool ok = dbus::setDbusProperty(objPath.first,
                     "xyz.openbmc_project.State.Decorator.Health", "Health",
                     PropertyVariant(healthState));
                 if (ok == true)
                 {
-#ifdef ENABLE_LOGS
-                    std::cout << "Changed health property as expected\n";
-#endif
+                    log_dbg("Changed health property as expected\n");
                 } // else setDbusProperty() prints message on std::cerr
             }
         }
