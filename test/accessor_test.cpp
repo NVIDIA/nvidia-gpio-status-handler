@@ -500,6 +500,10 @@ TEST(DataAccessor, CmdLineRegexExpansion)
     const std::string deviceType{"GPU[0-7]"};
     // if the "lookup" worked then the expansion is fine
     EXPECT_EQ(cmdAccessor.check(cmdAccessor, deviceType), true);
+    auto assertedDevices = cmdAccessor.getAssertedDeviceNames();
+    EXPECT_EQ(assertedDevices.size(), 1);
+    EXPECT_EQ(assertedDevices.count(1), 1);
+    EXPECT_EQ(assertedDevices[1], "GPU1");
 }
 
 TEST(DataAccessor, CmdLineEmptyRegexExpansionUseDevicetypeInstead)
@@ -514,4 +518,8 @@ TEST(DataAccessor, CmdLineEmptyRegexExpansionUseDevicetypeInstead)
     const std::string deviceType{"GPU[0-7]"};
     // if the "lookup" worked then the expansion is fine
     EXPECT_EQ(cmdAccessor.check(cmdAccessor, deviceType), true);
+    auto assertedDevices = cmdAccessor.getAssertedDeviceNames();
+    EXPECT_EQ(assertedDevices.size(), 1);
+    EXPECT_EQ(assertedDevices.count(1), 1);
+    EXPECT_EQ(assertedDevices[1], "GPU1");
 }

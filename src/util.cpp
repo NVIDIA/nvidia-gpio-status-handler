@@ -167,35 +167,14 @@ std::string replaceRangeByMatchedValue(const std::string& regxValue,
     std::string newString{regxValue};
     if (matchedValue.empty() == false)
     {
-        auto info = getMinMaxRange(regxValue);
-        auto minMax = std::get<std::vector<int>>(info);
-        if (minMax.size() == 2)
+        auto info = getRangeInformation(regxValue);
+        auto rangeSize  = std::get<0>(info);
+        if (rangeSize > 0)
         {
-            auto counter = minMax.at(0);
-            for (; counter <= minMax.at(1); ++counter)
-            {
-                auto rangeDigit = std::to_string(counter);
-                if (matchedValue.find(rangeDigit) != std::string::npos)
-                {
-                    auto rangeStr = std::get<std::string>(info);
-                    auto rangePosition = regxValue.find(rangeStr);
-                    if (rangePosition != std::string::npos)
-                    {
-                        if (rangePosition == 0 ||
-                            regxValue.at(rangePosition - 1) == ' ')
-                        {
-                            newString.replace(rangePosition, rangeStr.size(),
-                                              matchedValue);
-                        }
-                        else
-                        {
-                            newString.replace(rangePosition, rangeStr.size(),
-                                              rangeDigit);
-                        }
-                        break;
-                    }
-                }
-            }
+
+            auto rangePosition =std::get<1>(info);
+            auto rangeStr = std::get<2>(info);
+            newString.replace(rangePosition, rangeSize, matchedValue);
         }
     }
     return newString;

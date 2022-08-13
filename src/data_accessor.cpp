@@ -61,67 +61,36 @@ bool DataAccessor::check(const DataAccessor& otherAcc,
         ret = false;
         accNonConst._latestAssertedDevices.clear();
         /*
-         * check accessor type CMDLINE with range in arguments
-         * if so, is necessary to expand devices range and check() each device
+         * Note:
+         *   As read(device) is for a single device, there are cases where
+         *   it is necessary to loop all devices calling read() and subCheck()
+         *   These cases are:
+         *   1. CMDLINE i.g., "arguments": "AP0_BOOTCOMPLETE_TIMEOUT GPU[0-7]",
+         *   2. DeviceCoreAPI having range in event 'device_type', not having
+         *      “device_id” field or having “device_id” equal “range”
          */
-        auto cmdLineRange = getCmdLineRangeInformationInArguments();
-        auto sizeRangeString = std::get<0>(cmdLineRange);
-        if (sizeRangeString > 0)
+        util::DeviceIdMap devRange{};
+        if (isTypeCmdline() == true)
         {
-            // final assertedDeviceNames output from the loop
-            util::DeviceIdMap cmdlineAssertedDevices;
-            auto postionRangeSring = std::get<1>(cmdLineRange);
-            auto rangeString = std::get<2>(cmdLineRange);
-            // devRange is expanded to 0=GPU0, 1=GPU1, ...
-            decltype (util::expandDeviceRange(rangeString)) devRange;
-            /** check for empty brackets like {"arguments", "AP0_BOOT []"},
-             *  size will be 2 even there were spaces (were ignored) between the
-             *  brackets, then use deviceType which must have range
-             */
-            if (sizeRangeString == 2 && util::existsRange(deviceType))
-            {
-                devRange = util::expandDeviceRange(deviceType);
-            }
-            else
-            {
-                devRange = util::expandDeviceRange(rangeString);
-            }
-            log_dbg("%s:%s assertedDeviceNames CMDLINE: %s\n", __FILE__, __LINE__, rangeString.c_str());
-            for (auto& arg : devRange)
-            {
-                DataAccessor cmdlineAcc = *this;
-                std::string arguments = cmdlineAcc._acc[argumentsKey];
-                arguments.replace(postionRangeSring, sizeRangeString,
-                                  arg.second);
-                cmdlineAcc._acc[argumentsKey] = arguments;
-                cmdlineAcc.read();
-                if (cmdlineAcc.subCheck(cmdlineAcc, redefCriteria, rangeString,
-                                        arg.second) == true)
-                {
-                    ret = true;
-                    // insert the asserteDeviceName from cmdlineAcc into
-                    //  return map, it should always come as devId 0
-                    if (cmdlineAcc._latestAssertedDevices.count(0) != 0)
-                    {
-                        auto& devId = arg.first;
-                        cmdlineAssertedDevices[devId] =
-                            cmdlineAcc._latestAssertedDevices[0];
-                    }
-                }
-            }
-            if (ret == true)
-            {
-                // the final assertedDeviceNames for CMDLINE with range in args
-                accNonConst._latestAssertedDevices = cmdlineAssertedDevices;
-                return ret; // work done
-            }
+            devRange = getCmdLineRangeArguments(deviceType); // case 1
         }
-        else // not CMDLINE with range in arguments
+        else if (isTypeDeviceCoreApi() == true && isDeviceIdRange() == true)
+        {
+            // working so far with 'equal' and 'bitmask'
+            devRange = util::expandDeviceRange(deviceType); // case 2
+        }
+        if (devRange.size() > 0)
+        {
+            auto tmpAccessor = *this;
+            ret = tmpAccessor.checkLoopingDevices(devRange, otherAcc,
+                                                  redefCriteria, deviceType);
+        }
+        else // not necessary to loop all devices, using orignal deviceToRead
         {
             accNonConst.read(deviceToRead);
             ret = subCheck(otherAcc, redefCriteria, deviceType, deviceToRead);
         }
-    } // existsCheckKey() == true
+    }
     if (ret == true && accNonConst._latestAssertedDevices.empty() == true)
     {
         buildSingleAssertedDeviceName(accNonConst, deviceToRead, deviceType);
@@ -156,7 +125,7 @@ bool DataAccessor::check() const
 bool DataAccessor::subCheck(const DataAccessor& otherAcc,
                             const PropertyVariant& redefCriteria,
                             const std::string& deviceType,
-                            const std::string& dev2Read = std::string{""}) const
+                            const std::string& dev2Read) const
 {
     if (otherAcc.hasData() == false)
     {
@@ -342,8 +311,16 @@ bool DataAccessor::readDeviceCoreApi(const std::string& device)
         }
         else
         {
-            _dataValue = std::make_shared<PropertyValue>(PropertyValue(
-                std::get<std::string>(tuple), std::get<uint64_t>(tuple)));
+            if (existsCheckLookup() == true && isDeviceIdRange() == false)
+            {
+                _dataValue = std::make_shared<PropertyValue>(PropertyValue(
+                      std::get<std::string>(tuple), std::get<uint64_t>(tuple)));
+            }
+            else
+            {
+                _dataValue = std::make_shared<PropertyValue>(PropertyValue(
+                                                    std::get<uint64_t>(tuple)));
+            }
         }
     }
     return ret;
@@ -377,15 +354,59 @@ void DataAccessor::buildSingleAssertedDeviceName(
     }
 }
 
-util::RangeInformation
-    DataAccessor::getCmdLineRangeInformationInArguments() const
+util::DeviceIdMap DataAccessor::getCmdLineRangeArguments(
+        const std::string& deviceType) const
 {
-    if (isTypeCmdline() == true && _acc.count(argumentsKey) != 0)
+    util::DeviceIdMap devArgs;
+    if (isValidCmdlineAccessor() == true && _acc.count(argumentsKey) != 0)
     {
-        return util::getRangeInformation(_acc[argumentsKey].get<std::string>());
+        auto args = _acc[argumentsKey].get<std::string>();
+        auto cmdLineRange = util::getRangeInformation(args);
+        auto sizeRangeString = std::get<0>(cmdLineRange);
+        if (sizeRangeString > 0)
+        {
+            /** check for empty brackets like {"arguments", "AP0_BOOT []"},
+             *  size will be 2 even there were spaces (were ignored) between the
+             *  brackets, then use deviceType which must have range
+             */
+            if (sizeRangeString == 2 && util::existsRange(deviceType))
+            {
+                devArgs = util::expandDeviceRange(deviceType);
+            }
+            else
+            {
+                devArgs = util::expandDeviceRange(std::get<2>(cmdLineRange));
+            }
+        }
     }
-    // returns empty information
-    return util::getRangeInformation(std::string{""});
+    return devArgs;
+}
+
+bool DataAccessor::checkLoopingDevices(const util::DeviceIdMap& devices,
+                                          const DataAccessor& otherAcc,
+                                          const PropertyVariant& redefCriteria,
+                                          const std::string& deviceType)
+{
+    bool ret = false;
+    DataAccessor& accNonConst = const_cast<DataAccessor&>(otherAcc);
+    for (auto& arg : devices)
+    {
+        read(arg.second); // arg.first=deviceId, arg.second=deviceName
+        if (subCheck(*this, redefCriteria, deviceType, arg.second) == true)
+        {
+            ret = true;
+            // insert the asserteDeviceName from tmpAccessor into
+            //  return map, it always comes as devId 0
+            if (_latestAssertedDevices.count(0) != 0)
+            {
+                accNonConst._latestAssertedDevices[arg.first] =
+                                _latestAssertedDevices.at(0);
+                // *this and otherAcc cannot be the same object
+                _latestAssertedDevices.erase(0);
+            }
+        }
+    }
+    return ret;
 }
 
 } // namespace data_accessor

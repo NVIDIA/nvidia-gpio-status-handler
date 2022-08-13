@@ -38,6 +38,7 @@ constexpr auto executableKey = "executable";
 constexpr auto argumentsKey = "arguments";
 constexpr auto deviceNameKey = "device_name";
 constexpr auto testValueKey = "test_value";
+constexpr auto deviceidKey = "device_id";
 
 static std::map<std::string, std::vector<std::string>> accessorTypeKeys = {
     {"DBUS", {"object", "interface", "property"}},
@@ -288,6 +289,31 @@ class DataAccessor
     }
 
     /**
+     * @brief checks if _acc["check"]["lookup"] exists
+     * @return true if that exists, otherwise false
+     */
+    inline bool existsCheckLookup() const
+    {
+        return existsCheckKey() && _acc[checkKey].count(lookupKey) != 0;
+    }
+
+    /**
+     * @brief This is an optional flag telling the Accessor to loop devices
+     *
+     * The “device_id” field if present can have the following values:
+     *   1. “device_id”: “range”
+     *   2. “device_id”: “single”
+     *
+     * If the “device_id” field  is NOT present if defaults to "range"
+     *
+     * @return true if “device_id” is not present or if it is equal "range"
+     */
+    inline bool isDeviceIdRange() const
+    {
+        return _acc.count(deviceidKey) == 0 || _acc[deviceidKey] == "range";
+    }
+
+    /**
      * @brief read value per the accessor info
      *
      * @return std::string
@@ -413,7 +439,7 @@ class DataAccessor
      * @return true
      * @return false
      */
-    bool isValid(const nlohmann::json& acc) const
+    inline bool isValid(const nlohmann::json& acc) const
     {
         return (acc.count(typeKey) > 0);
     }
@@ -482,7 +508,7 @@ class DataAccessor
     /**
      * @brief clearData() clear the _dataValue if it has a previous value
      */
-    void clearData()
+    inline void clearData()
     {
         if (_dataValue != nullptr)
         {
@@ -513,7 +539,7 @@ class DataAccessor
      *
      * @return true if this Accessor Dbus is OK
      */
-    bool isValidDbusAccessor() const
+    inline bool isValidDbusAccessor() const
     {
         return isTypeDbus() == true && _acc.count(objectKey) != 0 &&
                _acc.count(interfaceKey) != 0 && _acc.count(propertyKey) != 0;
@@ -526,7 +552,7 @@ class DataAccessor
      *
      * @return true if this Accessor CMDLINE is OK
      */
-    bool isValidCmdlineAccessor() const
+    inline bool isValidCmdlineAccessor() const
     {
         return isTypeCmdline() == true && _acc.count(executableKey) != 0;
     }
@@ -536,9 +562,9 @@ class DataAccessor
      *
      * @return true if the Accessor type "DeviceCoreAPI" has property
      */
-    bool isValidDeviceCoreApiAccessor() const
+    inline bool isValidDeviceCoreApiAccessor() const
     {
-        return isTypeDeviceCoreApi() && _acc.count(propertyKey) != 0;
+        return isTypeDeviceCoreApi() == true && _acc.count(propertyKey) != 0;
     }
 
     /**
@@ -602,25 +628,43 @@ class DataAccessor
                                        const std::string& devType) const;
 
     /**
-     * @brief  returns range infomation from arguments in accessor type CMDLINE
+     * @brief  returns a DeviceIdMap from arguments in accessor type CMDLINE
      *
+     *    For an Accessor such as:
+     * @code
      *        "accessor": {
      *          "type": "CMDaLINE",
      *          "executable": "mctp-vdm-util-wrapper",
      *          "arguments": "bla GPU[0-7]",
+     *          ...
+     *         }
+     * @endcode
+     *      returns a map => 0=GPU0 1=GPU1, ...
      *
-     *  the 'range infomation' is suitable to replace the full range string
-     *       considering the example above, it would be:
-     *          sizeString=8
-     *          position=5
-     *          string=GPU[0-7]
-     *
-     * @return information with sizeString > 0 if type is CMDLINE
-     *                                   and arguments is present
-     *                                   and argument has range
-     *         otherwise sizeString will be 0
+     * @return populated map if type is CMDLINE and there is range in arguments
+     *         otherwise an empty map
      */
-    util::RangeInformation getCmdLineRangeInformationInArguments() const;
+    util::DeviceIdMap
+           getCmdLineRangeArguments(const std::string& deviceType) const;
+
+    /**
+     * @brief performs a check() for all devices from 'devices' parameter
+     *
+     *        The Accessor::read(single-device) is performed on *this
+     * @note
+     *        *this and otherAcc CANNOT BE THE SAME OBJECT
+     *
+     * @param devices map of devicesId with their deviceNames
+     * @param otherAcc the Accessor which will receive assertedDevices
+     * @param redefCriteria another value from the one gotten from read() can
+     *        be forced as the value to perform the check
+     * @param deviceType the json device_type for current event
+     * @return a single return, true if one or more checks return true
+     */
+    bool checkLoopingDevices(const util::DeviceIdMap& devices,
+                                const DataAccessor& otherAcc,
+                                const PropertyVariant& redefCriteria,
+                                const std::string& deviceType);
 
   private:
     /**
