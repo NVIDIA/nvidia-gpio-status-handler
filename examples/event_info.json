@@ -8,12 +8,16 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "THERM_OVERT",
-        "check": { "equal": "false" }
+        "check": {
+          "equal": "false"
+        }
       },
       "accessor": {
         "type": "DeviceCoreAPI",
         "property": "gpu.thermal.temperature.overTemperatureInfo",
-        "check": {"bitmap": "1"}
+        "check": {
+          "bitmap": "1"
+        }
       },
       "severity": "Critical",
       "resolution": "Check thermal environmental to ensure GPU operates under Shutdown Temperature (UpperFatal threshold) and power cycle the BaseBoard to recover.",
@@ -23,7 +27,23 @@
         "metadata": ""
       },
       "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorThresholdExceeded"
+        "message_id": "ResourceEvent.1.0.ResourceErrorThresholdExceeded",
+        "message_args": {
+          "patterns": [
+            "{GPUId} Temperature",
+            "{UpperFatal Threshold}"
+          ],
+          "parameters": [
+            {
+              "type": "DIRECT",
+              "field": "CurrentDeviceName"
+            },
+            {
+              "type": "CONSTANT",
+              "value": "'TODO (proper accessor needs to be defined in /usr/share/oobaml/event_info.json)'"
+            }
+          ]
+        }
       },
       "telemetries": [
         {
@@ -53,7 +73,19 @@
         "metadata": ""
       },
       "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected",
+        "message_args": {
+          "patterns": [
+            "{GPUId} SRAM",
+            "Uncorrectable ECC Error"
+          ],
+          "parameters": [
+            {
+              "type": "DIRECT",
+              "field": "CurrentDeviceName"
+            }
+          ]
+        }
       },
       "telemetries": [],
       "action": "",
@@ -67,12 +99,16 @@
         "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
         "interface": "xyz.openbmc_project.com.nvidia.Events.PendingRegister",
         "property": "EventsPendingRegister",
-        "check": {"bitmask": "4"}
+        "check": {
+          "bitmask": "4"
+        }
       },
       "accessor": {
         "type": "DeviceCoreAPI",
         "property": "gpu.xid.event",
-        "check": {"lookup": "94"}
+        "check": {
+          "lookup": "94"
+        }
       },
       "severity": "Warning",
       "resolution": "Restart the affected application.",
@@ -82,7 +118,19 @@
         "metadata": ""
       },
       "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected",
+        "message_args": {
+          "patterns": [
+            "{GPUId} Memory",
+            "Contained ECC Error"
+          ],
+          "parameters": [
+            {
+              "type": "DIRECT",
+              "field": "CurrentDeviceName"
+            }
+          ]
+        }
       },
       "telemetries": [],
       "action": "",
@@ -96,12 +144,16 @@
         "object": "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]",
         "interface": "xyz.openbmc_project.com.nvidia.Events.PendingRegister",
         "property": "EventsPendingRegister",
-        "check": {"bitmask": "4"}
+        "check": {
+          "bitmask": "4"
+        }
       },
       "accessor": {
         "type": "DeviceCoreAPI",
         "property": "gpu.xid.event",
-        "check": {"lookup": "95"}
+        "check": {
+          "lookup": "95"
+        }
       },
       "severity": "Critical",
       "resolution": "Reset the GPU and restart affected applications.",
@@ -111,7 +163,19 @@
         "metadata": ""
       },
       "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected",
+        "message_args": {
+          "patterns": [
+            "{GPUId} Memory",
+            "Uncontained ECC Error"
+          ],
+          "parameters": [
+            {
+              "type": "DIRECT",
+              "field": "CurrentDeviceName"
+            }
+          ]
+        }
       },
       "telemetries": [],
       "action": "",
@@ -125,12 +189,16 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "I2C3_ALERT",
-        "check": {"equal": "false"}
+        "check": {
+          "equal": "false"
+        }
       },
       "accessor": {
         "type": "DeviceCoreAPI",
         "property": "gpu.interrupt.PresenceInfo",
-        "check": {"bitmap": "1"}
+        "check": {
+          "bitmap": "1"
+        }
       },
       "severity": "Critical",
       "resolution": "Cordon the HGX server node for further diagnosis.",
@@ -140,7 +208,19 @@
         "metadata": ""
       },
       "redfish": {
-        "message_id": "ResourceEvent.1.1.ResourceStateChanged"
+        "message_id": "ResourceEvent.1.1.ResourceStateChanged",
+        "message_args": {
+          "patterns": [
+            "{GPUId}",
+            "Absent"
+          ],
+          "parameters": [
+            {
+              "type": "DIRECT",
+              "field": "CurrentDeviceName"
+            }
+          ]
+        }
       },
       "telemetries": [],
       "action": "",
@@ -154,12 +234,16 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "I2C3_ALERT",
-        "check": {"equal": "false"}
+        "check": {
+          "equal": "false"
+        }
       },
       "accessor": {
         "type": "DeviceCoreAPI",
         "property": "gpu.interrupt.powerGoodAbnormalChange",
-        "check": {"bitmap": "1"}
+        "check": {
+          "bitmap": "1"
+        }
       },
       "severity": "Critical",
       "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation.",
@@ -169,7 +253,19 @@
         "metadata": ""
       },
       "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected",
+        "message_args": {
+          "patterns": [
+            "{GPUId} PowerGood",
+            "Abnormal Power Change"
+          ],
+          "parameters": [
+            {
+              "type": "DIRECT",
+              "field": "CurrentDeviceName"
+            }
+          ]
+        }
       },
       "telemetries": [],
       "action": "",
@@ -183,13 +279,15 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "I2C3_ALERT",
-        "check": { "equal": "false" }
+        "check": {
+          "equal": "false"
+        }
       },
       "accessor": {
         "type": "CMDLINE",
         "executable": "mctp-vdm-util-wrapper",
         "arguments": "AP0_BOOTCOMPLETE_TIMEOUT GPU[0-7]",
-        "check":{
+        "check": {
           "equal": "1"
         }
       },
@@ -201,7 +299,19 @@
         "metadata": ""
       },
       "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected",
+        "message_args": {
+          "patterns": [
+            "{GPUId} Firmware",
+            "Boot Complete Failure"
+          ],
+          "parameters": [
+            {
+              "type": "DIRECT",
+              "field": "CurrentDeviceName"
+            }
+          ]
+        }
       },
       "telemetries": [],
       "action": "",
@@ -215,13 +325,15 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "I2C3_ALERT",
-        "check": { "equal": "false" }
+        "check": {
+          "equal": "false"
+        }
       },
       "accessor": {
         "type": "CMDLINE",
         "executable": "mctp-vdm-util-wrapper",
         "arguments": "AP0_PRIMARY_FW_AUTHENTICATION_STATUS GPU[0-7]",
-        "check":{
+        "check": {
           "equal": "6"
         }
       },
@@ -233,7 +345,19 @@
         "metadata": ""
       },
       "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected",
+        "message_args": {
+          "patterns": [
+            "{GPUId} Firmware",
+            "Secure Boot Failure"
+          ],
+          "parameters": [
+            {
+              "type": "DIRECT",
+              "field": "CurrentDeviceName"
+            }
+          ]
+        }
       },
       "telemetries": [],
       "action": "",
@@ -247,13 +371,15 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "I2C3_ALERT",
-        "check": { "equal": "false" }
+        "check": {
+          "equal": "false"
+        }
       },
       "accessor": {
         "type": "CMDLINE",
         "executable": "mctp-vdm-util-wrapper",
         "arguments": "AP0_SPI_READ_FAILURE GPU[0-7]",
-        "check":{
+        "check": {
           "equal": "1"
         }
       },
@@ -265,7 +391,19 @@
         "metadata": ""
       },
       "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected",
+        "message_args": {
+          "patterns": [
+            "{GPUId} Firmware",
+            "SPI Flash Error"
+          ],
+          "parameters": [
+            {
+              "type": "DIRECT",
+              "field": "CurrentDeviceName"
+            }
+          ]
+        }
       },
       "telemetries": [],
       "action": "",
@@ -279,13 +417,17 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "I2C3_ALERT",
-        "check": { "equal": "false" }
+        "check": {
+          "equal": "false"
+        }
       },
       "accessor": {
         "type": "CMDLINE",
         "executable": "mctp-error-detection",
         "arguments": "GPU",
-        "check": {"bitmap": "1"}
+        "check": {
+          "bitmap": "1"
+        }
       },
       "severity": "Critical",
       "resolution": "BaseBoard components will retry if encounters errors. If problem persists, analyze FPGA log or ERoT log.",
@@ -295,7 +437,19 @@
         "metadata": ""
       },
       "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected",
+        "message_args": {
+          "patterns": [
+            "{ERoT_GPUId} Firmware",
+            "MCTP Runtime Failure"
+          ],
+          "parameters": [
+            {
+              "type": "DIRECT",
+              "field": "CurrentDeviceName"
+            }
+          ]
+        }
       },
       "telemetries": [],
       "action": "",
@@ -311,12 +465,16 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "THERM_OVERT",
-        "check": {"equal": "false"}
+        "check": {
+          "equal": "false"
+        }
       },
       "accessor": {
         "type": "DeviceCoreAPI",
         "property": "nvswitch.thermal.temperature.overTemperatureInfo",
-        "check": {"bitmap": "1"}
+        "check": {
+          "bitmap": "1"
+        }
       },
       "severity": "Critical",
       "resolution": "Power off the BaseBoard within 1 second, the NVSwitch will be held in reset. Check thermal environmental to ensure the NVSwitch operates under UpperFatal threshold and power cycle the BaseBoard to recover. ",
@@ -326,7 +484,23 @@
         "metadata": ""
       },
       "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorThresholdExceeded"
+        "message_id": "ResourceEvent.1.0.ResourceErrorThresholdExceeded",
+        "message_args": {
+          "patterns": [
+            "{NVSwitchId} Temperature",
+            "{UpperFatal Threshold}"
+          ],
+          "parameters": [
+            {
+              "type": "DIRECT",
+              "field": "CurrentDeviceName"
+            },
+            {
+              "type": "CONSTANT",
+              "value": "'TODO (proper accessor needs to be defined in /usr/share/oobaml/event_info.json)'"
+            }
+          ]
+        }
       },
       "telemetries": [],
       "action": "",
@@ -340,12 +514,16 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "I2C4_ALERT",
-        "check": {"equal": "false"}
+        "check": {
+          "equal": "false"
+        }
       },
       "accessor": {
         "type": "DeviceCoreAPI",
         "property": "nvswitch.thermal.alert",
-        "check": {"bitmap": "1"}
+        "check": {
+          "bitmap": "1"
+        }
       },
       "severity": "Warning",
       "resolution": "Increase the BaseBoard cooling and check thermal environmental to ensure the NVSwtich operates under UpperCritical threshold. ",
@@ -355,7 +533,23 @@
         "metadata": ""
       },
       "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorThresholdExceeded"
+        "message_id": "ResourceEvent.1.0.ResourceErrorThresholdExceeded",
+        "message_args": {
+          "patterns": [
+            "{NVSwitchId} Temperature",
+            "{UpperCritical Threshold}"
+          ],
+          "parameters": [
+            {
+              "type": "DIRECT",
+              "field": "CurrentDeviceName"
+            },
+            {
+              "type": "CONSTANT",
+              "value": "'TODO (proper accessor needs to be defined in /usr/share/oobaml/event_info.json)'"
+            }
+          ]
+        }
       },
       "telemetries": [],
       "action": "",
@@ -369,12 +563,16 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "I2C4_ALERT",
-        "check": {"equal": "false"}
+        "check": {
+          "equal": "false"
+        }
       },
       "accessor": {
         "type": "DeviceCoreAPI",
         "property": "nvswitch.device.vrFault",
-        "check": {"bitmap": "1"}
+        "check": {
+          "bitmap": "1"
+        }
       },
       "severity": "Critical",
       "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation.",
@@ -384,7 +582,19 @@
         "metadata": ""
       },
       "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected",
+        "message_args": {
+          "patterns": [
+            "{NVSwitchId} PowerGood",
+            "Abnormal Power Change"
+          ],
+          "parameters": [
+            {
+              "type": "DIRECT",
+              "field": "CurrentDeviceName"
+            }
+          ]
+        }
       },
       "telemetries": [],
       "action": "",
@@ -408,7 +618,19 @@
         "metadata": ""
       },
       "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected",
+        "message_args": {
+          "patterns": [
+            "{NVSwitchId} PCIe",
+            "Abnormal Speed Change"
+          ],
+          "parameters": [
+            {
+              "type": "DIRECT",
+              "field": "CurrentDeviceName"
+            }
+          ]
+        }
       },
       "telemetries": [],
       "action": "",
@@ -432,7 +654,19 @@
         "metadata": ""
       },
       "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected",
+        "message_args": {
+          "patterns": [
+            "{NVSwitchId} PCIe",
+            "Abnormal Width Change"
+          ],
+          "parameters": [
+            {
+              "type": "DIRECT",
+              "field": "CurrentDeviceName"
+            }
+          ]
+        }
       },
       "telemetries": [],
       "action": "",
@@ -456,7 +690,23 @@
         "metadata": ""
       },
       "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected",
+        "message_args": {
+          "patterns": [
+            "{NVSwitchId} PCIe",
+            "{PCIe Uncorrectable Error}"
+          ],
+          "parameters": [
+            {
+              "type": "DIRECT",
+              "field": "CurrentDeviceName"
+            },
+            {
+              "type": "CONSTANT",
+              "value": "'TODO (proper accessor needs to be defined in /usr/share/oobaml/event_info.json)'"
+            }
+          ]
+        }
       },
       "telemetries": [],
       "action": "",
@@ -470,12 +720,16 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "I2C4_ALERT",
-        "check": {"equal": "false"}
+        "check": {
+          "equal": "false"
+        }
       },
       "accessor": {
         "type": "DeviceCoreAPI",
         "property": "nvswitch.device.vrFault",
-        "check": {"bitmap": "1"}
+        "check": {
+          "bitmap": "1"
+        }
       },
       "severity": "Critical",
       "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation.",
@@ -485,7 +739,19 @@
         "metadata": ""
       },
       "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected",
+        "message_args": {
+          "patterns": [
+            "{NVSwitchId} PowerGood",
+            "Abnormal Power Change"
+          ],
+          "parameters": [
+            {
+              "type": "DIRECT",
+              "field": "CurrentDeviceName"
+            }
+          ]
+        }
       },
       "telemetries": [],
       "action": "",
@@ -499,13 +765,15 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "I2C3_ALERT",
-        "check": { "equal": "false" }
+        "check": {
+          "equal": "false"
+        }
       },
       "accessor": {
         "type": "CMDLINE",
         "executable": "mctp-vdm-util-wrapper",
         "arguments": "AP0_BOOTCOMPLETE_TIMEOUT NVSwitch[0-3]",
-        "check":{
+        "check": {
           "equal": "1"
         }
       },
@@ -517,7 +785,19 @@
         "metadata": ""
       },
       "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected",
+        "message_args": {
+          "patterns": [
+            "{NVSwitchId} Firmware",
+            "Boot Complete Failure"
+          ],
+          "parameters": [
+            {
+              "type": "DIRECT",
+              "field": "CurrentDeviceName"
+            }
+          ]
+        }
       },
       "telemetries": [],
       "action": "",
@@ -531,13 +811,15 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "I2C3_ALERT",
-        "check": { "equal": "false" }
+        "check": {
+          "equal": "false"
+        }
       },
       "accessor": {
         "type": "CMDLINE",
         "executable": "mctp-vdm-util-wrapper",
         "arguments": "AP0_PRIMARY_FW_AUTHENTICATION_STATUS NVSwitch[0-3]",
-        "check":{
+        "check": {
           "equal": "6"
         }
       },
@@ -549,7 +831,19 @@
         "metadata": ""
       },
       "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected",
+        "message_args": {
+          "patterns": [
+            "{NVSwitchId} Firmware",
+            "Secure Boot Failure"
+          ],
+          "parameters": [
+            {
+              "type": "DIRECT",
+              "field": "CurrentDeviceName"
+            }
+          ]
+        }
       },
       "telemetries": [],
       "action": "",
@@ -563,13 +857,15 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "I2C3_ALERT",
-        "check": { "equal": "false" }
+        "check": {
+          "equal": "false"
+        }
       },
       "accessor": {
         "type": "CMDLINE",
         "executable": "mctp-vdm-util-wrapper",
         "arguments": "AP0_SPI_READ_FAILURE NVSwitch[0-3]",
-        "check":{
+        "check": {
           "equal": "1"
         }
       },
@@ -581,7 +877,19 @@
         "metadata": ""
       },
       "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected",
+        "message_args": {
+          "patterns": [
+            "{NVSwitchId} Firmware",
+            "SPI Flash Error"
+          ],
+          "parameters": [
+            {
+              "type": "DIRECT",
+              "field": "CurrentDeviceName"
+            }
+          ]
+        }
       },
       "telemetries": [],
       "action": "",
@@ -595,13 +903,17 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "I2C3_ALERT",
-        "check": { "equal": "false" }
+        "check": {
+          "equal": "false"
+        }
       },
       "accessor": {
         "type": "CMDLINE",
         "executable": "mctp-error-detection",
         "arguments": "NVSwitch",
-        "check": {"bitmap": "1"}
+        "check": {
+          "bitmap": "1"
+        }
       },
       "severity": "Critical",
       "resolution": "BaseBoard components will retry if encounters errors. If problem persists, analyze FPGA log or ERoT log.",
@@ -611,7 +923,19 @@
         "metadata": ""
       },
       "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected",
+        "message_args": {
+          "patterns": [
+            "{ERoT_NVSwitchId} Firmware",
+            "MCTP Runtime Failure"
+          ],
+          "parameters": [
+            {
+              "type": "DIRECT",
+              "field": "CurrentDeviceName"
+            }
+          ]
+        }
       },
       "telemetries": [],
       "action": "",
@@ -627,13 +951,15 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "I2C3_ALERT",
-        "check": { "equal": "false" }
+        "check": {
+          "equal": "false"
+        }
       },
       "accessor": {
         "type": "CMDLINE",
         "executable": "mctp-vdm-util-wrapper",
         "arguments": "AP0_SPI_READ_FAILURE PCIeSwitch0",
-        "check":{
+        "check": {
           "equal": "1"
         }
       },
@@ -645,7 +971,19 @@
         "metadata": ""
       },
       "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected",
+        "message_args": {
+          "patterns": [
+            "{PCIeSwitchId} Firmware",
+            "SPI Flash Error"
+          ],
+          "parameters": [
+            {
+              "type": "DIRECT",
+              "field": "CurrentDeviceName"
+            }
+          ]
+        }
       },
       "telemetries": [],
       "action": "",
@@ -659,12 +997,16 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "I2C4_ALERT",
-        "check": {"equal": "false"}
+        "check": {
+          "equal": "false"
+        }
       },
       "accessor": {
         "type": "DeviceCoreAPI",
         "property": "pcieswitch.0V8.abnormalPowerChange",
-        "check": {"bitmap": "1"}
+        "check": {
+          "bitmap": "1"
+        }
       },
       "severity": "Critical",
       "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation.",
@@ -674,7 +1016,19 @@
         "metadata": ""
       },
       "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected",
+        "message_args": {
+          "patterns": [
+            "{PCIeSwitchId} PowerGood",
+            "Abnormal Power Change"
+          ],
+          "parameters": [
+            {
+              "type": "DIRECT",
+              "field": "CurrentDeviceName"
+            }
+          ]
+        }
       },
       "telemetries": [],
       "action": "",
@@ -688,12 +1042,16 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "THERM_OVERT",
-        "check": { "equal": "false" }
+        "check": {
+          "equal": "false"
+        }
       },
       "accessor": {
         "type": "DeviceCoreAPI",
         "property": "pcieswitch.thermal.temperature.overTemperatureInfo",
-        "check": {"bitmap": "1"}
+        "check": {
+          "bitmap": "1"
+        }
       },
       "severity": "Critical",
       "resolution": "Power off the BaseBoard within 1 second, the PCIe Switch will be held in reset. Check thermal environmental to ensure the PCIe Switch operates under UpperFatal threshold and power cycle the BaseBoard to recover. ",
@@ -703,7 +1061,23 @@
         "metadata": ""
       },
       "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorThresholdExceeded"
+        "message_id": "ResourceEvent.1.0.ResourceErrorThresholdExceeded",
+        "message_args": {
+          "patterns": [
+            "{PCIeSwitchId} Temperature",
+            "{UpperFatal Threshold}"
+          ],
+          "parameters": [
+            {
+              "type": "DIRECT",
+              "field": "CurrentDeviceName"
+            },
+            {
+              "type": "CONSTANT",
+              "value": "'TODO (proper accessor needs to be defined in /usr/share/oobaml/event_info.json)'"
+            }
+          ]
+        }
       },
       "telemetries": [],
       "action": "",
@@ -717,13 +1091,15 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "I2C3_ALERT",
-        "check": { "equal": "false" }
+        "check": {
+          "equal": "false"
+        }
       },
       "accessor": {
         "type": "CMDLINE",
         "executable": "mctp-vdm-util-wrapper",
         "arguments": "AP0_BOOTCOMPLETE_TIMEOUT PCIeSwitch0",
-        "check":{
+        "check": {
           "equal": "1"
         }
       },
@@ -735,7 +1111,19 @@
         "metadata": ""
       },
       "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected",
+        "message_args": {
+          "patterns": [
+            "{PCIeSwitchId} Firmware",
+            "Boot Complete Failure"
+          ],
+          "parameters": [
+            {
+              "type": "DIRECT",
+              "field": "CurrentDeviceName"
+            }
+          ]
+        }
       },
       "telemetries": [],
       "action": "",
@@ -749,13 +1137,15 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "I2C3_ALERT",
-        "check": { "equal": "false" }
+        "check": {
+          "equal": "false"
+        }
       },
       "accessor": {
         "type": "CMDLINE",
         "executable": "mctp-vdm-util-wrapper",
         "arguments": "AP0_PRIMARY_FW_AUTHENTICATION_STATUS PCIeSwitch0",
-        "check":{
+        "check": {
           "equal": "6"
         }
       },
@@ -767,7 +1157,19 @@
         "metadata": ""
       },
       "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected",
+        "message_args": {
+          "patterns": [
+            "{PCIeSwitchId} Firmware",
+            "Secure Boot Failure"
+          ],
+          "parameters": [
+            {
+              "type": "DIRECT",
+              "field": "CurrentDeviceName"
+            }
+          ]
+        }
       },
       "telemetries": [],
       "action": "",
@@ -781,13 +1183,17 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "I2C3_ALERT",
-        "check": { "equal": "false" }
+        "check": {
+          "equal": "false"
+        }
       },
       "accessor": {
         "type": "CMDLINE",
         "executable": "mctp-error-detection",
         "arguments": "PCIeSwitch0",
-        "check": {"bitmap": "1"}
+        "check": {
+          "bitmap": "1"
+        }
       },
       "severity": "Critical",
       "resolution": "BaseBoard components will retry if encounters errors. If problem persists, analyze FPGA log or ERoT log.",
@@ -797,7 +1203,19 @@
         "metadata": ""
       },
       "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected",
+        "message_args": {
+          "patterns": [
+            "{ERoT_PCIeSwitchId} Firmware",
+            "MCTP Runtime Failure"
+          ],
+          "parameters": [
+            {
+              "type": "DIRECT",
+              "field": "CurrentDeviceName"
+            }
+          ]
+        }
       },
       "telemetries": [],
       "action": "",
@@ -813,12 +1231,16 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "I2C4_ALERT",
-        "check": { "equal": "false" }
+        "check": {
+          "equal": "false"
+        }
       },
       "accessor": {
         "type": "DeviceCoreAPI",
         "property": "pcieretimer.0V9.abnormalPowerChange",
-        "check": {"bitmap": "1"}
+        "check": {
+          "bitmap": "1"
+        }
       },
       "severity": "Critical",
       "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation",
@@ -828,7 +1250,19 @@
         "metadata": ""
       },
       "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected",
+        "message_args": {
+          "patterns": [
+            "{RetimerId} PowerGood",
+            "Abnormal Power Change"
+          ],
+          "parameters": [
+            {
+              "type": "DIRECT",
+              "field": "CurrentDeviceName"
+            }
+          ]
+        }
       },
       "telemetries": [],
       "action": "",
@@ -842,12 +1276,16 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "I2C4_ALERT",
-        "check": { "equal": "false" }
+        "check": {
+          "equal": "false"
+        }
       },
       "accessor": {
         "type": "DeviceCoreAPI",
         "property": "pcieretimer.1V8VDD.abnormalPowerChange",
-        "check": {"bitmap": "1"}
+        "check": {
+          "bitmap": "1"
+        }
       },
       "severity": "Critical",
       "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation",
@@ -857,7 +1295,19 @@
         "metadata": ""
       },
       "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected",
+        "message_args": {
+          "patterns": [
+            "{RetimerId} PowerGood",
+            "Abnormal Power Change"
+          ],
+          "parameters": [
+            {
+              "type": "DIRECT",
+              "field": "CurrentDeviceName"
+            }
+          ]
+        }
       },
       "telemetries": [],
       "action": "",
@@ -871,12 +1321,16 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "THERM_OVERT",
-        "check": { "equal": "false" }
+        "check": {
+          "equal": "false"
+        }
       },
       "accessor": {
         "type": "DeviceCoreAPI",
         "property": "pcieretimer.thermal.temperature.overTemperatureInfo",
-        "check": {"bitmap": "1"}
+        "check": {
+          "bitmap": "1"
+        }
       },
       "severity": "Critical",
       "resolution": "Power off the BaseBoard within 1 second, and the Retimer will be held in reset. Check thermal environmental to ensure the Retimer operates under UpperFatal threshold and power cycle the BaseBoard to recover. ",
@@ -886,7 +1340,23 @@
         "metadata": ""
       },
       "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorThresholdExceeded"
+        "message_id": "ResourceEvent.1.0.ResourceErrorThresholdExceeded",
+        "message_args": {
+          "patterns": [
+            "{PCIeRetimerId} Temperature",
+            "{UpperFatal Threshold}"
+          ],
+          "parameters": [
+            {
+              "type": "DIRECT",
+              "field": "CurrentDeviceName"
+            },
+            {
+              "type": "CONSTANT",
+              "value": "'TODO (proper accessor needs to be defined in /usr/share/oobaml/event_info.json)'"
+            }
+          ]
+        }
       },
       "telemetries": [],
       "action": "",
@@ -902,12 +1372,16 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "I2C4_ALERT",
-        "check": {"equal": "false"}
+        "check": {
+          "equal": "false"
+        }
       },
       "accessor": {
         "type": "DeviceCoreAPI",
         "property": "hsc.power.abnormalPowerChange",
-        "check": {"bitmap": "1"}
+        "check": {
+          "bitmap": "1"
+        }
       },
       "severity": "Critical",
       "resolution": "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation.",
@@ -917,7 +1391,19 @@
         "metadata": ""
       },
       "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected",
+        "message_args": {
+          "patterns": [
+            "{HSCId} PowerGood",
+            "Abnormal Power Change"
+          ],
+          "parameters": [
+            {
+              "type": "DIRECT",
+              "field": "CurrentDeviceName"
+            }
+          ]
+        }
       },
       "telemetries": [],
       "action": "",
@@ -933,12 +1419,16 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "I2C4_ALERT",
-        "check": {"equal": "false"}
+        "check": {
+          "equal": "false"
+        }
       },
       "accessor": {
         "type": "DeviceCoreAPI",
         "property": "inletTemp.thermal.temperature.threshold.alert",
-        "check": {"bitmap": "1"}
+        "check": {
+          "bitmap": "1"
+        }
       },
       "severity": "Warning",
       "resolution": "Increase the BaseBoard cooling and check thermal environmental to ensure Inlet Temperature reading is under UpperCritical threshold. ",
@@ -948,7 +1438,23 @@
         "metadata": ""
       },
       "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected",
+        "message_args": {
+          "patterns": [
+            "{InletTempId} Temperature",
+            "{UpperCritical Threshold}"
+          ],
+          "parameters": [
+            {
+              "type": "DIRECT",
+              "field": "CurrentDeviceName"
+            },
+            {
+              "type": "CONSTANT",
+              "value": "'TODO (proper accessor needs to be defined in /usr/share/oobaml/event_info.json)'"
+            }
+          ]
+        }
       },
       "telemetries": [],
       "action": "",
@@ -964,12 +1470,16 @@
         "object": "/xyz/openbmc_project/GpioStatusHandler",
         "interface": "xyz.openbmc_project.GpioStatus",
         "property": "I2C4_ALERT",
-        "check": {"equal": "false"}
+        "check": {
+          "equal": "false"
+        }
       },
       "accessor": {
         "type": "DeviceCoreAPI",
         "property": "baseboard.pcb.temperature.Alert",
-        "check": {"bitmap": "1"}
+        "check": {
+          "bitmap": "1"
+        }
       },
       "severity": "Warning",
       "resolution": "Increase the BaseBoard cooling and check thermal environmental to ensure Inlet Temperature reading is under UpperCritical threshold. ",
@@ -979,7 +1489,23 @@
         "metadata": ""
       },
       "redfish": {
-        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected"
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected",
+        "message_args": {
+          "patterns": [
+            "{PCBTempId} Temperature",
+            "{UpperCritical Threshold}"
+          ],
+          "parameters": [
+            {
+              "type": "DIRECT",
+              "field": "CurrentDeviceName"
+            },
+            {
+              "type": "CONSTANT",
+              "value": "'TODO (proper accessor needs to be defined in /usr/share/oobaml/event_info.json)'"
+            }
+          ]
+        }
       },
       "telemetries": [],
       "action": "",

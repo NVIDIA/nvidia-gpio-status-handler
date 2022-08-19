@@ -17,6 +17,7 @@ using json = nlohmann::json;
 
 namespace event_info
 {
+class EventNode;
 
 struct counterReset
 {
@@ -28,12 +29,216 @@ struct Message
 {
     std::string severity;
     std::string resolution;
+
+  public:
+    /**
+     * @brief Print this object to the output stream @c os (e.g. std::cout,
+     * std::cerr, std::stringstream) with every line prefixed with @c indent.
+     *
+     * For the use with logging framework use the following construct:
+     *
+     * @code
+     *   std::stringstream ss;
+     *   obj.print(ss, indent);
+     *   log_dbg("%s", ss.str().c_str());
+     * @endcode
+     */
+    template <class CharT>
+    void print(std::basic_ostream<CharT>& os = std::cout,
+               std::string indent = std::string("")) const
+    {
+        os << indent << "severity:"
+           << "\t" << severity << std::endl;
+        os << indent << "resolution:"
+           << "\t" << resolution << std::endl;
+    }
+};
+
+struct MessageArgPattern
+{
+    std::string pattern;
+
+  public:
+    /**
+     * @brief Get the number of placeholders (substrings of the form '{...}') in
+     * the @c pattern
+     */
+    unsigned placeholdersCount() const;
+
+    /**
+     * @brief Get a string with all placeholders (substrings of the form
+     * '{...}') replaced with the corresponding values in @c values
+     *
+     * For example, given object @c x with @c x.pattern being "name: {TheName},
+     * age: {TheAge}" the @c substPlaceholders({"Karen", "42"}) returns "name:
+     * Karen, age: 42".
+     *
+     * The @c pattern field is not modified.
+     *
+     * @param[in] values It's assumed the length of the vector is equal to the
+     * value @c placeholdersCount() would return.
+     */
+    std::string substPlaceholders(const std::vector<std::string>& values) const;
+
+    /**
+     * @brief Print this object to the output stream @c os (e.g. std::cout,
+     * std::cerr, std::stringstream) with every line prefixed with @c indent.
+     *
+     * For the use with logging framework use the following construct:
+     *
+     * @code
+     *   std::stringstream ss;
+     *   obj.print(ss, indent);
+     *   log_dbg("%s", ss.str().c_str());
+     * @endcode
+     */
+    template <class CharT>
+    void print(std::basic_ostream<CharT>& os = std::cout,
+               std::string indent = std::string("")) const
+    {
+        os << indent << pattern << std::endl;
+    }
+};
+
+struct MessageArg
+{
+    MessageArgPattern pattern;
+    std::vector<data_accessor::DataAccessor> parameters;
+
+  public:
+    /**
+     * @brief Print this object to the output stream @c os (e.g. std::cout,
+     * std::cerr, std::stringstream) with every line prefixed with @c indent.
+     *
+     * For the use with logging framework use the following construct:
+     *
+     * @code
+     *   std::stringstream ss;
+     *   obj.print(ss, indent);
+     *   log_dbg("%s", ss.str().c_str());
+     * @endcode
+     */
+    template <class CharT>
+    void print(std::basic_ostream<CharT>& os = std::cout,
+               std::string indent = std::string("")) const
+    {
+        os << indent << "pattern:" << std::endl;
+        pattern.print(os, indent + "\t");
+        os << indent << "parameters:" << std::endl;
+        util::print(parameters, os, indent + "\t");
+    }
+
+    /**
+     * @brief Get a string with values from the accessors inserted into '{...}'
+     * placeholders in @c pattern
+     *
+     * Call the accessors in sequence and insert the values they return in the
+     * placeholders in `pattern'. For instance, assuming this object represents
+     * the first message arg ("{GPUId} Temperature") of the json snippet
+     *
+     * ,----
+     * | "message_args": [
+     * |   "{GPUId} Temperature",
+     * |   "{UpperFatal Threshold}"
+     * | ],
+     * | "parameters": [
+     * |   {
+     * |     "type": "DIRECT",
+     * |     "field": "CurrentDeviceName"
+     * |   },
+     * |   {
+     * |     "type": "...",
+     * |     "interface": "...",
+     * |     "object": "...",
+     * |     "property": "..."
+     * |   }
+     * | ]
+     * `----
+     *
+     * and the event occured on "GPU3" the string "GPU3 Temperature" will be
+     * returned.
+     *
+     * @param[in] event Information needed to compose the message args about the
+     * event. The object passed can (and most probably should) be the one @c
+     * *this is contained in as the @c messageRegistry.messageArgs[...] field.
+     */
+    std::string getStringMessageArg(const EventNode& event);
 };
 
 struct redfish
 {
     std::string messageId;
     Message message;
+    std::vector<MessageArg> messageArgs;
+
+  public:
+    /**
+     * @brief Print this object to the output stream @c os (e.g. std::cout,
+     * std::cerr, std::stringstream) with every line prefixed with @c indent.
+     *
+     * For the use with logging framework use the following construct:
+     *
+     * @code
+     *   std::stringstream ss;
+     *   obj.print(ss, indent);
+     *   log_dbg("%s", ss.str().c_str());
+     * @endcode
+     */
+    template <class CharT>
+    void print(std::basic_ostream<CharT>& os = std::cout,
+               std::string indent = std::string("")) const
+    {
+        os << indent << "messageId:"
+           << "\t" << this->messageId << std::endl;
+        os << indent << "message:" << std::endl;
+        message.print(os, indent + "\t");
+        os << indent << "messageArgs:" << std::endl;
+        util::print(messageArgs, os, indent + "\t");
+    }
+
+    /**
+     * @brief Evaluate the dynamic message arg and encode them into a single
+     * string
+     *
+     * Concatenate the results of evaluating each dynamic message arg with a
+     * comma. For instance, assuming this object represents the json snippet
+     *
+     * ,----
+     * | "message_args": [
+     * |   "{GPUId} Temperature",
+     * |   "{UpperFatal Threshold}"
+     * | ],
+     * | "parameters": [
+     * |   {
+     * |     "type": "DIRECT",
+     * |     "field": "CurrentDeviceName"
+     * |   },
+     * |   {
+     * |     "type": "DBUS",
+     * |     "interface": "...",
+     * |     "object": "...",
+     * |     "property": "..."
+     * |   }
+     * | ]
+     * `----
+     *
+     * and
+     * 1. the event occured on "GPU3" device
+     * 2. dbus call returned "120" string
+     *
+     * the string
+     *
+     * ,----
+     * | "GPU3 Temperature, 120"
+     * `----
+     *
+     * will be returned.
+     *
+     * @param[in] event Information needed to compose the message args about the
+     * event. The object passed can (and most probably should) be the one @c
+     * *this is contained in as the @c messageRegistry field.
+     */
+    std::string getStringMessageArgs(const EventNode& event);
 };
 
 /** @class EventNode

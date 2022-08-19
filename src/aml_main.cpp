@@ -8,8 +8,9 @@
  * license agreement from NVIDIA CORPORATION is strictly prohibited.
  */
 
-#include "aml.hpp"
 #include "aml_main.hpp"
+
+#include "aml.hpp"
 #include "cmd_line.hpp"
 #include "dat_traverse.hpp"
 #include "event_detection.hpp"
@@ -180,7 +181,9 @@ int main(int argc, char* argv[])
 
     return 0;
 #endif
-    logs_info("Default log level: %d. Current log level: %d\n", DEF_DBG_LEVEL, getLogLevel(logger.getLevel()));
+
+    logs_info("Default log level: %d. Current log level: %d\n", DEF_DBG_LEVEL,
+              getLogLevel(logger.getLevel()));
     try
     {
         cmd_line::CmdLine cmdLine(argc, argv, aml::cmdLineArgs);
@@ -224,18 +227,20 @@ int main(int argc, char* argv[])
             if (++retryGettingDbusInfo < RETRY_DBUS_INFO_COUNTER)
             {
                 logs_wrn("waiting Dbus information ...\n");
-                
+
                 ::sleep(RETRY_SLEEP);
                 continue;
             }
-            logs_err("HealthRollup & OriginOfCondition can't be supported at the moment due to Dbus Error.\n");
+            logs_err(
+                "HealthRollup & OriginOfCondition can't be supported at the moment due to Dbus Error.\n");
         }
     }
 
     event_handler::ClearEvent clearEvent;
     event_handler::EventHandlerManager eventHdlrMgr("EventHandlerManager");
-    event_handler::RootCauseTracer rootCauseTracer("RootCauseTracer",
-                        aml::profile::datMap, event_handler::checkDeviceDBus);
+    event_handler::RootCauseTracer rootCauseTracer(
+        "RootCauseTracer", aml::profile::datMap,
+        event_handler::checkDeviceDBus);
 
     /* Event handlers registration order is important - msgComposer uses data
     acquired by previous handlers; handlers are used in registration order. */
@@ -254,18 +259,18 @@ int main(int argc, char* argv[])
     try
     {
         auto io = std::make_shared<boost::asio::io_context>();
-        auto sdbusp = 
+        auto sdbusp =
             std::make_shared<sdbusplus::asio::connection>(*io, aml::bus);
 
         sdbusp->request_name(oob_aml::SERVICE_BUSNAME);
         auto server = sdbusplus::asio::object_server(sdbusp);
-        auto iface = server.add_interface(oob_aml::TOP_OBJPATH, 
+        auto iface = server.add_interface(oob_aml::TOP_OBJPATH,
                                           oob_aml::SERVICE_IFCNAME);
 
         event_detection::EventDetection eventDetection(
             "EventDetection1", &aml::profile::eventMap, &eventHdlrMgr);
-        auto eventMatcher = eventDetection.startEventDetection(&eventDetection,
-                                                                sdbusp);
+        auto eventMatcher =
+            eventDetection.startEventDetection(&eventDetection, sdbusp);
 
         iface->initialize();
 

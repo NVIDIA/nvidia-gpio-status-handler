@@ -20,6 +20,11 @@
 #include <tuple>
 #include <vector>
 
+namespace event_info
+{
+class EventNode;
+}
+
 namespace data_accessor
 {
 
@@ -45,7 +50,8 @@ static std::map<std::string, std::vector<std::string>> accessorTypeKeys = {
     {"DeviceCoreAPI", {"property"}},
     {"DEVICE", {"device_name"}},
     {"OTHER", {"other"}},
-};
+    {"DIRECT", {}},
+    {"CONSTANT", {"value"}}};
 
 /**
  * @brief A class for Data Accessor
@@ -77,6 +83,25 @@ class DataAccessor
     ~DataAccessor() = default;
 
   public:
+    /**
+     * @brief Print this object to the output stream @c os (e.g. std::cout,
+     * std::cerr, std::stringstream) with every line prefixed with @c indent.
+     *
+     * For the use with logging framework use the following construct:
+     *
+     * @code
+     *   std::stringstream ss;
+     *   obj.print(ss, indent);
+     *   log_dbg("%s", ss.str().c_str());
+     * @endcode
+     */
+    template <class CharT>
+    void print(std::basic_ostream<CharT>& os = std::cout,
+               std::string indent = std::string("")) const
+    {
+        os << indent << this->_acc << std::endl;
+    }
+
     /**
      * @brief Assign json data.
      *
@@ -132,8 +157,8 @@ class DataAccessor
             }
         }
         std::stringstream ss;
-        ss << "\n\tThis: " << _acc
-                  << "\n\tOther: " << other._acc << "\n\treturn: " << ret;
+        ss << "\n\tThis: " << _acc << "\n\tOther: " << other._acc
+           << "\n\treturn: " << ret;
         log_dbg("%s\n", ss.str().c_str());
         return ret;
     }
@@ -342,6 +367,14 @@ class DataAccessor
         {
             return _acc[testValueKey];
         }
+        else if (isTypeDeviceName())
+        {
+            return device;
+        }
+        else if (isTypeConst())
+        {
+            return _acc["value"].get<std::string>();
+        }
 
         if (_dataValue != nullptr)
         {
@@ -350,6 +383,8 @@ class DataAccessor
         log_dbg(" ret=%s\n", ret.c_str());
         return ret;
     }
+
+    std::string read(const event_info::EventNode& event);
 
     /**
      * @brief write value via the accessor info
@@ -431,19 +466,6 @@ class DataAccessor
      */
     InterfaceObjectsMap getDbusInterfaceObjectsMap() const;
 
-  private:
-    /**
-     * @brief Check if a acc json has the "type" field.
-     *
-     * @param acc
-     * @return true
-     * @return false
-     */
-    inline bool isValid(const nlohmann::json& acc) const
-    {
-        return (acc.count(typeKey) > 0);
-    }
-
     /**
      * @brief isTypeDbus()
      *
@@ -475,6 +497,26 @@ class DataAccessor
     }
 
     /**
+     * @brief isTypeDeviceName()
+     *
+     * @return  true if acccessor["type"] exists and it is "DIRECT"
+     */
+    inline bool isTypeDeviceName() const
+    {
+        return isValid(_acc) == true && _acc[typeKey] == "DIRECT";
+    }
+
+    /**
+     * @brief isTypeConst()
+     *
+     * @return  true if acccessor["type"] exists and it is "DIRECT"
+     */
+    inline bool isTypeConst() const
+    {
+        return isValid(_acc) == true && _acc[typeKey] == "CONSTANT";
+    }
+
+    /**
      * @brief isTypeCmdline()
      *
      * @return  true if acccessor["type"] exists and it is CMDLINE
@@ -493,6 +535,20 @@ class DataAccessor
     {
         return isValid(_acc) == true && _acc[typeKey] == "DeviceCoreAPI";
     }
+
+  private:
+    /**
+     * @brief Check if a acc json has the "type" field.
+     *
+     * @param acc
+     * @return true
+     * @return false
+     */
+    bool isValid(const nlohmann::json& acc) const
+    {
+        return (acc.count(typeKey) > 0);
+    }
+
     /**
      * @brief hasData() checks if a real data is stored in _dataValue
      *
@@ -565,6 +621,26 @@ class DataAccessor
     inline bool isValidDeviceCoreApiAccessor() const
     {
         return isTypeDeviceCoreApi() == true && _acc.count(propertyKey) != 0;
+    }
+
+    /**
+     * @brief isValidDeviceNameAccessor()
+     *
+     * @return true if acccessor["type"] exists and it is "DIRECT"
+     */
+    bool isValidDeviceNameAccessor() const
+    {
+        return isTypeDeviceName();
+    }
+
+    /**
+     * @brief isValidConstantAccessor()
+     *
+     * @return true if acccessor["type"] exists and it is "CONSTANT"
+     */
+    bool isValidConstantAccessor() const
+    {
+        return isTypeDeviceName();
     }
 
     /**
@@ -645,7 +721,7 @@ class DataAccessor
      *         otherwise an empty map
      */
     util::DeviceIdMap
-           getCmdLineRangeArguments(const std::string& deviceType) const;
+        getCmdLineRangeArguments(const std::string& deviceType) const;
 
     /**
      * @brief performs a check() for all devices from 'devices' parameter
@@ -662,9 +738,9 @@ class DataAccessor
      * @return a single return, true if one or more checks return true
      */
     bool checkLoopingDevices(const util::DeviceIdMap& devices,
-                                const DataAccessor& otherAcc,
-                                const PropertyVariant& redefCriteria,
-                                const std::string& deviceType);
+                             const DataAccessor& otherAcc,
+                             const PropertyVariant& redefCriteria,
+                             const std::string& deviceType);
 
   private:
     /**

@@ -15,6 +15,8 @@ static bool setup_event_cnt_test(event_info::EventNode& ev,
     j["severity"] = "Critical";
     j["resolution"] = "Contact NVIDIA Support";
     j["redfish"]["message_id"] = "ResourceEvent.1.0.ResourceErrorsDetected";
+    j["redfish"]["message_args"]["patterns"] = {"p1", "p2"};
+    j["redfish"]["message_args"]["parameters"] = nlohmann::json::array();
     j["telemetries"] = {"t0", "t1"};
     j["trigger_count"] = tested_trigger_count;
     j["event_trigger"]["metadata"] = "metadata";
@@ -41,6 +43,8 @@ TEST(EventLookupTest, TriggerAccessor)
     j["severity"] = "Critical";
     j["resolution"] = "Contact NVIDIA Support";
     j["redfish"]["message_id"] = "ResourceEvent.1.0.ResourceErrorsDetected";
+    j["redfish"]["message_args"]["patterns"] = {"p1", "p2"};
+    j["redfish"]["message_args"]["parameters"] = nlohmann::json::array();
     j["telemetries"] = {"t0", "t1"};
     j["trigger_count"] = 0;
     j["event_trigger"]["property"] = "property";
@@ -60,6 +64,8 @@ TEST(EventLookupTest, TriggerAccessor)
     j2["severity"] = "Critical";
     j2["resolution"] = "Contact NVIDIA Support";
     j2["redfish"]["message_id"] = "ResourceEvent.1.0.ResourceErrorsDetected";
+    j2["redfish"]["message_args"]["patterns"] = {"p1", "p2"};
+    j2["redfish"]["message_args"]["parameters"] = nlohmann::json::array();
     j2["telemetries"] = {"t0", "t1"};
     j2["trigger_count"] = 0;
     j2["event_trigger"] = nlohmann::json::object();

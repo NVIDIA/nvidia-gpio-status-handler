@@ -1,0 +1,255 @@
+{
+  "type" : "object",
+  "additionalProperties" : false,
+  "patternProperties" : {
+    ".*" : {
+      "type" : "array",
+      "items" : {
+        "type" : "object",
+        "required": [
+          "event",
+          "device_type",
+          "event_trigger",
+          "accessor",
+          "severity",
+          "resolution",
+          "trigger_count",
+          "event_counter_reset",
+          "redfish",
+          "telemetries",
+          "action",
+          "value_as_count"
+        ],
+        "properties" : {
+          "event" : {
+            "type" : "string"
+          },
+          "device_type" : {
+            "type" : "string"
+          },
+          "event_trigger" : true,
+          "accessor" : {
+            "$ref" : "#/$defs/accessor"
+          },
+          "severity" : {
+            "type" : "string",
+            "enum" : [
+              "OK",
+              "Warning",
+              "Critical"
+            ]
+          },
+          "resolution" : {
+            "type" : "string"
+          },
+          "trigger_count" : {
+            "type" : "integer",
+            "minimum" : 0
+          },
+          "event_counter_reset" : {
+            "type" : "object",
+            "properties" : {
+              "type" : {
+                "type" : "string"
+              },
+              "metadata" : {
+                "type" : "string"
+              }
+            }
+          },
+          "redfish" : {
+            "type" : "object",
+            "required": [
+              "message_id",
+              "message_args"
+            ],
+            "additionalProperties": false,
+            "properties" : {
+              "message_id" : {
+                "type" : "string"
+              },
+              "message_args" : {
+                "type" : "object",
+                "required": [
+                  "patterns"
+                ],
+                "additionalProperties": false,
+                "properties" : {
+                  "patterns" : {
+                    "type" : "array",
+                    "items" : {
+                      "type" : "string"
+                    }
+                  },
+                  "parameters" : {
+                    "type" : "array",
+                    "items" : {
+                      "$ref" : "#/$defs/accessor"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "telemetries" : {
+            "type" : "array",
+            "items" : {
+              "type" : "object",
+              "properties" : {
+                "name" : {
+                  "type" : "string"
+                },
+                "type" : {
+                  "type" : "string"
+                },
+                "property" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "action" : {
+            "type" : "string"
+          },
+          "value_as_count" : {
+            "type" : "boolean"
+          }
+        }
+      }
+    }
+  },
+  "$defs" : {
+    "check" : {
+      "type" : "object",
+      "additionalProperties": false,
+      "maxProperties" : 1,
+      "minProperties" : 1,
+      "properties" : {
+        "bitmap" : {
+          "type" : "string"
+        },
+        "lookup" : {
+          "type" : "string"
+        },
+        "equal" : {
+          "type" : "string"
+        }
+      }
+    },
+    "accessor" : {
+      "type" : "object",
+      "anyOf" : [
+        {
+          "description" : "Dummy 'accessor' returning the exact value it was provided",
+          "type" : "object",
+          "required": [
+            "type",
+            "value"
+          ],
+          "additionalProperties": false,
+          "properties" : {
+            "type" : {
+              "type" : "string",
+              "enum" : ["CONSTANT"]
+            },
+            "value" : {
+              "type" : "string"
+            }
+          }
+        },
+        {
+          "description" : "Special 'accessor' returning the name of the device it's defined in",
+          "type" : "object",
+          "required": [
+            "type",
+            "field"
+          ],
+          "additionalProperties": false,
+          "properties" : {
+            "type" : {
+              "type" : "string",
+              "enum" : ["DIRECT"]
+            },
+            "field" : {
+              "type" : "string"
+            }
+          }
+        },
+        {
+          "description" : "Command line -type accessor",
+          "type" : "object",
+          "required": [
+            "type",
+            "executable"
+          ],
+          "additionalProperties": false,
+          "properties" : {
+            "type" : {
+              "type" : "string",
+              "enum" : ["CMDLINE"]
+            },
+            "executable" : {
+              "type" : "string"
+            },
+            "arguments" : {
+              "type" : "string"
+            },
+            "check" : {
+              "$ref" : "#/$defs/check"
+            }
+          }
+        },
+        {
+          "description" : "DBUS-type accessor",
+          "type" : "object",
+          "required": [
+            "type",
+            "object",
+            "interface",
+            "property"
+          ],
+          "additionalProperties": false,
+          "properties" : {
+            "type" : {
+              "type" : "string",
+              "enum" : ["DBUS"]
+            },
+            "object" : {
+              "type" : "string"
+            },
+            "interface" : {
+              "type" : "string"
+            },
+            "property" : {
+              "type" : "string"
+            },
+            "check" : {
+              "$ref" : "#/$defs/check"
+            }
+          }
+        },
+        {
+          "description" : "DeviceCoreAPI-type accessor",
+          "type" : "object",
+          "required": [
+            "type",
+            "property"
+          ],
+          "additionalProperties": false,
+          "properties" : {
+            "type" : {
+              "type" : "string",
+              "enum" : ["DeviceCoreAPI"]
+            },
+            "property" : {
+              "type" : "string"
+            },
+            "check" : {
+              "$ref" : "#/$defs/check"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

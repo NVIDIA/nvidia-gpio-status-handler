@@ -8,8 +8,9 @@
  license agreement from NVIDIA CORPORATION is strictly prohibited.
 *
 */
-#include "log.hpp"
 #include "util.hpp"
+
+#include "log.hpp"
 
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/split.hpp>
@@ -254,7 +255,8 @@ std::string determineDeviceName(const std::string& objPath,
             // name =  expandDeviceRange(devType)[0];
         }
     }
-    logs_dbg("determineDeviceName() objPath %s devType:%s Devname: %s\n.", objPath, devType, name);
+    logs_dbg("determineDeviceName() objPath %s devType:%s Devname: %s\n.",
+             objPath, devType, name);
     return name;
 }
 
@@ -280,7 +282,7 @@ RangeInformation getRangeInformation(const std::string& str)
                 {
                     matchedRegex = str;
                 }
-                else  // check for empty brackets
+                else // check for empty brackets
                 {
                     std::string auxRange{"["};
                     while (++openBracketsPos <= closeBrackets)
@@ -292,7 +294,7 @@ RangeInformation getRangeInformation(const std::string& str)
                             matchedRegex = auxRange;
                             break;
                         }
-                        else if (isspace(str.at(openBracketsPos)) == 0 )
+                        else if (isspace(str.at(openBracketsPos)) == 0)
                         {
                             break; // not empty brackets
                         }

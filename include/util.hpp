@@ -10,7 +10,7 @@
 */
 
 #pragma once
-
+#include <iostream>
 #include <map>
 #include <regex>
 #include <string>
@@ -115,4 +115,61 @@ std::string replaceRangeByMatchedValue(const std::string& regxValue,
  */
 std::string determineDeviceName(const std::string& objPath,
                                 const std::string& devType);
+
+/**
+ * @brief Print the vector @c vec to the output stream @c os (e.g. std::cout,
+ * std::cerr, std::stringstream) with every line prefixed with @c indent.
+ *
+ * The format is like:
+ *
+ * ,----
+ * |   [
+ * |   0:
+ * |     pattern:  {GPUId} SRAM
+ * |     parameters:
+ * |       [
+ * |       0:
+ * |         {"type":"CurrentDeviceName"}
+ * |       ]
+ * |   1:
+ * |     pattern:  Uncorrectable ECC Error
+ * |     parameters:
+ * |       [
+ * |       ]
+ * |   ]
+ * `----
+ *
+ * with @c indent being two spaces, and the object representation defined by @c
+ * MessageArg::print, which itself calls this function recursively for the @c
+ * parameters vector-type field.
+ *
+ * For the use with logging framework use the following construct:
+ *
+ * @code
+ *   std::stringstream ss;
+ *   print(vec, ss, "");
+ *   log_dbg("%s", ss.str().c_str());
+ * @endcode
+ */
+template <class CharT, typename T>
+void print(const std::vector<T>& vec, std::basic_ostream<CharT>& os,
+           std::string indent)
+{
+    os << indent << "[";
+    if (vec.size() > 0)
+    {
+        os << std::endl;
+        for (auto i = 0u; i < vec.size(); ++i)
+        {
+            os << indent << i << ":" << std::endl;
+            vec.at(i).print(os, indent + "\t");
+        }
+    }
+    else // ! vec.size() > 0
+    {
+        os << std::endl;
+    }
+    os << indent << "]" << std::endl;
+}
+
 } // namespace util

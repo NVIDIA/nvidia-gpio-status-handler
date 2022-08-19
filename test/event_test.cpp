@@ -16,6 +16,8 @@ TEST(EventTest, LoadJson)
     j["severity"] = "Critical";
     j["resolution"] = "Contact NVIDIA Support";
     j["redfish"]["message_id"] = "ResourceEvent.1.0.ResourceErrorsDetected";
+    j["redfish"]["message_args"]["patterns"] = {"p1", "p2"};
+    j["redfish"]["message_args"]["parameters"] = nlohmann::json::array();
     j["telemetries"] = {"t0", "t1"};
     j["trigger_count"] = 0;
     j["event_trigger"] = "trigger";
@@ -42,6 +44,8 @@ TEST(MsgCompTest, MakeCall)
     j["severity"] = "Critical";
     j["resolution"] = "Contact NVIDIA Support";
     j["redfish"]["message_id"] = "ResourceEvent.1.0.ResourceErrorsDetected";
+    j["redfish"]["message_args"]["patterns"] = {"p1", "p2"};
+    j["redfish"]["message_args"]["parameters"] = nlohmann::json::array();
     j["telemetries"] = {"t0", "t1"};
     j["trigger_count"] = 0;
     j["event_trigger"] = "trigger";
@@ -74,6 +78,8 @@ TEST(EventTelemtries, MakeCall)
     j["severity"] = "Critical";
     j["resolution"] = "Contact NVIDIA Support";
     j["redfish"]["message_id"] = "ResourceEvent.1.0.ResourceErrorsDetected";
+    j["redfish"]["message_args"]["patterns"] = {"p1", "p2"};
+    j["redfish"]["message_args"]["parameters"] = nlohmann::json::array();
     j["telemetries"] = {
         {{"name", "temperature"},
          {"type", "DBUS"},
@@ -98,7 +104,7 @@ TEST(EventTelemtries, MakeCall)
         message_composer::MessageComposer::collectDiagData(event);
 
     /*  deserialize object, check content;
-        selftest report is expected to be empty in this case as there were none 
+        selftest report is expected to be empty in this case as there were none
         performed. */
     nlohmann::json jCollected = nlohmann::json::parse(telemetries);
     EXPECT_EQ(jCollected.size(), 3);

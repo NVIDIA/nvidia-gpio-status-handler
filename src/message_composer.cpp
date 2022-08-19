@@ -41,7 +41,7 @@ bool MessageComposer::createLog(event_info::EventNode& event)
                     event.messageRegistry.message.severity;
     method.append(severity);
 
-    auto messageArgs = createMessageArgs(event);
+    auto messageArgs = event.messageRegistry.getStringMessageArgs(event);
     auto telemetries = collectDiagData(event);
 
     std::string oocDevice;
@@ -59,8 +59,9 @@ bool MessageComposer::createLog(event_info::EventNode& event)
     auto originOfCondition = getDeviceDBusPath(oocDevice);
 
     // TODO: auto telemetries = Compression(telemetries);
-    
-    log_err("OOC device for %s is %s !!!!\n", event.device.c_str(), originOfCondition.c_str());
+
+    log_err("OOC device for %s is %s !!!!\n", event.device.c_str(),
+            originOfCondition.c_str());
 
     method.append(std::array<std::pair<std::string, std::string>, 6>(
         {{{"xyz.openbmc_project.Logging.Entry.Resolution",

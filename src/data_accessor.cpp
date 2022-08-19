@@ -2,6 +2,8 @@
  *
  */
 #include "data_accessor.hpp"
+
+#include "event_info.hpp"
 #include "log.hpp"
 
 #include <boost/process.hpp>
@@ -262,8 +264,7 @@ bool DataAccessor::runCommandLine(const std::string& device)
                 std::string error("return code = ");
                 error += std::to_string(processExitCode);
                 ss.str(std::string()); // Clear the stream
-                ss << "Error running the command \'" << cmd << "\' "
-                    << error;
+                ss << "Error running the command \'" << cmd << "\' " << error;
                 log_err("%s\n", ss.str().c_str());
             }
         }
@@ -272,7 +273,7 @@ bool DataAccessor::runCommandLine(const std::string& device)
             ret = false;
             ss.str(std::string()); // Clear the stream
             ss << "Error running the command \'" << cmd << "\' "
-                << error.what();
+               << error.what();
             log_err("%s\n", ss.str().c_str());
         }
         // ok lets store the output
@@ -314,12 +315,12 @@ bool DataAccessor::readDeviceCoreApi(const std::string& device)
             if (existsCheckLookup() == true && isDeviceIdRange() == false)
             {
                 _dataValue = std::make_shared<PropertyValue>(PropertyValue(
-                      std::get<std::string>(tuple), std::get<uint64_t>(tuple)));
+                    std::get<std::string>(tuple), std::get<uint64_t>(tuple)));
             }
             else
             {
-                _dataValue = std::make_shared<PropertyValue>(PropertyValue(
-                                                    std::get<uint64_t>(tuple)));
+                _dataValue = std::make_shared<PropertyValue>(
+                    PropertyValue(std::get<uint64_t>(tuple)));
             }
         }
     }
@@ -354,8 +355,8 @@ void DataAccessor::buildSingleAssertedDeviceName(
     }
 }
 
-util::DeviceIdMap DataAccessor::getCmdLineRangeArguments(
-        const std::string& deviceType) const
+util::DeviceIdMap
+    DataAccessor::getCmdLineRangeArguments(const std::string& deviceType) const
 {
     util::DeviceIdMap devArgs;
     if (isValidCmdlineAccessor() == true && _acc.count(argumentsKey) != 0)
@@ -383,9 +384,9 @@ util::DeviceIdMap DataAccessor::getCmdLineRangeArguments(
 }
 
 bool DataAccessor::checkLoopingDevices(const util::DeviceIdMap& devices,
-                                          const DataAccessor& otherAcc,
-                                          const PropertyVariant& redefCriteria,
-                                          const std::string& deviceType)
+                                       const DataAccessor& otherAcc,
+                                       const PropertyVariant& redefCriteria,
+                                       const std::string& deviceType)
 {
     bool ret = false;
     DataAccessor& accNonConst = const_cast<DataAccessor&>(otherAcc);
@@ -400,13 +401,36 @@ bool DataAccessor::checkLoopingDevices(const util::DeviceIdMap& devices,
             if (_latestAssertedDevices.count(0) != 0)
             {
                 accNonConst._latestAssertedDevices[arg.first] =
-                                _latestAssertedDevices.at(0);
+                    _latestAssertedDevices.at(0);
                 // *this and otherAcc cannot be the same object
                 _latestAssertedDevices.erase(0);
             }
         }
     }
     return ret;
+}
+
+std::string DataAccessor::read(const event_info::EventNode& event)
+{
+    if (isTypeDeviceName() || isTypeDeviceCoreApi() || isTypeCmdline())
+    {
+        // just device name, eg. "GPU1", "NVSwitch0", etc
+        return read(event.device);
+    }
+    else if (isTypeDbus() || isTypeDbus() || isTypeDevice() || isTypeTest() ||
+             isTypeConst())
+    {
+        // 'read' doesn't use the 'device' argument for those types
+        // apparently
+        return read();
+    }
+    else
+    {
+        throw std::runtime_error(
+            "Unrecognised data accessor type. "
+            "If a new accessor type was added a change in '" __FILE__
+            ":getStringMessageArg' is needed");
+    }
 }
 
 } // namespace data_accessor
