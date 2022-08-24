@@ -60,8 +60,7 @@
           "redfish" : {
             "type" : "object",
             "required": [
-              "message_id",
-              "message_args"
+              "message_id"
             ],
             "additionalProperties": false,
             "properties" : {

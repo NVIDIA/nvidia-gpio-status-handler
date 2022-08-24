@@ -30,7 +30,7 @@ std::string MessageArg::getStringMessageArg(const EventNode& event)
     return pattern.substPlaceholders(values);
 }
 
-std::string redfish::getStringMessageArgs(const EventNode& event)
+std::string redfish::getStringMessageArgsDynamic(const EventNode& event)
 {
     std::stringstream ss;
     std::string delimiter = ", ";
@@ -43,6 +43,32 @@ std::string redfish::getStringMessageArgs(const EventNode& event)
         ss << messageArgs.at(i).getStringMessageArg(event);
     }
     return ss.str();
+}
+
+std::string redfish::getStringMessageArgsStatic(const EventNode& event)
+{
+    std::vector<std::string> args;
+    args.push_back(event.device);
+    args.push_back(event.event);
+    std::string msg = "";
+    for (auto it = args.begin(); it != std::prev(args.end()); it++)
+    {
+        msg += *it + ", ";
+    }
+    msg += args.back();
+    return msg;
+}
+
+std::string redfish::getStringMessageArgs(const EventNode& event)
+{
+    if (messageArgs.size() > 0)
+    {
+        return getStringMessageArgsDynamic(event);
+    }
+    else
+    {
+        return getStringMessageArgsStatic(event);
+    }
 }
 
 unsigned MessageArgPattern::placeholdersCount() const
@@ -366,9 +392,16 @@ void EventNode::loadFrom(const json& j)
 
     this->counterReset = j["event_counter_reset"];
 
+    std::vector<event_info::MessageArg> messageArgs;
+    if (j["redfish"].contains("message_args"))
+    {
+        messageArgs = loadMessageArgs(j["redfish"]["message_args"]);
+    }
+    // otherwise leave `messageArgs' empty
+
     this->messageRegistry = {j["redfish"]["message_id"].get<std::string>(),
                              {j["severity"], j["resolution"]},
-                             loadMessageArgs(j["redfish"]["message_args"])};
+                             messageArgs};
 
     this->accessor = j["accessor"];
 
@@ -412,10 +445,6 @@ static void print_node(const EventNode& n)
        << "todo"
        << "\n";
     ss << n.counterReset << "\n";
-
-    // ss << "\t\tmessageRegistry " << n.messageRegistry;
-
-    // ss << "\t\tmessageRegistry " << n.messageRegistry.messageId << "\n";
 
     ss << "\t\tredfish:" << std::endl;
     n.messageRegistry.print(ss, "\t\t\t");

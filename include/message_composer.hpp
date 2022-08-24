@@ -90,26 +90,6 @@ class MessageComposer : public event_handler::EventHandler
     }
 
     /**
-     * @brief Compose REDFISH_MESSAGE_ARGS from event
-     *
-     * @param event
-     * @return std::string&
-     */
-    static std::string createMessageArgs(const event_info::EventNode& event)
-    {
-        std::vector<std::string> args;
-        args.push_back(event.device);
-        args.push_back(event.event);
-        std::string msg = "";
-        for (auto it = args.begin(); it != std::prev(args.end()); it++)
-        {
-            msg += *it + ", ";
-        }
-        msg += args.back();
-        return msg;
-    }
-
-    /**
      * @brief Use stored in event node data; Collect event related telemetries
      *        values as diag data.
      *

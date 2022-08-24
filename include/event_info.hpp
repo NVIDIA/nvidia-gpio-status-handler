@@ -203,40 +203,74 @@ struct redfish
      * Concatenate the results of evaluating each dynamic message arg with a
      * comma. For instance, assuming this object represents the json snippet
      *
-     * ,----
-     * | "message_args": [
-     * |   "{GPUId} Temperature",
-     * |   "{UpperFatal Threshold}"
-     * | ],
-     * | "parameters": [
-     * |   {
-     * |     "type": "DIRECT",
-     * |     "field": "CurrentDeviceName"
-     * |   },
-     * |   {
-     * |     "type": "DBUS",
-     * |     "interface": "...",
-     * |     "object": "...",
-     * |     "property": "..."
-     * |   }
-     * | ]
-     * `----
+     * @code
+     * "message_args": {
+     *   "patterns": [
+     *     "{GPUId} Temperature",
+     *     "{UpperFatal Threshold}"
+     *   ],
+     *   "parameters": [
+     *     {
+     *       "type": "DIRECT",
+     *       "field": "CurrentDeviceName"
+     *     },
+     *     {
+     *       "type": "DBUS",
+     *       "interface": "...",
+     *       "object": "...",
+     *       "property": "..."
+     *     }
+     *   ]
+     * }
+     *
+     * @endcode
      *
      * and
      * 1. the event occured on "GPU3" device
      * 2. dbus call returned "120" string
      *
-     * the string
-     *
-     * ,----
-     * | "GPU3 Temperature, 120"
-     * `----
-     *
-     * will be returned.
+     * the string "GPU3 Temperature, 120" will be returned.
      *
      * @param[in] event Information needed to compose the message args about the
      * event. The object passed can (and most probably should) be the one @c
      * *this is contained in as the @c messageRegistry field.
+     */
+    std::string getStringMessageArgsDynamic(const EventNode& event);
+
+    /**
+     * @brief Compose REDFISH_MESSAGE_ARGS from event
+     *
+     * Behave like @c getStringMessageArgsDynamic except ignore the actual @c
+     * messageArgs value and act as if it corresponded to the following
+     * configuration:
+     *
+     * @code
+     * "message_args": {
+     *   "message_args": [
+     *     "{}",
+     *     EVENT_NAME
+     *   ],
+     *   "parameters": [
+     *     {
+     *       "type": "DIRECT",
+     *       "field": "CurrentDeviceName"
+     *     }
+     *   ]
+     * }
+     * @endcode
+     *
+     * where EVENT_NAME is simply the value of @c event.event.
+     *
+     * This function is provided for backward compatibility.
+     *
+     * @param event
+     * @return std::string&
+     */
+    std::string getStringMessageArgsStatic(const EventNode& event);
+
+    /**
+     * @brief Fall back to @c getStringMessageArgsDynamic or @c
+     * getStringMessageArgsStatic depending on @c messageArgs size.
      */
     std::string getStringMessageArgs(const EventNode& event);
 };
