@@ -17,8 +17,8 @@
 
 #include <chrono>
 #include <iostream>
-#include <variant>
 #include <queue>
+#include <variant>
 
 namespace selftest
 {
@@ -59,11 +59,12 @@ void Selftest::updateDeviceHealth(const std::string& device,
                 std::string healthState =
                     "xyz.openbmc_project.State.Decorator.Health.HealthType." +
                     health;
-                    
-                log_dbg("Setting Health Property for: %s healthState: %s\n", objPath.first, healthState);
-                bool ok = dbus::setDbusProperty(objPath.first,
-                    "xyz.openbmc_project.State.Decorator.Health", "Health",
-                    PropertyVariant(healthState));
+
+                log_dbg("Setting Health Property for: %s healthState: %s\n",
+                        objPath.first.c_str(), healthState.c_str());
+                bool ok = dbus::setDbusProperty(
+                    objPath.first, "xyz.openbmc_project.State.Decorator.Health",
+                    "Health", PropertyVariant(healthState));
                 if (ok == true)
                 {
                     log_dbg("Changed health property as expected\n");
@@ -78,7 +79,7 @@ void Selftest::updateDeviceHealth(const std::string& device,
                         entry("SDBUSERR=%s", e.what()));
     }
 }
-    
+
 bool Selftest::evaluateDevice(const DeviceResult& deviceResult)
 {
     for (auto& layer : deviceResult.layer)
@@ -102,7 +103,7 @@ bool Selftest::evaluateTestReport(const ReportResult& reportRes)
             return false;
         }
     }
-    
+
     return true;
 }
 
@@ -177,12 +178,13 @@ aml::RcCode Selftest::perform(const dat_traverse::Device& dev,
                     selftestRes = this->perform(devNested, reportRes);
                 }
 
-                bool devEvalRes = (selftestRes == aml::RcCode::succ) && 
-                                    evaluateDevice(reportRes[devName]);
+                bool devEvalRes = (selftestRes == aml::RcCode::succ) &&
+                                  evaluateDevice(reportRes[devName]);
 
                 fillTpRes(tmpTestPointResult, testPoint.expectedValue,
-                         (devEvalRes) ? testPoint.expectedValue
-                                      : reportResultFail, devName);
+                          (devEvalRes) ? testPoint.expectedValue
+                                       : reportResultFail,
+                          devName);
             }
             else
             {
@@ -217,16 +219,14 @@ Selftest::Selftest(const std::string& name,
 
 /* ========================= report ========================= */
 
-static std::map<std::string, std::string> layerToKeyLut = 
-{
+static std::map<std::string, std::string> layerToKeyLut = {
     {"power_rail", "power-rail-status"},
     {"erot_control", "erot-control-status"},
     {"pin_status", "pin-status"},
     {"interface_status", "interface-status"},
     {"firmware_status", "firmware-status"},
     {"protocol_status", "protocol-status"},
-    {"data_dump", "data-dump"}
-};
+    {"data_dump", "data-dump"}};
 
 std::ostream& operator<<(std::ostream& os, const Report& rpt)
 {
@@ -245,14 +245,14 @@ static std::string getTimestampString(void)
     return stream.str();
 }
 
-bool Report::processLayer(nlohmann::ordered_json& jdev, 
+bool Report::processLayer(nlohmann::ordered_json& jdev,
                           const std::string& layerName,
                           std::vector<selftest::TestPointResult>& testpoints)
 {
     if (layerToKeyLut.count(layerName) == 0)
     {
-        std::cerr << "Error: generate report invalid layer key: "
-                          << layerName << std::endl;
+        std::cerr << "Error: generate report invalid layer key: " << layerName
+                  << std::endl;
         return false;
     }
 
@@ -279,14 +279,14 @@ bool Report::processLayer(nlohmann::ordered_json& jdev,
             auto resStr = tp.result ? reportResultPass : reportResultFail;
             jdev[layerKey]["test-points"] +=
                 {{"name", tp.targetName},
-                {"value", tp.valRead},
-                {"value-expected", tp.valExpected},
-                {"result", resStr}};
+                 {"value", tp.valRead},
+                 {"value-expected", tp.valExpected},
+                 {"result", resStr}};
         }
     }
 
-    jdev[layerKey]["result"] = 
-                    layerPassOrFail ? reportResultPass : reportResultFail;
+    jdev[layerKey]["result"] =
+        layerPassOrFail ? reportResultPass : reportResultFail;
 
     return true;
 }
@@ -314,7 +314,7 @@ bool Report::generateReport(ReportResult& reportRes)
             /* to keep this key last, skip here and handle explicitly last */
             if (layer.first == "data_dump")
             {
-                continue; 
+                continue;
             }
 
             if (!processLayer(jdev, layer.first, layer.second))
@@ -326,8 +326,8 @@ bool Report::generateReport(ReportResult& reportRes)
         auto dataDumpLayer = devTestLayers.find("data_dump");
         if (dataDumpLayer != devTestLayers.end())
         {
-            if (!processLayer(jdev, dataDumpLayer->first, 
-                                    dataDumpLayer->second))
+            if (!processLayer(jdev, dataDumpLayer->first,
+                              dataDumpLayer->second))
             {
                 return false;
             }
@@ -370,19 +370,18 @@ aml::RcCode DoSelftest([[maybe_unused]] const dat_traverse::Device& dev,
 namespace event_handler
 {
 
-/* TODO: cleanup, this method duplicated here and in message composer 
+/* TODO: cleanup, this method duplicated here and in message composer
     used to check if device exists (present on dbus) */
 static std::string getDeviceDBusPath(const std::string& device)
 {
 
     auto bus = sdbusplus::bus::new_default_system();
     auto method = bus.new_method_call("xyz.openbmc_project.ObjectMapper",
-                                        "/xyz/openbmc_project/object_mapper",
-                                        "xyz.openbmc_project.ObjectMapper",
-                                        "GetSubTreePaths");
+                                      "/xyz/openbmc_project/object_mapper",
+                                      "xyz.openbmc_project.ObjectMapper",
+                                      "GetSubTreePaths");
     int depth = 6;
-    method.append("/xyz/openbmc_project", depth,
-                    std::vector<std::string>());
+    method.append("/xyz/openbmc_project", depth, std::vector<std::string>());
     auto reply = bus.call(method);
     std::vector<std::string> dbusPaths;
     reply.read(dbusPaths);
@@ -395,8 +394,8 @@ static std::string getDeviceDBusPath(const std::string& device)
         }
     }
 
-    std::cerr << "Found no path in ObjectMapper ending with device: "
-                << device << "\n";
+    std::cerr << "Found no path in ObjectMapper ending with device: " << device
+              << "\n";
     return "";
 }
 
@@ -406,7 +405,7 @@ bool checkDeviceDBus(const std::string& device)
     return !devPath.empty();
 }
 
-bool RootCauseTracer::findRootCause(const std::string& triggeringDevice, 
+bool RootCauseTracer::findRootCause(const std::string& triggeringDevice,
                                     const selftest::ReportResult& report,
                                     std::string& rootCauseDevice)
 {
@@ -414,12 +413,12 @@ bool RootCauseTracer::findRootCause(const std::string& triggeringDevice,
 
 #if ROOT_CAUSE_TRACER_USE_ONLY_ASSOCIATION_KEY_TRAVERSAL
     auto childVec = DATTraverse::getSubAssociations(_dat, triggeringDevice);
-#else // use DAT testpoints traversal
-    auto childVec = DATTraverse::getSubAssociations(_dat, triggeringDevice, 
-                                                    true);
-#endif// #if ROOT_CAUSE_TRACER_USE_ONLY_ASSOCIATION_KEY_TRAVERSAL
+#else  // use DAT testpoints traversal
+    auto childVec =
+        DATTraverse::getSubAssociations(_dat, triggeringDevice, true);
+#endif // #if ROOT_CAUSE_TRACER_USE_ONLY_ASSOCIATION_KEY_TRAVERSAL
 
-    /* test every device in order from most nested to least; 
+    /* test every device in order from most nested to least;
     ignore devices not yet implemented in DBUS (other logic dependence);
     first failed device is the root cause of condition for device triggering the
     tracing */
@@ -427,7 +426,8 @@ bool RootCauseTracer::findRootCause(const std::string& triggeringDevice,
     {
         if (!checkDeviceExists(*it))
         {
-//            std::cout << "device " << *it << " not found on dbus" << "\n";
+            //            std::cout << "device " << *it << " not found on dbus"
+            //            << "\n";
             continue;
         }
 
@@ -437,13 +437,13 @@ bool RootCauseTracer::findRootCause(const std::string& triggeringDevice,
             return true;
         }
     }
-    
+
     return false;
 }
 
 void RootCauseTracer::updateRootCause(dat_traverse::Device& dev,
-                                dat_traverse::Device& rootCauseDevice,
-                                selftest::Selftest& selftester)
+                                      dat_traverse::Device& rootCauseDevice,
+                                      selftest::Selftest& selftester)
 {
     dat_traverse::Status status;
     status.health = "Critical";
@@ -455,8 +455,8 @@ void RootCauseTracer::updateRootCause(dat_traverse::Device& dev,
     selftester.updateDeviceHealth(dev.name, status.health);
 }
 
-aml::RcCode
-    RootCauseTracer::process([[maybe_unused]] event_info::EventNode& event)
+aml::RcCode RootCauseTracer::process([
+    [maybe_unused]] event_info::EventNode& event)
 {
     std::string problemDevice = event.device;
     if ((problemDevice.length() == 0) || (_dat.count(problemDevice) == 0))
@@ -468,18 +468,19 @@ aml::RcCode
 
     selftest::ReportResult completeReportRes;
     selftest::Selftest selftester("rootCauseSelftester", _dat);
-    std::string rootCauseCandidateName {};
+    std::string rootCauseCandidateName{};
 
-    if (selftester.perform(_dat.at(problemDevice), completeReportRes) != aml::RcCode::succ)
+    if (selftester.perform(_dat.at(problemDevice), completeReportRes) !=
+        aml::RcCode::succ)
     {
         std::cerr << "Error: rootCauseTracer failed to perform selftest "
-                    << "for device " << problemDevice << std::endl;
+                  << "for device " << problemDevice << std::endl;
         return aml::RcCode::error;
     }
 
     if (findRootCause(problemDevice, completeReportRes, rootCauseCandidateName))
     {
-        updateRootCause(_dat.at(problemDevice), _dat.at(rootCauseCandidateName), 
+        updateRootCause(_dat.at(problemDevice), _dat.at(rootCauseCandidateName),
                         selftester);
     }
 

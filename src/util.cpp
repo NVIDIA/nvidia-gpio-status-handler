@@ -169,11 +169,11 @@ std::string replaceRangeByMatchedValue(const std::string& regxValue,
     if (matchedValue.empty() == false)
     {
         auto info = getRangeInformation(regxValue);
-        auto rangeSize  = std::get<0>(info);
+        auto rangeSize = std::get<0>(info);
         if (rangeSize > 0)
         {
 
-            auto rangePosition =std::get<1>(info);
+            auto rangePosition = std::get<1>(info);
             auto rangeStr = std::get<2>(info);
             newString.replace(rangePosition, rangeSize, matchedValue);
         }
@@ -256,7 +256,7 @@ std::string determineDeviceName(const std::string& objPath,
         }
     }
     logs_dbg("determineDeviceName() objPath %s devType:%s Devname: %s\n.",
-             objPath, devType, name);
+             objPath.c_str(), devType.c_str(), name.c_str());
     return name;
 }
 

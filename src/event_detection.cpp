@@ -2,10 +2,11 @@
 /*
  *
  */
+#include "event_detection.hpp"
+
 #include "aml.hpp"
 #include "aml_main.hpp"
 #include "data_accessor.hpp"
-#include "event_detection.hpp"
 
 #include <boost/container/flat_map.hpp>
 #include <nlohmann/json.hpp>
@@ -37,7 +38,8 @@ void EventDetection::dbusEventHandlerCallback(sdbusplus::message::message& msg)
 
     std::string signalSignature = msg.get_signature();
 
-    logs_dbg("objectPath:%s\nsignalSignature:%s\nmsgInterface:%s\n", objectPath, signalSignature, msgInterface);
+    logs_dbg("objectPath:%s\nsignalSignature:%s\nmsgInterface:%s\n",
+             objectPath.c_str(), signalSignature.c_str(), msgInterface.c_str());
 
     if (propertiesChanged.empty())
     {
@@ -71,7 +73,8 @@ void EventDetection::dbusEventHandlerCallback(sdbusplus::message::message& msg)
             continue;
         }
 
-        logs_dbg("Path: %s, Property: %s, Variant: %s\n", objectPath, eventProperty, variant);
+        logs_dbg("Path: %s, Property: %s, Variant: %lf\n", objectPath.c_str(),
+                 eventProperty.c_str(), *variant);
 
         const std::string type = "DBUS";
         nlohmann::json j;
@@ -107,8 +110,10 @@ void EventDetection::dbusEventHandlerCallback(sdbusplus::message::message& msg)
             for (const auto& device : candidate.assertedDeviceNames)
             {
                 event.device = device.second;
-                logs_dbg("%s:%s Throw out an eventHdlrMgr. device: %s event: %s",
-                            __FILE__, __LINE__, event.device, event.event);
+                logs_dbg(
+                    "%s:%d Throw out an eventHdlrMgr. device: %s event: %s",
+                    __FILE__, __LINE__, event.device.c_str(),
+                    event.event.c_str());
                 if (eventDetectionPtr->IsEvent(candidate, eventValue))
                 {
                     eventDetectionPtr->RunEventHandlers(event);
@@ -157,9 +162,8 @@ DbusEventHandlerList EventDetection::startEventDetection(
         const auto& interface = intfObjects.first;
         for (const auto& object : intfObjects.second)
         {
-            handlerList.push_back(
-                        dbus::registerServicePropertyChanged(
-                              conn, object, interface, genericHandler));
+            handlerList.push_back(dbus::registerServicePropertyChanged(
+                conn, object, interface, genericHandler));
         }
     }
     log_dbg("dbusEventHandlerMatcher created.\n");
@@ -167,8 +171,8 @@ DbusEventHandlerList EventDetection::startEventDetection(
 }
 
 data_accessor::InterfaceObjectsMap
-EventDetection::getAccDbusTriggers(const data_accessor::DataAccessor& acc,
-                                   RegisteredObjectInterfaceMap& map)
+    EventDetection::getAccDbusTriggers(const data_accessor::DataAccessor& acc,
+                                       RegisteredObjectInterfaceMap& map)
 {
     data_accessor::InterfaceObjectsMap ret;
     auto dbusInfo = acc.getDbusInterfaceObjectsMap();
@@ -190,7 +194,7 @@ void EventDetection::identifyEventCandidate(const std::string& objPath,
                                             const std::string& signature,
                                             const std::string& property)
 {
-    logs_info("dbus([%s]/[%s]/[%s]).\n" << objPath, signature, property);
+    logs_info("dbus([%s]/[%s]/[%s]).\n", objPath.c_str(), signature.c_str(), property.c_str());
     std::regex rgx("obj=\"(.+?)\"");
     std::smatch match;
 

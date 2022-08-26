@@ -181,7 +181,7 @@ int main(int argc, char* argv[])
 
     return 0;
 #endif
-
+    logger.setLevel(DEF_DBG_LEVEL);
     logs_info("Default log level: %d. Current log level: %d\n", DEF_DBG_LEVEL,
               getLogLevel(logger.getLevel()));
     try
@@ -249,7 +249,7 @@ int main(int argc, char* argv[])
     eventHdlrMgr.RegisterHandler(&msgComposer);
     eventHdlrMgr.RegisterHandler(&clearEvent);
 
-    logs_dbg("Creating %s\n", oob_aml::SERVICE_BUSNAME);
+    logs_dbg("Creating %s\n", (const char*)oob_aml::SERVICE_BUSNAME);
 
     rc = sd_bus_default_system(&aml::bus);
     if (rc < 0)
