@@ -327,8 +327,6 @@ class EventNode : public object::Object
     /** @brief Event count map: maps device name to count **/
     std::map<std::string, int> count;
 
-    util::DeviceIdMap assertedDeviceNames;
-
     /** @brief Count that will trigger event **/
     int triggerCount;
 

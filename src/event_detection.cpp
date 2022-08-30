@@ -83,23 +83,25 @@ void EventDetection::dbusEventHandlerCallback(sdbusplus::message::message& msg)
         j[data_accessor::accessorTypeKeys[type][1]] = msgInterface;
         j[data_accessor::accessorTypeKeys[type][2]] = eventProperty;
         data_accessor::DataAccessor accessor(j);
-        auto eventsList = eventDetectionPtr->LookupEventFrom(accessor);
-        if (eventsList.empty() == true)
+        auto assertedEventsList = eventDetectionPtr->LookupEventFrom(accessor);
+        if (assertedEventsList.empty() == true)
         {
             logs_dbg("No event found in the supporting list.\n");
             continue;
         }
-        for (auto candidate : eventsList)
+        for (auto& assertedEvent : assertedEventsList)
         {
-            event_info::EventNode& event = candidate;
+            auto& candidate = *assertedEvent.first;
+            auto event = candidate;
             int eventValue = invalidIntParam;
             if (candidate.valueAsCount)
             {
                 eventValue = int(*variant);
             }
+            const auto& assertedDeviceNames = assertedEvent.second;
             // this is the case when the "check" operation is not 'bitmap'
             //   that means, the check does not loop over device range
-            if (candidate.assertedDeviceNames.empty() == true)
+            if (assertedDeviceNames.empty() == true)
             {
                 std::cerr << __FILE__ << ":" << __LINE__
                           << " event: " << event.event
@@ -107,7 +109,7 @@ void EventDetection::dbusEventHandlerCallback(sdbusplus::message::message& msg)
                 continue;
             }
             // now loop thru candidate.assertedDeviceNames
-            for (const auto& device : candidate.assertedDeviceNames)
+            for (const auto& device : assertedDeviceNames)
             {
                 event.device = device.second;
                 logs_dbg(

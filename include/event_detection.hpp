@@ -26,6 +26,14 @@ using DbusEventHandlerList =
     std::vector<std::unique_ptr<sdbusplus::bus::match_t>>;
 
 /**
+ *  This list is used in LookupEventFrom(),
+ *
+ *  Per each event in the list there is a assertedDevices map assigned to it
+ */
+using AssertedEventList =
+         std::vector<std::pair<event_info::EventNode*, util::DeviceIdMap>>;
+
+/**
  *   A map to check if a pair object-path + interface has already been
  *    registered for receiving PropertyChange signal from dbus
  *
@@ -83,10 +91,9 @@ class EventDetection : public object::Object
      * @param acc
      * @return
      */
-    std::vector<event_info::EventNode>
-        LookupEventFrom(const data_accessor::DataAccessor& acc)
+    AssertedEventList LookupEventFrom(const data_accessor::DataAccessor& acc)
     {
-        std::vector<event_info::EventNode> eventList;
+        AssertedEventList eventList;
         for (auto& eventPerDevType : *this->_eventMap)
         {
             for (auto& event : eventPerDevType.second)
@@ -96,7 +103,7 @@ class EventDetection : public object::Object
                     << "\n\tevent.trigger: " << event.trigger
                     << "\n\tacc: " << acc;
                 log_dbg("%s\n", ss.str().c_str());
-                
+
                 /**
                  * event.trigger is compared first, when it macthes:
                  *   1. event.trigger performs a check against the data from acc
@@ -107,21 +114,25 @@ class EventDetection : public object::Object
                 {
                     if (event.trigger.check(acc, event.deviceType) == true)
                     {
-                        if (event.accessor.check(event.deviceType) == true)
+                        // the Accessor which receives the check should always
+                        // be a temporary object as it keeps data from read()
+                        // and assertedDevices list
+                        auto tmpAccessor = event.accessor;
+                        if (tmpAccessor.check(event.deviceType) == true)
                         {
+                            auto assertedDevices =
+                                    tmpAccessor.getAssertedDeviceNames();
                             /**
                              * the assertedDeviceNames can be in either
                              * event.accessor (most of the times)
                              * or in acc which is the DBUS accessor
                              */
-                            event.assertedDeviceNames =
-                                event.accessor.getAssertedDeviceNames();
-                            if (event.assertedDeviceNames.empty() == true)
+                            if (assertedDevices.empty() == true)
                             {
-                                event.assertedDeviceNames =
-                                    acc.getAssertedDeviceNames();
+                                assertedDevices = acc.getAssertedDeviceNames();
                             }
-                            eventList.push_back(event);
+                            eventList.push_back(std::make_pair(
+                                                      &event, assertedDevices));
                             continue;
                         }
                     }
@@ -130,10 +141,8 @@ class EventDetection : public object::Object
                 {
                     if (event.accessor.check(acc, event.deviceType) == true)
                     {
-                        // DataAccessorDBUS property change contains devices
-                        event.assertedDeviceNames =
-                            acc.getAssertedDeviceNames();
-                        eventList.push_back(event);
+                        eventList.push_back(std::make_pair(
+                                       &event,  acc.getAssertedDeviceNames()));
                         continue;
                     }
                 }

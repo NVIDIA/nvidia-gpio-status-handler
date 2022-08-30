@@ -402,8 +402,6 @@ bool DataAccessor::checkLoopingDevices(const util::DeviceIdMap& devices,
             {
                 accNonConst._latestAssertedDevices[arg.first] =
                     _latestAssertedDevices.at(0);
-                // *this and otherAcc cannot be the same object
-                _latestAssertedDevices.erase(0);
             }
         }
     }
