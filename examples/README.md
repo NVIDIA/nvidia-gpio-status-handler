@@ -302,60 +302,7 @@ This translates to the `"redfish"` entry like
 -   **`"patterns"`:** The actual string values inserted in the message upon the occurrence of an event. They can contain placeholders in the form `"{Some Name}"` which are substituted with values dynamically obtained during an event, as described by the `"parameters"` attribute (see below). The string between the curly brackets is irrelevant to the substitution logic (can be used for documentation purposes). The entries can contain no placeholders, like `"Secure Boot Failure"` , or multiple placeholders, like `"xxx {param1} yyy {param2}"`.
 -   **`"parameters"`:** Describe the means of obtaining the values for placeholders in the `"patterns"` attribute. The number of elements must be equal to the total number of placeholders in `"patterns"` array. The values are substituted in the same order.
     
-    Every object in the `"parameters"` array is an accessor with the same syntax and semantics as those used for `"accessor"` and `"event_trigger"` entries, which gives the following list of accessor types:
-    
-    -   **Current device name accessor:** Translates to the name of the device the fault occured on, e.g. `GPU3` or `NVSwitch1`
-        
-            {
-              "type": "DIRECT",
-              "field" : "CurrentDeviceName"
-            }
-    -   **DBUS-type accessor:** Obtain the value of the parameter from a dbus property.
-        
-            {
-              "type": "DBUS",
-              "object": "…",
-              "interface": "…",
-              "property": "…",
-              "check": …
-            }
-    -   **Device Core API accessor:** Obtain the value of the parameter using the device's API
-        
-            {
-              "type": "DeviceCoreAPI",
-              "property": "…",
-              "check": …
-            }
-    -   **Command line accessor:** Obtain the value of the parameter using the output of a command call
-        
-            {
-              "type": "CMDLINE",
-              "executable": "…",
-              "arguments": "…",
-              "check": …
-            }
-    -   **Constant value "accessor":** Always return the `"value"` property literally
-        
-            {
-              "type": "CONSTANT",
-              "value": "…",
-            }
-        
-        This accessor can be useful for testing and debugging purposes to mockup a return value from some other type accessor. It can also be useful in including the literal `{` or `}` characters in the final message arg without messing with the placeholder identification, eg
-        
-            "message_args": {
-              "patterns": [
-                "{}"
-              ],
-              "parameters": [
-                {
-                  "type": "CONSTANT",
-                  "value": "{UpperCritical Threshold}"
-                }
-              ]
-            }
-        
-        would become `"{UpperCritical Threshold}"`.
+    Every object in the `"parameters"` array is an accessor with the same syntax and semantics as those used for `"accessor"` and `"event_trigger"` entries. See [Accessor format](#orgfc57f5d). which gives the following list of accessor types:
 
 
 ### Example 1: XID related log entry ("DRAM Contained ECC Error")
@@ -460,4 +407,62 @@ This translates to the `"redfish"` entry like
 The schema for the full `event_info.json` file, containing formal definition of the format, is provided in the `event_info-schema.json` file.
 
 There are many tools performing the validation of a given json file for the provided schema, for example <https://extendsclass.com/json-schema-validator.html>.
+
+
+<a id="orgfc57f5d"></a>
+
+# Accessor format
+
+-   **Current device name accessor:** Translates to the name of the device the fault occured on, e.g. `GPU3` or `NVSwitch1`
+    
+        {
+          "type": "DIRECT",
+          "field" : "CurrentDeviceName"
+        }
+-   **DBUS-type accessor:** Obtain the value of the parameter from a dbus property.
+    
+        {
+          "type": "DBUS",
+          "object": "…",
+          "interface": "…",
+          "property": "…",
+          "check": …
+        }
+-   **Device Core API accessor:** Obtain the value of the parameter using the device's API
+    
+        {
+          "type": "DeviceCoreAPI",
+          "property": "…",
+          "check": …
+        }
+-   **Command line accessor:** Obtain the value of the parameter using the output of a command call
+    
+        {
+          "type": "CMDLINE",
+          "executable": "…",
+          "arguments": "…",
+          "check": …
+        }
+-   **Constant value "accessor":** Always return the `"value"` property literally
+    
+        {
+          "type": "CONSTANT",
+          "value": "…",
+        }
+    
+    This accessor can be useful for testing and debugging purposes to mockup a return value from some other type accessor. It can also be useful in including the literal `{` or `}` characters in the final message arg without messing with the placeholder identification, eg
+    
+        "message_args": {
+          "patterns": [
+            "{}"
+          ],
+          "parameters": [
+            {
+              "type": "CONSTANT",
+              "value": "{UpperCritical Threshold}"
+            }
+          ]
+        }
+    
+    would become `"{UpperCritical Threshold}"`.
 

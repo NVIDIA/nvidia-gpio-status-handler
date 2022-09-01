@@ -1,0 +1,196 @@
+Category	SR #	Fault Scenario	OpCode	GPUOOB Property/OOB API	DBUS Information	Telemetry	Poll/Event Triggered	Comments	Next Steps	Plan for QS0
+GPU Failures	GPU_2	GPU PWR BRAKE Asserted	Opcode 1Bh - Query Clock Frequency Info Throttle-Reason: HW Power Brake Slowdown	gpu.clock.throttleReason/GPUGetThrottleReason	Not implemented in GPU Manager. Dynamic in oob_properties, need to ask Sharad for implementation plan.		DBUS Property Change Signal	GPU SMBPBI spec v5.1 does not have support for this Arg1	GPU VBIOS Team: When will this be supported by? 	Support available in GPUOOB/GPUMGR
+GPU Failures	GPU_4	GPU[0-7] Row remapping failure	Opcode 20h - Requre Row-remapping Statistics	gpu.device.RowRemappingStats.stateFlagPage0/GPUGetRowRemappingFailureState	Not implemented in GPU Manager. Dynamic in oob_properties, need to ask Sharad for implementation plan.		DBUS Property Change Signal	How do these counts map to the fault of interest  --  Row remapping pending or failure checks need to be checked if supported or not. Sainath to check will evaluate need of new properties or not.   --  New property is being added to gpuoob		Support available in GPUOOB/GPUMGR
+GPU Failures	GPU_5	GPU[0-7] Row remapping pending	Opcode 20h - Requre Row-remapping Statistics	gpu.device.RowRemappingStats.stateFlagPage0/GPUGetRowRemappingPendingState	Not implemented in GPU Manager. Dynamic in oob_properties, need to ask Sharad for implementation plan.		DBUS Property Change Signal	How do these counts map to the fault of interest  --  Same as above.    -- New property is being added to gpuoob		Support available in GPUOOB/GPUMGR
+GPU Failures		GPU[0-7] Disabled single bit interrupts	Opcode 1DH - (Xid reporting via DEM)	gpu.xid.event	Need not be implemented in GPU Manager. 		Use Core API	Event pending handling takes care of polling this property upon new event?	Ask Harinder	Support available in GPUOOB/GPUMGR
+GPU Failures	GPU_9	GPU[0-7] in Throttled state	Opcode 1Bh - Query Clock Frequency Info	gpu.clock.throttleReason/GPUGetThrottleReason	Not implemented in GPU Manager. Dynamic in oob_properties, need to ask Sharad for implementation plan.		DBUS Property Change Signal	How is this different from the Fault in row 2  -- Sainath to check output format of throttleReason.   -- It is a hex string. AML needs to decode the string and compare it with the of interest (dynamic message arg support AML will support) 		Support available in GPUOOB/GPUMGR
+GPU Failures	GPU_10	GPU[0-7] PCIe link speed state change	Opcode 21h - Query PCIe Link Status - Speed Select	gpu.pcie.linkStatus.page0/GPUGetPCIeLinkSpeed		New Value to be additional data	DBUS Property Change Signal	Who is maintaining the current speed/link state? Because GPU Mgr will just return the current speed/state.   --  GPU Manager to return current speed. AML to keep track of change. 		Support available in GPUOOB/GPUMGR
+GPU Failures	GPU_11	GPU[0-7] PCIe link width state change	Opcode 21h - Query PCIe Link Status - Lane Select	gpu.pcie.linkStatus.page0/GPUGetPCIeLinkWidth		New Value to be additional data	DBUS Property Change Signal	Who is maintaining the current speed/link state? Because GPU Mgr will just return the current speed/state.   --  GPU Manager to return current state. AML to keep track of change.  		Support available in GPUOOB/GPUMGR
+GPU Failures	GPU_13	GPU[0-7] I2C Hang	Use Baseboard OpCode B1h, ARG1=00h, Data Output Bit 29   I2C-1 Peripheral Error Interrupt		Not implemented in GPU Manager and GPUOOB.		DBUS Property Change Signal	Does this map to FPGA backend error 0x02. If not, is there a corresponding backend error for this? If not backend error, how do we realize this error?   Check with Shakeeb with the implementation status for publishing backend errors on dbus  Similar to I2C Hang NVSwitch ---  0x01 0x04 are I2C Hangs (0x01 hang is interface hang, 0x04 is chip hangs but interface didn't hang)  0x01 == Timeout (Interface Hang) 0x04 == NACK (Chip Hang)  0x02 == FPGA in hang State (Don't use here, if FPGA is working we should always see 0x01)   Same valid for NVSW as well	Ask FPGA team	Support available in GPUOOB/GPUMGR
+GPU Failures	GPU_16	GPU[0-7] Destination FLA Translation Error	Opcode 1DH - (Xid reporting via DEM)	gpu.xid.event	Need not be implemented in GPU Manager 		DBUS Property Change Signal	Event pending handling takes care of polling this property upon new event?	Ask Harinder	Support available in GPUOOB/GPUMGR
+GPU Failures	GPU_20	GPU [0-7] Nvlink Error (...) 	Opcode 1AH	gpu.nvlink.aggregateReplayErrCount/GPUGetAggregateNVLinkReplayCount gpu.nvlink.aggregateRecoveryErrCount/GPUGetAggregateNVLinkRecoveryErrorCount gpu.nvlink.aggregateFlitCRCErrCount/GPUGetAggregateNVLinkFlitCRCErrorCount gpu.nvlink.aggregateDataCRCErrCount/GPUGetAggregateNVLinkDataCRCErrorCount	Implemented - but aggregate isn't implemented. So per GPU needs to be taken care of by AML. 		DBUS Property Change Signal	NVLink Query API returns 3 types of error counts. Which errors is the Vulcan fault interested in?   Looks like this is NVLink State check? Each GPU has 32 NVLinks, are they all supposed to be UP/DOWN together? Other config? Needs verification or some register to be monitored?   --  Sainath to check if possible to check state of all nvlinks of one GPU  ?  --  Split into 4 events per error category. 		Support available in GPUOOB/GPUMGR
+NVSwitch	NVSwitch_1	NVSwitch[0-3] fallen off of bus	opcode 18H - Nvswitch State Flags Driver State (Bit 6:6) Not running	nvswitch.device.stateFlags.page0/NVSwitchGetDriverLoaded			DBUS Property Change Signal			Support available in GPUOOB/GPUMGR
+NVSwitch	NVSwitch_10	NVSwitch[0-3] Link training error	opcode 1Ah - Query Nvlink Information 0DH - Query nvlink training errror states.	nvswitch.nvlink.TrainingErrCountStatus/NVSwitchGetNVLinkTrainingErrorCount			DBUS Property Change Signal			Support available in GPUOOB/GPUMGR
+NVSwitch	NVSwitch_11	NVSwitch[0-3] Successful link replays or recoveries	opcode 1Ah - Query Nvlink Information Arg 05h Query Nvlink replay error count Arg 06H Query Nvlink recovery error count	nvswitch.nvlink.replayErrCount.page/NVSwitchGetNVLinkReplayCount nvswitch.nvlink.recoveryErrCount.page/NVSwitchGetNVLinkRecoveryErrorCount			DBUS Property Change Signal			Support available in GPUOOB/GPUMGR
+NVSwitch	NVSwitch_12	NVSwitch[0-3] Link CRC Errors	opcode 1Ah - Query Nvlink Information Arg 05h Query Nvlink flit CRC errror count Arg 06H Query Nvlink data CRC error count	nvswitch.nvlink.flitCRCErrCount.page/NVSwitchGetNVLinkFlitCRCErrorCount nvswitch.nvlink.dataCRCErrCount.page/NVSwitchGetNVLinkDataCRCErrorCount			DBUS Property Change Signal			Support available in GPUOOB/GPUMGR
+PCIe SW	1	PCIe Switch PCIe link Error	opcode 21h?	pcieswitch.pcie.linkStatus.upPage0/getPCIeLinkStatusPage0				Which errors are of interest here? Correctable/Fatal/Non-Fatal - other doc says PCIe Uncorrectable errors. 	Ask Vishal	Support not Implemented
+PCIe SW	2	PCIe Switch PCIe link Goes down	opcode 21h?	pcieswitch.pcie.linkStatus.page6/getPCIeLinkStatusPage6			DBUS Property Change Signal	LTSSM state info is good here?	Ask Vishal	Support not Implemented
+PCIe SW	4	PCIe AER status notification	opcode 21h?	pcieswitch.pcie.linkStatus.upPage0/getPCIeLinkStatusPage0				AER bits for current Correctable/UnCorrectable errors status?	Ask Vishal	Support not Implemented
+PCIe SW	5	Incorrect link width	opcode 21h?	pcieswitch.pcie.linkStatus.upPage0/getPCIeLinkStatusPage0				How is it determined current link width is incorrect?	Ask Vishal/Kun	Support not Implemented
+PCIe SW	6	Incorrect link speed	opcode 21h?	pcieswitch.pcie.linkStatus.upPage0/getPCIeLinkStatusPage0				How is it determined current link speed is incorrect?	Ask Vishal/Kun	Support not Implemented
+Retimer	Retimer_1	Retimer[0-7] PCIe link goes down	opcode 21h?	pcieretimer.pcie.linkStatus.page6/getPCIeLinkStatusPage6			DBUS Property Change Signal	LTSSM state info is good here?	Ask Vishal	Support not Implemented
+Retimer	Retimer_2	Retimer[0-7] PCIe link never up	opcode 21h?					How is it determined current link width is incorrect? Needs better description.  1. What register in FPGA for retimer status?  2. If retimer status says PCIe Link not established, how does that map to GPUs below retimer not working?   --- Register dump doesn't represent this information anymore.   Needs better fault naming (Ask Kun/Vishal)   Use 21H 	Ask FPGA	Support not Implemented
+Retimer	Retimer_5	Incorrect link width	opcode 21h?	pcieretimer.pcie.linkStatus.upPage0/getPCIeLinkStatusPage0				How is it determined current link width is incorrect?	Ask Vishal/Kun	Support not Implemented
+Retimer	Retimer_6	Incorrect link speed	opcode 21h?	pcieretimer.pcie.linkStatus.upPage0/getPCIeLinkStatusPage0				How is it determined current link speed is incorrect?	Ask Vishal/Kun	Support not Implemented
+	FPGA_1	FPGA Temp Alert (FPGA_LM95233_0_TEMP_CRIT(1))	OpCode B2H	Inlet Sensor #1 is for FPGA Temp monitoring. fpga.thermal.alert Opcode B2, Arg1: 83 -> Bit 6 fpga.thermal.alert 			Use Core API with property with fpga id 0	FPGA Temp monitoring is Inlet Sensor #1? Ask FPGA    Inlet Sensor #1 is FPGA.  Inlet Sensor #2 is PEX SW (See I2C device mapping sheet on Vulcan I2C request form) 	Ask FPGA	Support available in GPUOOB/GPUMGR
+		FPGA - BMC PCIe Error	opcode 21h?	hostBmc.pcie.linkStatus.page0/getPCIeLinkStatusPage0				Which errors are of interest here? Correctable/Fatal/Non-Fatal	Ask Vishal	Support not Implemented
+	FPGA_25	Alert caused by Inlet sensor temperture alert	Opcdeo B2H (SMBPBI Baseboard Spec)	inletTemp.thermal.alert			Use Core API with respective inletTemp id	Inlet Sensor #1 / Inlet Sensor #2 ? 	Ask Vishal	Support available in GPUOOB/GPUMGR
+	FPGA_26	Alert caused by HSC alert	Opcode B3H (SMBPBI Baseboard Spec) ARG 80h	hsc.device.alert			Use Core API with respective hsc id	SMBPBI Spec ARG 80 on B2H should give all HSC Alert Info		Support available in GPUOOB/GPUMGR
+	FPGA_27	Alert caused by PCB sensor temperature alert	Opcdeo B2H (SMBPBI Baseboard Spec)	baseboard.pcb.temperature.alert			Use Core API with the new property	NVIDIA Baseboard PCB Temperature Alert on SMBPBI Spec		Support available in GPUOOB/GPUMGR
+	FPGA_24	Alert caused by EROT FATAL pin state change	Is this supported? 	nvswitch.interrupt.erot pcieswitch.interrupt.erot gpu.interrupt.erot hmc.interrupt.erot			Use Core API with respective property	EROT Failure on FPGA? or other devices? or selected number of devices?  -- This is per device. See message Args. Use Core API for this. 	Ask Vishal	Support available in GPUOOB/GPUMGR
+		FPGA - HMC PCIe Error	Need to figure out object path to get information. Need to speak to Shakeeb. Indication for PCIe to I2C fallback needs to be found out ? When PCIE fails, I2C fallback how? 	hmc.pcie.linkStatus.page0/getPCIeLinkStatusPage0				If PCIE fails then I2C fallback works. (Confirmed) What errors Correctable/Uncorrectable or something else?     See original sheet for description of all errors wanting to be captured - Whats the source of these errors to be ?	Ask Vishal / Kun	Support not Implemented
+	FPGA_29	GPU wrong PEC byte handle in SMBBPI	Need to figure out object path to get information. Need to speak to Shakeeb. Indication for PCIe to I2C fallback needs to be found out ? When PCIE fails, I2C fallback how? 				DBUS Property Change Signal	Does this map to the backend error? Backend error #3..[YES]  Needs input from Vishal about HMC behaviour?  --  All of them are backend errors on PCIe Channel 	Ask FPGA	Support available in GPUOOB/GPUMGR
+	FPGA_30	FPGA SMBPBI timeout handle	find out if GPUOOB internal error code is put on DBUS as property? 					Does this map to a backend error? Backend error 0x01 [Same as I2CHang, I2C hang will result in SMBPBI timeout]   What opcode/Arg to check on I2C2 and I2C4?   Needs input from Vishal about HMC behaviour?  --- Reports both I2C Alert and backend error. Sainath to go through doc and make decision.  All of them are backend errors on PCIe Channel 	Ask FPGA / Kun / Vishal	Support available in GPUOOB/GPUMGR
+	FPGA_31	FPGA I2C timeout handle	find out if GPUOOB internal error code is put on DBUS as property? 					Does this map to a backend error?   What opcode/Arg to check on I2C2 and I2C4?   Needs input from Vishal about HMC behaviour?  --- Reports both I2C Alert and backend error. Sainath to go through doc and make decision.  All of them are backend errors on PCIe Channel 	Ask FPGA / Kun / Vishal	Duplicate Fault
+	FPGA_32	Clock buffer hardcode handle for GPU/NVSW PWR_GD state changes	Find out if this exists on GPUOOB as a property or can exist? Should be on FPGA register table otherwise. 	gpu.pcie.clockOutputEnableState nvswitch.pcie.clockOutputEnableState pcieretimer.pcie.clockOutputEnableState pcieswitch.pcie.clockOutputEnableState gpu.nvlink.clockOutputEnableState 	PCIeReferenceClockEnabled		DBUS Property Change Signal	Should this be B5 Opcode (Clock output buffer state) ? Kun: Yes (See internal SMBPBI Spec)   Needs input from Vishal about HMC behaviour? 	Ask Kun / Vishal	Requirements not Clear/Mapped
+	FPGA_33	Clock buffer access while hardcode is in process	Find out if this exists on GPUOOB as a property or can exist? Should be on FPGA register table otherwise. 					Combine with the one above? Or will the HMC infer something else from this fault different from the one above? 	Ask Kun / Vishal	Not a fault
+	FPGA_36	BMC PCIE error report for Invalid TLP 	PCIe 21 Opcode					Repeat of row 26? Else what new information does HMC get? Source of information? HMC Behavoiour to be defined. 	Ask Kun / Vishal	
+	FPGA_37	HMC PCIE error report for Invalid TLP 	PCIe 21 Opcode					Repeat of row 31? Else what new information does HMC get? Source of information? HMC Behavoiour to be defined. 	Ask Kun / Vishal	
+	FPGA_40	SMBPBI access to GPU/LS devices where devices return NACKs.	Find out if this exists on GPUOOB as a property or can exist? Should be on FPGA register table otherwise. 					Source of information is backend error #4? Why I2C1 and I2C2 Alert for this? HMC behaviour to be defined. 	Ask FPGA team / Vishal 	Support available in GPUOOB/GPUMGR
+	FPGA_45	I2C access to GPU devices where devices return NACKs.	Find out if this exists on GPUOOB as a property or can exist? Should be on FPGA register table otherwise. 					Source of information is backend error #4? If not what is the source of information for this alert? Why I2C1 and I2C2 Alert for this? HMC behaviour to be defined.    --- If using proxy, backend error log will show. If not using proxy, rely on error cascading scheme. 	Ask FPGA team / Vishal 	Duplicate Fault
+	FPGA_19	Alert caused by GPU PRSNT state run time change	Unknown 	gpu.interrupt.PresenceInfo			Use Core API with respective gpu id	See gpu-manager to get DBUS property which acts as the trigger. There's an opcode for this which is implemented.   --  This is mostly form GPIO, is it only detecting if IO is not there or power isn't present. 	Ask Sainath	Support available in GPUOOB/GPUMGR
+	FPGA_20	Alert caused by NVSW PRSNT state run time change		nvswitch.device.abnormalPresenceChange			Use Core API with respective nvswitch id	See gpu-manager to get DBUS property which acts as the trigger. There's an opcode for this which is implemented.   --  This is mostly form GPIO, is it only detecting if IO is not there or power isn't present. 	Ask Sainath	Support available in GPUOOB/GPUMGR
+	FPGA_41	Invalid PCIE TLPs noncompliant to SMBPBI proxy specifications.	Unknown 					Repeat of HMC/BMC PCIe Error. Mark as DUP in summary sheet.	Ask Sainath	Duplicate Fault
+	VR_14	System VR fault	B2H Opcode. Args 80H and Args 81H has few faults covered for Sys VRs Which faults are of interest here?	sysvr3v3.power.abnormalPowerChange sysvr1v8.power.abnormalPowerChange			Use Core APIs	FPGA Register dump+ Error Cascading Document (NEed to see what HMC needs from telemetry POV) 	Ask FPGA 	Support available in GPUOOB/GPUMGR
+										
+										
+										
+										
+These are all opcodes needing faults apart from the ones covered in ES release										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+										
+		2 - 14	Shanjit							
+		15 - 29	Christian							
+		30 - 44	Carlos							
