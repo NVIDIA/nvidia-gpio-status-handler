@@ -71,6 +71,20 @@ TEST(UtilExpandDeviceRange, RangeAtBeginning)
     EXPECT_EQ(devMap.at(1), "1end");
 }
 
+TEST(UtilExpandDeviceRange, DoubleRange)
+{
+    auto devMap = expandDeviceRange("GPU_SXM_[1-8]_DRAM_[1-8]");
+    EXPECT_EQ(devMap.size(), 64);
+
+    EXPECT_EQ(devMap.count(1), 1);
+    EXPECT_EQ(devMap.count(32), 1);
+    EXPECT_EQ(devMap.count(64), 1);
+
+    EXPECT_EQ(devMap.at(1),  "GPU_SXM_1_DRAM_1");
+    EXPECT_EQ(devMap.at(32), "GPU_SXM_4_DRAM_8");
+    EXPECT_EQ(devMap.at(64), "GPU_SXM_8_DRAM_8");
+}
+
 TEST(UtilExpandDeviceRange, RangeMiddle)
 {
     auto devMap = expandDeviceRange("begin[0-1]end");

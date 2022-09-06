@@ -120,13 +120,10 @@ int getDeviceId(const std::string& deviceName, const std::string& range)
     return ret;
 }
 
-DeviceIdMap expandDeviceRange(const std::string& deviceRegx)
+int priv_expandRange(const std::string& deviceRegx, int initialValue,
+                     DeviceIdMap& deviceMap )
 {
-    DeviceIdMap deviceMap;
-    if (deviceRegx.empty() == true)
-    {
-        return deviceMap; // return empty map
-    }
+    int globalValue = 0;
     std::string matchedStr =
         (deviceRegx.find_first_of("[") == 0 &&
          deviceRegx.find_last_of("]") == deviceRegx.size() - 1)
@@ -149,15 +146,39 @@ DeviceIdMap expandDeviceRange(const std::string& deviceRegx)
         std::vector<std::string> values;
         boost::split(values, regxStr, boost::is_any_of("-"));
         int value = std::stoi(values[0]);
+        globalValue = initialValue + value;
         int finalValue = std::stoi(values[1]);
         while (value <= finalValue)
         {
             std::string rangeValue = std::to_string(value);
             std::string original = deviceRegx;
-            deviceMap[value] =
-                original.replace(regex_position, sizeRegxStr, rangeValue);
+            auto expanded = original.replace(regex_position, sizeRegxStr,
+                                             rangeValue);
+
+            if (expanded.find_last_of("[") != std::string::npos)
+            {
+               globalValue += priv_expandRange(expanded, globalValue -1,
+                                               deviceMap) - 1;
+            }
+            else
+            {
+                deviceMap[globalValue] = expanded; // nothing more to expand
+                globalValue++;
+            }
             value++;
         }
+    }
+    return globalValue - initialValue;
+}
+
+
+DeviceIdMap expandDeviceRange(const std::string& deviceRegx)
+{
+    DeviceIdMap deviceMap;
+    if (deviceRegx.empty() == false)
+    {
+        int start=0;
+        priv_expandRange(deviceRegx, start, deviceMap);
     }
     return deviceMap;
 }
