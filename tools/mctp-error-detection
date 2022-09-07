@@ -63,19 +63,19 @@ output=`echo $output | cut -d ' ' -f 6`
 
 case $1 in
 
-  "GPU")
+   GPU | GPU_SXM | HGX_GPU_SXM)
     # Return Bits 0-7
     bitmask=0xff
     ;;
 
-  "NVSwitch")
+  NVSwitch*)
     # Return Bits 8-11
     # Shift right by 8
     output=$(( $output >> 8 ))
     bitmask=0xf
     ;;
 
-  "PCIeSwitch0")
+  PCIeSwitch*)
     # Return Bit 12
     # Shift right by 12
     output=$(( $output >> 12 ))

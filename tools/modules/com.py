@@ -4,7 +4,8 @@ Common constants and functions
 
 import re
 
-EVENT_LOG_URI="redfish/v1/Systems/system/LogServices/EventLog/Entries"
+#EVENT_LOG_URI="redfish/v1/Systems/system/LogServices/EventLog/Entries"
+EVENT_LOG_URI="redfish/v1/Systems/HGX_Baseboard_0/LogServices/EventLog/Entries"
 
 LOGGING_SERVICE = "xyz.openbmc_project.Logging"
 LOGGING_OBJECT  = "/xyz/openbmc_project/logging"
