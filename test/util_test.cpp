@@ -83,6 +83,67 @@ TEST(UtilExpandDeviceRange, DoubleRange)
     EXPECT_EQ(devMap.at(1),  "GPU_SXM_1_DRAM_1");
     EXPECT_EQ(devMap.at(32), "GPU_SXM_4_DRAM_8");
     EXPECT_EQ(devMap.at(64), "GPU_SXM_8_DRAM_8");
+
+
+    devMap = expandDeviceRange("GPU_SXM_[0-3]_DRAM_[0-3]");
+    EXPECT_EQ(devMap.size(), 16);
+
+    EXPECT_EQ(devMap.count(0), 1);
+    EXPECT_EQ(devMap.count(7), 1);
+    EXPECT_EQ(devMap.count(15), 1);
+
+    EXPECT_EQ(devMap.at(0), "GPU_SXM_0_DRAM_0");
+    EXPECT_EQ(devMap.at(7), "GPU_SXM_1_DRAM_3");
+    EXPECT_EQ(devMap.at(15), "GPU_SXM_3_DRAM_3");
+
+}
+
+TEST(UtilRemoveRangeFollowed, OneOccurrence)
+{
+   auto str = revertRangeRepeated("/xyz/first_[0-3]/second_()/third_()");
+   EXPECT_EQ(str, "/xyz/first_[0-3]/second_[0-3]/third_[0-3]");
+
+#if 0 // TODO there is another TODO on revertRangeFollowed() function
+   str = revertRangeFollowed("1_[0-3]/2_()/3_()/[0-1]/_()");
+   EXPECT_EQ(str, "1_[0-3]/2_[0-3]/3_[0-3]/[0-1]/_[0-1]");
+#endif
+}
+
+TEST(UtilExpandDeviceRange, DoubleRangeSingleExpansion)
+{
+    auto devMap = expandDeviceRange("/xyz/HGX_NVSwitch_[0-3]/NVSwitch_()");
+
+    EXPECT_EQ(devMap.size(), 4);
+    EXPECT_EQ(devMap.count(0), 1);
+    EXPECT_EQ(devMap.count(1), 1);
+    EXPECT_EQ(devMap.count(2), 1);
+    EXPECT_EQ(devMap.count(3), 1);
+    EXPECT_EQ(devMap.at(0), "/xyz/HGX_NVSwitch_0/NVSwitch_0");
+    EXPECT_EQ(devMap.at(1), "/xyz/HGX_NVSwitch_1/NVSwitch_1");
+    EXPECT_EQ(devMap.at(2), "/xyz/HGX_NVSwitch_2/NVSwitch_2");
+    EXPECT_EQ(devMap.at(3), "/xyz/HGX_NVSwitch_3/NVSwitch_3");
+
+    devMap = expandDeviceRange("/xyz/first_[0-3]/second_()/third_()");
+    EXPECT_EQ(devMap.size(), 4);
+    EXPECT_EQ(devMap.count(0), 1);
+    EXPECT_EQ(devMap.count(1), 1);
+    EXPECT_EQ(devMap.count(2), 1);
+    EXPECT_EQ(devMap.count(3), 1);
+    EXPECT_EQ(devMap.at(0), "/xyz/first_0/second_0/third_0");
+    EXPECT_EQ(devMap.at(1), "/xyz/first_1/second_1/third_1");
+    EXPECT_EQ(devMap.at(2), "/xyz/first_2/second_2/third_2");
+    EXPECT_EQ(devMap.at(3), "/xyz/first_3/second_3/third_3");
+
+    devMap = expandDeviceRange("/xyz/first_[0-3]/second_()/third_[0-3]");
+    EXPECT_EQ(devMap.size(), 16);
+    EXPECT_EQ(devMap.count(0), 1);
+    EXPECT_EQ(devMap.count(1), 1);
+    EXPECT_EQ(devMap.count(2), 1);
+    EXPECT_EQ(devMap.count(3), 1);
+    EXPECT_EQ(devMap.at(0), "/xyz/first_0/second_0/third_0");
+    EXPECT_EQ(devMap.at(1), "/xyz/first_0/second_0/third_1");
+    EXPECT_EQ(devMap.at(2), "/xyz/first_0/second_0/third_2");
+    EXPECT_EQ(devMap.at(15), "/xyz/first_3/second_3/third_3");
 }
 
 TEST(UtilExpandDeviceRange, RangeMiddle)
@@ -115,6 +176,12 @@ TEST(UtilExpandDeviceRange, Empty)
 {
     auto devMap = expandDeviceRange("");
     EXPECT_EQ(devMap.size(), 0);
+}
+
+TEST(UtilExpandDeviceRange, TwoDigits)
+{
+    auto devMap = expandDeviceRange("[1-20]");
+    EXPECT_EQ(devMap.size(), 20);
 }
 
 TEST(UtilreplaceRangeByMatchedValue, IsolatedRangeAtEnd)

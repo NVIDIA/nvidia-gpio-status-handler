@@ -22,6 +22,7 @@ namespace util
 {
 
 constexpr auto RANGE_REGX_STR = ".*(\\[[0-9]+\\-[0-9]+\\]).*";
+constexpr auto RangeRepeaterIndicatorLength = ::strlen(RangeRepeaterIndicator);
 
 /**
  *  this regex matches: "GPU2", "GPU5-ERoT", "NVSwitch2"
@@ -146,7 +147,14 @@ int priv_expandRange(const std::string& deviceRegx, int initialValue,
         std::vector<std::string> values;
         boost::split(values, regxStr, boost::is_any_of("-"));
         int value = std::stoi(values[0]);
-        globalValue = initialValue + value;
+        if (initialValue == -1)
+        {
+            globalValue = value;
+        }
+        else
+        {
+            globalValue = initialValue;
+        }
         int finalValue = std::stoi(values[1]);
         while (value <= finalValue)
         {
@@ -155,10 +163,30 @@ int priv_expandRange(const std::string& deviceRegx, int initialValue,
             auto expanded = original.replace(regex_position, sizeRegxStr,
                                              rangeValue);
 
-            if (expanded.find_last_of("[") != std::string::npos)
+            auto nextRepeatIndPos = expanded.find_first_of("[");
+            /** Curly brackets follow an occurrence from a previous range
+             *
+             *  "name[1-2]/double_()_more_[1-3]") should be expanded to:
+             *      'name1/double_1_more_1', 'name1/double_1_more_2',
+             *      'name1/double_1_more_3', 'name2/double_2_more_1',
+             *      'name2/double_2_more_2', 'name2/double_2_more_3'
+             */
+            auto repIndPos = expanded.find_first_of(RangeRepeaterIndicator);
+            while (repIndPos != std::string::npos)
             {
-               globalValue += priv_expandRange(expanded, globalValue -1,
-                                               deviceMap) - 1;
+                if (nextRepeatIndPos != std::string::npos && repIndPos >
+                        nextRepeatIndPos)
+                {
+                    break;
+                }
+                expanded.replace(repIndPos, 2, rangeValue);
+                repIndPos = expanded.find_first_of(RangeRepeaterIndicator);
+            }
+
+            if (nextRepeatIndPos != std::string::npos)
+            {
+               globalValue += priv_expandRange(expanded, globalValue,
+                                               deviceMap);
             }
             else
             {
@@ -177,7 +205,7 @@ DeviceIdMap expandDeviceRange(const std::string& deviceRegx)
     DeviceIdMap deviceMap;
     if (deviceRegx.empty() == false)
     {
-        int start=0;
+        int start=-1;
         priv_expandRange(deviceRegx, start, deviceMap);
     }
     return deviceMap;
@@ -342,6 +370,37 @@ RangeInformation getRangeInformation(const std::string& str)
         }
     }
     return std::make_tuple(sizeString, stringPosition, fullRegxString);
+}
+
+std::string revertRangeRepeated(const std::string& str, size_t pos)
+{
+    std::string strRegex{str};
+    auto position = pos;
+    if (pos == std::string::npos)
+    {
+       position = str.find_first_of(RangeRepeaterIndicator);
+    }
+
+    // TODO create a vector of Regular expressions for cases more than one
+    std::string matchedRegex = matchedRegx(strRegex, RANGE_REGX_STR);
+    while (position != std::string::npos)
+    {
+        // TODO use matchedRegex[indexed]
+        if (matchedRegex.empty() == false)
+        {
+            auto nextRegRegxPosition = strRegex.find_first_of("[", position);
+            while (position != std::string::npos && (
+                   nextRegRegxPosition == std::string::npos ||
+                       position < nextRegRegxPosition))
+            {
+                strRegex.replace(position, RangeRepeaterIndicatorLength,
+                                 matchedRegex);
+                position = strRegex.find_first_of(RangeRepeaterIndicator,
+                                                 position + matchedRegex.size());
+            }
+        }
+    }
+    return strRegex;
 }
 
 } // namespace util

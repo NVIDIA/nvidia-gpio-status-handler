@@ -15,9 +15,12 @@
 #include <regex>
 #include <string>
 #include <tuple>
+#include <vector>
 
 namespace util
 {
+
+constexpr auto RangeRepeaterIndicator = "()";
 
 using DeviceIdMap = std::map<int, std::string>;
 
@@ -171,5 +174,10 @@ void print(const std::vector<T>& vec, std::basic_ostream<CharT>& os,
     }
     os << indent << "]" << std::endl;
 }
+
+
+std::string revertRangeRepeated(const std::string& str,
+                                size_t pos = std::string::npos);
+
 
 } // namespace util

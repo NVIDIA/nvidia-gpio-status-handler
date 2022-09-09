@@ -146,9 +146,24 @@ class DataAccessor
                     break;
                 }
 
-                const std::regex r{val}; // 'val' could have regex format
-                auto values_match =
-                    std::regex_match(other._acc[key].get<std::string>(), r);
+                auto otherVal = other._acc[key].get<std::string>();
+                auto myVal = val.get<std::string>();
+                auto valRangRepeatPos =
+                        myVal.find_first_of(util::RangeRepeaterIndicator);
+                if (valRangRepeatPos != std::string::npos)
+                {
+                    myVal = util::revertRangeRepeated(myVal, valRangRepeatPos);
+                }
+                auto otherRangeRepeatPos =
+                        otherVal.find_first_of(util::RangeRepeaterIndicator);
+                if (otherRangeRepeatPos != std::string::npos)
+                {
+                    otherVal = util::revertRangeRepeated(otherVal,
+                                                         otherRangeRepeatPos);
+                }
+
+                const std::regex r{myVal};
+                auto values_match =  std::regex_match(otherVal, r);
                 if (values_match == false)
                 {
                     ret = false;

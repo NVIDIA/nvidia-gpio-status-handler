@@ -97,6 +97,10 @@ SEVERITYDBUSTOREDFISH = {
                             'warning'   : ["xyz.openbmc_project.Logging.Entry.Level.Warning"]
                         }
 
+## avoid huge range expansion such as:
+## /xyz/openbmc_project/inventory/system/fabrics/HGX_NVLinkFabric_0/Switches/NVSwitch_[0-3]/Ports/NVLink_[0-39] , in this case the second range will be limited by 2
+DOUBLE_EXPANSION_LIMIT = 2
+
 
 def get_logging_entry_level(level):
     """
@@ -111,9 +115,37 @@ def get_logging_entry_level(level):
     return full_level
 
 
-def expand_range(name):
+def replace_occurrence(string, occurrence):
+    """
+    replaces any sequence of "{}" before a range specification in string by occurrence
+    example:
+           print (replace_occurrence("test_{}_more_{}", "1"))
+           print (replace_occurrence("test_{}_more_{}_not[1-2]_{}", "1"))
+    prints:
+          test_1_more_1
+          test_1_more_1_not[1-2]_{}
+    """
+    my_string = string
+    occurrence_defined =  my_string.find('{}')
+    if occurrence_defined != -1:
+        open_bracket = my_string.find('[')
+        if open_bracket != -1:
+            occurrence_defined =  my_string.find('{}', 0, open_bracket)
+        while occurrence_defined != -1:
+            my_string = my_string[:occurrence_defined] + occurrence +  my_string[occurrence_defined + 2 : ]
+            open_bracket = my_string.find('[')
+            if open_bracket != -1:
+                occurrence_defined =  my_string.find('{}', 0, open_bracket)
+            else:
+                occurrence_defined =  my_string.find('{}')
+    return my_string
+
+
+def expand_range(name, limit=0):
     """
     expand_range(range_string) returns a list from strings with/without range specification at end
+
+    The 'limit' parameter can be used to avoid big expansions
 
     expand a name such as:
 
@@ -124,25 +156,28 @@ def expand_range(name):
               ['chars0', 'chars1', 'charsg', 'charsh', 'charsi', 'charsj', 'charsk']
 
     """
-    name_prefix = name
-    name_range = name.split('[')
     list_names = []
-    if len(name_range) > 1:
-        name_prefix = name_range[0]
-        for item_string in name_range[1].split(','):
-            item = item_string.strip()
-            if '-' not in item:
-                list_names.append(name_prefix + item)
-            else:
-                values_range = item.split('-')
-                value = values_range[0].strip()
-                final_value = values_range[1].strip()
-                while value <= final_value:
-                    list_names.append(name_prefix + value)
-                    value_int = ord(value) + 1
-                    value = chr(value_int)
+    open_bracket = name.find('[')
+    if open_bracket != -1:
+        close_bracket = name.find(']', open_bracket)
+        if close_bracket != -1:
+            range_str = name[open_bracket: close_bracket + 1]
+            values_range = range_str.split('-')
+            value = int(values_range[0][1:])
+            final_value = int(values_range[1][:-1])
+            while value <= final_value:
+                replaced = name.replace(range_str, str(value), 1)
+                replaced = replace_occurrence(replaced, str(value))
+                open_bracket = replaced.find('[', open_bracket)
+                if open_bracket != -1:
+                    list_names.extend(expand_range(replaced, DOUBLE_EXPANSION_LIMIT))
+                else:
+                    list_names.append(replaced)
+                value += 1
+                if value == limit:
+                   break
     else:
-        list_names.append(name_prefix)
+        list_names.append(name)
     return list_names
 
 
