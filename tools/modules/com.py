@@ -101,6 +101,8 @@ SEVERITYDBUSTOREDFISH = {
 ## /xyz/openbmc_project/inventory/system/fabrics/HGX_NVLinkFabric_0/Switches/NVSwitch_[0-3]/Ports/NVLink_[0-39] , in this case the second range will be limited by 2
 DOUBLE_EXPANSION_LIMIT = 2
 
+# Used to say that a previous range must be repeated and not double expanded agains the first one
+RANGE_REPEATER_INDICATOR = '()'
 
 def get_logging_entry_level(level):
     """
@@ -117,27 +119,27 @@ def get_logging_entry_level(level):
 
 def replace_occurrence(string, occurrence):
     """
-    replaces any sequence of "{}" before a range specification in string by occurrence
+    replaces any sequence of "()" before a range specification in string by occurrence
     example:
-           print (replace_occurrence("test_{}_more_{}", "1"))
-           print (replace_occurrence("test_{}_more_{}_not[1-2]_{}", "1"))
+           print (replace_occurrence("test_()_more_()", "1"))
+           print (replace_occurrence("test_()_more_()_not[1-2]_()", "1"))
     prints:
           test_1_more_1
-          test_1_more_1_not[1-2]_{}
+          test_1_more_1_not[1-2]_()
     """
     my_string = string
-    occurrence_defined =  my_string.find('{}')
+    occurrence_defined =  my_string.find(RANGE_REPEATER_INDICATOR)
     if occurrence_defined != -1:
         open_bracket = my_string.find('[')
         if open_bracket != -1:
-            occurrence_defined =  my_string.find('{}', 0, open_bracket)
+            occurrence_defined =  my_string.find(RANGE_REPEATER_INDICATOR, 0, open_bracket)
         while occurrence_defined != -1:
             my_string = my_string[:occurrence_defined] + occurrence +  my_string[occurrence_defined + 2 : ]
             open_bracket = my_string.find('[')
             if open_bracket != -1:
-                occurrence_defined =  my_string.find('{}', 0, open_bracket)
+                occurrence_defined =  my_string.find(RANGE_REPEATER_INDICATOR, 0, open_bracket)
             else:
-                occurrence_defined =  my_string.find('{}')
+                occurrence_defined =  my_string.find(RANGE_REPEATER_INDICATOR)
     return my_string
 
 
@@ -166,16 +168,16 @@ def expand_range(name, limit=0):
             value = int(values_range[0][1:])
             final_value = int(values_range[1][:-1])
             while value <= final_value:
-                replaced = name.replace(range_str, str(value), 1)
-                replaced = replace_occurrence(replaced, str(value))
-                open_bracket = replaced.find('[', open_bracket)
-                if open_bracket != -1:
-                    list_names.extend(expand_range(replaced, DOUBLE_EXPANSION_LIMIT))
-                else:
-                    list_names.append(replaced)
-                value += 1
-                if value == limit:
-                   break
+               replaced = name.replace(range_str, str(value), 1)
+               replaced = replace_occurrence(replaced, str(value))
+               open_bracket = replaced.find('[', open_bracket)
+               if open_bracket != -1:
+                  list_names.extend(expand_range(replaced, DOUBLE_EXPANSION_LIMIT))
+               else:
+                  list_names.append(replaced)
+               value += 1
+               if value == limit:
+                  break
     else:
         list_names.append(name)
     return list_names
