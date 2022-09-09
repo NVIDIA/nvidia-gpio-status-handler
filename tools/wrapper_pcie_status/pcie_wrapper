@@ -1,0 +1,282 @@
+#!/usr/bin/env bash
+
+# Copyright (c) 2022, NVIDIA CORPORATION.  All rights reserved.
+#
+#  NVIDIA CORPORATION and its licensors retain all intellectual property
+#  and proprietary rights in and to this software, related documentation
+#  and any modifications thereto.  Any use, reproduction, disclosure or
+#  distribution of this software and related documentation without an express
+#  license agreement from NVIDIA CORPORATION is strictly prohibited.
+
+# Wrapper to map command + device calls onto fpga querry and return
+# corresponding bit value
+
+set -o pipefail
+
+APP_NAME="pcie_wrapper"
+APP_VER="0.1"
+
+# Platform dependent profile.
+# Use Case 1:
+# In OpenBMC recipe, replace PROFILE_FILE with 
+# selftest_pcie_profile.csv proper path.
+#
+# Use Case 2:
+# From cmdline, define PROFILE_FILE=<path of selftest_pcie_profile.csv> 
+# before calling this script to run with custom profile.
+[ -z "$PROFILE_FILE" ] && PROFILE_FILE="selftest_pcie_profile.csv"
+profile_path="${PROFILE_FILE}"
+
+# Maps current namespace deviceId to general device name.
+# Eg. GPU_SXM_5 -> GPU0
+# For details refer to target help
+[ -z "$DEVICE_NAME_MAPPER" ] && DEVICE_NAME_MAPPER="device-id-norm.sh" 
+
+show_help()
+{
+    echo "A wrapper for FPGA bits access for easier usage, ver=${APP_VER}."
+    echo "Internally converts provided <cmd> and <dev_name> to pcie query"
+    echo "command, reads the byte register and outputs specific bit value, eg."
+    echo "./pcie_wrapper -dry-run pcie_link_speed GPU_SXM_4"
+    echo
+    echo "<usage>"
+    echo "  ${APP_NAME} [-verbose] [-dry-run|-test-run] <cmd> <dev_name>"
+    echo
+    echo "<options>"
+    echo "  -verbose          - allows to output dbg infos."
+    echo "  -dry-run          - does find reg addr and bit but simulates external"
+    echo "                      dependency tool value read as 0xAA"
+    echo "  -test-run         - used to test adress and bit matching,"
+    echo "                      outputs: \"slaveaddr regaddr bit\""
+    echo
+    echo "  cmd               - cmd to find in platform profile file"
+    echo "  dev_name          - device name to look for in platform profile file"
+    echo
+}
+
+dbg()
+{
+    if [ $TEST_RUN -ne 1 ] && [ $VERBOSE -eq 1 ]; then
+        echo "[dbg] $1"
+    fi
+}
+
+## MAIN
+DRY_RUN=0
+TEST_RUN=0
+VERBOSE=0
+
+## -verbose
+if [ "$1"  = "-verbose" ]; then
+   VERBOSE=1
+   dbg "verbose mode"
+   shift
+fi
+
+## -dry-run just prints the i2ctransfer command line
+if [ "$1"  = "-dry-run" ]; then
+   DRY_RUN=1
+   shift
+fi
+
+## -test-run prints single line in format ()
+if [ "$1"  = "-test-run" ]; then
+    TEST_RUN=1
+    shift
+fi
+
+if [ $TEST_RUN -eq 1 ]; then
+
+    if [ $# -ne 3 ]; then
+        echo "Wrong args for tests, see example below."
+        echo "pcie_wrapper -test-run pcie_link_speed GPU_SXM_3 \"(iau) 0 4 0 520093729 131412 6\""
+        exit 1
+    fi
+
+    COMMAND="$1";shift
+    DEVNAME="$1";shift
+    ARTIFICIAL_OUTPUT="$1"; shift
+    # hacky workaround to bash stripping quotes, expects underscored argument
+    # but preprocess it back to spaces
+    ARTIFICIAL_OUTPUT=${ARTIFICIAL_OUTPUT//'_'/' '}
+
+else
+
+    if [ $# -ne 2 ]; then
+        show_help
+        exit 1
+    fi
+
+    COMMAND="$1";shift
+    DEVNAME="$1";shift
+
+fi
+
+# Validate / map devname
+mappedDevname=$( $DEVICE_NAME_MAPPER --ext ${DEVNAME} )
+if [ $? -ne 0 ]; then
+    echo "Error: cannot map deviceID ($DEVNAME)"
+    exit 1
+fi
+
+read deviceFullId deviceStem deviceIndex <<EOF
+${mappedDevname}
+EOF
+
+devnameStrippedId=$deviceStem
+
+if [ $TEST_RUN -ne 1 ] && [ $VERBOSE -eq 1 ]; then
+    dbg "called with $COMMAND $DEVNAME profile ${profile_path}"
+    dbg "map result $deviceFullId  and   $deviceStem  and  $deviceIndex"
+    dbg "mapped $DEVNAME to $devnameStrippedId searching $devnameStrippedId"
+fi
+
+profile_dev=""
+profile_id_pos=""
+profile_cmd=""
+profile_queryType=""
+profile_opcode=""
+profile_arg1=""
+profile_arg2=""
+profile_dataOutBits=""
+profile_extDataOutBits=""
+profile_additionalDataInCnt=""
+profile_additionalDataBytes=""
+
+while IFS=',' read -r dev id_pos cmd queryType opcode arg1 arg2 dataOutBits extDataOutBits additionalDataInCnt additionalDataBytes
+do
+    #dbg "$dev $id_pos $cmd $queryType $opcode $arg1 $arg2 $dataOutBits $extDataOutBits $additionalDataInCnt $additionalDataBytes"
+
+    if [ "$cmd,," = "$COMMAND,," ] && [ "$dev,," = "$devnameStrippedId,," ]; then
+
+        if [ $TEST_RUN -ne 1 ] && [ $VERBOSE -eq 1 ]; then
+            dbg "MATCH $dev $id_pos $cmd $queryType $opcode $arg1 $arg2 $dataOutBits $extDataOutBits $additionalDataInCnt $additionalDataBytes"
+        fi
+
+        profile_dev=$dev
+        profile_id_pos=$id_pos
+        profile_cmd=$cmd
+        profile_queryType=$queryType
+        profile_opcode=$opcode
+        profile_arg1=$arg1
+        profile_arg2=$arg2
+        profile_dataOutBits=$dataOutBits
+        profile_extDataOutBits=$extDataOutBits
+        profile_additionalDataInCnt=$additionalDataInCnt
+        profile_additionalDataBytes=$additionalDataBytes
+        # this is last field in csv and there is unprintable character breaking
+        # busctl call, removing linebreak fixes the problem
+        profile_additionalDataBytes=${profile_additionalDataBytes//$'\r'/''}
+        profile_additionalDataBytes=${profile_additionalDataBytes//$'\n'/''}
+        break
+    fi
+done < ${profile_path}
+
+if [ -z "$profile_dev" ]; then
+    echo "Error: command $COMMAND or device $devnameStrippedId not found \
+in $profile_path"
+    exit 1
+fi
+
+# for device id position configured as:
+#   * 'cmd' put id in id place as assual
+#   * 'arg2' put id in place of arg2; id received from mapping could be empty in
+#      some cases - update arg2 only if valid id received from mapping tool
+id=0
+if [ "${id_pos,,}" = "cmd" ]; then
+    id=$deviceIndex
+    dbg "id placed in id field = ($id)"
+else # [ "${id_pos,,}" = "arg2" ]
+    if [ -n "$deviceIndex" ]; then
+        profile_arg2=$deviceIndex
+        dbg "id placed in arg2 field ($id)"
+    fi
+fi
+
+busctlCmd="busctl call xyz.openbmc_project.GpuMgr /xyz/openbmc_project/GpuMgr \
+xyz.openbmc_project.GpuMgr.Server $profile_queryType iyyyau $id $profile_opcode \
+$profile_arg1 $profile_arg2 $profile_additionalDataInCnt $profile_additionalDataBytes"
+
+dbg "$busctlCmd"
+
+if [ $DRY_RUN -eq 1 ]; then
+    output="(iau) 0 4 0 520093729 131412 6" # dummy out from manual run busctl
+                                            # from gpumgr and sandbox gpuoob
+    # output="(iau) 1027 0" # example error output
+    dbg "dry run, substituting read value with $output"
+elif [ $TEST_RUN -eq 1 ]; then
+    output=$ARTIFICIAL_OUTPUT
+else
+    output=$($busctlCmd); rc=$?
+
+    if [ $rc -ne 0 ]; then
+        >&2 echo "Error: pcie query cmd failed ($cmd) rc=$rc!"
+        exit $rc
+    fi
+fi
+
+## process output
+dbg "$output"
+
+#skip signature, static
+# echo $(echo $output | cut -f1 -d' ')  
+
+#status of passthrough command, 0 on success otherwise error code
+outStatus=$(echo $output | cut -f2 -d' ')
+if [ "$outStatus" != "0" ]; then
+    echo "Error: command response error ($output)"
+    exit 1
+fi
+
+# output bytes count not supported yet, static 4 is fine for now (the 4 
+# means to parse 4 bytes past this)
+# outCnt=$(echo $output | cut -f3 -d' ') 
+
+# ????
+outStatusRegister=$(echo $output | cut -f4 -d' ')
+
+# returns bitmap of opcode, arg1, arg2, and 0x1f on success
+outCommandRegister=$(echo $output | cut -f5 -d' ')
+# printf '0x%x 0x%x 0x%x 0x%x\n' $((($outCommandRegister >> 0) & 0xff)) \
+# $((($outCommandRegister >> 8) & 0xff)) $((($outCommandRegister >> 16) & 0xff)) \
+# $((($outCommandRegister >> 24) & 0xff))
+
+# output data - bitmap of flags/counters depending on opcode, arg1 and arg2
+outData=$(echo $output | cut -f6 -d' ')
+
+# extended data bitmap depending on opcode, arg1 and arg2
+outExtendedData=$(echo $output | cut -f7 -d' ')
+
+# bits could be encoded in data register or extended data register
+if [ -n "$profile_dataOutBits" ]; then
+    bits=$profile_dataOutBits
+    reg=$outData
+    dbg "data stored in data register"
+elif [ -n "$profile_extDataOutBits" ]; then
+    bits=$profile_extDataOutBits
+    reg=$outExtendedData
+    dbg "data stored in extended data register"
+else
+    echo "Error: profile file wrong config"
+    exit 1
+fi
+
+# remove sufix and prefix, decode 2:0 bit range to seperate bits
+left=${bits%:*}
+right=${bits#*:}
+dbg "from bit $left to bit $right"
+# calc start bit, bit width and bit mask
+startBit=$right
+bitWidth=$(($left - $right + 1))
+bitMask=$(( (2 ** $bitWidth) - 1 ))
+dbg "start bit $startBit bit width $bitWidth bit mask $bitMask"
+# extract value from register
+value=$(( ($reg >> $startBit) & $bitMask ))
+# printf 'value %u 0x%x \n' $value $value
+dbg "$outStatusRegister $outCommandRegister $outData $outExtendedData"
+
+# return value to shell and last exitcode
+echo $value 
+exit $rc
+
+

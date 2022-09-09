@@ -1,0 +1,265 @@
+#!/usr/bin/env bash
+
+# Copyright (c) 2022, NVIDIA CORPORATION.  All rights reserved.
+#
+#  NVIDIA CORPORATION and its licensors retain all intellectual property
+#  and proprietary rights in and to this software, related documentation
+#  and any modifications thereto.  Any use, reproduction, disclosure or
+#  distribution of this software and related documentation without an express
+#  license agreement from NVIDIA CORPORATION is strictly prohibited.
+
+# Wrapper to map command + device calls onto fpga querry and return
+# corresponding bit value
+
+set -o pipefail
+
+APP_NAME="fpga_regtbl_wrapper"
+APP_VER="0.1"
+
+# Platform dependent profile.
+# Use Case 1:
+# In OpenBMC recipe, replace PROFILE_FILE with 
+# selftest_fpga_regtbl_profile.csv proper path.
+#
+# Use Case 2:
+# From cmdline, define PROFILE_FILE=<path of device_mctp_eid.csv> 
+# before calling this script to run with custom profile.
+[ -z "$PROFILE_FILE" ] && PROFILE_FILE="selftest_fpga_regtbl_profile.csv"
+
+# Maps current namespace deviceId to general device name.
+# Eg. GPU_SXM_5 -> GPU0
+# For details refer to target help
+[ -z "$DEVICE_NAME_MAPPER" ] && DEVICE_NAME_MAPPER="device-id-norm.sh" 
+
+profile_path="${PROFILE_FILE}"
+# hardcoded i2c-3 because fpga defs spreadheet pointed all commands to slave
+# address 0x09 which was only present on i2c-3
+i2cbus="3"
+slaveaddr="unknown"
+regaddr="unknown"
+bitidx="unknown"
+
+show_help()
+{
+    echo "A wrapper for FPGA bits access for easier usage, ver=${APP_VER}."
+    echo "Internally converts provided <cmd> and <dev_name> to fpga query"
+    echo "command, reads the byte register and outputs specific bit value, eg."
+    echo "./fpga_regtbl_wrapper -dry-run "ALERT_INT_N" "HSC1""
+    echo "1"
+    echo
+    echo "<usage>"
+    echo "  ${APP_NAME} [-verbose] [-dry-run|-test-run] <cmd> <dev_name>"
+    echo
+    echo "<options>"
+    echo "  -verbose          - allows to output dbg infos."
+    echo "  -dry-run          - does find reg addr and bit but simulates external"
+    echo "                      dependency tool value read as 0xAA"
+    echo "  -test-run         - used to test adress and bit matching,"
+    echo "                      outputs: \"slaveaddr regaddr bit\""
+    echo
+    echo "  cmd               - cmd to find in platform profile file"
+    echo "  dev_name          - device name to look for in platform profile file"
+    echo
+}
+
+dbg()
+{
+    if [ $TEST_RUN -ne 1 ] && [ $VERBOSE -eq 1 ]; then
+        echo "[dbg] $1"
+    fi
+}
+
+# initialLineMatch()
+# {
+#     local toSeekCmd=$1; shift
+#     local toSeekDev=$1; shift
+#     local file=$profile_path
+#     local grepcmd="grep -i -E ${toSeekCmd}.*${toSeekDev} ${file}"
+#     local matchedLines=`${grepcmd}`
+#     rc=$?
+#     if [ $rc -ne 0 ] || [ -z "${matchedLines}" ]; then
+#         echo "no lines matched!"
+#         return 1
+#     fi
+
+#     echo "${matchedLines}"
+#     return 0
+# }
+
+# parseLines()
+# {
+#     local line=$1
+#     if [ -z "$line" ]; then
+#         return 1
+#     fi
+
+#     while IFS=',' read -r addr reg bits  #b7 b6 b5 b4 b3 b2 b1 b0
+#     do
+#         if [ $TEST_RUN -ne 1 ] && [ $VERBOSE -eq 1 ]; then
+#             echo bits $bits
+#         fi
+#         bits=${bits//$'\r'/''}
+#         bits=${bits//$'\n'/''}
+#         IFS=',' read -ra VAR <<< "$bits"
+#         for (( i=0; i<${#VAR[@]}; i=i+2 ))
+#         do
+#             local candidateDev="${VAR[$(($i+1))]^^} " #note traling space
+#             local devname="${DEVNAME^^}"
+#             local candidateCmd="${VAR[$i]^^}"
+#             local cmd="${COMMAND^^}"
+
+#             if [[ "$candidateDev" =~ "$devname ".*$ ]] && [[ "$candidateCmd" =~ "$cmd" ]]; then
+#                 if [ $TEST_RUN -ne 1 ] && [ $VERBOSE -eq 1 ]; then
+#                     echo "         i = $i matched $candidateDev to $devname and $candidateCmd to $cmd"
+#                 fi
+#                 bitidx=$((7-$i/2))
+#                 slaveaddr=$addr;   # echo "$slaveaddr"
+#                 regaddr=$reg;      # echo $regaddr
+#             fi
+#         done
+#     done <<< "$line"
+
+#     return 0
+# }
+
+initialLineMatch()
+{
+    local toSeekCmd=$1; shift
+    local file=$profile_path
+    local grepcmd="grep -i -E ${toSeekCmd} ${file}"
+    local matchedLines=`${grepcmd}`
+    rc=$?
+    if [ $rc -ne 0 ] || [ -z "${matchedLines}" ]; then
+        echo "no lines matched!"
+        return 1
+    fi
+
+    echo "${matchedLines}"
+    return 0
+}
+
+parseLines()
+{
+    local line=$1
+    if [ -z "$line" ]; then
+        return 1
+    fi
+
+    while IFS=',' read -r addr reg bits  #b7 b6 b5 b4 b3 b2 b1 b0
+    do
+        dbg "bits $bits"
+
+        bits=${bits//$'\r'/''}
+        bits=${bits//$'\n'/''}
+        IFS=',' read -ra VAR <<< "$bits"
+        for (( i=0; i<${#VAR[@]}; i=i+2 ))
+        do
+            local candidateCmd="${VAR[$i]^^}"
+            local cmd="${COMMAND^^}"
+
+            if [[ "$candidateCmd" =~ "$cmd" ]]; then
+                dbg "i = $i matched $candidateCmd to $cmd"
+                bitidx=$((7-$i/2))
+                slaveaddr=$addr;   # echo "$slaveaddr"
+                regaddr=$reg;      # echo $regaddr
+                return 0
+            fi
+        done
+    done <<< "$line"
+
+    return 0
+}
+
+## MAIN
+DRY_RUN=0
+TEST_RUN=0
+VERBOSE=0
+
+## -verbose
+if [ "$1"  = "-verbose" ]; then
+   VERBOSE=1
+   shift
+fi
+
+## -dry-run just prints the i2ctransfer command line
+if [ "$1"  = "-dry-run" ]; then
+   DRY_RUN=1
+   shift
+fi
+
+## -test-run prints single line in format ()
+if [ "$1"  = "-test-run" ]; then
+   TEST_RUN=1
+   shift
+fi
+
+if [ $# -ne 2 ]; then
+    show_help
+    exit 1
+fi
+
+COMMAND="$1";shift
+DEVNAME="$1"
+
+# # Validate / map devname
+# mappedDevname=$( $DEVICE_NAME_MAPPER --ext ${DEVNAME} )
+# if [ $? -ne 0 ]; then
+#     echo "Error: cannot map deviceID ($DEVNAME)"
+#     exit 1
+# fi
+
+# read deviceFullId deviceStem deviceIndex <<EOF
+# ${mappedDevname}
+# EOF
+
+if [ $TEST_RUN -eq 1 ]; then
+    lines=`initialLineMatch ${COMMAND} ${DEVNAME}`;rc=$?
+    parseLines "${lines}";rc=$? 
+    echo "$slaveaddr $regaddr $bitidx"
+    exit 0
+fi
+
+dbg "called with command $COMMAND profile ${profile_path}"
+
+# get addr, register and bit out of a table based on provided symbol and device
+rc=0
+# second arg unused until decided which way to go with this wrapper script
+# to match unique command symbols or try matching part of symbol and device id
+lines=`initialLineMatch ${COMMAND} ${DEVNAME}`; rc=$?
+if [ $rc -ne 0 ]; then
+    >&2 echo "Error: initial match failed ${COMMAND} ${DEVNAME}, err $lines, rc=$rc!"
+    exit $rc
+fi
+
+parseLines "${lines}"; rc=$? # Find exact register address and bit
+if [ $rc -ne 0 ]; then
+    >&2 echo "Error: cannot parse line, rc=$rc!"
+    exit $rc
+fi
+
+dbg "slave $slaveaddr reg $regaddr bit $bitidx"
+
+cmd="i2ctransfer -y $i2cbus w1@$slaveaddr $regaddr r1"
+if [ $VERBOSE -eq 1 ]; then
+    echo "$cmd"
+fi
+
+if [ $DRY_RUN -eq 1 ]; then
+    val_read=0xAA   # substitute i2c transfer read value with artificial 0b10101010
+    if [ $VERBOSE -eq 1 ]; then
+        echo "dry run, substituting i2ctransfer read value with $val_read"
+    fi
+else
+    val_read=`$cmd`; rc=$?
+    if [ $rc -ne 0 ]; then
+        >&2 echo "Error: bit query cmd failed ($cmd) rc=$rc!"
+        exit $rc
+    fi
+fi
+
+bit_value=$((($val_read >> $bitidx) & 0x01))
+if [ $VERBOSE -eq 1 ]; then
+    echo "bit value = $bit_value"
+fi
+echo "$bit_value"
+exit $rc
