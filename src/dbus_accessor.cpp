@@ -123,7 +123,7 @@ RetCoreApi deviceGetCoreAPI(const int devId, const std::string& property)
     {
         std::string tmp =
             errorMsg("deviceGetCoreAPI(): DBus error for", std::string{""},
-                     std::string{""}, interface, e.what());
+                     std::string{""}, property, e.what());
         logs_err("%s\n", tmp.c_str());
 
         return std::make_tuple(-1, valueStr, value);
@@ -137,8 +137,8 @@ RetCoreApi deviceGetCoreAPI(const int devId, const std::string& property)
     {
         std::string tmp =
             errorMsg("deviceGetCoreAPI(): bad return for", std::string{""},
-                     std::string{""}, object, interface);
-        logs_err("%s\n", tmp.c_str());
+                     std::string{""}, property);
+        logs_err("%s rc=%ld\n", tmp.c_str(), rc);
     }
     else
     {
