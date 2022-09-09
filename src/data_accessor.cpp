@@ -328,16 +328,29 @@ bool DataAccessor::readDeviceCoreApi(const std::string& device)
 }
 
 std::string DataAccessor::findDeviceName(const DataAccessor& other,
-                                         const std::string& device) const
+                                         const std::string& deviceType) const
 {
-    std::string deviceName = util::getDeviceName(device);
-    if (deviceName.empty() == true && other.count(objectKey) != 0)
+    auto objectName = other.getDbusObjectPath();
+    std::string deviceName{""};
+    if (objectName.empty() == false)
     {
-        deviceName = util::getDeviceName(other[objectKey].get<std::string>());
+        deviceName = util::determineDeviceName(objectName, deviceType);
+        if (deviceName.empty() == true)
+        {
+            deviceName = util::getDeviceName(objectName);
+        }
     }
-    if (deviceName.empty() == true && _acc.count(objectKey) != 0)
+    if (deviceName.empty() == true)
     {
-        deviceName = util::getDeviceName(_acc[objectKey].get<std::string>());
+        deviceName = util::getDeviceName(deviceType);
+    }
+    if (deviceName.empty() == true)
+    {
+        objectName = this->getDbusObjectPath();
+        if (objectName.empty() == false)
+        {
+            deviceName = util::getDeviceName(objectName);
+        }
     }
     return deviceName;
 }

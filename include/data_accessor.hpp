@@ -689,7 +689,7 @@ class DataAccessor
      * @return a valid device name such as "GPU1" or empty string
      */
     std::string findDeviceName(const DataAccessor& other,
-                               const std::string& device) const;
+                               const std::string& deviceType) const;
 
     /**
      * @brief creates fills the _latestAssertedDevices from accData
