@@ -220,14 +220,17 @@ class EventDetection : public object::Object
 
   private:
     /**
-     * @brief gets the event list of Interfaces+objectPaths to register in DBUS
-     * @param event
-     * @param map
-     * @return
+     * @brief  Subscribe Accessor Dbus objects to receive PropertyChanged signal
+     * @param  acc the DataAccessor
+     * @param  map a global map for all events to make sure unique subscribing
+     *           for a single object + interface
+     * @param  conn the current Dbus IO connection
+     * @param  The handler list of subscribing to be populated
      */
-    data_accessor::InterfaceObjectsMap
-    getAccDbusTriggers(const data_accessor::DataAccessor& acc,
-                        RegisteredObjectInterfaceMap& map);
+    void subscribeAcc(const data_accessor::DataAccessor& acc,
+                      RegisteredObjectInterfaceMap& map,
+                      std::shared_ptr<sdbusplus::asio::connection>& conn,
+                      DbusEventHandlerList& handlerList);
 
   private:
     /**

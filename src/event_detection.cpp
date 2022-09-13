@@ -126,69 +126,57 @@ void EventDetection::dbusEventHandlerCallback(sdbusplus::message::message& msg)
 }
 
 DbusEventHandlerList EventDetection::startEventDetection(
-    EventDetection* eventDetection,
-    std::shared_ptr<sdbusplus::asio::connection> conn)
+        EventDetection* eventDetection,
+        std::shared_ptr<sdbusplus::asio::connection> conn)
 {
     // it will be used in EventDetection::dbusEventHandlerCallback()
     eventDetectionPtr = eventDetection;
-    auto genericHandler = std::bind(&EventDetection::dbusEventHandlerCallback,
-                                    std::placeholders::_1);
+
     DbusEventHandlerList handlerList;
     // helper map to make sure a object-path+interface is registered just once
     RegisteredObjectInterfaceMap uniqueRegisterMap;
-    // this maps interface and list of objects that will be registered to
-    // receive PropertyChanged signal from Dbus
-    data_accessor::InterfaceObjectsMap toRegister;
-    // this first loop just populate the toRegister map
+
     for (const auto& dev : *this->_eventMap)
     {
         for (auto& event : dev.second)
         {
-            // getAccDbusTriggers() checks if an objec-path + interface is
-            // already in the uniqueRegisterMap map, if so returns an empty map
-            auto dbData = getAccDbusTriggers(event.trigger, uniqueRegisterMap);
-            if (dbData.empty() == false)
-            {
-                toRegister[dbData.begin()->first] = dbData.begin()->second;
-            }
-            dbData = getAccDbusTriggers(event.accessor, uniqueRegisterMap);
-            if (dbData.empty() == false)
-            {
-                toRegister[dbData.begin()->first] = dbData.begin()->second;
-            }
-        }
-    }
-    // now register for receiving Dbus PropertyChanged signal
-    for (const auto& intfObjects : toRegister)
-    {
-        const auto& interface = intfObjects.first;
-        for (const auto& object : intfObjects.second)
-        {
-            handlerList.push_back(dbus::registerServicePropertyChanged(
-                conn, object, interface, genericHandler));
+            subscribeAcc(event.trigger, uniqueRegisterMap, conn, handlerList);
+            subscribeAcc(event.accessor, uniqueRegisterMap, conn, handlerList);
         }
     }
     log_dbg("dbusEventHandlerMatcher created.\n");
     return handlerList;
 }
 
-data_accessor::InterfaceObjectsMap
-    EventDetection::getAccDbusTriggers(const data_accessor::DataAccessor& acc,
-                                       RegisteredObjectInterfaceMap& map)
+void
+EventDetection::subscribeAcc(const data_accessor::DataAccessor& acc,
+                             RegisteredObjectInterfaceMap& map,
+                             std::shared_ptr<sdbusplus::asio::connection>& conn,
+                             DbusEventHandlerList& handlerList)
 {
-    data_accessor::InterfaceObjectsMap ret;
+    auto genericHandler = std::bind(&EventDetection::dbusEventHandlerCallback,
+                                    std::placeholders::_1);
     auto dbusInfo = acc.getDbusInterfaceObjectsMap();
     if (dbusInfo.empty() == false)
     {
         const auto& interface = dbusInfo.begin()->first;
-        auto key = dbusInfo.begin()->second.at(0) + interface;
+        // key is checked just for the first object from the range (if exists)
+        auto key = dbusInfo.begin()->second.at(0) + ":" + interface;
         if (map.count(key) == 0)
         {
-            map[key] = 1; // just indicate it is alreqady mapped
-            ret[interface] = dbusInfo.begin()->second;
+            log_dbg("subscribing object:interface : %s\n", key.c_str());
+            for (const auto& object : dbusInfo.begin()->second)
+            {
+                handlerList.push_back(dbus::registerServicePropertyChanged(
+                    conn, object, interface, genericHandler));
+            }
+            map[key] = 1; // global map, indicate it is already subscribed
+        }
+        else
+        {
+             log_dbg("object:interface already subscribed: %s\n", key.c_str());
         }
     }
-    return ret;
 }
 
 #if 0
