@@ -112,3 +112,33 @@ TEST(EventTelemtries, MakeCall)
     EXPECT_EQ(jCollected["temperature"], "123");
     EXPECT_EQ(jCollected["selftest"].size(), 0);
 }
+
+TEST(EventSeverityLevel, Critical)
+{
+    auto level =  message_composer::MessageComposer::makeSeverity("Critical");
+    EXPECT_EQ(level, "xyz.openbmc_project.Logging.Entry.Level.Critical");
+}
+
+TEST(EventSeverityLevel, OK)
+{
+    auto level =  message_composer::MessageComposer::makeSeverity("OK");
+    EXPECT_EQ(level, "xyz.openbmc_project.Logging.Entry.Level.Informational");
+}
+
+TEST(EventSeverityLevel, OkLowerK)
+{
+    auto level =  message_composer::MessageComposer::makeSeverity("Ok");
+    EXPECT_EQ(level, "xyz.openbmc_project.Logging.Entry.Level.Informational");
+}
+
+TEST(EventSeverityLevel, Warning)
+{
+    auto level =  message_composer::MessageComposer::makeSeverity("Warning");
+    EXPECT_EQ(level, "xyz.openbmc_project.Logging.Entry.Level.Warning");
+}
+
+TEST(EventSeverityLevel, WarningLowerW)
+{
+    auto level =  message_composer::MessageComposer::makeSeverity("warning");
+    EXPECT_EQ(level, "xyz.openbmc_project.Logging.Entry.Level.Warning");
+}

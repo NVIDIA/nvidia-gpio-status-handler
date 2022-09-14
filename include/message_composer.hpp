@@ -110,6 +110,14 @@ class MessageComposer : public event_handler::EventHandler
         return output.dump();
     }
 
+    /**
+     *  Creates the full Phosphor Logging Severity Level string
+     *  If necessary converts a Json severity to  Phosphor Logging severity
+     *
+     * @return the whole Phosphor Logging string
+     */
+    static std::string makeSeverity(const std::string& severityJson);
+
   private:
     /**
      * @brief Establishes D-Bus connection and creates log with eventNode

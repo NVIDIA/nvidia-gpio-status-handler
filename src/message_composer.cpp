@@ -19,6 +19,7 @@
 #include <numeric>
 #include <utility>
 #include <vector>
+#include <map>
 
 namespace message_composer
 {
@@ -26,6 +27,19 @@ namespace message_composer
 using phosphor::logging::entry;
 using phosphor::logging::level;
 using phosphor::logging::log;
+
+/**
+ * This maps Json severity to Phosphor Logging severity
+ */
+std::map<std::string, std::string> severityMapper{
+    {"OK", "Informational"},
+    {"Ok", "Informational"},
+    {"ok", "Informational"},
+    {"Warning", "Warning"},
+    {"warning", "Warning"},
+    {"Critical", "Critical"},
+    {"critical", "Critical"}
+};
 
 MessageComposer::~MessageComposer()
 {}
@@ -37,9 +51,7 @@ bool MessageComposer::createLog(event_info::EventNode& event)
         "xyz.openbmc_project.Logging", "/xyz/openbmc_project/logging",
         "xyz.openbmc_project.Logging.Create", "Create");
     method.append(event.event);
-    auto severity = std::string("xyz.openbmc_project.Logging.Entry.Level.") +
-                    event.messageRegistry.message.severity;
-    method.append(severity);
+    method.append(makeSeverity(event.messageRegistry.message.severity));
 
     auto messageArgs = event.messageRegistry.getStringMessageArgs(event);
     auto telemetries = collectDiagData(event);
@@ -84,6 +96,21 @@ bool MessageComposer::createLog(event_info::EventNode& event)
                         entry("SDBUSERR=%s", e.what()));
         return false;
     }
+}
+
+std::string MessageComposer::makeSeverity(const std::string& severityJson)
+{
+    // so far only "OK" generates a problem, replace it by "Informational"
+    std::string severity{"xyz.openbmc_project.Logging.Entry.Level."};
+    if (severityMapper.count(severityJson) != 0)
+    {
+        severity += severityMapper.at(severityJson);
+    }
+    else
+    {
+        severity += severityJson;
+    }
+    return severity;
 }
 
 } // namespace message_composer
