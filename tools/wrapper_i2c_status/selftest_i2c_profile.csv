@@ -19,6 +19,6 @@ PCIeRetimer4,1,0x47,get
 PCIeRetimer5,1,0x48,get
 PCIeRetimer6,1,0x49,get
 PCIeRetimer7,1,0x0B,get
-PCIeSwitch,1,0x08,get
+PCIeSwitch0,1,0x08,get
 FPGA,1,0x60,get
 HMC,1,0x54,detect
