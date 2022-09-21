@@ -1,0 +1,10 @@
+tp accessor type,total cnt,fail cnt,read fail cnt,pass cnt
+DEVICE,63,63,0,0
+CMDLINE,493,5,375,113
+CMDLINE_fpga_regtbl_wrapper,198,0,198,0
+DBUS,70,4,8,58
+DeviceCoreAPI,116,0,116,0
+CMDLINE_i2c_wrapper,80,0,62,18
+CMDLINE_mctp-vdm-util-wrapper,129,5,29,95
+CMDLINE_pcie_wrapper,64,0,64,0
+CMDLINE_nvlink-wp-status-wrapper,22,0,22,0
