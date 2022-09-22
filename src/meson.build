@@ -9,7 +9,8 @@ amllib_sources = ['config_parser.cpp',
                   'event_info.cpp',
                   'message_composer.cpp',
                   'message_dispatcher.cpp',
-                  'oobaml_api.cpp']
+                  'oobaml_api.cpp',
+                  'log.cpp']
 
 amllib = shared_library('oobaml',
                         amllib_sources,

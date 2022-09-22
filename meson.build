@@ -33,6 +33,10 @@ if get_option('sandbox_mode').enabled()
     add_project_arguments('-DSANDBOX_MODE', language : lang)
 endif
 
+if get_option('log_elapsed_time').enabled()
+    add_project_arguments('-DLOG_ELAPSED_TIME', language : lang)
+endif
+
 # Get the options and enable the respective features
 ## create a MAP of  "options : feature_flag"
 
@@ -162,7 +166,8 @@ amllib_sources = [
                 'src/event_info.cpp',
                 'src/message_composer.cpp',
                 'src/message_dispatcher.cpp',
-                'src/oobaml_api.cpp']
+                'src/oobaml_api.cpp',
+                'src/log.cpp']
 
 selftestlib_sources = ['src/selftest.cpp']
 

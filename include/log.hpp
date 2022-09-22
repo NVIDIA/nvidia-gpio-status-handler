@@ -39,6 +39,114 @@
 namespace logging
 {
 
+#if defined(LOG_ELAPSED_TIME)
+/**
+ * @brief This class prints information about execution/performance times
+ *
+ * The macro "log_elapsed()" can used inside any code block (between {}).
+ * Usually that macro will appear at beginning of functions, then total elapsed
+ *  time of this function will be logged. But it is also possible to use that
+ *  inside other blocks such as if/else, loops, etc.
+ *
+ * It is also possible to specify a user message following printf standard
+ *   format, example:  log_elapsed("(inside loop) counter=%d", counter)
+ *
+ * Entry points are defined by the execution flow, the first macro called will
+ *  generate the first entry point (level 00), others called during the
+ *  execution flow will added into the tree which is a LIFO queue.
+ *
+ * The entire tree is printed and emptied when first entry point finishes its
+ *   execution.
+ *
+ * The code example below:
+ * @code
+        void t2()
+        {
+            log_elapsed();
+            std::this_thread::sleep_for(std::chrono::milliseconds(20));
+        }
+
+        void t3()
+        {
+            log_elapsed();
+            std::this_thread::sleep_for(std::chrono::milliseconds(40));
+        }
+
+        void t1()
+        {
+            log_elapsed();
+            const int  totalLoop = 10;
+            for (int counter=0; counter < totalLoop; ++counter)
+            {
+                log_elapsed("(inside loop) counter=%d", counter);
+                std::this_thread::sleep_for(std::chrono::milliseconds(8));
+            }
+        }
+
+        void t0()
+        {
+            log_elapsed();
+            std::this_thread::sleep_for(std::chrono::milliseconds(900));
+            t1();
+            t2();
+        }
+
+        int  main()
+        {
+           t0();
+           return 0;
+        }
+    @endcode
+
+    Produces the following output:
+    @code
+     1001.016 ms   00 [t0()] main.cpp:71
+       80.847 ms    01 [t1()] main.cpp:60
+        8.065 ms      02 [t1()][msg: (inside loop) counter=0 ] main.cpp:64
+        8.066 ms      02 [t1()][msg: (inside loop) counter=1 ] main.cpp:64
+        8.072 ms      02 [t1()][msg: (inside loop) counter=2 ] main.cpp:64
+        8.066 ms      02 [t1()][msg: (inside loop) counter=3 ] main.cpp:64
+        8.064 ms      02 [t1()][msg: (inside loop) counter=4 ] main.cpp:64
+        8.063 ms      02 [t1()][msg: (inside loop) counter=5 ] main.cpp:64
+        8.065 ms      02 [t1()][msg: (inside loop) counter=6 ] main.cpp:64
+        8.062 ms      02 [t1()][msg: (inside loop) counter=7 ] main.cpp:64
+        8.059 ms      02 [t1()][msg: (inside loop) counter=8 ] main.cpp:64
+        8.058 ms      02 [t1()][msg: (inside loop) counter=9 ] main.cpp:64
+       20.065 ms    01 [t2()] main.cpp:48
+    @endcode
+ */
+class LogElapsedTime
+{
+  private:  // static variables
+    /** @brief stores the tree messages, it is cleaned after printing */
+    static std::vector<std::string> _messages;
+    /** @brief stores the the level/deep of current entry point */
+    static int _deep;
+  private:
+    /** @brief time stamp when the entry point starts its execution */
+    struct timespec _begin;
+    /** @brief index in _messages for this entry point */
+    size_t _msgIndex;
+  private:
+    /** @brief calculates elapsed time remaking the string in _messages
+     *          pointed by by _msgIndex */
+    void calcTimeStamp();
+    /** @brief prints the entire tree and clears _messages */
+    void printElapsedTree() const;
+  public:
+    explicit LogElapsedTime(const char* file, int line, const char *label,
+                            const char* fmt = nullptr, ...);
+    LogElapsedTime(const LogElapsedTime&) = delete;
+    LogElapsedTime() = delete;
+    virtual ~LogElapsedTime();
+};
+
+#define log_elapsed(fmt, ...) LogElapsedTime __func_performance__(\
+    __FILE__, __LINE__, __func__, fmt " ",  ##__VA_ARGS__)
+#else
+# define log_elapsed(...) /* fmt, ##__VA_ARGS__ */
+#endif // LOG_ELAPSED_TIME
+
 /**
  * Set debug level controller by,
  * #define DBG_LOG_CTRL x
@@ -50,7 +158,7 @@ namespace logging
 
 /**
  * Debug Level Definition
- * 0 : Log disabled 
+ * 0 : Log disabled
  * 1 : Error log only (default)
  * 2 : Error & Warning logs
  * 3 : Error & Warning & Debug logs
@@ -126,7 +234,7 @@ class Log
         std::lock_guard<std::mutex> logGuard(lMutex);
         std::stringstream ss;
         if (!(getLogControl(desiredLevel) & LogLevel::dataonly))
-        {   
+        {
             // Timestamp
             ss << timestampString();
 

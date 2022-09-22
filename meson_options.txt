@@ -4,3 +4,5 @@ option('sandbox_mode', type : 'feature', value : 'auto',
         description : 'Sandbox mode enablement')
 option ('tests', type : 'feature', value : 'enabled',
         description : 'Enable Unit tests for oobaml')
+option ('log_elapsed_time', type : 'feature', value : 'disabled',
+        description : 'Enable generation of the Elpased time logs')
