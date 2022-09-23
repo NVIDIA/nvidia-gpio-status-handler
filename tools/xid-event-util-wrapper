@@ -1,0 +1,119 @@
+#!/usr/bin/env bash
+
+set -o pipefail
+
+APP_NAME="xid-event-util-wrapper"
+APP_VER="0.1"
+
+show_help()
+{
+    echo "A wrapper for xid events for GPUs and NVSwitches, ver=${APP_VER}."
+    echo "<usage>"
+    echo "  ${APP_NAME} [-dry-run] <device_id> <oob_property> <xid_data>"
+    echo
+    echo "<options>"
+    echo "  -dry-run          - Only print ${APP_NAME} cmdline."
+    echo
+    echo "  device_id         - Device ID: For GPUs->[1-8], For NVSwitches->[0-3]"
+    echo
+    echo "  oob_property      - OOB properties Supported: gpu.xid.event, nvswitch.Sxid.event"
+    echo
+    echo "  xid_data          - XID Data Types Supported: XidId, TextMessage, XidTextMessage"
+    echo
+}
+
+
+## MAIN
+
+DRY_RUN=0
+
+## -dry-run just prints the xid-event-util-wrapper command line
+if [ "$1"  = "-dry-run" ]; then
+   DRY_RUN=1
+   shift
+fi
+
+if [ $# -ne 3 ]; then
+    show_help
+    exit 1
+fi
+
+cmdline="busctl call xyz.openbmc_project.GpuMgr /xyz/openbmc_project/GpuMgr xyz.openbmc_project.GpuMgr.Server DeviceGetData isi $1 \"$2\" 1"
+
+# Sample Output: (isau) 0 "GPU Driver Event Message - xid Event : 06 ab 00 ba ba ba ba ab ab ab ab 48 65 6c 6c 6f 57 6f 72 6c 64 00 00 00" 2 3120605958 2881141434
+# Indexes:                                                        1   2  3  4           5           6  
+# Index Meaning:
+#          1 record size    32-bit words
+#          2 xid id         8-bits
+#          3 flags          8-bits
+#          4 seqNumber      32-bits
+#          5 timeStamp      32-bits
+#          6 textMessage[0] Null terminated
+
+if [ "$DRY_RUN" -eq 1 ]; then
+    echo $cmdline
+    return 0
+fi
+
+output=$(eval $cmdline)
+rc=$?
+[ "$rc" -eq 0 ] || exit $rc
+
+# output='(isau) 0 "GPU Driver Event Message - xid Event : 06 ab 00 ba ba ba ba ab ab ab ab 48 65 6c 6c 6f 20 57 6f 72 6c 64 00 00 00" 2 3120605958 2881141434'
+# Cut on delimiter ' ' to get the data after the ':'
+# output -> 06 ab 00 ba ba ba ba ab ab ab ab 48 65 6c 6c 6f 20 57 6f 72 6c 64 00 00 00
+output=`echo $output | cut -d'"' -f 2 | sed 's/.*\: //'`
+
+[ -z "$output" ] && echo "No data found." && exit 1
+
+# Convert Hex "48 65 6c 6c 6f 20 57 6f 72 6c 64 00 00 00"
+# To ASCII "Hello World"
+function convertHexToAscii()
+{
+  local res
+  ascii=""
+  for char in $@
+  do
+    res=`printf "\x$char"`
+    ascii="$ascii$res"
+  done
+}
+
+# Check for the arguments
+case $3 in
+
+   XidId)
+    # Return XID ID or index 2 from the output
+    result=`echo $output | cut -d ' ' -f 2`
+    result=$(( 16#$result ))
+    ;;
+
+  TextMessage)
+    # Return Text Message or index 6 from the output
+    result=`echo $output | cut -d ' ' -f12- | sed 's/00//g'`
+    convertHexToAscii $TextMessage
+    result="$ascii"
+    ;;
+
+  XidTextMessage)
+    # Return XID ID or index 2 from the output
+    XidId=`echo $output | cut -d ' ' -f 2`
+    XidId=$(( 16#$XidId ))
+
+    # Return Text Message or index 6 from the output
+    TextMessage=`echo $output | cut -d ' ' -f12- | sed 's/00//g'`
+    # TextMessage=`echo -n $TextMessage | xxd -r -p`
+    convertHexToAscii $TextMessage
+
+    # Concatinate XidID and Text Message
+    result="$XidId $ascii"
+    ;;
+
+  *)
+    show_help
+    exit -1
+    ;;
+esac
+
+echo $result
+exit 0
