@@ -143,8 +143,11 @@ RetCoreApi deviceGetCoreAPI(const int devId, const std::string& property)
     else
     {
         auto data = std::get<std::vector<uint32_t>>(response);
-        // Per SMBPBI spec: data[0]:dataOut, data[1]:exDataOut
-        value = ((uint64_t)data[1] << 32 | data[0]);
+        if (data.size() >= 2)
+        {
+            // Per SMBPBI spec: data[0]:dataOut, data[1]:exDataOut
+            value = ((uint64_t)data[1] << 32 | data[0]);
+        }
 
         // msg example: "Baseboard GPU over temperature info : 0001"
         valueStr = std::get<std::string>(response);
