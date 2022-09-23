@@ -430,7 +430,7 @@ TEST(DataAccessor, BitmaskWithValueTwo)
     DataAccessor accessorData(PropertyVariant(uint64_t(0x02)));
 
     const PropertyVariant invalid;
-    const std::string deviceType{"GPUDRAM[0-7]"};
+    const std::string deviceType{"GPU[0-7]"};
     bool ok =
         accessorValue2.subCheck(accessorData, invalid, deviceType, "GPU0");
     EXPECT_EQ(ok, true);
@@ -441,11 +441,6 @@ TEST(DataAccessor, BitmaskWithValueTwo)
         const int gpu0id = 0;
         EXPECT_EQ(devices.count(gpu0id), 1);
         EXPECT_EQ(devices[0], "GPU0");
-    }
-    else
-    {
-        auto deviceName = util::determineDeviceName("GPU0", "GPUDRAM[0-7]");
-        EXPECT_EQ(deviceName, "GPU0");
     }
 }
 

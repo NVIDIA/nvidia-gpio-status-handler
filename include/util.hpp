@@ -175,9 +175,63 @@ void print(const std::vector<T>& vec, std::basic_ostream<CharT>& os,
     os << indent << "]" << std::endl;
 }
 
-
+/**
+ * @brief Replace any occurrence of "()" in a string by a previous range specification,
+ *        It reverts what @sa expandDeviceRange() made
+ *
+ * @example
+ *   Having a range specification such as: "xyz_[-1-5]/another_()"
+ *      returns "xyz_[-1-5]/another_[1-5]"
+ */
 std::string revertRangeRepeated(const std::string& str,
                                 size_t pos = std::string::npos);
 
+/**
+ * @brief  Having a string with one or more range specifications returns a
+ *         string suitable for std::regex_search()
+ *
+ * @example
+ *   revertRangeRepeated("test[1-5]") returns "test[0-9]+"
+ */
+std::string makeRangeForRegexSearch(const std::string& rangeStr);
+
+
+/**
+ * @brief Splits a device_type string definition such as "GPU_SXM_[1-8]_DRAM_0"
+ *         preserving range specificatin and isolated digits, also makes ranges
+ *         suitable for std::regex_search()
+ * @param  deviceType the device_type string
+ * @param  devTypePieces an empty array where to store to split into
+ * @example
+ *          splitDeviceTypeForRegxSearch("GPU", "SMX_[1-8]+", "DRAM_0") returns
+ *          [ "GPU", "SMX_[1-8]+", "DRAM_0" ]
+ */
+void splitDeviceTypeForRegxSearch(const std::string& deviceType,
+                                  std::vector<std::string>& devTypePieces);
+
+/**
+ * @brief determine the AssertedDeviceName based on device_type
+ *
+ * Here are some examples as Unit Test:
+ * @code
+ *
+ *      TEST(Device, AssertedDeviceName)
+ *      {
+ *         auto result = determineAssertedDeviceName("HGX_GPU_SXM_2",
+ *                                                   "GPU_SXM_[1-8]_DRAM_0");
+ *         EXPECT_EQ(result, "GPU_SXM_2_DRAM_0");
+ *
+ *         result = determineAssertedDeviceName("GPU_SXM_8",
+ *                                             "GPU_SXM_[1-8]");
+ *         EXPECT_EQ(result, "GPU_SXM_8");
+ *
+ *         result = determineAssertedDeviceName("PCIeSwitch0",
+ *                                             "PCIeSwitch0");
+ *         EXPECT_EQ(result, "PCIeSwitch0");
+ *      }
+ * @endcode
+ */
+std::string determineAssertedDeviceName(const std::string& realDevice,
+                                        const std::string& deviceType);
 
 } // namespace util

@@ -214,7 +214,7 @@ class EventDetection : public object::Object
         }
         else
         {
-            log_dbg("Create thread to process event failed!\n");
+            log_err("Create thread to process event failed!\n");
         }
     }
 

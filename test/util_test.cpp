@@ -253,3 +253,48 @@ TEST(Util, GetRangeInformation)
     EXPECT_EQ(std::get<1>(info), 0);  // position
     EXPECT_EQ(std::get<2>(info), "01GPU[0-3]");
 }
+
+TEST(AssertedDeviceName, Spliting)
+{
+    std::vector<std::string> result;
+    splitDeviceTypeForRegxSearch("GPU_SXM_[1-8]_DRAM_0", result);
+
+    EXPECT_EQ(result.size(), 3);
+    EXPECT_EQ(result.at(0), "GPU");
+    EXPECT_EQ(result.at(1), "SXM_[0-9]+");
+    EXPECT_EQ(result.at(2), "DRAM_0");
+}
+
+TEST(AssertedDeviceName, Sufix)
+{
+    auto result = determineAssertedDeviceName("HGX_GPU_SXM_2",
+                                              "GPU_SXM_[1-8]_DRAM_0");
+    EXPECT_EQ(result, "GPU_SXM_2_DRAM_0");
+}
+
+TEST(AssertedDeviceName, Normal)
+{
+    auto result = determineAssertedDeviceName("GPU_SXM_8",
+                                              "GPU_SXM_[1-8]");
+    EXPECT_EQ(result, "GPU_SXM_8");
+}
+
+TEST(AssertedDeviceName, Equal)
+{
+    auto result = determineAssertedDeviceName("PCIeSwitch0",
+                                              "PCIeSwitch0");
+    EXPECT_EQ(result, "PCIeSwitch0");
+}
+
+TEST(AssertedDeviceName, Prefix)
+{
+    auto result =  determineAssertedDeviceName(
+        "/v1/Chassis/HGX_GPU_SXM_1/PCIeDevices/GPU_SXM_1", "HGX_GPU_SXM_[1-8]");
+    EXPECT_EQ(result, "HGX_GPU_SXM_1");
+}
+
+TEST(AssertedDeviceName, Empty)
+{
+    auto result =  determineAssertedDeviceName("", "GPU_SXM_[1-8]");
+    EXPECT_EQ(result.empty(), true);
+}

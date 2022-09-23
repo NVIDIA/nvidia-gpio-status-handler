@@ -290,9 +290,9 @@ std::string determineDeviceName(const std::string& objPath,
     std::string name{objPath};
     if (objPath.empty() == false && devType.empty() == false)
     {
-        // device_type sometimes has range, remove it if that exists
-        auto deviceType = util::removeRange(devType);
-        const std::regex r{".*(" + deviceType + "[0-9]+).*"}; // TODO: fixme
+        // device_type sometimes has range, apply "[0-9]+" on every range
+        auto deviceType = util::makeRangeForRegexSearch(devType);
+        const std::regex r{".*(" + deviceType + ").*"};
         std::smatch m;
 
         if (std::regex_search(objPath.begin(), objPath.end(), m, r))
@@ -304,7 +304,7 @@ std::string determineDeviceName(const std::string& objPath,
             // name =  expandDeviceRange(devType)[0];
         }
     }
-    logs_dbg("determineDeviceName() objPath %s devType:%s Devname: %s\n.",
+    logs_dbg("objPath %s devType:%s Devname: %s\n.",
              objPath.c_str(), devType.c_str(), name.c_str());
     return name;
 }
@@ -401,6 +401,113 @@ std::string revertRangeRepeated(const std::string& str, size_t pos)
         }
     }
     return strRegex;
+}
+
+std::string makeRangeForRegexSearch(const std::string& rangeStr)
+{
+    auto rangePosition = rangeStr.find_first_of("[");
+    if (rangePosition == std::string::npos)
+    {
+        return rangeStr;
+    }
+    const std::string match{"[0-9]+"};
+    std::string matchRegx{rangeStr};
+    while (rangePosition != std::string::npos)
+    {
+        auto size = matchRegx.find_first_of("]", rangePosition) -
+                rangePosition + 1;
+        matchRegx.replace(rangePosition, size, match);
+        rangePosition = matchRegx.find_first_of("[", rangePosition + size - 1);
+    }
+    auto rangeRepeaterPosition = matchRegx.find_first_of(RangeRepeaterIndicator);
+    while (rangeRepeaterPosition != std::string::npos)
+    {
+         matchRegx.replace(rangeRepeaterPosition, RangeRepeaterIndicatorLength,
+                           match);
+         rangeRepeaterPosition = matchRegx.find_first_of(RangeRepeaterIndicator,
+                                                        rangeRepeaterPosition);
+    }
+    return matchRegx;
+}
+
+
+void splitDeviceTypeForRegxSearch(const std::string& deviceType,
+                                  std::vector<std::string>& devTypePieces)
+{
+    decltype(deviceType.size()) start = 0;
+    decltype(start) counter = 0;
+    std::regex regxUnderscore{"_[A-Za-z]+"};
+    std::sregex_token_iterator noMatches;
+    std::sregex_token_iterator piece(
+                     deviceType.begin(), deviceType.end(), regxUnderscore, -1);
+    /**  split the device type by undescore applying some criteria
+               does not  split if next character is a digit nor '['
+            GPU_SXM_[1-8]_DRAM_0 => "GPU", "SMX_[1-8]+", "DRAM_0"
+    */
+    for (; piece != noMatches; piece++)
+    {
+        std::string subStr = *piece;
+        if (subStr.empty() == false)
+        {
+            std::string prevPart{""};
+            counter = deviceType.find(subStr, start);
+            // it is also necessary to consider parts that do not match
+            if (start > 0 && counter > 0)
+            {
+                prevPart = deviceType.substr(start+1, counter - start -1);
+                start = counter;
+            }
+            start += subStr.size();
+            devTypePieces.push_back(makeRangeForRegexSearch(prevPart + subStr));
+        }
+    }
+    if (devTypePieces.empty() == true)
+    {
+        devTypePieces.push_back(makeRangeForRegexSearch(deviceType));
+    }
+}
+
+std::string determineAssertedDeviceName(const std::string& realDevice,
+                                        const std::string& deviceType)
+{
+     std::string name{""};
+     if (realDevice.empty() == false && deviceType.empty() == false)
+     {
+         std::vector<std::string> devTypePieces;
+         splitDeviceTypeForRegxSearch(deviceType, devTypePieces);
+         auto counter = devTypePieces.size();
+         bool matchedFlag = false;
+         while (counter--)
+         {
+             auto part = devTypePieces.at(counter);
+             const std::regex r{".*(" + part + ").*"};
+             std::smatch m;
+            /* if a part from deviceType matches in device uses matched part,
+             *  otherwise uses the deviceType part as always based on deviceType
+             */
+             if (std::regex_search(realDevice.begin(), realDevice.end(), m, r))
+             {
+                 devTypePieces[counter] = m[1];
+                 matchedFlag = true;
+             }
+         }
+         /**
+          * If not match exists, return empty string */
+         if (matchedFlag == true)
+         {
+            if (devTypePieces.size() == 1)
+            {
+               name = devTypePieces.back();
+            }
+            else
+            {
+               name = boost::join(devTypePieces, "_");
+            }
+         }
+     }
+     logs_dbg("realDevice %s deviceType:%s Devname: %s\n.",
+              realDevice.c_str(), deviceType.c_str(), name.c_str());
+     return name;
 }
 
 } // namespace util

@@ -359,7 +359,7 @@ void DataAccessor::buildSingleAssertedDeviceName(
     DataAccessor& accData, const std::string& realDevice,
     const std::string& devType) const
 {
-    auto deviceName = util::determineDeviceName(realDevice, devType);
+    auto deviceName = util::determineAssertedDeviceName(realDevice, devType);
     if (deviceName.empty() == false)
     {
         util::DeviceIdMap map;

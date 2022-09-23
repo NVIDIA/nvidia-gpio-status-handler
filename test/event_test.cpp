@@ -65,7 +65,7 @@ TEST(MsgCompTest, MakeCall)
 TEST(DevNameTest, MakeCall)
 {
     auto objPath = "/xyz/openbmc_project/inventory/system/chassis/GPU12";
-    auto devType = "GPU";
+    auto devType = "GPU[1-19]";
     auto name = util::determineDeviceName(objPath, devType);
     EXPECT_EQ(name, "GPU12");
 }
