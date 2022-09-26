@@ -103,9 +103,8 @@ void EventDetection::dbusEventHandlerCallback(sdbusplus::message::message& msg)
             //   that means, the check does not loop over device range
             if (assertedDeviceNames.empty() == true)
             {
-                std::cerr << __FILE__ << ":" << __LINE__
-                          << " event: " << event.event
-                          << " no assertedDeviceNames, exiting..." << std::endl;
+               logs_err("event: '%s' no assertedDeviceNames, exiting...\n",
+                       event.event.c_str());
                 continue;
             }
             // now loop thru candidate.assertedDeviceNames
@@ -113,9 +112,8 @@ void EventDetection::dbusEventHandlerCallback(sdbusplus::message::message& msg)
             {
                 event.device = device.second;
                 logs_dbg(
-                    "%s:%d Throw out an eventHdlrMgr. device: %s event: %s",
-                    __FILE__, __LINE__, event.device.c_str(),
-                    event.event.c_str());
+                    "Throw out an eventHdlrMgr. device: %s event: %s\n",
+                    event.device.c_str(), event.event.c_str());
                 if (eventDetectionPtr->IsEvent(candidate, eventValue))
                 {
                     eventDetectionPtr->RunEventHandlers(event);

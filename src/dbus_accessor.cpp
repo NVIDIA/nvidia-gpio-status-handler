@@ -53,6 +53,7 @@ static std::string errorMsg(const std::string& description,
 std::string getService(const std::string& objectPath,
                        const std::string& interface)
 {
+    log_elapsed();
     constexpr auto mapperBusBame = "xyz.openbmc_project.ObjectMapper";
     constexpr auto mapperObjectPath = "/xyz/openbmc_project/object_mapper";
     constexpr auto mapperInterface = "xyz.openbmc_project.ObjectMapper";
@@ -100,6 +101,7 @@ std::string getService(const std::string& objectPath,
 
 RetCoreApi deviceGetCoreAPI(const int devId, const std::string& property)
 {
+    log_elapsed();
     constexpr auto service = "xyz.openbmc_project.GpuMgr";
     constexpr auto object = "/xyz/openbmc_project/GpuMgr";
     constexpr auto interface = "xyz.openbmc_project.GpuMgr.Server";
@@ -145,19 +147,22 @@ RetCoreApi deviceGetCoreAPI(const int devId, const std::string& property)
         auto data = std::get<std::vector<uint32_t>>(response);
         if (data.size() >= 2)
         {
-            // Per SMBPBI spec: data[0]:dataOut, data[1]:exDataOut
-            value = ((uint64_t)data[1] << 32 | data[0]);
+        // Per SMBPBI spec: data[0]:dataOut, data[1]:exDataOut
+        value = ((uint64_t)data[1] << 32 | data[0]);
         }
 
         // msg example: "Baseboard GPU over temperature info : 0001"
         valueStr = std::get<std::string>(response);
     }
+    logs_dbg("devId: %d property: %s; rc=%ld value=%llu string='%s'\n",
+            devId, property.c_str(), rc, value, valueStr.c_str());
 
     return std::make_tuple(rc, valueStr, value);
 }
 
 int deviceClearCoreAPI(const int devId, const std::string& property)
 {
+    log_elapsed();
     constexpr auto service = "xyz.openbmc_project.GpuMgr";
     constexpr auto object = "/xyz/openbmc_project/GpuMgr";
     constexpr auto interface = "xyz.openbmc_project.GpuMgr.Server";
@@ -192,7 +197,7 @@ int deviceClearCoreAPI(const int devId, const std::string& property)
                                    property, dbusError.c_str());
         logs_err("%s\n", tmp.c_str());
     }
-
+    logs_dbg("rc=%d property='%s' devId=%d\n", rc, property.c_str(), devId);
     return rc;
 }
 
@@ -200,7 +205,7 @@ PropertyVariant readDbusProperty(const std::string& objPath,
                                  const std::string& interface,
                                  const std::string& property)
 {
-
+    log_elapsed();
     PropertyVariant value;
     if (util::existsRange(objPath) == true)
     {
@@ -224,6 +229,9 @@ PropertyVariant readDbusProperty(const std::string& objPath,
         method.append(interface, property);
         auto reply = bus.call(method);
         reply.read(value);
+        auto valueStr = data_accessor::PropertyValue(value).getString();
+        logs_dbg("object=%s \n\tinterface=%s property=%s value=%s\n", objPath.c_str(),
+                 interface.c_str(), property.c_str(), valueStr.c_str());
     }
     catch (const sdbusplus::exception::exception& e)
     {
@@ -247,26 +255,21 @@ DbusPropertyChangedHandler registerServicePropertyChanged(
     sdbusplus::bus::bus& bus, const std::string& objectPath,
     const std::string& interface, CallbackFunction callback)
 {
-
+    log_elapsed();
     DbusPropertyChangedHandler propertyHandler;
     try
     {
         auto subscribeStr = sdbusplus::bus::match::rules::propertiesChanged(
             objectPath, interface);
-
-        std::stringstream ss;
-        ss << __func__ << "(): subscribeStr:" << subscribeStr;
-        logs_dbg("%s\n", ss.str().c_str());
+        logs_dbg("subscribeStr: %s\n", subscribeStr.c_str());
         propertyHandler = std::make_unique<sdbusplus::bus::match_t>(
             bus, subscribeStr, callback);
     }
     catch (const sdbusplus::exception::SdBusError& e)
     {
-        std::string msg{__func__};
-        msg += "(): " + objectPath + " " + interface +
-               " Failed to registry for PropertiesChanged Error: ";
-        msg += e.what();
-        std::cerr << msg << std::endl;
+        std::string tmp = errorMsg("registerServicePropertyChanged(): Error",
+                          objectPath, interface, "", e.what());
+        logs_err("%s\n", tmp.c_str());
         throw std::runtime_error(e.what());
     }
     return propertyHandler;
@@ -283,6 +286,7 @@ bool setDbusProperty(const std::string& service, const std::string& objPath,
                      const std::string& interface, const std::string& property,
                      const PropertyVariant& val)
 {
+    log_elapsed();
     auto bus = sdbusplus::bus::new_default();
     bool ret = false;
     try

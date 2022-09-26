@@ -53,7 +53,7 @@ class ClearEvent : public EventHandler
     aml::RcCode process([[maybe_unused]] event_info::EventNode& event) override
     {
         // TODO: clear event
-        return aml::RcCode::error;
+        return aml::RcCode::succ;
     }
 };
 
@@ -91,9 +91,8 @@ class EventHandlerManager : public object::Object
     {
         for (auto& hdlr : _handlers)
         {
-            log_dbg("running handler(%s) on event(%s).\n",
+            log_dbg("running handler(%s) on event(%s)\n",
                      hdlr->getName().c_str(), event.getName().c_str());
-            log_dbg("calling hdlr: %s\n", hdlr->getName().c_str());
 
             auto rc = hdlr->process(event);
 

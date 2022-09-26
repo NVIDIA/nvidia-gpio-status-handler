@@ -198,6 +198,7 @@ InterfaceObjectsMap DataAccessor::getDbusInterfaceObjectsMap() const
 
 bool DataAccessor::readDbus()
 {
+    log_elapsed();
     clearData();
     bool ret = isValidDbusAccessor();
     if (ret == true)
@@ -213,14 +214,12 @@ bool DataAccessor::readDbus()
         // setDataValueFromVariant returns false in case variant is invalid
         ret = setDataValueFromVariant(propVariant);
     }
-    std::stringstream ss;
-    ss << "ret=" << ret;
-    log_dbg("%s\n", ss.str().c_str());
     return ret;
 }
 
 bool DataAccessor::runCommandLine(const std::string& device)
 {
+    log_elapsed();
     clearData();
     bool ret = isValidCmdlineAccessor();
     if (ret == true)
@@ -241,13 +240,12 @@ bool DataAccessor::runCommandLine(const std::string& device)
             cmd += ' ' + args;
         }
         std::stringstream ss;
-        ss << "cmd: " << cmd;
-        log_dbg("%s\n", ss.str().c_str());
         std::string result{""};
         uint64_t processExitCode = 0;
         try
         {
             std::string line{""};
+            log_elapsed("running cmd: %s", cmd.c_str());
             boost::process::ipstream pipe_stream;
             boost::process::child process(cmd, boost::process::std_out >
                                                    pipe_stream);
@@ -258,6 +256,7 @@ bool DataAccessor::runCommandLine(const std::string& device)
             }
             process.wait();
             processExitCode = static_cast<uint64_t>(process.exit_code());
+            log_dbg("returnCode=%llu cmd='%s'\n", processExitCode, cmd.c_str());
             if (processExitCode != 0)
             {
                 ret = false;
@@ -299,11 +298,13 @@ bool DataAccessor::setDataValueFromVariant(const PropertyVariant& propVariant)
 
 bool DataAccessor::readDeviceCoreApi(const std::string& device)
 {
+    log_elapsed();
     clearData();
     bool ret = isValidDeviceCoreApiAccessor();
     if (ret == true)
     {
         auto deviceId = util::getDeviceId(device);
+        log_elapsed("deviceId=%d api='%s'", deviceId, device.c_str());
         auto tuple = dbus::deviceGetCoreAPI(deviceId, _acc[propertyKey]);
         auto rc = std::get<int>(tuple);
         if (rc != 0)

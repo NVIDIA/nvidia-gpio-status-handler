@@ -360,7 +360,9 @@ class DataAccessor
      */
     std::string read(const std::string& device = std::string{""})
     {
+        log_elapsed();
         std::string ret{"123"};
+        log_dbg("device='%s'\n", device.c_str());
 
         if (isTypeDbus() == true)
         {
@@ -395,7 +397,7 @@ class DataAccessor
         {
             ret = _dataValue->getString();
         }
-        log_dbg(" ret=%s\n", ret.c_str());
+        log_dbg("ret=%s\n", ret.c_str());
         return ret;
     }
 
