@@ -14,7 +14,6 @@
 
 #include <iostream>
 #include <map>
-#include <memory>
 #include <regex>
 #include <string>
 #include <tuple>
@@ -60,11 +59,11 @@ static std::map<std::string, std::vector<std::string>> accessorTypeKeys = {
 class DataAccessor
 {
   public:
-    DataAccessor() : _dataValue(nullptr)
+    DataAccessor() : _dataValue(PropertyValue())
     {}
 
     explicit DataAccessor(const nlohmann::json& acc) :
-        _acc(acc), _dataValue(nullptr)
+        _acc(acc), _dataValue(PropertyValue())
     {
         std::stringstream ss;
         ss << "Const.: _acc: " << _acc;
@@ -75,7 +74,7 @@ class DataAccessor
      *  @brief  used for tests purpose with an invalid accessor type
      */
     explicit DataAccessor(const PropertyVariant& initialData) :
-        _dataValue(nullptr)
+        _dataValue(PropertyValue())
     {
         setDataValueFromVariant(initialData);
     }
@@ -393,9 +392,9 @@ class DataAccessor
             return _acc["value"].get<std::string>();
         }
 
-        if (_dataValue != nullptr)
+        if (_dataValue.empty() == false)
         {
-            ret = _dataValue->getString();
+            ret = _dataValue.getString();
         }
         log_dbg("ret=%s\n", ret.c_str());
         return ret;
@@ -553,7 +552,6 @@ class DataAccessor
         return isValid(_acc) == true && _acc[typeKey] == "DeviceCoreAPI";
     }
 
-  private:
     /**
      * @brief Check if a acc json has the "type" field.
      *
@@ -575,22 +573,10 @@ class DataAccessor
      */
     inline bool hasData() const
     {
-        return _dataValue != nullptr;
+        return _dataValue.empty() == false;
     }
 
-    /**
-     * @brief clearData() clear the _dataValue if it has a previous value
-     */
-    inline void clearData()
-    {
-        if (_dataValue != nullptr)
-        {
-            _dataValue.reset();
-            _dataValue = nullptr;
-        }
-    }
-
-    /**
+   /**
      * @brief getDataValue() instead of read() it returns the real data
      *
      * @note  It does not call read(), just returns the data if exists
@@ -599,12 +585,7 @@ class DataAccessor
      */
     inline PropertyValue getDataValue() const
     {
-        PropertyValue data;
-        if (hasData() == true)
-        {
-            data = *_dataValue;
-        }
-        return data;
+       return _dataValue;
     }
 
     /**
@@ -658,6 +639,15 @@ class DataAccessor
     bool isValidConstantAccessor() const
     {
         return isTypeDeviceName();
+    }
+
+ private:
+    /**
+     * @brief clearData() clear the _dataValue if it has a previous value
+     */
+    inline void clearData()
+    {
+        _dataValue.clear();
     }
 
     /**
@@ -771,7 +761,7 @@ class DataAccessor
      *
      * @sa read()
      */
-    std::shared_ptr<PropertyValue> _dataValue;
+    PropertyValue _dataValue;
 
     /**
      * @brief after calling check() it may contain the list of device names

@@ -33,15 +33,29 @@ constexpr auto notEqualKey = "not_equal";
  *     Fields:
  *           strValue      string representation
  *           value64       64 bits value intended for bit operations
- *           valid         true if conversion to 64 bits was successful
+ *           state         State of the current Data @sa DataState
  */
 struct PropertyValueData
 {
+    enum DataState
+    {
+        /** No data (nothing), nor an empty string which is data */
+        Empty,
+        /** The Data contains a valid Integer value even 0 */
+        Integer,
+        /** The data is string, the conversion to Integer was not possible or
+         *   it is not desired */
+        StringOnly
+    };
     std::string strValue;
     uint64_t value64;
-    bool valid;
-    explicit PropertyValueData(const std::string& str = {""}) :
-        strValue(str), value64(0), valid(false)
+    DataState state;
+    PropertyValueData() : strValue{""}, value64(0), state(Empty)
+    {
+        // Empty
+    }
+    explicit PropertyValueData(const std::string& str) :
+        strValue(str), value64(0), state(StringOnly)
     {
         // Empty
     }
@@ -83,7 +97,7 @@ class PropertyValueDataHelper
             auto value = std::get<T>(varVar);
             data->value64 = static_cast<uint64_t>(value);
             data->strValue = std::to_string(value);
-            data->valid = true;
+            data->state = PropertyValueData::Integer;
             return true;
         }
         return false;
@@ -104,7 +118,7 @@ class PropertyValueDataHelper
         if (std::holds_alternative<bool>(varVar) == true)
         {
             auto booleanData = std::get<bool>(varVar);
-            data->valid = true;
+            data->state = PropertyValueData::Integer;
             if (booleanData == true)
             {
                 data->strValue = "true";
@@ -136,7 +150,7 @@ class PropertyValueDataHelper
         {
             data->strValue = std::get<std::string>(varVar);
             data->value64 = 0;
-            data->valid = false;
+            data->state = PropertyValueData::StringOnly;
             return true;
         }
         return false;
@@ -262,7 +276,26 @@ class PropertyValue
      */
     inline bool isValid() const
     {
-        return _data.valid;
+        return _data.state == PropertyValueData::Integer;
+    }
+
+    /**
+     * @brief clear, just clears the data @sa empty()
+     */
+    inline void clear()
+    {
+        _data.strValue.clear();
+        _data.value64 = 0;
+        _data.state = PropertyValueData::Empty;
+    }
+
+    /**
+     * @brief empty
+     * @return  true if there is not stored data
+     */
+    inline bool empty() const
+    {
+        return _data.state == PropertyValueData::Empty;
     }
 
   protected:

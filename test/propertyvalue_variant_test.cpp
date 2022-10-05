@@ -6,6 +6,26 @@
 
 using namespace data_accessor;
 
+TEST(PropertyValue, CopyOperator)
+{
+    PropertyValue string(std::string{"001"});
+    auto integer = string;
+    EXPECT_EQ(integer.isValid(), true);
+    EXPECT_EQ(integer.getInt64(), 1);
+}
+
+TEST(PropertyValue, Clear)
+{
+    PropertyValue string(std::string{"001"});
+    EXPECT_EQ(string.getInt64(), 1);
+    EXPECT_EQ(string.getString().empty(), false);
+    EXPECT_EQ(string.empty(), false);
+    string.clear();
+    EXPECT_EQ(string.getInt64(), 0);
+    EXPECT_NE(string.getString().empty(), false);
+    EXPECT_NE(string.empty(), false);
+}
+
 TEST(PropertyValue, VariantInteger)
 {
     int value = 5;

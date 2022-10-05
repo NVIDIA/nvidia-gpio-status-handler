@@ -29,6 +29,7 @@ namespace data_accessor
 PropertyString::PropertyString(const std::string& value) : PropertyValue()
 {
     _data.strValue = value;
+    _data.state = PropertyValueData::StringOnly;
 }
 
 PropertyString::PropertyString(const PropertyVariant& varVar) : PropertyValue()
@@ -36,12 +37,13 @@ PropertyString::PropertyString(const PropertyVariant& varVar) : PropertyValue()
     if (std::holds_alternative<std::string>(varVar) == true)
     {
         _data.strValue = std::get<std::string>(varVar);
-        _data.valid = false;
+        _data.state = PropertyValueData::StringOnly;
     }
     else
     {
         getPropertyDataFromVariant(varVar);
-        _data.valid = false; // make sure it will not be used as Integer
+        // make sure it will not be used as Integer
+        _data.state = PropertyValueData::StringOnly;
     }
 }
 
@@ -55,7 +57,7 @@ PropertyValue::PropertyValue(const std::string& valueStr, uint64_t value64)
 {
     _data.strValue = valueStr;
     _data.value64 = value64;
-    _data.valid = true;
+    _data.state = PropertyValueData::Integer;
 }
 
 PropertyValue::~PropertyValue()
@@ -180,7 +182,7 @@ void PropertyValue::getPropertyDataFromVariant(const PropertyVariant& varVar)
 void PropertyValue::string2Uint64(const std::string& value)
 {
     _data.strValue = value;
-    _data.valid = false;
+    _data.state = PropertyValueData::StringOnly;
     _data.value64 = 0;
     if (value.empty() == true || value.find_first_of(' ') != std::string::npos)
     {
@@ -192,7 +194,7 @@ void PropertyValue::string2Uint64(const std::string& value)
     if (strTrue == true || strFalse == true)
     {
         _data.value64 = strTrue == true ? 1 : 0; // 1 if value is one of Trues
-        _data.valid = true;
+        _data.state = PropertyValueData::Integer;
     }
     else // any decimal or hexa value
     {
@@ -204,12 +206,12 @@ void PropertyValue::string2Uint64(const std::string& value)
             try
             {
                 data = std::stoll(value, nullptr, HEXA_BASE);
-                _data.valid = true;
+                _data.state = PropertyValueData::Integer;
                 _data.value64 = data;
             }
             catch (...)
             {
-                _data.valid = false;
+                _data.state = PropertyValueData::StringOnly;
             }
         }
         else
@@ -217,12 +219,12 @@ void PropertyValue::string2Uint64(const std::string& value)
             try
             {
                 data = std::stoll(value, nullptr, DECIMAL_BASE);
-                _data.valid = true;
+                _data.state = PropertyValueData::Integer;
                 _data.value64 = data;
             }
             catch (...)
             {
-                _data.valid = false;
+                _data.state = PropertyValueData::StringOnly;
             }
         }
     }

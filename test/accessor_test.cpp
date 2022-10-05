@@ -518,3 +518,16 @@ TEST(DataAccessor, CmdLineEmptyRegexExpansionUseDevicetypeInstead)
     EXPECT_EQ(assertedDevices.count(1), 1);
     EXPECT_EQ(assertedDevices[1], "GPU1");
 }
+
+TEST(DataAccessor, CopyOperator)
+{
+    DataAccessor source(PropertyVariant(int(1)));
+    DataAccessor destination;
+    EXPECT_EQ(destination.hasData(),  false);
+    EXPECT_EQ(destination.getDataValue().empty(), true);
+    destination = source;
+    EXPECT_NE(destination.hasData(),  false);
+    EXPECT_NE(destination.getDataValue().empty(), true);
+    EXPECT_EQ(destination.getDataValue().isValid(), true);
+    EXPECT_EQ(destination.getDataValue().getInt64(), 1);
+}

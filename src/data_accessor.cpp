@@ -159,7 +159,7 @@ bool DataAccessor::subCheck(const DataAccessor& otherAcc,
         {
             auto devId = deviceItem.first;
             PropertyVariant bitmask(bitmapValue.getInt64() << devId);
-            if (otherAcc._dataValue->check(checkMap, bitmask) == true)
+            if (otherAcc._dataValue.check(checkMap, bitmask) == true)
             {
                 const auto& deviceName = deviceItem.second;
                 ret = true; // true if at least one device
@@ -169,7 +169,7 @@ bool DataAccessor::subCheck(const DataAccessor& otherAcc,
     }
     else // common case
     {
-        ret = otherAcc._dataValue->check(checkMap, redefCriteria);
+        ret = otherAcc._dataValue.check(checkMap, redefCriteria);
         if (ret == true)
         {
             // it allows using subCheck() in UT
@@ -278,7 +278,7 @@ bool DataAccessor::runCommandLine(const std::string& device)
         // ok lets store the output
         if (ret == true)
         {
-            _dataValue = std::make_shared<PropertyValue>(result);
+            _dataValue = PropertyValue(result);
         }
     }
     return ret;
@@ -290,8 +290,7 @@ bool DataAccessor::setDataValueFromVariant(const PropertyVariant& propVariant)
     bool ret = isValidVariant(propVariant);
     if (ret == true)
     {
-        _dataValue =
-            std::make_shared<PropertyValue>(PropertyValue(propVariant));
+        _dataValue = PropertyValue(propVariant);
     }
     return ret;
 }
@@ -315,13 +314,12 @@ bool DataAccessor::readDeviceCoreApi(const std::string& device)
         {
             if (existsCheckLookup() == true && isDeviceIdRange() == false)
             {
-                _dataValue = std::make_shared<PropertyValue>(PropertyValue(
-                    std::get<std::string>(tuple), std::get<uint64_t>(tuple)));
+                _dataValue = PropertyValue(std::get<std::string>(tuple),
+                                           std::get<uint64_t>(tuple));
             }
             else
             {
-                _dataValue = std::make_shared<PropertyValue>(
-                    PropertyValue(std::get<uint64_t>(tuple)));
+                _dataValue = PropertyValue(std::get<uint64_t>(tuple));
             }
         }
     }
@@ -339,7 +337,7 @@ std::string DataAccessor::findDeviceName(const DataAccessor& other,
         if (deviceName.empty() == true)
         {
             deviceName = util::getDeviceName(objectName);
-        }
+    }
     }
     if (deviceName.empty() == true)
     {
