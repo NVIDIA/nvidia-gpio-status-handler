@@ -10,18 +10,18 @@ TEST(PropertyValue, CopyOperator)
 {
     PropertyValue string(std::string{"001"});
     auto integer = string;
-    EXPECT_EQ(integer.isValid(), true);
-    EXPECT_EQ(integer.getInt64(), 1);
+    EXPECT_EQ(integer.isValidInteger(), true);
+    EXPECT_EQ(integer.getInteger(), 1);
 }
 
 TEST(PropertyValue, Clear)
 {
     PropertyValue string(std::string{"001"});
-    EXPECT_EQ(string.getInt64(), 1);
+    EXPECT_EQ(string.getInteger(), 1);
     EXPECT_EQ(string.getString().empty(), false);
     EXPECT_EQ(string.empty(), false);
     string.clear();
-    EXPECT_EQ(string.getInt64(), 0);
+    EXPECT_EQ(string.getInteger(), 0);
     EXPECT_NE(string.getString().empty(), false);
     EXPECT_NE(string.empty(), false);
 }
@@ -31,8 +31,8 @@ TEST(PropertyValue, VariantInteger)
     int value = 5;
     PropertyVariant variant = value;
     PropertyValue prop{variant};
-    EXPECT_EQ(prop.getInt64(), 5);
-    EXPECT_EQ(prop.isValid(), true);
+    EXPECT_EQ(prop.getInteger(), 5);
+    EXPECT_EQ(prop.isValidInteger(), true);
 }
 
 TEST(PropertyValue, VariantHexa)
@@ -40,8 +40,8 @@ TEST(PropertyValue, VariantHexa)
     int value = 0xff;
     PropertyVariant variant = value;
     PropertyValue prop{variant};
-    EXPECT_EQ(prop.getInt64(), 255);
-    EXPECT_EQ(prop.isValid(), true);
+    EXPECT_EQ(prop.getInteger(), 255);
+    EXPECT_EQ(prop.isValidInteger(), true);
 }
 
 TEST(PropertyValue, VariantBoolean)
@@ -49,8 +49,8 @@ TEST(PropertyValue, VariantBoolean)
     bool boolean = false;
     PropertyVariant variant = boolean;
     PropertyValue prop{variant};
-    EXPECT_EQ(prop.getInt64(), 0);
-    EXPECT_EQ(prop.isValid(), true);
+    EXPECT_EQ(prop.getInteger(), 0);
+    EXPECT_EQ(prop.isValidInteger(), true);
 }
 
 TEST(PropertyValue, VariantDouble)
@@ -58,8 +58,8 @@ TEST(PropertyValue, VariantDouble)
     double value = 10.0;
     PropertyVariant variant = value;
     PropertyValue prop{variant};
-    EXPECT_EQ(prop.getInt64(), 10);
-    EXPECT_EQ(prop.isValid(), true);
+    EXPECT_EQ(prop.getInteger(), 10);
+    EXPECT_EQ(prop.isValidInteger(), true);
 }
 
 TEST(PropertyValue, VariantFloat)
@@ -67,8 +67,8 @@ TEST(PropertyValue, VariantFloat)
     float value = 10.0;
     PropertyVariant variant = value;
     PropertyValue prop{variant};
-    EXPECT_EQ(prop.getInt64(), 10);
-    EXPECT_EQ(prop.isValid(), true);
+    EXPECT_EQ(prop.getInteger(), 10);
+    EXPECT_EQ(prop.isValidInteger(), true);
 }
 
 TEST(PropertyValue, Bitmask16Bits)
@@ -86,7 +86,7 @@ TEST(PropertyValue, Bitmask32Bits)
     int32_t value = 0x1001; // bit 0, 12
     PropertyVariant variant = value;
     PropertyValue prop{variant};
-    EXPECT_EQ(prop.getInt64(), 0x1001);
+    EXPECT_EQ(prop.getInteger(), 0x1001);
     EXPECT_EQ(prop.bitmask(0x01), true);   // bit 0
     EXPECT_EQ(prop.bitmask(0x1000), true); // bit 12
     EXPECT_NE(prop.bitmask(0x02), true);   // bit 2 not set
@@ -97,7 +97,7 @@ TEST(PropertyValue, Bitmask64Bits)
     int32_t value = 0x100001; // bit 0, 20
     PropertyVariant variant = value;
     PropertyValue prop{variant};
-    EXPECT_EQ(prop.getInt64(), 0x100001);
+    EXPECT_EQ(prop.getInteger(), 0x100001);
     EXPECT_EQ(prop.bitmask(0x01), true);     // bit 0
     EXPECT_EQ(prop.bitmask(0x100000), true); // bit 20
     EXPECT_EQ(prop.bitmask(0x02), false);    // bit 2 not set
@@ -108,7 +108,7 @@ TEST(PropertyValue, Bitmask2Properties)
     int32_t value = 0x100001; // bit 0, 20
     PropertyVariant variant = value;
     PropertyValue prop{variant};
-    EXPECT_EQ(prop.getInt64(), 0x100001);
+    EXPECT_EQ(prop.getInteger(), 0x100001);
 
     PropertyVariant variantBit0 = 0x01;
     PropertyValue propBit0{variantBit0};

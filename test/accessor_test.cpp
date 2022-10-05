@@ -528,6 +528,6 @@ TEST(DataAccessor, CopyOperator)
     destination = source;
     EXPECT_NE(destination.hasData(),  false);
     EXPECT_NE(destination.getDataValue().empty(), true);
-    EXPECT_EQ(destination.getDataValue().isValid(), true);
-    EXPECT_EQ(destination.getDataValue().getInt64(), 1);
+    EXPECT_EQ(destination.getDataValue().isValidInteger(), true);
+    EXPECT_EQ(destination.getDataValue().getInteger(), 1);
 }

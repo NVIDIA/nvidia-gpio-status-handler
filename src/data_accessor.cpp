@@ -151,14 +151,14 @@ bool DataAccessor::subCheck(const DataAccessor& otherAcc,
                 ? PropertyValue(redefCriteria)
                 : PropertyValue(_acc[checkKey][bitmapKey].get<std::string>());
     }
-    if (bitmapValue.isValid() == true)
+    if (bitmapValue.isValidInteger() == true)
     {
         util::DeviceIdMap devices = util::expandDeviceRange(deviceType);
         // now walk thuru devices
         for (auto& deviceItem : devices)
         {
             auto devId = deviceItem.first;
-            PropertyVariant bitmask(bitmapValue.getInt64() << devId);
+            PropertyVariant bitmask(bitmapValue.getInteger() << devId);
             if (otherAcc._dataValue.check(checkMap, bitmask) == true)
             {
                 const auto& deviceName = deviceItem.second;

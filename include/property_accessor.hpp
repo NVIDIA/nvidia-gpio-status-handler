@@ -262,19 +262,19 @@ class PropertyValue
     }
 
     /**
-     * @brief getInt64
+     * @brief getInteger
      * @return the 64 bits integer representation of the stored data
      */
-    inline uint64_t getInt64() const
+    inline uint64_t getInteger() const
     {
         return _data.value64;
     }
 
     /**
-     * @brief isValid
+     * @brief isValidInteger
      * @return true if the 64 bits integer conversion was OK even when zero
      */
-    inline bool isValid() const
+    inline bool isValidInteger() const
     {
         return _data.state == PropertyValueData::Integer;
     }

@@ -115,7 +115,7 @@ bool PropertyValue::check(const CheckDefinitionMap& map,
 
 bool PropertyValue::bitmask(const uint64_t mask) const
 {
-    bool ret = isValid();
+    bool ret = isValidInteger();
     if (ret == true)
     {
         uint64_t result = _data.value64 & mask;
@@ -126,7 +126,7 @@ bool PropertyValue::bitmask(const uint64_t mask) const
 
 bool PropertyValue::bitmask(const PropertyValue& otherMask) const
 {
-    return otherMask.isValid() && bitmask(otherMask._data.value64);
+    return otherMask.isValidInteger() && bitmask(otherMask._data.value64);
 }
 
 bool PropertyValue::lookup(const std::string& lookupString,
