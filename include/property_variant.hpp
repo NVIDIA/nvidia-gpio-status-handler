@@ -36,9 +36,11 @@ using InvalidMonoState =
  *  Variant type used for Dbus blocking 'get' and 'set' properties
  */
 using PropertyVariant =
-    std::variant<InvalidMonoState, bool, uint8_t, int16_t, uint16_t,
-                 int32_t, uint32_t, int64_t, uint64_t, double, std::string,
-                 std::vector<std::string>, std::vector<Association>>;
+    std::variant<InvalidMonoState, /*01*/ bool, /*02*/ uint8_t, /*03*/ int16_t,
+                 /*04*/ uint16_t, /*05*/ int32_t, /*06*/ uint32_t,
+                 /*07*/ int64_t,  /*08*/ uint64_t, /*09*/ double,
+                 /*10*/ std::string, /*11*/ std::vector<std::string>,
+                 /*12*/ std::vector<Association>>;
 
 /**
  * @brief returns true if the PropertyVariant has a valid value

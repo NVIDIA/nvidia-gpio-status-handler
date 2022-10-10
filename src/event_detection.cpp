@@ -30,20 +30,15 @@ static EventDetection* eventDetectionPtr = nullptr;
 void EventDetection::dbusEventHandlerCallback(sdbusplus::message::message& msg)
 {
     std::string msgInterface;
-    boost::container::flat_map<std::string, std::variant<double>>
-        propertiesChanged;
+    boost::container::flat_map<std::string, PropertyVariant> propertiesChanged;
+
     msg.read(msgInterface, propertiesChanged);
 
     std::string objectPath = msg.get_path();
 
-    std::string signalSignature = msg.get_signature();
-
-    logs_dbg("objectPath:%s\nsignalSignature:%s\nmsgInterface:%s\n",
-             objectPath.c_str(), signalSignature.c_str(), msgInterface.c_str());
-
     if (propertiesChanged.empty())
     {
-        logs_dbg("empty propertiesChanged, return.\n");
+        logs_err("sdbusplus::message: empty propertiesChanged, return.\n");
         return;
     }
 
@@ -64,17 +59,24 @@ void EventDetection::dbusEventHandlerCallback(sdbusplus::message::message& msg)
          destination=:1.93 serial=6777 reply_serial=2 variant double 100
          *
          */
-        auto variant = std::get_if<double>(&pc.second);
+        auto variant = pc.second;
         std::string eventProperty = pc.first;
 
-        if (eventProperty.empty() || nullptr == variant)
+        auto index = variant.index();
+        if (eventProperty.empty() || isValidVariant(variant) == false)
         {
-            logs_dbg("empty eventProperty, skip.\n");
+            logs_err("sdbusplus::message: empty or invalid Property, skipping "
+                     "Path: %s, Intf: %s, Prop: '%s', VarIndex: %d\n",
+                            objectPath.c_str(),  msgInterface.c_str(),
+                            eventProperty.c_str(), index);
             continue;
         }
 
-        logs_dbg("Path: %s, Property: %s, Variant: %lf\n", objectPath.c_str(),
-                 eventProperty.c_str(), *variant);
+        data_accessor::PropertyValue propertyValue(variant);
+        logs_dbg("sdbusplus::message: sender: %s, Path: %s, Intf: %s, Prop: %s,"
+                 " VarIndex: %d, Value: '%s'\n", msg.get_sender(),
+                objectPath.c_str(),  msgInterface.c_str(),
+                eventProperty.c_str(), index, propertyValue.getString().c_str());
 
         const std::string type = "DBUS";
         nlohmann::json j;
@@ -82,7 +84,7 @@ void EventDetection::dbusEventHandlerCallback(sdbusplus::message::message& msg)
         j[data_accessor::accessorTypeKeys[type][0]] = objectPath;
         j[data_accessor::accessorTypeKeys[type][1]] = msgInterface;
         j[data_accessor::accessorTypeKeys[type][2]] = eventProperty;
-        data_accessor::DataAccessor accessor(j);
+        data_accessor::DataAccessor accessor(j, propertyValue);
         auto assertedEventsList = eventDetectionPtr->LookupEventFrom(accessor);
         if (assertedEventsList.empty() == true)
         {
@@ -96,7 +98,7 @@ void EventDetection::dbusEventHandlerCallback(sdbusplus::message::message& msg)
             int eventValue = invalidIntParam;
             if (candidate.valueAsCount)
             {
-                eventValue = int(*variant);
+                eventValue = propertyValue.getInteger();
             }
             const auto& assertedDeviceNames = assertedEvent.second;
             // this is the case when the "check" operation is not 'bitmap'

@@ -89,7 +89,11 @@ bool DataAccessor::check(const DataAccessor& otherAcc,
         }
         else // not necessary to loop all devices, using orignal deviceToRead
         {
-            accNonConst.read(deviceToRead);
+            // if DBus aleady contains data no need to read it again
+            if (otherAcc.isTypeDbus() == false || otherAcc.hasData() == false)
+            {
+                accNonConst.read(deviceToRead);
+            }
             ret = subCheck(otherAcc, redefCriteria, deviceType, deviceToRead);
         }
     }
