@@ -101,10 +101,8 @@ class EventHandlerManager : public object::Object
                 log_err("handler(%s) on event(%s) failed, rc = %d!\n",
                         hdlr->getName().c_str(), event.getName().c_str(),
                         aml::to_integer(rc));
-
-                // return on first failure.
-                // TODO: add option for continue on failure if needed.
-                return rc;
+                // let it generate the Event even there is a failure
+                // TODO: add some handling use case when it should stop/continue
             }
         }
         return aml::RcCode::succ;
