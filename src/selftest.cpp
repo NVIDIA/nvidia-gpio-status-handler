@@ -119,7 +119,8 @@ bool Selftest::isDeviceCached(const std::string& devName,
 }
 
 aml::RcCode Selftest::perform(const dat_traverse::Device& dev,
-                              ReportResult& reportRes)
+                              ReportResult& reportRes,
+                              std::vector<std::string> layersToIgnore)
 {
     if (isDeviceCached(dev.name, reportRes))
     {
@@ -154,6 +155,12 @@ aml::RcCode Selftest::perform(const dat_traverse::Device& dev,
     {
         auto& tmpLayerReport = tmpDeviceReport.layer[tl.first];
 
+        if (std::find(layersToIgnore.begin(), layersToIgnore.end(), tl.first) !=
+            layersToIgnore.end())
+        {
+            continue;
+        }
+
         for (auto& tp : tl.second.testPoints)
         {
             auto& testPoint = tp.second;
@@ -175,7 +182,8 @@ aml::RcCode Selftest::perform(const dat_traverse::Device& dev,
                 aml::RcCode selftestRes = aml::RcCode::succ;
                 if (!isDeviceCached(devName, reportRes))
                 {
-                    selftestRes = this->perform(devNested, reportRes);
+                    selftestRes =
+                        this->perform(devNested, reportRes, layersToIgnore);
                 }
 
                 bool devEvalRes = (selftestRes == aml::RcCode::succ) &&
@@ -455,8 +463,8 @@ void RootCauseTracer::updateRootCause(dat_traverse::Device& dev,
     selftester.updateDeviceHealth(dev.name, status.health);
 }
 
-aml::RcCode RootCauseTracer::process([
-    [maybe_unused]] event_info::EventNode& event)
+aml::RcCode
+    RootCauseTracer::process([[maybe_unused]] event_info::EventNode& event)
 {
     std::string problemDevice = event.device;
     if ((problemDevice.length() == 0) || (_dat.count(problemDevice) == 0))
@@ -470,7 +478,11 @@ aml::RcCode RootCauseTracer::process([
     selftest::Selftest selftester("rootCauseSelftester", _dat);
     std::string rootCauseCandidateName{};
 
-    if (selftester.perform(_dat.at(problemDevice), completeReportRes) !=
+    /* TODO: refactor ignoring layers during selftest into selftest options
+        tracked in design doc https://jirasw.nvidia.com/browse/DGXOPENBMC-5375
+        current solution is quick, temporary, hardcoded patch */
+    if (selftester.perform(_dat.at(problemDevice), completeReportRes,
+                           std::vector<std::string>{"data_dump"}) !=
         aml::RcCode::succ)
     {
         std::cerr << "Error: rootCauseTracer failed to perform selftest "

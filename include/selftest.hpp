@@ -71,7 +71,8 @@ using ReportResult = std::map<std::string, DeviceResult>;
 class Report
 {
   public:
-    Report() : tpTotal(0), tpFailed(0) {}
+    Report() : tpTotal(0), tpFailed(0)
+    {}
     ~Report() = default;
 
   public:
@@ -89,7 +90,7 @@ class Report
      *
      * @return json
      */
-   const nlohmann::ordered_json& getReport(void);
+    const nlohmann::ordered_json& getReport(void);
 
     /**
      * @brief Output internal json report. Has to be generated first.
@@ -102,7 +103,7 @@ class Report
 
   private:
     /**
-     * @brief Writes header data during report generation. Must be called in 
+     * @brief Writes header data during report generation. Must be called in
      *        the end of report generation.
      */
     void writeSummaryHeader(void);
@@ -113,12 +114,12 @@ class Report
      * @param[out] jdev device to write given layer report piece to
      * @param[in] layerName layer key name (its support is validated internally)
      * @param[in] testpoints TPs results of given layer to process
-     * 
+     *
      * @return returns true on success, false on unsupported layer key
      */
-    bool processLayer(nlohmann::ordered_json& jdev, 
-                          const std::string& layerName,
-                          std::vector<selftest::TestPointResult>& testpoints);
+    bool processLayer(nlohmann::ordered_json& jdev,
+                      const std::string& layerName,
+                      std::vector<selftest::TestPointResult>& testpoints);
 
     /** @brief Internal report storage. **/
     nlohmann::ordered_json _report;
@@ -210,10 +211,13 @@ class Selftest : public event_handler::EventHandler
      * @param[in]  dev        - device to perform test on
      * @param[out] reportRes  - container with written in TP's results @ref
      * <ReportResult>
+     * @param[in]  layersToIgnore - for these passed layer names testpoints are
+     * skipped and only empty layers are included in the reportRes; default none
      * @return aml::RcCode meaning testing operation status, not test results
      */
     aml::RcCode perform(const dat_traverse::Device& dev,
-                        ReportResult& reportRes);
+                        ReportResult& reportRes,
+                        std::vector<std::string> layersToIgnore = {});
 
     /** @brief Performs selftest on entire DAT.
      *
@@ -265,8 +269,7 @@ class RootCauseTracer : public EventHandler
                     std::map<std::string, dat_traverse::Device>& dat,
                     std::function<bool(const std::string&)> checkDeviceExists) :
         EventHandler(name),
-        _dat(dat),
-        checkDeviceExists(checkDeviceExists)
+        _dat(dat), checkDeviceExists(checkDeviceExists)
     {}
 
     ~RootCauseTracer() = default;
@@ -295,27 +298,28 @@ class RootCauseTracer : public EventHandler
      * @param[in] selftester - self test object
      */
     void updateRootCause(dat_traverse::Device& dev,
-                        dat_traverse::Device& rootCauseDevice,
-                        selftest::Selftest& selftester);
+                         dat_traverse::Device& rootCauseDevice,
+                         selftest::Selftest& selftester);
 
     /**
      * @brief finds most nested device that caused the problem
      *
      * @param[in] triggeringDevice - device that root cause search started from
-     * @param[in] report - report result of selftest performed on 
+     * @param[in] report - report result of selftest performed on
      * @triggeringDevice
      * @param[out] rootCauseDevice - returns failed device name if found,
      * otherwise empty
-     * 
-     * @return true when found root cause, otherwise false (whole report correct)
+     *
+     * @return true when found root cause, otherwise false (whole report
+     * correct)
      */
-    bool findRootCause(const std::string& triggeringDevice, 
-                      const selftest::ReportResult& report,
-                      std::string& rootCauseDevice);
+    bool findRootCause(const std::string& triggeringDevice,
+                       const selftest::ReportResult& report,
+                       std::string& rootCauseDevice);
 
     /** @brief Internal DAT reference. **/
     std::map<std::string, dat_traverse::Device>& _dat;
-    
+
     /** @brief Used to check if device exists and is implemented and is present
      * on DBUS. **/
     std::function<bool(const std::string&)> checkDeviceExists;

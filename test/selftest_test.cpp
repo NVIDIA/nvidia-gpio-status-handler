@@ -187,7 +187,7 @@ TEST(selftestTest, doPerform)
         Expected: report of 2 devices, where report of Dev_A
         consists of N TP reports and one device_Device_B TP
         and Dev_B report.
-        Expected: a failed tp in *child* device causes corresponding 
+        Expected: a failed tp in *child* device causes corresponding
         tp in *parent* device to be failed too. */
     nlohmann::json jdat;
     nlohmann::json jgpu0;
@@ -246,6 +246,108 @@ TEST(selftestTest, doPerform)
     EXPECT_EQ(selftest.perform(datMap.at("GPU0"), otherRep), aml::RcCode::succ);
     EXPECT_EQ(otherRep["VR0"].layer["power_rail"][0].result, false);
     EXPECT_EQ(otherRep["GPU0"].layer["power_rail"][0].result, false);
+}
+
+TEST(selftestTest, performUsingLayerFilter)
+{
+    /*  Device_A: (N dummy TP's) + 1 TP pointing to Device_B.
+        Device_B: (N dummy TP's).
+        Perform using "data_dump" and "erot_control" layers filters.
+        Expected: report of 2 devices, where:
+        * report of Dev_A consists of N TP reports excluding filtered layers and
+       one device_Device_B TP
+        * Dev_B report similarily to Dev_A has filtered out layers testpoints.
+     */
+    nlohmann::json jdat;
+    nlohmann::json jgpu0;
+    nlohmann::json jvr0;
+    nlohmann::json jbaseboard;
+    jgpu0 = json_device_template("GPU0", "VR0");
+    jgpu0["power_rail"] = {json_testpoint_template("PGOOD", true, "VR0")};
+    jgpu0["erot_control"] = {json_testpoint_template()};
+    jgpu0["pin_status"] = {json_testpoint_template()};
+    jgpu0["interface_status"] = {json_testpoint_template()};
+    jgpu0["firmware_status"] = {json_testpoint_template()};
+    jgpu0["protocol_status"] = {json_testpoint_template()};
+    jgpu0["data_dump"] = {json_testpoint_template()};
+
+    jvr0 = json_device_template("VR0");
+    jvr0["power_rail"] = {json_testpoint_template()};
+    jvr0["erot_control"] = {json_testpoint_template()};
+    jvr0["pin_status"] = {json_testpoint_template()};
+    jvr0["interface_status"] = {json_testpoint_template()};
+    jvr0["firmware_status"] = {json_testpoint_template()};
+    jvr0["protocol_status"] = {json_testpoint_template()};
+    jvr0["data_dump"] = {json_testpoint_template()};
+
+    jbaseboard = json_device_template("Baseboard");
+    jbaseboard["association"] += "GPU0";
+    jbaseboard["association"] += "VR0";
+
+    jdat["Baseboard"] = jbaseboard;
+    jdat["GPU0"] = jgpu0;
+    jdat["VR0"] = jvr0;
+
+    // std::cout << jgpu0.dump(4) << std::endl;
+    // std::cout << jvr0.dump(4) << std::endl;
+    // std::cout << jbaseboard.dump(4) << std::endl;
+    // std::cout << jdat.dump(4) << std::endl;
+
+    std::map<std::string, dat_traverse::Device> datMap;
+    populateMapMock(datMap, jdat);
+    // dat_traverse::Device::printTree(datMap);
+    selftest::Selftest selftest("selftestObj", datMap);
+    selftest::ReportResult rep_res;
+    EXPECT_EQ(
+        selftest.perform(datMap.at("GPU0"), rep_res,
+                         std::vector<std::string>{"data_dump", "erot_control"}),
+        aml::RcCode::succ);
+    EXPECT_EQ(rep_res.size(), 2);
+    EXPECT_EQ(rep_res.find("GPU0") != rep_res.end(), true);
+    EXPECT_EQ(rep_res.find("VR0") != rep_res.end(), true);
+
+    // std::cout << rep_res;
+    EXPECT_EQ(rep_res["GPU0"].layer["data_dump"].size(), 0);
+    EXPECT_EQ(rep_res["GPU0"].layer["erot_control"].size(), 0);
+    EXPECT_EQ(rep_res["GPU0"].layer["power_rail"].size(),
+              jgpu0["power_rail"].size());
+    EXPECT_EQ(rep_res["GPU0"].layer["pin_status"].size(),
+              jgpu0["pin_status"].size());
+    EXPECT_EQ(rep_res["GPU0"].layer["interface_status"].size(),
+              jgpu0["interface_status"].size());
+    EXPECT_EQ(rep_res["GPU0"].layer["firmware_status"].size(),
+              jgpu0["firmware_status"].size());
+    EXPECT_EQ(rep_res["GPU0"].layer["protocol_status"].size(),
+              jgpu0["protocol_status"].size());
+
+    EXPECT_EQ(rep_res["VR0"].layer["data_dump"].size(), 0);
+    EXPECT_EQ(rep_res["VR0"].layer["erot_control"].size(), 0);
+    EXPECT_EQ(rep_res["VR0"].layer["power_rail"].size(),
+              jvr0["power_rail"].size());
+    EXPECT_EQ(rep_res["VR0"].layer["pin_status"].size(),
+              jvr0["pin_status"].size());
+    EXPECT_EQ(rep_res["VR0"].layer["interface_status"].size(),
+              jvr0["interface_status"].size());
+    EXPECT_EQ(rep_res["VR0"].layer["firmware_status"].size(),
+              jvr0["firmware_status"].size());
+    EXPECT_EQ(rep_res["VR0"].layer["protocol_status"].size(),
+              jvr0["protocol_status"].size());
+
+    EXPECT_EQ(rep_res["GPU0"].layer.count("data_dump"), 1);
+    EXPECT_EQ(rep_res["GPU0"].layer.count("power_rail"), 1);
+    EXPECT_EQ(rep_res["GPU0"].layer.count("erot_control"), 1);
+    EXPECT_EQ(rep_res["GPU0"].layer.count("pin_status"), 1);
+    EXPECT_EQ(rep_res["GPU0"].layer.count("interface_status"), 1);
+    EXPECT_EQ(rep_res["GPU0"].layer.count("firmware_status"), 1);
+    EXPECT_EQ(rep_res["GPU0"].layer.count("protocol_status"), 1);
+
+    EXPECT_EQ(rep_res["VR0"].layer.count("data_dump"), 1);
+    EXPECT_EQ(rep_res["VR0"].layer.count("power_rail"), 1);
+    EXPECT_EQ(rep_res["VR0"].layer.count("erot_control"), 1);
+    EXPECT_EQ(rep_res["VR0"].layer.count("pin_status"), 1);
+    EXPECT_EQ(rep_res["VR0"].layer.count("interface_status"), 1);
+    EXPECT_EQ(rep_res["VR0"].layer.count("firmware_status"), 1);
+    EXPECT_EQ(rep_res["VR0"].layer.count("protocol_status"), 1);
 }
 
 TEST(selftestTest, doPerformEntireTree)
@@ -748,21 +850,21 @@ TEST(selftestReportTest, fieldOrder)
 {
     /* Generate dummy report, expect that:
         1. header key is first and test key is second
-        2. inside every device key: layer keys are preceeding datadump key 
-        3. TP result without expected value is simplified to name and read 
+        2. inside every device key: layer keys are preceeding datadump key
+        3. TP result without expected value is simplified to name and read
             fields only */
-    
+
     /* Given */
     selftest::ReportResult reportResult;
-    struct selftest::TestPointResult dummyTpExp =   {.targetName = "expValTp",
-                                                    .valRead = "dummy read",
-                                                    .valExpected = "OK",
-                                                    .result = false};
+    struct selftest::TestPointResult dummyTpExp = {.targetName = "expValTp",
+                                                   .valRead = "dummy read",
+                                                   .valExpected = "OK",
+                                                   .result = false};
 
     struct selftest::TestPointResult dummyTpNoExp = {.targetName = "noExpValTp",
-                                                    .valRead = "dummy read",
-                                                    .valExpected = "",
-                                                    .result = true};
+                                                     .valRead = "dummy read",
+                                                     .valExpected = "",
+                                                     .result = true};
 
     std::vector<struct selftest::TestPointResult> tpVec;
     tpVec.insert(tpVec.end(), dummyTpExp);
@@ -797,10 +899,12 @@ TEST(selftestReportTest, fieldOrder)
     }
 
     /* check 2. requirement */
-    const std::vector<std::string> deviceKeysOrderLut = { 
-    "device-name", "firmware-version", "timestamp", "erot-control-status",
-    "firmware-status", "interface-status", "pin-status", "power-rail-status",
-    "protocol-status", "data-dump"};
+    const std::vector<std::string> deviceKeysOrderLut = {
+        "device-name",     "firmware-version",
+        "timestamp",       "erot-control-status",
+        "firmware-status", "interface-status",
+        "pin-status",      "power-rail-status",
+        "protocol-status", "data-dump"};
     idx = 0;
 
     for (auto& el : j.at("tests").at(0).items())
@@ -819,7 +923,7 @@ TEST(selftestReportTest, fieldOrder)
     EXPECT_EQ(TPs[0]["value-expected"], dummyTpExp.valExpected);
     EXPECT_EQ(TPs[0].count("result"), 1);
     EXPECT_EQ(TPs[0]["result"], dummyTpExp.result ? "Pass" : "Fail");
-    
+
     EXPECT_EQ(TPs[1].count("name"), 1);
     EXPECT_EQ(TPs[1]["name"], dummyTpNoExp.targetName);
     EXPECT_EQ(TPs[1].count("value"), 1);
@@ -860,8 +964,10 @@ TEST(rootCauseTraceTest, test1)
     jgpu0["name"] = "GPU0";
     jgpu0["association"] = {"HSC0", "GPU0-ERoT", "Retimer0"};
     jgpu0["power_rail"] = {json_testpoint_template("nestedHSC", true, "HSC0")};
-    jgpu0["erot_control"] = {json_testpoint_template("nestedEROT", true, "GPU0-ERoT")};
-    jgpu0["interface_status"] = {json_testpoint_template("nestRETIMER", true, "Retimer0")};
+    jgpu0["erot_control"] = {
+        json_testpoint_template("nestedEROT", true, "GPU0-ERoT")};
+    jgpu0["interface_status"] = {
+        json_testpoint_template("nestRETIMER", true, "Retimer0")};
     dat_traverse::Device gpu0("GPU0", jgpu0);
 
     nlohmann::json jhsc0 = jTemplateDevice;
@@ -877,7 +983,8 @@ TEST(rootCauseTraceTest, test1)
     nlohmann::json jretimer0 = jTemplateDevice;
     jretimer0["name"] = "Retimer0";
     jretimer0["association"] = {"HSC8"};
-    jretimer0["power_rail"] = {json_testpoint_template("nestedHSC", true, "HSC8")};
+    jretimer0["power_rail"] = {
+        json_testpoint_template("nestedHSC", true, "HSC8")};
     dat_traverse::Device retimer0("Retimer0", jretimer0);
 
     nlohmann::json jhsc8 = jTemplateDevice;
@@ -894,8 +1001,8 @@ TEST(rootCauseTraceTest, test1)
         std::pair<std::string, dat_traverse::Device>(retimer0.name, retimer0));
     dat.insert(std::pair<std::string, dat_traverse::Device>(hsc8.name, hsc8));
 
-    event_handler::RootCauseTracer rootCauseTracer(
-                                        "testTracer", dat, isDevicePresentMock);
+    event_handler::RootCauseTracer rootCauseTracer("testTracer", dat,
+                                                   isDevicePresentMock);
     event_info::EventNode event("test event");
     event.device = "GPU0";
 
@@ -924,7 +1031,7 @@ TEST(rootCauseTraceTest, test1)
 
     EXPECT_EQ(rootCauseTracer.process(event), aml::RcCode::succ);
     /*  test case failed count is a sum of purposely failed GPU0 above +
-        + GPU0 nested device TP (retimer) also failed + retimer's single 
+        + GPU0 nested device TP (retimer) also failed + retimer's single
         failed TP, 3 in total */
     EXPECT_EQ(event.selftestReport["header"]["summary"]["test-case-failed"], 3);
     EXPECT_EQ(event.selftestReport["tests"].size(), 5);
