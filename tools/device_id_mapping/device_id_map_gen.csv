@@ -1,0 +1,51 @@
+Baseboard,,,Baseboard
+GPU([0-9]+),,x,GPU#
+NVSwitch([0-9]+),,x,NVSwitch#
+eth([0-9]+),,x,eth#
+usb([0-9]+),,x,usb#
+PCIeSwitchFabric,,,PCIeSwitchFabric
+PCIeRetimerFabric,,,PCIeRetimerFabric
+NVLinkFabric,,,NVLinkFabric
+FabricManager,,,FabricManager
+bmc,,,bmc
+GPUDRAM([0-9]+),,x,GPUDRAM#
+PCIeRetimer([0-9]+),,x,PCIeRetimer#
+PCIeSwitch([0-9]+),,x,PCIeSwitch#
+DOWN([0-9]+),,x,DOWN#
+NVLink([0-9]+),,x,NVLink#
+UP([0-9]+),,x,UP#
+FPGA,,,FPGA
+(HGX_)?Baseboard_0,,,Baseboard
+(HGX_)?FPGA_0,,,FPGA
+(HGX_)?GPU_SXM_([0-9]+),1 <= x1 && x1 <= 4,x1+3,GPU#
+(HGX_)?GPU_SXM_([0-9]+),5 <= x1 && x1 <= 8,x1-5,GPU#
+(HGX_)?HMC_0,,,HMC
+(HGX_)?BMC_0,,,HMC
+(HGX_)?NVSwitch_([0-9]+),,x1,NVSwitch#
+(HGX_)?PCIeRetimer_([0-9]+),,x1,PCIeRetimer#
+(HGX_)?PCIeSwitch_([0-9]+),,x1,PCIeSwitch#
+(HGX_)?NVLinkFabric_0,,,NVLinkFabric
+(HGX_)?PCIeRetimerTopology_0,,,PCIeRetimerFabric
+(HGX_)?PCIeSwitchTopology_0,,,PCIeSwitchFabric
+(HGX_)?FabricManager_0,,,FabricManager
+(HGX_)?GPU_SXM_([0-9]+)_DRAM_0,1 <= x1 && x1 <= 4,x1+3,GPUDRAM#
+(HGX_)?GPU_SXM_([0-9]+)_DRAM_0,5 <= x1 && x1 <= 8,x1-5,GPUDRAM#
+(HGX_)?DOWN_([0-9]+),,x1,DOWN#
+(HGX_)?NVLink_([0-9]+),,x1,NVLink#
+(HGX_)?UP_([0-9]+),,x1,UP#
+ERoT_FPGA,,,ERoT_FPGA
+ERoT_GPU([0-9]+),,x,ERoT_GPU#
+ERoT_HMC,,,ERoT_HMC
+ERoT_NVSwitch([0-9]+),,x,ERoT_NVSwitch#
+ERoT_PCIeSwitch0,,,ERoT_PCIeSwitch0
+(HGX_)?ERoT_FPGA_0,,,ERoT_FPGA
+(HGX_)?ERoT_GPU_SXM_([0-9]+),1 <= x1 && x1 <= 4,x1+3,ERoT_GPU#
+(HGX_)?ERoT_GPU_SXM_([0-9]+),5 <= x1 && x1 <= 8,x1-5,ERoT_GPU#
+(HGX_)?ERoT_HMC_0,,,ERoT_HMC
+(HGX_)?ERoT_BMC_0,,,ERoT_HMC
+(HGX_)?ERoT_NVSwitch_([0-9]+),,x1,ERoT_NVSwitch#
+(HGX_)?ERoT_PCIeSwitch_0,,,ERoT_PCIeSwitch0
+HSC_([0-9]+),,x,HSC_#
+InletSensor,,,InletSensor
+StandbyHSC_([0-9]+),,x,StandbyHSC_#
+VR,,,VR

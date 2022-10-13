@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 
-scr='device-id-norm.sh'
+[ -z "$SCRIPT" ] && SCRIPT='device-id-norm.sh'
 
 runTest() {
     local deviceId=$1
     local expectedOutput=$2  # ignore for now
     # command=${scr} ${OPTS} ${deviceId}
-    result=$( ${scr} ${OPTS} ${deviceId} ); rc=$?
+    result=$( ${SCRIPT} ${OPTS} ${deviceId} ); rc=$?
     echo -n "${deviceId} -> ${result}"
     if (( rc == 0 )); then
         echo "  PASS"
@@ -28,30 +28,6 @@ while [[ ${dispatchOpts} ]]; do
         dispatchOpts=""
     fi
 done
-
-# runTest GPU_SXM_1 GPU4
-# runTest GPU_SXM_2 GPU5
-# runTest GPU_SXM_3 GPU6
-# runTest GPU_SXM_4 GPU7
-# runTest GPU_SXM_5 GPU0
-# runTest GPU_SXM_6 GPU1
-# runTest GPU_SXM_7 GPU2
-# runTest GPU_SXM_8 GPU3
-# runTest NVSwitch_0 NVSwitch0
-# runTest NVSwitch_1 NVSwitch1
-# runTest NVSwitch_2 NVSwitch2
-# runTest NVSwitch_3 NVSwitch3
-# runTest PCIeRetimer_0 PCIeRetimer0
-# runTest PCIeRetimer_1 PCIeRetimer1
-# runTest PCIeRetimer_2 PCIeRetimer2
-# runTest PCIeRetimer_3 PCIeRetimer3
-# runTest PCIeRetimer_4 PCIeRetimer4
-# runTest PCIeRetimer_5 PCIeRetimer5
-# runTest PCIeRetimer_6 PCIeRetimer6
-# runTest PCIeRetimer_7 PCIeRetimer7
-# runTest PCIeSwitch_0 PCIeSwitch
-# runTest FPGA_0 FPGA
-# runTest BMC_0 HMC
 
 ############################# Old names ##############################
 
