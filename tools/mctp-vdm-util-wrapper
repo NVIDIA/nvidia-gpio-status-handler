@@ -27,6 +27,12 @@ APP_VER="0.1"
 [ -z "$DEV_EID_PROFILE" ] && DEV_EID_PROFILE="device_mctp_eid.csv"
 DEVICENAME_EID_LIST=`cat "$DEV_EID_PROFILE"`
 
+DOWNLOAD_LOG_CMD="download_log"
+GLACIER_LOG_FILE="/var/mctp-vdm-output.bin"
+
+
+DEVNAME=""
+
 getDeviceEid() #1=device name
 {
     local device=$1
@@ -45,6 +51,7 @@ getDeviceEid() #1=device name
     done
     return 1
 }
+
 
 # Per
 # [Glacier Firmware Design Document](https://docs.google.com/document/d/12VnlI_eX4hvsMVXzOhS4SkwLsvUHZEl5-g-OEBJhGRw/edit#heading=h.yv8pagajiaef)
@@ -88,6 +95,59 @@ mctp_cmd_lookup() #(pretty_cmd) => <mctp_cmd>
     return 1
 }
 
+
+## This function can be used to put any proxy before running the mct-vdm-util command
+## it should return NOT 0 if for some reason mct-vdm-util should not be invoked
+cmd_requires_special_pre_start_handling()
+{
+    local dev_eid="$1"
+    local mctp_cmd="$2"
+    local rc=0
+    case "$mctp_cmd" in
+       "$DOWNLOAD_LOG_CMD")  ## here will be some lock file handling
+                             return 0
+                             ;;
+       *)                    return 0;; # returns without printing anything
+    esac
+    return 0
+}
+
+print_glacier_log_raw_bytes()
+{
+   local log=$1
+   hexdump -ve '/1 "0x%02x "' $log
+}
+
+# this function prints something such as 1 when it performs a specific output
+# handling, otherwise it prints nothing
+cmd_requires_special_output_handling() # $1=$dev_eid $2=mctp_cmd $3=cmd output
+{
+    local dev_eid="$1"
+    local mctp_cmd="$2"
+    local output=$3
+    local rc=0
+    case "$mctp_cmd" in
+       "$DOWNLOAD_LOG_CMD")  rc=1
+                      LOG_OUT="/tmp/downloaded_glacier_log_${DEVNAME}.bin"
+                      if [ -f "$GLACIER_LOG_FILE" ]; then
+                         /bin/cp $GLACIER_LOG_FILE $LOG_OUT
+                         rc=0
+                      fi
+                      if [ $rc -eq 0 ]; then
+                           >&2 echo "parsing log $LOG_OUT, please wait..."
+                           LOG=`print_glacier_log_raw_bytes $LOG_OUT`
+                           ## output for selftest
+                           echo "$LOG"
+                      else
+                           echo 1 # no /var/mctp-vdm-output.bin
+                      fi
+                      return 0;;
+
+       *)             return 0;; # returns without printing anything
+    esac
+    return 0
+}
+
 mctp_access() #(dev_eid, pretty_cmd) => <value>
 {
     local dev_eid=$1;shift
@@ -113,9 +173,29 @@ mctp_access() #(dev_eid, pretty_cmd) => <value>
         return 0
     fi
 
+    ## if command should manage its return code
+    ## if not zero it will not continue
+    cmd_requires_special_pre_start_handling $dev_eid "$mctp_cmd"
+    rc=$?
+    if [ "$rc" -ne "0" ]; then
+       return $rc
+    fi
+
     local output;output=`$cmdline`;rc=$?
-    [ "$rc" -eq 0 ] || return $rc
+    if [ "$rc" -ne 0 ]
+    then
+       return $rc
+    fi
+
     output=`echo $output`
+
+    # if requires a specific output handling, it must be done and exit here
+    special_output=`cmd_requires_special_output_handling $dev_eid "$mctp_cmd" "$output"`;rc=$?
+
+    if [ "$special_output" != "" ]; then
+        echo $special_output
+        return $rc
+    fi
 
     # output parsing
     [[ $output =~ .*TX:(([ ][0-9A-Fa-f]{2})+)\ RX:(([ ][0-9A-Fa-f]{2})+) ]]
