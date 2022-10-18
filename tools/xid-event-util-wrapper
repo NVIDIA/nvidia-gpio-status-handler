@@ -14,7 +14,7 @@ show_help()
     echo "<options>"
     echo "  -dry-run          - Only print ${APP_NAME} cmdline."
     echo
-    echo "  device_id         - Device ID: For GPUs->[1-8], For NVSwitches->[0-3]"
+    echo "  device_id         - Device ID: For NVSwitch->HGX_NVSwitch_[1-8], For GPU->HGX_GPU_SXM_[0-3]"
     echo
     echo "  oob_property      - OOB properties Supported: gpu.xid.event, nvswitch.Sxid.event"
     echo
@@ -33,12 +33,14 @@ if [ "$1"  = "-dry-run" ]; then
    shift
 fi
 
-if [ $# -ne 3 ]; then
-    show_help
-    exit 1
+device_id=$(echo "$1" | grep -Eo '[0-9]+$')
+
+if [ -z $device_id ]; then
+  echo "Unsupported Device Name. Exiting!"
+  exit 1
 fi
 
-cmdline="busctl call xyz.openbmc_project.GpuMgr /xyz/openbmc_project/GpuMgr xyz.openbmc_project.GpuMgr.Server DeviceGetData isi $1 \"$2\" 1"
+cmdline="busctl call xyz.openbmc_project.GpuMgr /xyz/openbmc_project/GpuMgr xyz.openbmc_project.GpuMgr.Server DeviceGetData isi $device_id \"$2\" 1"
 
 # Sample Output: (isau) 0 "GPU Driver Event Message - xid Event : 06 ab 00 ba ba ba ba ab ab ab ab 48 65 6c 6c 6f 57 6f 72 6c 64 00 00 00" 2 3120605958 2881141434
 # Indexes:                                                        1   2  3  4           5           6  
@@ -52,7 +54,12 @@ cmdline="busctl call xyz.openbmc_project.GpuMgr /xyz/openbmc_project/GpuMgr xyz.
 
 if [ "$DRY_RUN" -eq 1 ]; then
     echo $cmdline
-    return 0
+    exit 0
+fi
+
+if [ $# -ne 3 ]; then
+    show_help
+    exit 1
 fi
 
 output=$(eval $cmdline)
