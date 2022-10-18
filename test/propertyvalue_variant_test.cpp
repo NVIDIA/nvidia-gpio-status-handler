@@ -144,6 +144,32 @@ TEST(PropertyValue, CheckNegativePropertyValue)
     EXPECT_NE(propertyValueFail.check(accessorCHECK), true);
 }
 
+TEST(PropertyValue, CheckEqualString)
+{
+    const CheckDefinitionMap accessorCHECK = {{"equal", "0x01"}};
+    PropertyValue propertyValueOK{std::string{"1"}};
+    EXPECT_EQ(propertyValueOK.check(accessorCHECK), true);
+}
+
+TEST(PropertyValue, CheckEqualInteger)
+{
+    const CheckDefinitionMap accessorCHECK = {{"equal", "0x01"}};
+    PropertyValue propertyValueInteger{1};
+    EXPECT_EQ(propertyValueInteger.check(accessorCHECK), true);
+}
+
+TEST(PropertyValue, CheckNotEqual)
+{
+    const CheckDefinitionMap accessorCHECK = {{"not_equal", "0x01"}};
+    PropertyValue propertyValueInteger{1};
+    // they are equal, then not_equal returns false
+    EXPECT_EQ(propertyValueInteger.check(accessorCHECK), false);
+
+    PropertyValue propertyValueIntegerDiff{2};
+    // they are different, then not_equal returns true
+    EXPECT_EQ(propertyValueIntegerDiff.check(accessorCHECK), true);
+}
+
 TEST(PropertyValue, CheckPositiveLookupString)
 {
     CheckDefinitionMap accessorCHECK = {{"lookup", "0x40"}};
@@ -167,4 +193,10 @@ TEST(PropertyValue, CheckNegativeBitmaskPropertyValueRedefinition)
 
     PropertyVariant maskRedefinition(int64_t(0x04));
     EXPECT_NE(propertyValueFail.check(accessorCHECK, maskRedefinition), true);
+}
+
+TEST(PropertyValue, EqualOperator)
+{
+    EXPECT_EQ(PropertyValue(std::string("001")) == PropertyValue(1), true);
+    EXPECT_EQ(PropertyValue(std::string("001")) == PropertyValue(0x01), true);
 }

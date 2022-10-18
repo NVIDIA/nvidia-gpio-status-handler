@@ -190,6 +190,30 @@ class PropertyValue
     virtual ~PropertyValue();
 
     /**
+     * @brief operator ==  Compares two PropertyValue Data
+     *
+     *      This comparing returns true:
+     * @code
+     *         if (PropertyValue(std::string("001")) == PropertyValue(0x01))
+     *         {
+     *             std::cout << "They are equal";
+     *         }
+     * @endcode
+     *
+     * @param other other PropertyValue object to compare
+     *
+     * @return  returns true if both data have equal values even strings differ
+    */
+    inline bool operator==(const PropertyValue& other) const
+    {
+        if (this->isValidInteger() == true && other.isValidInteger() == true)
+        {
+            return this->getInteger() == other.getInteger();
+        }
+        return this->getString() == other.getString();
+    }
+
+    /**
      * @brief check() does high level operation between 2 PropertyValue objects
      *
      *

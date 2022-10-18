@@ -94,15 +94,14 @@ bool PropertyValue::check(const CheckDefinitionMap& map,
         }
         else if (key == equalKey)
         {
-            auto value = criteria::getStringFromCriteria(redefCriteria,
-                                                         accessorCheck.second);
-            ret = value._data.strValue == _data.strValue;
+            ret = (*this == criteria::getValueFromCriteria(
+                                          redefCriteria, accessorCheck.second));
         }
         else if (key == notEqualKey)
         {
-            auto value = criteria::getStringFromCriteria(redefCriteria,
-                                                         accessorCheck.second);
-            ret = value._data.strValue != _data.strValue;
+            auto equal = (*this == criteria::getValueFromCriteria(
+                                          redefCriteria, accessorCheck.second));
+            ret = (equal == false);
         }
         if (ret == false)
         {
