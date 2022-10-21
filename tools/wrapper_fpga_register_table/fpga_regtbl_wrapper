@@ -32,9 +32,9 @@ APP_VER="0.1"
 [ -z "$DEVICE_NAME_MAPPER" ] && DEVICE_NAME_MAPPER="device-id-norm.sh" 
 
 profile_path="${PROFILE_FILE}"
-# hardcoded i2c-3 because fpga defs spreadheet pointed all commands to slave
-# address 0x09 which was only present on i2c-3
-i2cbus="3"
+# hardcoded i2c-2 because fpga defs spreadsheet pointed all commands to the same
+# slave address
+i2cbus="2"
 slaveaddr="unknown"
 regaddr="unknown"
 bitidx="unknown"
