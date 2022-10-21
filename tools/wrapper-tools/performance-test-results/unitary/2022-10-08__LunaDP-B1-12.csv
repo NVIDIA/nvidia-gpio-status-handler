@@ -1,0 +1,801 @@
+;.accessor.executable;.accessor.arguments;cpu_percent;elapsed_real;total_system_s;total_user_s;context_switches_invol;context_switches_vol;exit_code;output
+0;i2c_wrapper;i2c_access ERoT_FPGA_0;85%;0m 0.12s;0.04;0.05;596;12;1;Error: cannot map deviceID (ERoT_FPGA_0)
+1;i2c_wrapper;i2c_access ERoT_FPGA_0;89%;0m 0.10s;0.01;0.08;476;13;1;Error: cannot map deviceID (ERoT_FPGA_0)
+2;i2c_wrapper;i2c_access ERoT_GPU_SXM_1;78%;0m 0.14s;0.0;0.11;1096;11;1;Error: cannot map deviceID (ERoT_GPU_SXM_1)
+3;i2c_wrapper;i2c_access ERoT_GPU_SXM_1;86%;0m 0.11s;0.02;0.07;584;12;1;Error: cannot map deviceID (ERoT_GPU_SXM_1)
+4;i2c_wrapper;i2c_access ERoT_GPU_SXM_2;87%;0m 0.10s;0.03;0.06;565;12;1;Error: cannot map deviceID (ERoT_GPU_SXM_2)
+5;i2c_wrapper;i2c_access ERoT_GPU_SXM_2;84%;0m 0.11s;0.02;0.07;322;12;1;Error: cannot map deviceID (ERoT_GPU_SXM_2)
+6;i2c_wrapper;i2c_access ERoT_GPU_SXM_3;88%;0m 0.11s;0.03;0.06;526;12;1;Error: cannot map deviceID (ERoT_GPU_SXM_3)
+7;i2c_wrapper;i2c_access ERoT_GPU_SXM_3;89%;0m 0.10s;0.02;0.06;433;10;1;Error: cannot map deviceID (ERoT_GPU_SXM_3)
+8;i2c_wrapper;i2c_access ERoT_GPU_SXM_4;90%;0m 0.10s;0.03;0.06;287;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_4)
+9;i2c_wrapper;i2c_access ERoT_GPU_SXM_4;88%;0m 0.10s;0.02;0.07;278;12;1;Error: cannot map deviceID (ERoT_GPU_SXM_4)
+10;i2c_wrapper;i2c_access ERoT_GPU_SXM_5;90%;0m 0.10s;0.03;0.05;325;12;1;Error: cannot map deviceID (ERoT_GPU_SXM_5)
+11;i2c_wrapper;i2c_access ERoT_GPU_SXM_5;93%;0m 0.09s;0.02;0.06;214;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_5)
+12;i2c_wrapper;i2c_access ERoT_GPU_SXM_6;91%;0m 0.10s;0.01;0.07;169;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_6)
+13;i2c_wrapper;i2c_access ERoT_GPU_SXM_6;92%;0m 0.10s;0.01;0.07;206;12;1;Error: cannot map deviceID (ERoT_GPU_SXM_6)
+14;i2c_wrapper;i2c_access ERoT_GPU_SXM_7;87%;0m 0.10s;0.01;0.08;537;12;1;Error: cannot map deviceID (ERoT_GPU_SXM_7)
+15;i2c_wrapper;i2c_access ERoT_GPU_SXM_7;89%;0m 0.11s;0.03;0.06;325;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_7)
+16;i2c_wrapper;i2c_access ERoT_GPU_SXM_8;62%;0m 0.21s;0.04;0.09;1792;11;1;Error: cannot map deviceID (ERoT_GPU_SXM_8)
+17;i2c_wrapper;i2c_access ERoT_GPU_SXM_8;94%;0m 0.09s;0.02;0.05;140;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_8)
+18;i2c_wrapper;i2c_access ERoT_HMC_0;84%;0m 0.11s;0.03;0.06;429;10;1;Error: cannot map deviceID (ERoT_HMC_0)
+19;i2c_wrapper;i2c_access ERoT_HMC_0;58%;0m 0.21s;0.01;0.1;898;12;1;Error: cannot map deviceID (ERoT_HMC_0)
+20;i2c_wrapper;i2c_access ERoT_NVSwitch_0;53%;0m 0.32s;0.0;0.16;2266;12;1;Error: cannot map deviceID (ERoT_NVSwitch_0)
+21;i2c_wrapper;i2c_access ERoT_NVSwitch_0;82%;0m 0.12s;0.02;0.07;995;11;1;Error: cannot map deviceID (ERoT_NVSwitch_0)
+22;i2c_wrapper;i2c_access ERoT_NVSwitch_1;87%;0m 0.11s;0.04;0.05;475;13;1;Error: cannot map deviceID (ERoT_NVSwitch_1)
+23;i2c_wrapper;i2c_access ERoT_NVSwitch_1;79%;0m 0.14s;0.02;0.08;1155;10;1;Error: cannot map deviceID (ERoT_NVSwitch_1)
+24;i2c_wrapper;i2c_access ERoT_NVSwitch_2;94%;0m 0.09s;0.0;0.08;137;13;1;Error: cannot map deviceID (ERoT_NVSwitch_2)
+25;i2c_wrapper;i2c_access ERoT_NVSwitch_2;88%;0m 0.10s;0.0;0.09;256;13;1;Error: cannot map deviceID (ERoT_NVSwitch_2)
+26;i2c_wrapper;i2c_access ERoT_NVSwitch_3;91%;0m 0.10s;0.02;0.07;248;14;1;Error: cannot map deviceID (ERoT_NVSwitch_3)
+27;i2c_wrapper;i2c_access ERoT_NVSwitch_3;91%;0m 0.09s;0.02;0.06;226;12;1;Error: cannot map deviceID (ERoT_NVSwitch_3)
+28;i2c_wrapper;i2c_access ERoT_PCIeSwitch_0;93%;0m 0.09s;0.02;0.07;199;12;1;Error: cannot map deviceID (ERoT_PCIeSwitch_0)
+29;i2c_wrapper;i2c_access ERoT_PCIeSwitch_0;82%;0m 0.12s;0.02;0.08;665;11;1;Error: cannot map deviceID (ERoT_PCIeSwitch_0)
+30;i2c_wrapper;i2c_access FPGA_0;88%;0m 0.10s;0.03;0.05;429;19;0;link-up
+31;i2c_wrapper;i2c_access FPGA_0;91%;0m 0.09s;0.04;0.04;234;18;0;link-up
+32;i2c_wrapper;i2c_access GPU_SXM_1;81%;0m 0.15s;0.03;0.08;831;25;0;link-up
+33;i2c_wrapper;i2c_access GPU_SXM_1;81%;0m 0.15s;0.05;0.07;975;24;0;link-up
+34;i2c_wrapper;i2c_access GPU_SXM_2;83%;0m 0.13s;0.05;0.05;766;24;0;link-up
+35;i2c_wrapper;i2c_access GPU_SXM_2;85%;0m 0.13s;0.06;0.05;632;26;0;link-up
+36;i2c_wrapper;i2c_access GPU_SXM_3;86%;0m 0.13s;0.02;0.08;625;26;0;link-up
+37;i2c_wrapper;i2c_access GPU_SXM_3;90%;0m 0.12s;0.02;0.09;280;26;0;link-up
+38;i2c_wrapper;i2c_access GPU_SXM_4;91%;0m 0.13s;0.05;0.07;356;24;0;link-up
+39;i2c_wrapper;i2c_access GPU_SXM_4;82%;0m 0.14s;0.05;0.06;1087;25;0;link-up
+40;i2c_wrapper;i2c_access GPU_SXM_5;86%;0m 0.16s;0.06;0.07;514;27;0;link-up
+41;i2c_wrapper;i2c_access GPU_SXM_5;90%;0m 0.15s;0.04;0.09;434;28;0;link-up
+42;i2c_wrapper;i2c_access GPU_SXM_6;93%;0m 0.13s;0.04;0.08;238;28;0;link-up
+43;i2c_wrapper;i2c_access GPU_SXM_6;82%;0m 0.16s;0.08;0.04;779;27;0;link-up
+44;i2c_wrapper;i2c_access GPU_SXM_7;88%;0m 0.14s;0.05;0.07;489;26;0;link-up
+45;i2c_wrapper;i2c_access GPU_SXM_7;83%;0m 0.16s;0.03;0.1;628;29;0;link-up
+46;i2c_wrapper;i2c_access GPU_SXM_8;82%;0m 0.18s;0.09;0.06;402;27;0;link-up
+47;i2c_wrapper;i2c_access GPU_SXM_8;85%;0m 0.15s;0.05;0.07;428;28;0;link-up
+48;i2c_wrapper;i2c_access HSC_0;95%;0m 0.10s;0.02;0.06;161;13;1;Error: cannot map deviceID (HSC_0)
+49;i2c_wrapper;i2c_access HSC_0;66%;0m 0.18s;0.03;0.09;616;10;1;Error: cannot map deviceID (HSC_0)
+50;i2c_wrapper;i2c_access HSC_1;56%;0m 0.29s;0.03;0.13;2156;12;1;Error: cannot map deviceID (HSC_1)
+51;i2c_wrapper;i2c_access HSC_1;72%;0m 0.15s;0.02;0.09;524;11;1;Error: cannot map deviceID (HSC_1)
+52;i2c_wrapper;i2c_access HSC_2;80%;0m 0.12s;0.01;0.08;898;10;1;Error: cannot map deviceID (HSC_2)
+53;i2c_wrapper;i2c_access HSC_2;88%;0m 0.10s;0.01;0.08;327;13;1;Error: cannot map deviceID (HSC_2)
+54;i2c_wrapper;i2c_access HSC_3;94%;0m 0.09s;0.01;0.07;130;13;1;Error: cannot map deviceID (HSC_3)
+55;i2c_wrapper;i2c_access HSC_3;93%;0m 0.10s;0.02;0.06;106;13;1;Error: cannot map deviceID (HSC_3)
+56;i2c_wrapper;i2c_access HSC_4;95%;0m 0.09s;0.03;0.05;90;13;1;Error: cannot map deviceID (HSC_4)
+57;i2c_wrapper;i2c_access HSC_4;86%;0m 0.11s;0.02;0.06;610;10;1;Error: cannot map deviceID (HSC_4)
+58;i2c_wrapper;i2c_access HSC_5;90%;0m 0.10s;0.03;0.05;280;13;1;Error: cannot map deviceID (HSC_5)
+59;i2c_wrapper;i2c_access HSC_5;84%;0m 0.11s;0.01;0.09;618;12;1;Error: cannot map deviceID (HSC_5)
+60;i2c_wrapper;i2c_access HSC_6;85%;0m 0.11s;0.02;0.07;555;13;1;Error: cannot map deviceID (HSC_6)
+61;i2c_wrapper;i2c_access HSC_6;92%;0m 0.10s;0.01;0.07;224;12;1;Error: cannot map deviceID (HSC_6)
+62;i2c_wrapper;i2c_access HSC_7;90%;0m 0.10s;0.01;0.08;237;13;1;Error: cannot map deviceID (HSC_7)
+63;i2c_wrapper;i2c_access HSC_7;86%;0m 0.11s;0.01;0.08;336;12;1;Error: cannot map deviceID (HSC_7)
+64;i2c_wrapper;i2c_access HSC_8;81%;0m 0.12s;0.03;0.07;1122;10;1;Error: cannot map deviceID (HSC_8)
+65;i2c_wrapper;i2c_access HSC_8;84%;0m 0.11s;0.02;0.07;400;12;1;Error: cannot map deviceID (HSC_8)
+66;i2c_wrapper;i2c_access HSC_9;88%;0m 0.10s;0.01;0.07;339;11;1;Error: cannot map deviceID (HSC_9)
+67;i2c_wrapper;i2c_access HSC_9;95%;0m 0.09s;0.02;0.06;137;13;1;Error: cannot map deviceID (HSC_9)
+68;i2c_wrapper;i2c_access NVSwitch_0;90%;0m 0.12s;0.02;0.08;279;23;0;link-up
+69;i2c_wrapper;i2c_access NVSwitch_0;92%;0m 0.12s;0.04;0.06;252;24;0;link-up
+70;i2c_wrapper;i2c_access NVSwitch_1;85%;0m 0.12s;0.02;0.08;696;24;0;link-up
+71;i2c_wrapper;i2c_access NVSwitch_1;79%;0m 0.15s;0.05;0.07;1145;23;0;link-up
+72;i2c_wrapper;i2c_access NVSwitch_2;84%;0m 0.13s;0.05;0.05;602;25;0;link-up
+73;i2c_wrapper;i2c_access NVSwitch_2;85%;0m 0.12s;0.02;0.08;729;22;0;link-up
+74;i2c_wrapper;i2c_access NVSwitch_3;80%;0m 0.14s;0.02;0.09;734;22;0;link-up
+75;i2c_wrapper;i2c_access NVSwitch_3;88%;0m 0.12s;0.03;0.07;434;22;0;link-up
+76;i2c_wrapper;i2c_access PCIeSwitch_0;89%;0m 0.11s;0.03;0.07;469;18;1;Error: device PCIeSwitch0 not found in /usr/share/selftest_i2c_profile.csv
+77;i2c_wrapper;i2c_access PCIeSwitch_0;89%;0m 0.12s;0.03;0.07;367;19;1;Error: device PCIeSwitch0 not found in /usr/share/selftest_i2c_profile.csv
+78;i2c_wrapper;i2c_access StandbyHSC_0;90%;0m 0.11s;0.03;0.06;311;13;1;Error: cannot map deviceID (StandbyHSC_0)
+79;i2c_wrapper;i2c_access StandbyHSC_0;90%;0m 0.11s;0.03;0.06;94;13;1;Error: cannot map deviceID (StandbyHSC_0)
+80;i2c_wrapper;i2c_access ERoT_FPGA_0;96%;0m 0.10s;0.03;0.07;104;13;1;Error: cannot map deviceID (ERoT_FPGA_0)
+81;i2c_wrapper;i2c_access ERoT_FPGA_0;81%;0m 0.13s;0.02;0.08;822;11;1;Error: cannot map deviceID (ERoT_FPGA_0)
+82;i2c_wrapper;i2c_access ERoT_GPU_SXM_1;89%;0m 0.10s;0.01;0.07;420;14;1;Error: cannot map deviceID (ERoT_GPU_SXM_1)
+83;i2c_wrapper;i2c_access ERoT_GPU_SXM_1;76%;0m 0.17s;0.05;0.08;602;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_1)
+84;i2c_wrapper;i2c_access ERoT_GPU_SXM_2;74%;0m 0.15s;0.03;0.08;555;12;1;Error: cannot map deviceID (ERoT_GPU_SXM_2)
+85;i2c_wrapper;i2c_access ERoT_GPU_SXM_2;57%;0m 0.22s;0.03;0.09;457;12;1;Error: cannot map deviceID (ERoT_GPU_SXM_2)
+86;i2c_wrapper;i2c_access ERoT_GPU_SXM_3;73%;0m 0.14s;0.02;0.07;995;11;1;Error: cannot map deviceID (ERoT_GPU_SXM_3)
+87;i2c_wrapper;i2c_access ERoT_GPU_SXM_3;91%;0m 0.11s;0.02;0.07;267;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_3)
+88;i2c_wrapper;i2c_access ERoT_GPU_SXM_4;91%;0m 0.10s;0.01;0.08;218;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_4)
+89;i2c_wrapper;i2c_access ERoT_GPU_SXM_4;84%;0m 0.11s;0.03;0.06;780;10;1;Error: cannot map deviceID (ERoT_GPU_SXM_4)
+90;i2c_wrapper;i2c_access ERoT_GPU_SXM_5;89%;0m 0.10s;0.02;0.07;215;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_5)
+91;i2c_wrapper;i2c_access ERoT_GPU_SXM_5;89%;0m 0.11s;0.02;0.07;523;12;1;Error: cannot map deviceID (ERoT_GPU_SXM_5)
+92;i2c_wrapper;i2c_access ERoT_GPU_SXM_6;84%;0m 0.11s;0.04;0.05;680;11;1;Error: cannot map deviceID (ERoT_GPU_SXM_6)
+93;i2c_wrapper;i2c_access ERoT_GPU_SXM_6;89%;0m 0.10s;0.02;0.07;488;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_6)
+94;i2c_wrapper;i2c_access ERoT_GPU_SXM_7;86%;0m 0.11s;0.02;0.07;554;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_7)
+95;i2c_wrapper;i2c_access ERoT_GPU_SXM_7;78%;0m 0.14s;0.03;0.07;397;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_7)
+96;i2c_wrapper;i2c_access ERoT_GPU_SXM_8;91%;0m 0.09s;0.0;0.08;87;11;1;Error: cannot map deviceID (ERoT_GPU_SXM_8)
+97;i2c_wrapper;i2c_access ERoT_GPU_SXM_8;94%;0m 0.09s;0.01;0.08;107;10;1;Error: cannot map deviceID (ERoT_GPU_SXM_8)
+98;i2c_wrapper;i2c_access ERoT_HMC_0;90%;0m 0.10s;0.01;0.08;192;10;1;Error: cannot map deviceID (ERoT_HMC_0)
+99;i2c_wrapper;i2c_access ERoT_HMC_0;98%;0m 0.08s;0.02;0.05;67;10;1;Error: cannot map deviceID (ERoT_HMC_0)
+100;i2c_wrapper;i2c_access ERoT_NVSwitch_0;92%;0m 0.09s;0.01;0.07;81;11;1;Error: cannot map deviceID (ERoT_NVSwitch_0)
+101;i2c_wrapper;i2c_access ERoT_NVSwitch_0;94%;0m 0.09s;0.02;0.07;98;10;1;Error: cannot map deviceID (ERoT_NVSwitch_0)
+102;i2c_wrapper;i2c_access ERoT_NVSwitch_1;95%;0m 0.10s;0.03;0.05;113;10;1;Error: cannot map deviceID (ERoT_NVSwitch_1)
+103;i2c_wrapper;i2c_access ERoT_NVSwitch_1;98%;0m 0.08s;0.02;0.06;24;11;1;Error: cannot map deviceID (ERoT_NVSwitch_1)
+104;i2c_wrapper;i2c_access ERoT_NVSwitch_2;94%;0m 0.10s;0.01;0.07;115;9;1;Error: cannot map deviceID (ERoT_NVSwitch_2)
+105;i2c_wrapper;i2c_access ERoT_NVSwitch_2;92%;0m 0.12s;0.02;0.09;120;13;1;Error: cannot map deviceID (ERoT_NVSwitch_2)
+106;i2c_wrapper;i2c_access ERoT_NVSwitch_3;92%;0m 0.10s;0.02;0.07;97;13;1;Error: cannot map deviceID (ERoT_NVSwitch_3)
+107;i2c_wrapper;i2c_access ERoT_NVSwitch_3;94%;0m 0.11s;0.02;0.08;110;13;1;Error: cannot map deviceID (ERoT_NVSwitch_3)
+108;i2c_wrapper;i2c_access ERoT_PCIeSwitch_0;94%;0m 0.11s;0.03;0.07;112;13;1;Error: cannot map deviceID (ERoT_PCIeSwitch_0)
+109;i2c_wrapper;i2c_access ERoT_PCIeSwitch_0;94%;0m 0.10s;0.0;0.09;101;13;1;Error: cannot map deviceID (ERoT_PCIeSwitch_0)
+110;i2c_wrapper;i2c_access FPGA_0;94%;0m 0.10s;0.02;0.07;89;18;0;link-up
+111;i2c_wrapper;i2c_access FPGA_0;92%;0m 0.11s;0.01;0.08;142;18;0;link-up
+112;i2c_wrapper;i2c_access GPU_SXM_1;86%;0m 0.13s;0.04;0.06;475;25;0;link-up
+113;i2c_wrapper;i2c_access GPU_SXM_1;88%;0m 0.14s;0.05;0.06;412;27;0;link-up
+114;i2c_wrapper;i2c_access GPU_SXM_2;31%;0m 0.49s;0.05;0.1;1008;24;0;link-up
+115;i2c_wrapper;i2c_access GPU_SXM_2;25%;0m 0.69s;0.07;0.1;1153;26;0;link-up
+116;i2c_wrapper;i2c_access GPU_SXM_3;42%;0m 0.43s;0.05;0.13;1945;26;0;link-up
+117;i2c_wrapper;i2c_access GPU_SXM_3;79%;0m 0.16s;0.04;0.08;764;24;0;link-up
+118;i2c_wrapper;i2c_access GPU_SXM_4;89%;0m 0.12s;0.05;0.06;401;25;0;link-up
+119;i2c_wrapper;i2c_access GPU_SXM_4;92%;0m 0.13s;0.05;0.06;268;26;0;link-up
+120;i2c_wrapper;i2c_access GPU_SXM_5;86%;0m 0.15s;0.04;0.09;732;26;0;link-up
+121;i2c_wrapper;i2c_access GPU_SXM_5;86%;0m 0.16s;0.02;0.11;508;28;0;link-up
+122;i2c_wrapper;i2c_access GPU_SXM_6;84%;0m 0.16s;0.05;0.09;785;27;0;link-up
+123;i2c_wrapper;i2c_access GPU_SXM_6;83%;0m 0.16s;0.03;0.1;1098;28;0;link-up
+124;i2c_wrapper;i2c_access GPU_SXM_7;84%;0m 0.16s;0.04;0.09;752;27;0;link-up
+125;i2c_wrapper;i2c_access GPU_SXM_7;91%;0m 0.14s;0.01;0.11;322;28;0;link-up
+126;i2c_wrapper;i2c_access GPU_SXM_8;88%;0m 0.15s;0.05;0.08;469;28;0;link-up
+127;i2c_wrapper;i2c_access GPU_SXM_8;89%;0m 0.15s;0.04;0.09;466;28;0;link-up
+128;i2c_wrapper;i2c_access HSC_0;89%;0m 0.10s;0.02;0.07;389;12;1;Error: cannot map deviceID (HSC_0)
+129;i2c_wrapper;i2c_access HSC_0;89%;0m 0.11s;0.02;0.07;248;13;1;Error: cannot map deviceID (HSC_0)
+130;i2c_wrapper;i2c_access HSC_1;81%;0m 0.13s;0.02;0.08;978;11;1;Error: cannot map deviceID (HSC_1)
+131;i2c_wrapper;i2c_access HSC_1;88%;0m 0.10s;0.03;0.05;487;13;1;Error: cannot map deviceID (HSC_1)
+132;i2c_wrapper;i2c_access HSC_2;84%;0m 0.12s;0.02;0.07;568;13;1;Error: cannot map deviceID (HSC_2)
+133;i2c_wrapper;i2c_access HSC_2;86%;0m 0.12s;0.03;0.07;568;13;1;Error: cannot map deviceID (HSC_2)
+134;i2c_wrapper;i2c_access HSC_3;92%;0m 0.09s;0.01;0.07;205;13;1;Error: cannot map deviceID (HSC_3)
+135;i2c_wrapper;i2c_access HSC_3;93%;0m 0.10s;0.01;0.07;142;13;1;Error: cannot map deviceID (HSC_3)
+136;i2c_wrapper;i2c_access HSC_4;86%;0m 0.11s;0.01;0.08;582;12;1;Error: cannot map deviceID (HSC_4)
+137;i2c_wrapper;i2c_access HSC_4;90%;0m 0.10s;0.01;0.07;260;13;1;Error: cannot map deviceID (HSC_4)
+138;i2c_wrapper;i2c_access HSC_5;80%;0m 0.13s;0.01;0.08;688;13;1;Error: cannot map deviceID (HSC_5)
+139;i2c_wrapper;i2c_access HSC_5;81%;0m 0.13s;0.06;0.04;1117;10;1;Error: cannot map deviceID (HSC_5)
+140;i2c_wrapper;i2c_access HSC_6;89%;0m 0.10s;0.02;0.06;455;12;1;Error: cannot map deviceID (HSC_6)
+141;i2c_wrapper;i2c_access HSC_6;88%;0m 0.11s;0.01;0.08;551;13;1;Error: cannot map deviceID (HSC_6)
+142;i2c_wrapper;i2c_access HSC_7;84%;0m 0.12s;0.03;0.06;714;10;1;Error: cannot map deviceID (HSC_7)
+143;i2c_wrapper;i2c_access HSC_7;84%;0m 0.12s;0.01;0.08;797;12;1;Error: cannot map deviceID (HSC_7)
+144;i2c_wrapper;i2c_access HSC_8;89%;0m 0.12s;0.01;0.09;230;13;1;Error: cannot map deviceID (HSC_8)
+145;i2c_wrapper;i2c_access HSC_8;60%;0m 0.22s;0.02;0.11;831;13;1;Error: cannot map deviceID (HSC_8)
+146;i2c_wrapper;i2c_access HSC_9;57%;0m 0.27s;0.04;0.11;2144;13;1;Error: cannot map deviceID (HSC_9)
+147;i2c_wrapper;i2c_access HSC_9;74%;0m 0.16s;0.02;0.09;310;11;1;Error: cannot map deviceID (HSC_9)
+148;i2c_wrapper;i2c_access NVSwitch_0;80%;0m 0.14s;0.05;0.06;766;22;0;link-up
+149;i2c_wrapper;i2c_access NVSwitch_0;78%;0m 0.15s;0.03;0.08;1256;21;0;link-up
+150;i2c_wrapper;i2c_access NVSwitch_1;90%;0m 0.11s;0.05;0.05;382;24;0;link-up
+151;i2c_wrapper;i2c_access NVSwitch_1;82%;0m 0.14s;0.04;0.07;997;21;0;link-up
+152;i2c_wrapper;i2c_access NVSwitch_2;78%;0m 0.15s;0.04;0.07;1195;22;0;link-up
+153;i2c_wrapper;i2c_access NVSwitch_2;85%;0m 0.13s;0.03;0.08;613;24;0;link-up
+154;i2c_wrapper;i2c_access NVSwitch_3;82%;0m 0.14s;0.02;0.09;901;24;0;link-up
+155;i2c_wrapper;i2c_access NVSwitch_3;83%;0m 0.13s;0.05;0.05;706;23;0;link-up
+156;i2c_wrapper;i2c_access PCIeSwitch_0;88%;0m 0.13s;0.03;0.08;364;19;1;Error: device PCIeSwitch0 not found in /usr/share/selftest_i2c_profile.csv
+157;i2c_wrapper;i2c_access PCIeSwitch_0;86%;0m 0.13s;0.03;0.08;598;19;1;Error: device PCIeSwitch0 not found in /usr/share/selftest_i2c_profile.csv
+158;i2c_wrapper;i2c_access StandbyHSC_0;96%;0m 0.09s;0.0;0.08;91;13;1;Error: cannot map deviceID (StandbyHSC_0)
+159;i2c_wrapper;i2c_access StandbyHSC_0;88%;0m 0.11s;0.01;0.09;347;13;1;Error: cannot map deviceID (StandbyHSC_0)
+160;i2c_wrapper;i2c_access ERoT_FPGA_0;93%;0m 0.10s;0.03;0.06;183;13;1;Error: cannot map deviceID (ERoT_FPGA_0)
+161;i2c_wrapper;i2c_access ERoT_FPGA_0;76%;0m 0.14s;0.04;0.06;1324;10;1;Error: cannot map deviceID (ERoT_FPGA_0)
+162;i2c_wrapper;i2c_access ERoT_GPU_SXM_1;88%;0m 0.11s;0.0;0.09;274;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_1)
+163;i2c_wrapper;i2c_access ERoT_GPU_SXM_1;86%;0m 0.11s;0.03;0.06;418;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_1)
+164;i2c_wrapper;i2c_access ERoT_GPU_SXM_2;77%;0m 0.13s;0.01;0.09;1297;12;1;Error: cannot map deviceID (ERoT_GPU_SXM_2)
+165;i2c_wrapper;i2c_access ERoT_GPU_SXM_2;82%;0m 0.13s;0.02;0.07;703;12;1;Error: cannot map deviceID (ERoT_GPU_SXM_2)
+166;i2c_wrapper;i2c_access ERoT_GPU_SXM_3;78%;0m 0.14s;0.02;0.08;1322;12;1;Error: cannot map deviceID (ERoT_GPU_SXM_3)
+167;i2c_wrapper;i2c_access ERoT_GPU_SXM_3;90%;0m 0.10s;0.02;0.06;411;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_3)
+168;i2c_wrapper;i2c_access ERoT_GPU_SXM_4;79%;0m 0.13s;0.03;0.07;841;11;1;Error: cannot map deviceID (ERoT_GPU_SXM_4)
+169;i2c_wrapper;i2c_access ERoT_GPU_SXM_4;77%;0m 0.14s;0.02;0.08;1375;11;1;Error: cannot map deviceID (ERoT_GPU_SXM_4)
+170;i2c_wrapper;i2c_access ERoT_GPU_SXM_5;92%;0m 0.09s;0.01;0.07;193;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_5)
+171;i2c_wrapper;i2c_access ERoT_GPU_SXM_5;85%;0m 0.12s;0.02;0.07;508;12;1;Error: cannot map deviceID (ERoT_GPU_SXM_5)
+172;i2c_wrapper;i2c_access ERoT_GPU_SXM_6;91%;0m 0.11s;0.02;0.07;318;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_6)
+173;i2c_wrapper;i2c_access ERoT_GPU_SXM_6;66%;0m 0.16s;0.0;0.1;485;11;1;Error: cannot map deviceID (ERoT_GPU_SXM_6)
+174;i2c_wrapper;i2c_access ERoT_GPU_SXM_7;87%;0m 0.11s;0.02;0.07;290;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_7)
+175;i2c_wrapper;i2c_access ERoT_GPU_SXM_7;90%;0m 0.10s;0.0;0.09;240;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_7)
+176;i2c_wrapper;i2c_access ERoT_GPU_SXM_8;90%;0m 0.09s;0.0;0.08;294;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_8)
+177;i2c_wrapper;i2c_access ERoT_GPU_SXM_8;57%;0m 0.24s;0.02;0.12;938;12;1;Error: cannot map deviceID (ERoT_GPU_SXM_8)
+178;i2c_wrapper;i2c_access ERoT_HMC_0;52%;0m 0.21s;0.02;0.08;476;11;1;Error: cannot map deviceID (ERoT_HMC_0)
+179;i2c_wrapper;i2c_access ERoT_HMC_0;76%;0m 0.16s;0.04;0.08;233;12;1;Error: cannot map deviceID (ERoT_HMC_0)
+180;i2c_wrapper;i2c_access ERoT_NVSwitch_0;87%;0m 0.11s;0.0;0.09;212;13;1;Error: cannot map deviceID (ERoT_NVSwitch_0)
+181;i2c_wrapper;i2c_access ERoT_NVSwitch_0;91%;0m 0.10s;0.01;0.07;327;10;1;Error: cannot map deviceID (ERoT_NVSwitch_0)
+182;i2c_wrapper;i2c_access ERoT_NVSwitch_1;78%;0m 0.14s;0.02;0.08;1192;12;1;Error: cannot map deviceID (ERoT_NVSwitch_1)
+183;i2c_wrapper;i2c_access ERoT_NVSwitch_1;83%;0m 0.11s;0.0;0.09;677;11;1;Error: cannot map deviceID (ERoT_NVSwitch_1)
+184;i2c_wrapper;i2c_access ERoT_NVSwitch_2;90%;0m 0.11s;0.0;0.09;425;13;1;Error: cannot map deviceID (ERoT_NVSwitch_2)
+185;i2c_wrapper;i2c_access ERoT_NVSwitch_2;87%;0m 0.11s;0.02;0.08;550;12;1;Error: cannot map deviceID (ERoT_NVSwitch_2)
+186;i2c_wrapper;i2c_access ERoT_NVSwitch_3;88%;0m 0.10s;0.02;0.07;365;13;1;Error: cannot map deviceID (ERoT_NVSwitch_3)
+187;i2c_wrapper;i2c_access ERoT_NVSwitch_3;92%;0m 0.09s;0.01;0.07;214;13;1;Error: cannot map deviceID (ERoT_NVSwitch_3)
+188;i2c_wrapper;i2c_access ERoT_PCIeSwitch_0;88%;0m 0.11s;0.02;0.08;495;13;1;Error: cannot map deviceID (ERoT_PCIeSwitch_0)
+189;i2c_wrapper;i2c_access ERoT_PCIeSwitch_0;85%;0m 0.12s;0.01;0.09;629;12;1;Error: cannot map deviceID (ERoT_PCIeSwitch_0)
+190;i2c_wrapper;i2c_access FPGA_0;90%;0m 0.09s;0.01;0.07;349;17;0;link-up
+191;i2c_wrapper;i2c_access FPGA_0;79%;0m 0.12s;0.01;0.08;864;16;0;link-up
+192;i2c_wrapper;i2c_access GPU_SXM_1;86%;0m 0.14s;0.04;0.07;581;25;0;link-up
+193;i2c_wrapper;i2c_access GPU_SXM_1;91%;0m 0.12s;0.01;0.09;337;26;0;link-up
+194;i2c_wrapper;i2c_access GPU_SXM_2;91%;0m 0.13s;0.01;0.1;341;26;0;link-up
+195;i2c_wrapper;i2c_access GPU_SXM_2;87%;0m 0.13s;0.07;0.04;355;27;0;link-up
+196;i2c_wrapper;i2c_access GPU_SXM_3;91%;0m 0.12s;0.04;0.06;331;26;0;link-up
+197;i2c_wrapper;i2c_access GPU_SXM_3;84%;0m 0.14s;0.01;0.1;686;26;0;link-up
+198;i2c_wrapper;i2c_access GPU_SXM_4;82%;0m 0.15s;0.05;0.07;1062;21;0;link-up
+199;i2c_wrapper;i2c_access GPU_SXM_4;86%;0m 0.14s;0.05;0.06;547;26;0;link-up
+200;i2c_wrapper;i2c_access GPU_SXM_5;84%;0m 0.17s;0.04;0.09;771;28;0;link-up
+201;i2c_wrapper;i2c_access GPU_SXM_5;88%;0m 0.15s;0.06;0.07;670;28;0;link-up
+202;i2c_wrapper;i2c_access GPU_SXM_6;88%;0m 0.15s;0.04;0.09;474;27;0;link-up
+203;i2c_wrapper;i2c_access GPU_SXM_6;88%;0m 0.15s;0.03;0.1;511;27;0;link-up
+204;i2c_wrapper;i2c_access GPU_SXM_7;80%;0m 0.18s;0.07;0.06;697;28;0;link-up
+205;i2c_wrapper;i2c_access GPU_SXM_7;72%;0m 0.20s;0.04;0.1;787;28;0;link-up
+206;i2c_wrapper;i2c_access GPU_SXM_8;91%;0m 0.14s;0.07;0.06;361;27;0;link-up
+207;i2c_wrapper;i2c_access GPU_SXM_8;86%;0m 0.16s;0.05;0.09;741;27;0;link-up
+208;i2c_wrapper;i2c_access HSC_0;71%;0m 0.17s;0.04;0.08;610;13;1;Error: cannot map deviceID (HSC_0)
+209;i2c_wrapper;i2c_access HSC_0;62%;0m 0.21s;0.0;0.13;925;13;1;Error: cannot map deviceID (HSC_0)
+210;i2c_wrapper;i2c_access HSC_1;65%;0m 0.20s;0.02;0.1;783;12;1;Error: cannot map deviceID (HSC_1)
+211;i2c_wrapper;i2c_access HSC_1;83%;0m 0.12s;0.01;0.08;682;12;1;Error: cannot map deviceID (HSC_1)
+212;i2c_wrapper;i2c_access HSC_2;87%;0m 0.10s;0.02;0.06;512;10;1;Error: cannot map deviceID (HSC_2)
+213;i2c_wrapper;i2c_access HSC_2;88%;0m 0.12s;0.03;0.07;508;13;1;Error: cannot map deviceID (HSC_2)
+214;i2c_wrapper;i2c_access HSC_3;80%;0m 0.13s;0.01;0.09;1169;11;1;Error: cannot map deviceID (HSC_3)
+215;i2c_wrapper;i2c_access HSC_3;87%;0m 0.10s;0.02;0.07;490;13;1;Error: cannot map deviceID (HSC_3)
+216;i2c_wrapper;i2c_access HSC_4;92%;0m 0.10s;0.02;0.07;255;12;1;Error: cannot map deviceID (HSC_4)
+217;i2c_wrapper;i2c_access HSC_4;94%;0m 0.10s;0.01;0.08;183;13;1;Error: cannot map deviceID (HSC_4)
+218;i2c_wrapper;i2c_access HSC_5;86%;0m 0.11s;0.01;0.08;535;13;1;Error: cannot map deviceID (HSC_5)
+219;i2c_wrapper;i2c_access HSC_5;82%;0m 0.12s;0.02;0.08;926;11;1;Error: cannot map deviceID (HSC_5)
+220;i2c_wrapper;i2c_access HSC_6;91%;0m 0.10s;0.01;0.07;239;13;1;Error: cannot map deviceID (HSC_6)
+221;i2c_wrapper;i2c_access HSC_6;91%;0m 0.10s;0.02;0.07;224;13;1;Error: cannot map deviceID (HSC_6)
+222;i2c_wrapper;i2c_access HSC_7;79%;0m 0.13s;0.04;0.06;1226;9;1;Error: cannot map deviceID (HSC_7)
+223;i2c_wrapper;i2c_access HSC_7;85%;0m 0.11s;0.01;0.08;546;11;1;Error: cannot map deviceID (HSC_7)
+224;i2c_wrapper;i2c_access HSC_8;91%;0m 0.11s;0.03;0.06;274;12;1;Error: cannot map deviceID (HSC_8)
+225;i2c_wrapper;i2c_access HSC_8;87%;0m 0.10s;0.0;0.09;513;12;1;Error: cannot map deviceID (HSC_8)
+226;i2c_wrapper;i2c_access HSC_9;88%;0m 0.11s;0.03;0.06;368;12;1;Error: cannot map deviceID (HSC_9)
+227;i2c_wrapper;i2c_access HSC_9;86%;0m 0.12s;0.02;0.08;513;12;1;Error: cannot map deviceID (HSC_9)
+228;i2c_wrapper;i2c_access NVSwitch_0;92%;0m 0.11s;0.01;0.08;333;24;0;link-up
+229;i2c_wrapper;i2c_access NVSwitch_0;80%;0m 0.14s;0.03;0.07;802;22;0;link-up
+230;i2c_wrapper;i2c_access NVSwitch_1;89%;0m 0.12s;0.05;0.05;389;24;0;link-up
+231;i2c_wrapper;i2c_access NVSwitch_1;87%;0m 0.12s;0.02;0.08;583;24;0;link-up
+232;i2c_wrapper;i2c_access NVSwitch_2;83%;0m 0.14s;0.06;0.05;682;22;0;link-up
+233;i2c_wrapper;i2c_access NVSwitch_2;92%;0m 0.12s;0.01;0.09;252;21;0;link-up
+234;i2c_wrapper;i2c_access NVSwitch_3;92%;0m 0.11s;0.04;0.06;293;24;0;link-up
+235;i2c_wrapper;i2c_access NVSwitch_3;93%;0m 0.11s;0.03;0.07;193;24;0;link-up
+236;i2c_wrapper;i2c_access PCIeSwitch_0;88%;0m 0.12s;0.04;0.06;553;19;1;Error: device PCIeSwitch0 not found in /usr/share/selftest_i2c_profile.csv
+237;i2c_wrapper;i2c_access PCIeSwitch_0;65%;0m 0.19s;0.05;0.07;1052;18;1;Error: device PCIeSwitch0 not found in /usr/share/selftest_i2c_profile.csv
+238;i2c_wrapper;i2c_access StandbyHSC_0;94%;0m 0.09s;0.03;0.06;112;13;1;Error: cannot map deviceID (StandbyHSC_0)
+239;i2c_wrapper;i2c_access StandbyHSC_0;92%;0m 0.09s;0.03;0.06;225;13;1;Error: cannot map deviceID (StandbyHSC_0)
+240;i2c_wrapper;i2c_access ERoT_FPGA_0;81%;0m 0.13s;0.05;0.05;1204;10;1;Error: cannot map deviceID (ERoT_FPGA_0)
+241;i2c_wrapper;i2c_access ERoT_FPGA_0;54%;0m 0.23s;0.02;0.1;693;13;1;Error: cannot map deviceID (ERoT_FPGA_0)
+242;i2c_wrapper;i2c_access ERoT_GPU_SXM_1;66%;0m 0.18s;0.01;0.1;659;12;1;Error: cannot map deviceID (ERoT_GPU_SXM_1)
+243;i2c_wrapper;i2c_access ERoT_GPU_SXM_1;69%;0m 0.15s;0.01;0.09;307;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_1)
+244;i2c_wrapper;i2c_access ERoT_GPU_SXM_2;72%;0m 0.14s;0.03;0.07;383;12;1;Error: cannot map deviceID (ERoT_GPU_SXM_2)
+245;i2c_wrapper;i2c_access ERoT_GPU_SXM_2;82%;0m 0.12s;0.01;0.09;895;12;1;Error: cannot map deviceID (ERoT_GPU_SXM_2)
+246;i2c_wrapper;i2c_access ERoT_GPU_SXM_3;88%;0m 0.11s;0.02;0.07;328;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_3)
+247;i2c_wrapper;i2c_access ERoT_GPU_SXM_3;88%;0m 0.10s;0.01;0.08;455;14;1;Error: cannot map deviceID (ERoT_GPU_SXM_3)
+248;i2c_wrapper;i2c_access ERoT_GPU_SXM_4;80%;0m 0.13s;0.03;0.07;1081;11;1;Error: cannot map deviceID (ERoT_GPU_SXM_4)
+249;i2c_wrapper;i2c_access ERoT_GPU_SXM_4;79%;0m 0.13s;0.01;0.09;1275;11;1;Error: cannot map deviceID (ERoT_GPU_SXM_4)
+250;i2c_wrapper;i2c_access ERoT_GPU_SXM_5;87%;0m 0.10s;0.01;0.07;485;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_5)
+251;i2c_wrapper;i2c_access ERoT_GPU_SXM_5;82%;0m 0.12s;0.01;0.08;635;11;1;Error: cannot map deviceID (ERoT_GPU_SXM_5)
+252;i2c_wrapper;i2c_access ERoT_GPU_SXM_6;90%;0m 0.11s;0.01;0.08;265;14;1;Error: cannot map deviceID (ERoT_GPU_SXM_6)
+253;i2c_wrapper;i2c_access ERoT_GPU_SXM_6;91%;0m 0.10s;0.02;0.06;402;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_6)
+254;i2c_wrapper;i2c_access ERoT_GPU_SXM_7;80%;0m 0.12s;0.03;0.07;859;11;1;Error: cannot map deviceID (ERoT_GPU_SXM_7)
+255;i2c_wrapper;i2c_access ERoT_GPU_SXM_7;87%;0m 0.11s;0.03;0.07;335;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_7)
+256;i2c_wrapper;i2c_access ERoT_GPU_SXM_8;91%;0m 0.10s;0.0;0.08;330;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_8)
+257;i2c_wrapper;i2c_access ERoT_GPU_SXM_8;95%;0m 0.10s;0.01;0.07;127;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_8)
+258;i2c_wrapper;i2c_access ERoT_HMC_0;85%;0m 0.11s;0.03;0.06;502;11;1;Error: cannot map deviceID (ERoT_HMC_0)
+259;i2c_wrapper;i2c_access ERoT_HMC_0;81%;0m 0.12s;0.03;0.07;1150;10;1;Error: cannot map deviceID (ERoT_HMC_0)
+260;i2c_wrapper;i2c_access ERoT_NVSwitch_0;81%;0m 0.13s;0.0;0.1;1215;11;1;Error: cannot map deviceID (ERoT_NVSwitch_0)
+261;i2c_wrapper;i2c_access ERoT_NVSwitch_0;90%;0m 0.10s;0.01;0.08;322;12;1;Error: cannot map deviceID (ERoT_NVSwitch_0)
+262;i2c_wrapper;i2c_access ERoT_NVSwitch_1;91%;0m 0.09s;0.03;0.06;256;13;1;Error: cannot map deviceID (ERoT_NVSwitch_1)
+263;i2c_wrapper;i2c_access ERoT_NVSwitch_1;96%;0m 0.09s;0.04;0.04;84;13;1;Error: cannot map deviceID (ERoT_NVSwitch_1)
+264;i2c_wrapper;i2c_access ERoT_NVSwitch_2;93%;0m 0.09s;0.03;0.05;125;13;1;Error: cannot map deviceID (ERoT_NVSwitch_2)
+265;i2c_wrapper;i2c_access ERoT_NVSwitch_2;94%;0m 0.09s;0.01;0.07;95;13;1;Error: cannot map deviceID (ERoT_NVSwitch_2)
+266;i2c_wrapper;i2c_access ERoT_NVSwitch_3;93%;0m 0.09s;0.0;0.07;207;13;1;Error: cannot map deviceID (ERoT_NVSwitch_3)
+267;i2c_wrapper;i2c_access ERoT_NVSwitch_3;83%;0m 0.11s;0.02;0.07;422;11;1;Error: cannot map deviceID (ERoT_NVSwitch_3)
+268;i2c_wrapper;i2c_access ERoT_PCIeSwitch_0;83%;0m 0.12s;0.05;0.05;569;12;1;Error: cannot map deviceID (ERoT_PCIeSwitch_0)
+269;i2c_wrapper;i2c_access ERoT_PCIeSwitch_0;88%;0m 0.10s;0.02;0.06;475;13;1;Error: cannot map deviceID (ERoT_PCIeSwitch_0)
+270;i2c_wrapper;i2c_access FPGA_0;80%;0m 0.11s;0.02;0.06;582;17;0;link-up
+271;i2c_wrapper;i2c_access FPGA_0;65%;0m 0.19s;0.05;0.07;1556;17;0;link-up
+272;i2c_wrapper;i2c_access GPU_SXM_1;95%;0m 0.11s;0.04;0.06;181;25;0;link-up
+273;i2c_wrapper;i2c_access GPU_SXM_1;88%;0m 0.13s;0.02;0.09;294;26;0;link-up
+274;i2c_wrapper;i2c_access GPU_SXM_2;89%;0m 0.13s;0.04;0.07;384;26;0;link-up
+275;i2c_wrapper;i2c_access GPU_SXM_2;80%;0m 0.14s;0.04;0.07;331;26;0;link-up
+276;i2c_wrapper;i2c_access GPU_SXM_3;48%;0m 0.30s;0.04;0.1;1149;22;0;link-up
+277;i2c_wrapper;i2c_access GPU_SXM_3;63%;0m 0.23s;0.07;0.07;672;24;0;link-up
+278;i2c_wrapper;i2c_access GPU_SXM_4;91%;0m 0.12s;0.06;0.04;322;26;0;link-up
+279;i2c_wrapper;i2c_access GPU_SXM_4;87%;0m 0.14s;0.05;0.06;564;24;0;link-up
+280;i2c_wrapper;i2c_access GPU_SXM_5;85%;0m 0.16s;0.08;0.05;813;26;0;link-up
+281;i2c_wrapper;i2c_access GPU_SXM_5;82%;0m 0.16s;0.04;0.09;1178;25;0;link-up
+282;i2c_wrapper;i2c_access GPU_SXM_6;89%;0m 0.15s;0.05;0.08;391;28;0;link-up
+283;i2c_wrapper;i2c_access GPU_SXM_6;94%;0m 0.14s;0.06;0.06;246;28;0;link-up
+284;i2c_wrapper;i2c_access GPU_SXM_7;90%;0m 0.15s;0.03;0.1;435;29;0;link-up
+285;i2c_wrapper;i2c_access GPU_SXM_7;86%;0m 0.16s;0.03;0.1;614;29;0;link-up
+286;i2c_wrapper;i2c_access GPU_SXM_8;90%;0m 0.14s;0.06;0.06;409;29;0;link-up
+287;i2c_wrapper;i2c_access GPU_SXM_8;82%;0m 0.17s;0.05;0.08;1065;25;0;link-up
+288;i2c_wrapper;i2c_access HSC_0;91%;0m 0.10s;0.01;0.08;256;13;1;Error: cannot map deviceID (HSC_0)
+289;i2c_wrapper;i2c_access HSC_0;93%;0m 0.09s;0.03;0.05;220;13;1;Error: cannot map deviceID (HSC_0)
+290;i2c_wrapper;i2c_access HSC_1;92%;0m 0.09s;0.03;0.06;118;13;1;Error: cannot map deviceID (HSC_1)
+291;i2c_wrapper;i2c_access HSC_1;94%;0m 0.09s;0.0;0.08;94;13;1;Error: cannot map deviceID (HSC_1)
+292;i2c_wrapper;i2c_access HSC_2;92%;0m 0.09s;0.01;0.07;261;13;1;Error: cannot map deviceID (HSC_2)
+293;i2c_wrapper;i2c_access HSC_2;89%;0m 0.11s;0.02;0.07;519;12;1;Error: cannot map deviceID (HSC_2)
+294;i2c_wrapper;i2c_access HSC_3;84%;0m 0.12s;0.03;0.06;610;10;1;Error: cannot map deviceID (HSC_3)
+295;i2c_wrapper;i2c_access HSC_3;85%;0m 0.11s;0.03;0.06;655;11;1;Error: cannot map deviceID (HSC_3)
+296;i2c_wrapper;i2c_access HSC_4;81%;0m 0.13s;0.03;0.07;733;12;1;Error: cannot map deviceID (HSC_4)
+297;i2c_wrapper;i2c_access HSC_4;81%;0m 0.13s;0.02;0.08;703;13;1;Error: cannot map deviceID (HSC_4)
+298;i2c_wrapper;i2c_access HSC_5;88%;0m 0.10s;0.02;0.07;491;12;1;Error: cannot map deviceID (HSC_5)
+299;i2c_wrapper;i2c_access HSC_5;83%;0m 0.12s;0.0;0.09;467;12;1;Error: cannot map deviceID (HSC_5)
+300;i2c_wrapper;i2c_access HSC_6;92%;0m 0.10s;0.02;0.07;207;13;1;Error: cannot map deviceID (HSC_6)
+301;i2c_wrapper;i2c_access HSC_6;91%;0m 0.10s;0.0;0.09;208;11;1;Error: cannot map deviceID (HSC_6)
+302;i2c_wrapper;i2c_access HSC_7;94%;0m 0.09s;0.0;0.08;138;13;1;Error: cannot map deviceID (HSC_7)
+303;i2c_wrapper;i2c_access HSC_7;67%;0m 0.17s;0.03;0.07;577;10;1;Error: cannot map deviceID (HSC_7)
+304;i2c_wrapper;i2c_access HSC_8;92%;0m 0.10s;0.04;0.05;193;13;1;Error: cannot map deviceID (HSC_8)
+305;i2c_wrapper;i2c_access HSC_8;92%;0m 0.10s;0.03;0.06;246;12;1;Error: cannot map deviceID (HSC_8)
+306;i2c_wrapper;i2c_access HSC_9;90%;0m 0.10s;0.01;0.08;244;13;1;Error: cannot map deviceID (HSC_9)
+307;i2c_wrapper;i2c_access HSC_9;72%;0m 0.17s;0.03;0.09;711;13;1;Error: cannot map deviceID (HSC_9)
+308;i2c_wrapper;i2c_access NVSwitch_0;55%;0m 0.27s;0.02;0.12;1705;23;0;link-up
+309;i2c_wrapper;i2c_access NVSwitch_0;68%;0m 0.20s;0.03;0.1;1354;22;0;link-up
+310;i2c_wrapper;i2c_access NVSwitch_1;84%;0m 0.13s;0.06;0.05;591;23;0;link-up
+311;i2c_wrapper;i2c_access NVSwitch_1;88%;0m 0.12s;0.04;0.07;391;23;0;link-up
+312;i2c_wrapper;i2c_access NVSwitch_2;92%;0m 0.11s;0.03;0.07;229;24;0;link-up
+313;i2c_wrapper;i2c_access NVSwitch_2;92%;0m 0.11s;0.05;0.05;217;24;0;link-up
+314;i2c_wrapper;i2c_access NVSwitch_3;79%;0m 0.15s;0.04;0.07;1117;22;0;link-up
+315;i2c_wrapper;i2c_access NVSwitch_3;90%;0m 0.11s;0.03;0.07;298;23;0;link-up
+316;i2c_wrapper;i2c_access PCIeSwitch_0;92%;0m 0.11s;0.03;0.07;215;19;1;Error: device PCIeSwitch0 not found in /usr/share/selftest_i2c_profile.csv
+317;i2c_wrapper;i2c_access PCIeSwitch_0;93%;0m 0.11s;0.02;0.07;191;19;1;Error: device PCIeSwitch0 not found in /usr/share/selftest_i2c_profile.csv
+318;i2c_wrapper;i2c_access StandbyHSC_0;96%;0m 0.09s;0.02;0.05;97;13;1;Error: cannot map deviceID (StandbyHSC_0)
+319;i2c_wrapper;i2c_access StandbyHSC_0;94%;0m 0.09s;0.0;0.08;107;13;1;Error: cannot map deviceID (StandbyHSC_0)
+320;i2c_wrapper;i2c_access ERoT_FPGA_0;94%;0m 0.09s;0.02;0.07;94;13;1;Error: cannot map deviceID (ERoT_FPGA_0)
+321;i2c_wrapper;i2c_access ERoT_FPGA_0;93%;0m 0.09s;0.01;0.07;147;13;1;Error: cannot map deviceID (ERoT_FPGA_0)
+322;i2c_wrapper;i2c_access ERoT_GPU_SXM_1;92%;0m 0.10s;0.01;0.07;268;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_1)
+323;i2c_wrapper;i2c_access ERoT_GPU_SXM_1;95%;0m 0.09s;0.02;0.06;88;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_1)
+324;i2c_wrapper;i2c_access ERoT_GPU_SXM_2;86%;0m 0.11s;0.02;0.07;603;12;1;Error: cannot map deviceID (ERoT_GPU_SXM_2)
+325;i2c_wrapper;i2c_access ERoT_GPU_SXM_2;93%;0m 0.09s;0.02;0.06;200;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_2)
+326;i2c_wrapper;i2c_access ERoT_GPU_SXM_3;94%;0m 0.09s;0.01;0.08;96;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_3)
+327;i2c_wrapper;i2c_access ERoT_GPU_SXM_3;95%;0m 0.09s;0.01;0.07;98;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_3)
+328;i2c_wrapper;i2c_access ERoT_GPU_SXM_4;87%;0m 0.10s;0.02;0.07;500;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_4)
+329;i2c_wrapper;i2c_access ERoT_GPU_SXM_4;84%;0m 0.12s;0.0;0.1;631;11;1;Error: cannot map deviceID (ERoT_GPU_SXM_4)
+330;i2c_wrapper;i2c_access ERoT_GPU_SXM_5;82%;0m 0.13s;0.03;0.07;846;11;1;Error: cannot map deviceID (ERoT_GPU_SXM_5)
+331;i2c_wrapper;i2c_access ERoT_GPU_SXM_5;86%;0m 0.11s;0.01;0.07;586;12;1;Error: cannot map deviceID (ERoT_GPU_SXM_5)
+332;i2c_wrapper;i2c_access ERoT_GPU_SXM_6;83%;0m 0.12s;0.0;0.09;633;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_6)
+333;i2c_wrapper;i2c_access ERoT_GPU_SXM_6;82%;0m 0.12s;0.01;0.08;729;12;1;Error: cannot map deviceID (ERoT_GPU_SXM_6)
+334;i2c_wrapper;i2c_access ERoT_GPU_SXM_7;87%;0m 0.10s;0.02;0.07;500;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_7)
+335;i2c_wrapper;i2c_access ERoT_GPU_SXM_7;90%;0m 0.10s;0.02;0.06;326;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_7)
+336;i2c_wrapper;i2c_access ERoT_GPU_SXM_8;87%;0m 0.11s;0.01;0.08;595;11;1;Error: cannot map deviceID (ERoT_GPU_SXM_8)
+337;i2c_wrapper;i2c_access ERoT_GPU_SXM_8;89%;0m 0.11s;0.02;0.07;502;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_8)
+338;i2c_wrapper;i2c_access ERoT_HMC_0;74%;0m 0.15s;0.01;0.1;539;13;1;Error: cannot map deviceID (ERoT_HMC_0)
+339;i2c_wrapper;i2c_access ERoT_HMC_0;82%;0m 0.12s;0.01;0.08;661;13;1;Error: cannot map deviceID (ERoT_HMC_0)
+340;i2c_wrapper;i2c_access ERoT_NVSwitch_0;86%;0m 0.10s;0.02;0.06;568;11;1;Error: cannot map deviceID (ERoT_NVSwitch_0)
+341;i2c_wrapper;i2c_access ERoT_NVSwitch_0;65%;0m 0.19s;0.03;0.09;689;13;1;Error: cannot map deviceID (ERoT_NVSwitch_0)
+342;i2c_wrapper;i2c_access ERoT_NVSwitch_1;71%;0m 0.19s;0.02;0.11;1218;12;1;Error: cannot map deviceID (ERoT_NVSwitch_1)
+343;i2c_wrapper;i2c_access ERoT_NVSwitch_1;62%;0m 0.27s;0.04;0.12;2140;13;1;Error: cannot map deviceID (ERoT_NVSwitch_1)
+344;i2c_wrapper;i2c_access ERoT_NVSwitch_2;80%;0m 0.13s;0.0;0.09;1120;11;1;Error: cannot map deviceID (ERoT_NVSwitch_2)
+345;i2c_wrapper;i2c_access ERoT_NVSwitch_2;86%;0m 0.11s;0.0;0.09;369;13;1;Error: cannot map deviceID (ERoT_NVSwitch_2)
+346;i2c_wrapper;i2c_access ERoT_NVSwitch_3;84%;0m 0.12s;0.01;0.08;556;12;1;Error: cannot map deviceID (ERoT_NVSwitch_3)
+347;i2c_wrapper;i2c_access ERoT_NVSwitch_3;80%;0m 0.12s;0.03;0.07;1167;12;1;Error: cannot map deviceID (ERoT_NVSwitch_3)
+348;i2c_wrapper;i2c_access ERoT_PCIeSwitch_0;83%;0m 0.12s;0.03;0.06;620;12;1;Error: cannot map deviceID (ERoT_PCIeSwitch_0)
+349;i2c_wrapper;i2c_access ERoT_PCIeSwitch_0;95%;0m 0.09s;0.01;0.07;112;13;1;Error: cannot map deviceID (ERoT_PCIeSwitch_0)
+350;i2c_wrapper;i2c_access FPGA_0;80%;0m 0.11s;0.03;0.06;814;15;0;link-up
+351;i2c_wrapper;i2c_access FPGA_0;84%;0m 0.10s;0.02;0.05;522;15;0;link-up
+352;i2c_wrapper;i2c_access GPU_SXM_1;81%;0m 0.15s;0.02;0.09;1051;25;0;link-up
+353;i2c_wrapper;i2c_access GPU_SXM_1;86%;0m 0.13s;0.05;0.06;629;27;0;link-up
+354;i2c_wrapper;i2c_access GPU_SXM_2;85%;0m 0.13s;0.02;0.08;504;26;0;link-up
+355;i2c_wrapper;i2c_access GPU_SXM_2;82%;0m 0.15s;0.04;0.08;992;23;0;link-up
+356;i2c_wrapper;i2c_access GPU_SXM_3;89%;0m 0.12s;0.03;0.07;444;25;0;link-up
+357;i2c_wrapper;i2c_access GPU_SXM_3;87%;0m 0.14s;0.05;0.07;539;25;0;link-up
+358;i2c_wrapper;i2c_access GPU_SXM_4;85%;0m 0.14s;0.05;0.06;664;25;0;link-up
+359;i2c_wrapper;i2c_access GPU_SXM_4;82%;0m 0.15s;0.04;0.07;1073;24;0;link-up
+360;i2c_wrapper;i2c_access GPU_SXM_5;85%;0m 0.16s;0.06;0.07;727;27;0;link-up
+361;i2c_wrapper;i2c_access GPU_SXM_5;84%;0m 0.16s;0.05;0.08;1034;25;0;link-up
+362;i2c_wrapper;i2c_access GPU_SXM_6;91%;0m 0.14s;0.04;0.08;280;28;0;link-up
+363;i2c_wrapper;i2c_access GPU_SXM_6;84%;0m 0.17s;0.03;0.1;1003;27;0;link-up
+364;i2c_wrapper;i2c_access GPU_SXM_7;90%;0m 0.14s;0.04;0.08;424;28;0;link-up
+365;i2c_wrapper;i2c_access GPU_SXM_7;85%;0m 0.15s;0.06;0.06;669;28;0;link-up
+366;i2c_wrapper;i2c_access GPU_SXM_8;83%;0m 0.16s;0.06;0.06;956;26;0;link-up
+367;i2c_wrapper;i2c_access GPU_SXM_8;66%;0m 0.25s;0.06;0.1;1684;27;0;link-up
+368;i2c_wrapper;i2c_access HSC_0;90%;0m 0.10s;0.02;0.07;299;12;1;Error: cannot map deviceID (HSC_0)
+369;i2c_wrapper;i2c_access HSC_0;87%;0m 0.11s;0.01;0.07;401;12;1;Error: cannot map deviceID (HSC_0)
+370;i2c_wrapper;i2c_access HSC_1;82%;0m 0.13s;0.03;0.07;674;12;1;Error: cannot map deviceID (HSC_1)
+371;i2c_wrapper;i2c_access HSC_1;57%;0m 0.19s;0.01;0.09;466;10;1;Error: cannot map deviceID (HSC_1)
+372;i2c_wrapper;i2c_access HSC_2;76%;0m 0.14s;0.03;0.07;512;13;1;Error: cannot map deviceID (HSC_2)
+373;i2c_wrapper;i2c_access HSC_2;59%;0m 0.27s;0.02;0.13;1913;12;1;Error: cannot map deviceID (HSC_2)
+374;i2c_wrapper;i2c_access HSC_3;86%;0m 0.11s;0.02;0.07;423;12;1;Error: cannot map deviceID (HSC_3)
+375;i2c_wrapper;i2c_access HSC_3;86%;0m 0.11s;0.01;0.09;444;12;1;Error: cannot map deviceID (HSC_3)
+376;i2c_wrapper;i2c_access HSC_4;94%;0m 0.09s;0.02;0.06;139;13;1;Error: cannot map deviceID (HSC_4)
+377;i2c_wrapper;i2c_access HSC_4;86%;0m 0.11s;0.02;0.07;544;12;1;Error: cannot map deviceID (HSC_4)
+378;i2c_wrapper;i2c_access HSC_5;92%;0m 0.10s;0.01;0.08;197;13;1;Error: cannot map deviceID (HSC_5)
+379;i2c_wrapper;i2c_access HSC_5;80%;0m 0.12s;0.04;0.05;1163;11;1;Error: cannot map deviceID (HSC_5)
+380;i2c_wrapper;i2c_access HSC_6;82%;0m 0.12s;0.0;0.09;442;12;1;Error: cannot map deviceID (HSC_6)
+381;i2c_wrapper;i2c_access HSC_6;89%;0m 0.11s;0.03;0.06;363;13;1;Error: cannot map deviceID (HSC_6)
+382;i2c_wrapper;i2c_access HSC_7;90%;0m 0.10s;0.05;0.03;320;12;1;Error: cannot map deviceID (HSC_7)
+383;i2c_wrapper;i2c_access HSC_7;79%;0m 0.13s;0.02;0.08;768;11;1;Error: cannot map deviceID (HSC_7)
+384;i2c_wrapper;i2c_access HSC_8;82%;0m 0.13s;0.02;0.08;678;12;1;Error: cannot map deviceID (HSC_8)
+385;i2c_wrapper;i2c_access HSC_8;85%;0m 0.11s;0.01;0.08;640;11;1;Error: cannot map deviceID (HSC_8)
+386;i2c_wrapper;i2c_access HSC_9;87%;0m 0.11s;0.02;0.07;452;12;1;Error: cannot map deviceID (HSC_9)
+387;i2c_wrapper;i2c_access HSC_9;86%;0m 0.11s;0.02;0.07;656;11;1;Error: cannot map deviceID (HSC_9)
+388;i2c_wrapper;i2c_access NVSwitch_0;91%;0m 0.11s;0.02;0.08;270;24;0;link-up
+389;i2c_wrapper;i2c_access NVSwitch_0;80%;0m 0.14s;0.02;0.09;1161;22;0;link-up
+390;i2c_wrapper;i2c_access NVSwitch_1;82%;0m 0.14s;0.05;0.06;739;23;0;link-up
+391;i2c_wrapper;i2c_access NVSwitch_1;86%;0m 0.12s;0.02;0.08;661;21;0;link-up
+392;i2c_wrapper;i2c_access NVSwitch_2;79%;0m 0.15s;0.05;0.06;765;22;0;link-up
+393;i2c_wrapper;i2c_access NVSwitch_2;83%;0m 0.13s;0.01;0.09;715;24;0;link-up
+394;i2c_wrapper;i2c_access NVSwitch_3;88%;0m 0.12s;0.04;0.06;558;23;0;link-up
+395;i2c_wrapper;i2c_access NVSwitch_3;89%;0m 0.12s;0.04;0.06;399;24;0;link-up
+396;i2c_wrapper;i2c_access PCIeSwitch_0;90%;0m 0.12s;0.01;0.09;359;19;1;Error: device PCIeSwitch0 not found in /usr/share/selftest_i2c_profile.csv
+397;i2c_wrapper;i2c_access PCIeSwitch_0;92%;0m 0.11s;0.01;0.09;252;19;1;Error: device PCIeSwitch0 not found in /usr/share/selftest_i2c_profile.csv
+398;i2c_wrapper;i2c_access StandbyHSC_0;87%;0m 0.11s;0.01;0.08;359;13;1;Error: cannot map deviceID (StandbyHSC_0)
+399;i2c_wrapper;i2c_access StandbyHSC_0;75%;0m 0.16s;0.01;0.1;949;12;1;Error: cannot map deviceID (StandbyHSC_0)
+400;i2c_wrapper;i2c_access ERoT_FPGA_0;92%;0m 0.10s;0.02;0.07;292;13;1;Error: cannot map deviceID (ERoT_FPGA_0)
+401;i2c_wrapper;i2c_access ERoT_FPGA_0;77%;0m 0.14s;0.02;0.08;1290;11;1;Error: cannot map deviceID (ERoT_FPGA_0)
+402;i2c_wrapper;i2c_access ERoT_GPU_SXM_1;88%;0m 0.10s;0.03;0.05;327;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_1)
+403;i2c_wrapper;i2c_access ERoT_GPU_SXM_1;64%;0m 0.21s;0.0;0.12;1563;10;1;Error: cannot map deviceID (ERoT_GPU_SXM_1)
+404;i2c_wrapper;i2c_access ERoT_GPU_SXM_2;52%;0m 0.24s;0.03;0.09;849;10;1;Error: cannot map deviceID (ERoT_GPU_SXM_2)
+405;i2c_wrapper;i2c_access ERoT_GPU_SXM_2;71%;0m 0.17s;0.04;0.08;132;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_2)
+406;i2c_wrapper;i2c_access ERoT_GPU_SXM_3;78%;0m 0.12s;0.03;0.06;518;12;1;Error: cannot map deviceID (ERoT_GPU_SXM_3)
+407;i2c_wrapper;i2c_access ERoT_GPU_SXM_3;95%;0m 0.09s;0.01;0.07;130;11;1;Error: cannot map deviceID (ERoT_GPU_SXM_3)
+408;i2c_wrapper;i2c_access ERoT_GPU_SXM_4;80%;0m 0.13s;0.03;0.07;818;11;1;Error: cannot map deviceID (ERoT_GPU_SXM_4)
+409;i2c_wrapper;i2c_access ERoT_GPU_SXM_4;93%;0m 0.10s;0.0;0.09;183;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_4)
+410;i2c_wrapper;i2c_access ERoT_GPU_SXM_5;92%;0m 0.09s;0.01;0.07;221;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_5)
+411;i2c_wrapper;i2c_access ERoT_GPU_SXM_5;85%;0m 0.12s;0.02;0.07;601;11;1;Error: cannot map deviceID (ERoT_GPU_SXM_5)
+412;i2c_wrapper;i2c_access ERoT_GPU_SXM_6;90%;0m 0.11s;0.01;0.08;301;12;1;Error: cannot map deviceID (ERoT_GPU_SXM_6)
+413;i2c_wrapper;i2c_access ERoT_GPU_SXM_6;95%;0m 0.09s;0.04;0.04;96;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_6)
+414;i2c_wrapper;i2c_access ERoT_GPU_SXM_7;85%;0m 0.12s;0.0;0.09;337;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_7)
+415;i2c_wrapper;i2c_access ERoT_GPU_SXM_7;87%;0m 0.11s;0.03;0.06;446;12;1;Error: cannot map deviceID (ERoT_GPU_SXM_7)
+416;i2c_wrapper;i2c_access ERoT_GPU_SXM_8;87%;0m 0.10s;0.02;0.06;511;12;1;Error: cannot map deviceID (ERoT_GPU_SXM_8)
+417;i2c_wrapper;i2c_access ERoT_GPU_SXM_8;94%;0m 0.10s;0.03;0.06;166;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_8)
+418;i2c_wrapper;i2c_access ERoT_HMC_0;90%;0m 0.11s;0.04;0.05;317;12;1;Error: cannot map deviceID (ERoT_HMC_0)
+419;i2c_wrapper;i2c_access ERoT_HMC_0;84%;0m 0.11s;0.0;0.09;598;12;1;Error: cannot map deviceID (ERoT_HMC_0)
+420;i2c_wrapper;i2c_access ERoT_NVSwitch_0;91%;0m 0.10s;0.03;0.05;283;12;1;Error: cannot map deviceID (ERoT_NVSwitch_0)
+421;i2c_wrapper;i2c_access ERoT_NVSwitch_0;93%;0m 0.10s;0.03;0.06;177;13;1;Error: cannot map deviceID (ERoT_NVSwitch_0)
+422;i2c_wrapper;i2c_access ERoT_NVSwitch_1;91%;0m 0.10s;0.04;0.05;251;13;1;Error: cannot map deviceID (ERoT_NVSwitch_1)
+423;i2c_wrapper;i2c_access ERoT_NVSwitch_1;81%;0m 0.12s;0.01;0.08;1193;11;1;Error: cannot map deviceID (ERoT_NVSwitch_1)
+424;i2c_wrapper;i2c_access ERoT_NVSwitch_2;86%;0m 0.11s;0.02;0.07;534;12;1;Error: cannot map deviceID (ERoT_NVSwitch_2)
+425;i2c_wrapper;i2c_access ERoT_NVSwitch_2;80%;0m 0.13s;0.03;0.07;795;10;1;Error: cannot map deviceID (ERoT_NVSwitch_2)
+426;i2c_wrapper;i2c_access ERoT_NVSwitch_3;83%;0m 0.12s;0.01;0.09;250;11;1;Error: cannot map deviceID (ERoT_NVSwitch_3)
+427;i2c_wrapper;i2c_access ERoT_NVSwitch_3;93%;0m 0.09s;0.02;0.06;73;10;1;Error: cannot map deviceID (ERoT_NVSwitch_3)
+428;i2c_wrapper;i2c_access ERoT_PCIeSwitch_0;96%;0m 0.09s;0.02;0.06;49;10;1;Error: cannot map deviceID (ERoT_PCIeSwitch_0)
+429;i2c_wrapper;i2c_access ERoT_PCIeSwitch_0;97%;0m 0.08s;0.01;0.06;47;11;1;Error: cannot map deviceID (ERoT_PCIeSwitch_0)
+430;i2c_wrapper;i2c_access FPGA_0;96%;0m 0.08s;0.0;0.07;51;15;0;link-up
+431;i2c_wrapper;i2c_access FPGA_0;91%;0m 0.09s;0.01;0.07;106;15;0;link-up
+432;i2c_wrapper;i2c_access GPU_SXM_1;95%;0m 0.11s;0.03;0.07;98;23;0;link-up
+433;i2c_wrapper;i2c_access GPU_SXM_1;98%;0m 0.10s;0.02;0.08;46;22;0;link-up
+434;i2c_wrapper;i2c_access GPU_SXM_2;89%;0m 0.13s;0.06;0.05;146;23;0;link-up
+435;i2c_wrapper;i2c_access GPU_SXM_2;52%;0m 0.24s;0.04;0.07;105;22;0;link-up
+436;i2c_wrapper;i2c_access GPU_SXM_3;91%;0m 0.14s;0.02;0.1;138;26;0;link-up
+437;i2c_wrapper;i2c_access GPU_SXM_3;74%;0m 0.17s;0.03;0.1;270;26;0;link-up
+438;i2c_wrapper;i2c_access GPU_SXM_4;59%;0m 0.23s;0.06;0.07;240;26;0;link-up
+439;i2c_wrapper;i2c_access GPU_SXM_4;55%;0m 0.23s;0.06;0.07;218;25;0;link-up
+440;i2c_wrapper;i2c_access GPU_SXM_5;83%;0m 0.18s;0.03;0.12;212;26;0;link-up
+441;i2c_wrapper;i2c_access GPU_SXM_5;88%;0m 0.15s;0.07;0.06;439;29;0;link-up
+442;i2c_wrapper;i2c_access GPU_SXM_6;51%;0m 0.28s;0.04;0.09;524;28;0;link-up
+443;i2c_wrapper;i2c_access GPU_SXM_6;44%;0m 0.44s;0.07;0.13;2123;28;0;link-up
+444;i2c_wrapper;i2c_access GPU_SXM_7;70%;0m 0.19s;0.05;0.08;435;27;0;link-up
+445;i2c_wrapper;i2c_access GPU_SXM_7;85%;0m 0.16s;0.04;0.09;656;27;0;link-up
+446;i2c_wrapper;i2c_access GPU_SXM_8;91%;0m 0.14s;0.04;0.09;372;28;0;link-up
+447;i2c_wrapper;i2c_access GPU_SXM_8;88%;0m 0.15s;0.04;0.08;317;28;0;link-up
+448;i2c_wrapper;i2c_access HSC_0;93%;0m 0.10s;0.01;0.09;187;13;1;Error: cannot map deviceID (HSC_0)
+449;i2c_wrapper;i2c_access HSC_0;91%;0m 0.10s;0.0;0.08;285;12;1;Error: cannot map deviceID (HSC_0)
+450;i2c_wrapper;i2c_access HSC_1;94%;0m 0.09s;0.01;0.07;146;13;1;Error: cannot map deviceID (HSC_1)
+451;i2c_wrapper;i2c_access HSC_1;82%;0m 0.12s;0.01;0.09;683;12;1;Error: cannot map deviceID (HSC_1)
+452;i2c_wrapper;i2c_access HSC_2;85%;0m 0.11s;0.02;0.07;583;12;1;Error: cannot map deviceID (HSC_2)
+453;i2c_wrapper;i2c_access HSC_2;94%;0m 0.09s;0.02;0.06;148;13;1;Error: cannot map deviceID (HSC_2)
+454;i2c_wrapper;i2c_access HSC_3;86%;0m 0.11s;0.03;0.06;541;12;1;Error: cannot map deviceID (HSC_3)
+455;i2c_wrapper;i2c_access HSC_3;93%;0m 0.10s;0.01;0.07;169;13;1;Error: cannot map deviceID (HSC_3)
+456;i2c_wrapper;i2c_access HSC_4;88%;0m 0.10s;0.04;0.04;470;12;1;Error: cannot map deviceID (HSC_4)
+457;i2c_wrapper;i2c_access HSC_4;76%;0m 0.14s;0.03;0.08;1385;11;1;Error: cannot map deviceID (HSC_4)
+458;i2c_wrapper;i2c_access HSC_5;85%;0m 0.11s;0.02;0.07;634;12;1;Error: cannot map deviceID (HSC_5)
+459;i2c_wrapper;i2c_access HSC_5;84%;0m 0.11s;0.01;0.08;798;12;1;Error: cannot map deviceID (HSC_5)
+460;i2c_wrapper;i2c_access HSC_6;84%;0m 0.11s;0.01;0.08;560;13;1;Error: cannot map deviceID (HSC_6)
+461;i2c_wrapper;i2c_access HSC_6;87%;0m 0.11s;0.01;0.08;536;12;1;Error: cannot map deviceID (HSC_6)
+462;i2c_wrapper;i2c_access HSC_7;92%;0m 0.09s;0.04;0.04;251;13;1;Error: cannot map deviceID (HSC_7)
+463;i2c_wrapper;i2c_access HSC_7;86%;0m 0.11s;0.04;0.06;389;10;1;Error: cannot map deviceID (HSC_7)
+464;i2c_wrapper;i2c_access HSC_8;76%;0m 0.14s;0.02;0.08;1218;12;1;Error: cannot map deviceID (HSC_8)
+465;i2c_wrapper;i2c_access HSC_8;87%;0m 0.10s;0.01;0.08;571;11;1;Error: cannot map deviceID (HSC_8)
+466;i2c_wrapper;i2c_access HSC_9;85%;0m 0.11s;0.02;0.07;579;12;1;Error: cannot map deviceID (HSC_9)
+467;i2c_wrapper;i2c_access HSC_9;56%;0m 0.27s;0.01;0.13;1850;12;1;Error: cannot map deviceID (HSC_9)
+468;i2c_wrapper;i2c_access NVSwitch_0;51%;0m 0.29s;0.05;0.09;1441;23;0;link-up
+469;i2c_wrapper;i2c_access NVSwitch_0;63%;0m 0.22s;0.06;0.07;1475;23;0;link-up
+470;i2c_wrapper;i2c_access NVSwitch_1;85%;0m 0.14s;0.03;0.08;643;24;0;link-up
+471;i2c_wrapper;i2c_access NVSwitch_1;89%;0m 0.11s;0.02;0.08;347;24;0;link-up
+472;i2c_wrapper;i2c_access NVSwitch_2;85%;0m 0.13s;0.04;0.07;468;22;0;link-up
+473;i2c_wrapper;i2c_access NVSwitch_2;93%;0m 0.11s;0.05;0.05;154;24;0;link-up
+474;i2c_wrapper;i2c_access NVSwitch_3;89%;0m 0.12s;0.04;0.06;373;22;0;link-up
+475;i2c_wrapper;i2c_access NVSwitch_3;87%;0m 0.12s;0.05;0.05;403;25;0;link-up
+476;i2c_wrapper;i2c_access PCIeSwitch_0;92%;0m 0.12s;0.06;0.04;290;19;1;Error: device PCIeSwitch0 not found in /usr/share/selftest_i2c_profile.csv
+477;i2c_wrapper;i2c_access PCIeSwitch_0;95%;0m 0.11s;0.04;0.06;149;19;1;Error: device PCIeSwitch0 not found in /usr/share/selftest_i2c_profile.csv
+478;i2c_wrapper;i2c_access StandbyHSC_0;95%;0m 0.09s;0.04;0.04;100;13;1;Error: cannot map deviceID (StandbyHSC_0)
+479;i2c_wrapper;i2c_access StandbyHSC_0;89%;0m 0.11s;0.04;0.05;364;10;1;Error: cannot map deviceID (StandbyHSC_0)
+480;i2c_wrapper;i2c_access ERoT_FPGA_0;89%;0m 0.11s;0.02;0.07;307;11;1;Error: cannot map deviceID (ERoT_FPGA_0)
+481;i2c_wrapper;i2c_access ERoT_FPGA_0;79%;0m 0.12s;0.0;0.09;1171;11;1;Error: cannot map deviceID (ERoT_FPGA_0)
+482;i2c_wrapper;i2c_access ERoT_GPU_SXM_1;88%;0m 0.11s;0.02;0.07;495;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_1)
+483;i2c_wrapper;i2c_access ERoT_GPU_SXM_1;89%;0m 0.11s;0.02;0.07;355;12;1;Error: cannot map deviceID (ERoT_GPU_SXM_1)
+484;i2c_wrapper;i2c_access ERoT_GPU_SXM_2;93%;0m 0.09s;0.0;0.08;148;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_2)
+485;i2c_wrapper;i2c_access ERoT_GPU_SXM_2;86%;0m 0.11s;0.02;0.07;522;12;1;Error: cannot map deviceID (ERoT_GPU_SXM_2)
+486;i2c_wrapper;i2c_access ERoT_GPU_SXM_3;86%;0m 0.12s;0.04;0.06;574;11;1;Error: cannot map deviceID (ERoT_GPU_SXM_3)
+487;i2c_wrapper;i2c_access ERoT_GPU_SXM_3;84%;0m 0.11s;0.0;0.09;874;10;1;Error: cannot map deviceID (ERoT_GPU_SXM_3)
+488;i2c_wrapper;i2c_access ERoT_GPU_SXM_4;94%;0m 0.10s;0.0;0.09;168;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_4)
+489;i2c_wrapper;i2c_access ERoT_GPU_SXM_4;85%;0m 0.11s;0.02;0.07;388;12;1;Error: cannot map deviceID (ERoT_GPU_SXM_4)
+490;i2c_wrapper;i2c_access ERoT_GPU_SXM_5;83%;0m 0.12s;0.03;0.06;914;12;1;Error: cannot map deviceID (ERoT_GPU_SXM_5)
+491;i2c_wrapper;i2c_access ERoT_GPU_SXM_5;74%;0m 0.15s;0.03;0.07;1362;11;1;Error: cannot map deviceID (ERoT_GPU_SXM_5)
+492;i2c_wrapper;i2c_access ERoT_GPU_SXM_6;91%;0m 0.11s;0.01;0.08;308;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_6)
+493;i2c_wrapper;i2c_access ERoT_GPU_SXM_6;88%;0m 0.10s;0.02;0.06;524;12;1;Error: cannot map deviceID (ERoT_GPU_SXM_6)
+494;i2c_wrapper;i2c_access ERoT_GPU_SXM_7;82%;0m 0.12s;0.03;0.07;659;12;1;Error: cannot map deviceID (ERoT_GPU_SXM_7)
+495;i2c_wrapper;i2c_access ERoT_GPU_SXM_7;88%;0m 0.11s;0.01;0.08;361;10;1;Error: cannot map deviceID (ERoT_GPU_SXM_7)
+496;i2c_wrapper;i2c_access ERoT_GPU_SXM_8;63%;0m 0.17s;0.04;0.07;1489;12;1;Error: cannot map deviceID (ERoT_GPU_SXM_8)
+497;i2c_wrapper;i2c_access ERoT_GPU_SXM_8;88%;0m 0.11s;0.02;0.08;434;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_8)
+498;i2c_wrapper;i2c_access ERoT_HMC_0;79%;0m 0.13s;0.02;0.07;1217;12;1;Error: cannot map deviceID (ERoT_HMC_0)
+499;i2c_wrapper;i2c_access ERoT_HMC_0;84%;0m 0.12s;0.04;0.05;327;13;1;Error: cannot map deviceID (ERoT_HMC_0)
+500;i2c_wrapper;i2c_access ERoT_NVSwitch_0;63%;0m 0.21s;0.03;0.09;916;11;1;Error: cannot map deviceID (ERoT_NVSwitch_0)
+501;i2c_wrapper;i2c_access ERoT_NVSwitch_0;69%;0m 0.15s;0.03;0.07;365;12;1;Error: cannot map deviceID (ERoT_NVSwitch_0)
+502;i2c_wrapper;i2c_access ERoT_NVSwitch_1;65%;0m 0.18s;0.02;0.09;390;12;1;Error: cannot map deviceID (ERoT_NVSwitch_1)
+503;i2c_wrapper;i2c_access ERoT_NVSwitch_1;82%;0m 0.12s;0.01;0.09;1077;12;1;Error: cannot map deviceID (ERoT_NVSwitch_1)
+504;i2c_wrapper;i2c_access ERoT_NVSwitch_2;83%;0m 0.12s;0.01;0.08;686;11;1;Error: cannot map deviceID (ERoT_NVSwitch_2)
+505;i2c_wrapper;i2c_access ERoT_NVSwitch_2;94%;0m 0.09s;0.02;0.06;99;13;1;Error: cannot map deviceID (ERoT_NVSwitch_2)
+506;i2c_wrapper;i2c_access ERoT_NVSwitch_3;91%;0m 0.09s;0.04;0.04;260;10;1;Error: cannot map deviceID (ERoT_NVSwitch_3)
+507;i2c_wrapper;i2c_access ERoT_NVSwitch_3;86%;0m 0.12s;0.02;0.07;518;13;1;Error: cannot map deviceID (ERoT_NVSwitch_3)
+508;i2c_wrapper;i2c_access ERoT_PCIeSwitch_0;90%;0m 0.11s;0.01;0.08;347;12;1;Error: cannot map deviceID (ERoT_PCIeSwitch_0)
+509;i2c_wrapper;i2c_access ERoT_PCIeSwitch_0;94%;0m 0.10s;0.03;0.05;183;13;1;Error: cannot map deviceID (ERoT_PCIeSwitch_0)
+510;i2c_wrapper;i2c_access FPGA_0;92%;0m 0.09s;0.04;0.04;157;18;0;link-up
+511;i2c_wrapper;i2c_access FPGA_0;85%;0m 0.10s;0.03;0.06;359;18;0;link-up
+512;i2c_wrapper;i2c_access GPU_SXM_1;87%;0m 0.14s;0.05;0.07;596;26;0;link-up
+513;i2c_wrapper;i2c_access GPU_SXM_1;89%;0m 0.12s;0.04;0.07;408;26;0;link-up
+514;i2c_wrapper;i2c_access GPU_SXM_2;81%;0m 0.15s;0.05;0.07;1037;24;0;link-up
+515;i2c_wrapper;i2c_access GPU_SXM_2;87%;0m 0.13s;0.06;0.05;540;25;0;link-up
+516;i2c_wrapper;i2c_access GPU_SXM_3;82%;0m 0.15s;0.06;0.05;524;26;0;link-up
+517;i2c_wrapper;i2c_access GPU_SXM_3;81%;0m 0.15s;0.03;0.08;834;25;0;link-up
+518;i2c_wrapper;i2c_access GPU_SXM_4;85%;0m 0.14s;0.04;0.07;931;24;0;link-up
+519;i2c_wrapper;i2c_access GPU_SXM_4;80%;0m 0.15s;0.07;0.05;1162;26;0;link-up
+520;i2c_wrapper;i2c_access GPU_SXM_5;87%;0m 0.15s;0.06;0.06;504;27;0;link-up
+521;i2c_wrapper;i2c_access GPU_SXM_5;87%;0m 0.15s;0.08;0.05;519;28;0;link-up
+522;i2c_wrapper;i2c_access GPU_SXM_6;82%;0m 0.17s;0.04;0.09;933;27;0;link-up
+523;i2c_wrapper;i2c_access GPU_SXM_6;92%;0m 0.13s;0.06;0.06;334;27;0;link-up
+524;i2c_wrapper;i2c_access GPU_SXM_7;80%;0m 0.18s;0.05;0.09;1226;26;0;link-up
+525;i2c_wrapper;i2c_access GPU_SXM_7;89%;0m 0.15s;0.03;0.1;408;28;0;link-up
+526;i2c_wrapper;i2c_access GPU_SXM_8;77%;0m 0.18s;0.05;0.08;945;29;0;link-up
+527;i2c_wrapper;i2c_access GPU_SXM_8;84%;0m 0.17s;0.04;0.1;248;28;0;link-up
+528;i2c_wrapper;i2c_access HSC_0;81%;0m 0.12s;0.02;0.07;1127;10;1;Error: cannot map deviceID (HSC_0)
+529;i2c_wrapper;i2c_access HSC_0;86%;0m 0.11s;0.02;0.07;442;12;1;Error: cannot map deviceID (HSC_0)
+530;i2c_wrapper;i2c_access HSC_1;84%;0m 0.12s;0.02;0.08;346;13;1;Error: cannot map deviceID (HSC_1)
+531;i2c_wrapper;i2c_access HSC_1;50%;0m 0.24s;0.05;0.07;812;10;1;Error: cannot map deviceID (HSC_1)
+532;i2c_wrapper;i2c_access HSC_2;53%;0m 0.23s;0.03;0.08;713;11;1;Error: cannot map deviceID (HSC_2)
+533;i2c_wrapper;i2c_access HSC_2;63%;0m 0.22s;0.03;0.1;1525;11;1;Error: cannot map deviceID (HSC_2)
+534;i2c_wrapper;i2c_access HSC_3;90%;0m 0.10s;0.02;0.07;282;12;1;Error: cannot map deviceID (HSC_3)
+535;i2c_wrapper;i2c_access HSC_3;89%;0m 0.10s;0.02;0.07;287;13;1;Error: cannot map deviceID (HSC_3)
+536;i2c_wrapper;i2c_access HSC_4;80%;0m 0.13s;0.01;0.09;805;11;1;Error: cannot map deviceID (HSC_4)
+537;i2c_wrapper;i2c_access HSC_4;79%;0m 0.13s;0.02;0.08;1191;11;1;Error: cannot map deviceID (HSC_4)
+538;i2c_wrapper;i2c_access HSC_5;86%;0m 0.12s;0.02;0.07;515;13;1;Error: cannot map deviceID (HSC_5)
+539;i2c_wrapper;i2c_access HSC_5;91%;0m 0.11s;0.02;0.07;297;13;1;Error: cannot map deviceID (HSC_5)
+540;i2c_wrapper;i2c_access HSC_6;88%;0m 0.10s;0.02;0.06;338;12;1;Error: cannot map deviceID (HSC_6)
+541;i2c_wrapper;i2c_access HSC_6;92%;0m 0.10s;0.02;0.06;260;13;1;Error: cannot map deviceID (HSC_6)
+542;i2c_wrapper;i2c_access HSC_7;78%;0m 0.13s;0.02;0.08;1106;12;1;Error: cannot map deviceID (HSC_7)
+543;i2c_wrapper;i2c_access HSC_7;90%;0m 0.10s;0.03;0.05;277;13;1;Error: cannot map deviceID (HSC_7)
+544;i2c_wrapper;i2c_access HSC_8;91%;0m 0.09s;0.01;0.07;287;13;1;Error: cannot map deviceID (HSC_8)
+545;i2c_wrapper;i2c_access HSC_8;87%;0m 0.11s;0.02;0.08;499;12;1;Error: cannot map deviceID (HSC_8)
+546;i2c_wrapper;i2c_access HSC_9;86%;0m 0.12s;0.02;0.08;453;12;1;Error: cannot map deviceID (HSC_9)
+547;i2c_wrapper;i2c_access HSC_9;81%;0m 0.12s;0.03;0.07;1106;10;1;Error: cannot map deviceID (HSC_9)
+548;i2c_wrapper;i2c_access NVSwitch_0;86%;0m 0.13s;0.05;0.05;409;22;0;link-up
+549;i2c_wrapper;i2c_access NVSwitch_0;88%;0m 0.12s;0.03;0.07;435;25;0;link-up
+550;i2c_wrapper;i2c_access NVSwitch_1;90%;0m 0.11s;0.03;0.07;380;24;0;link-up
+551;i2c_wrapper;i2c_access NVSwitch_1;83%;0m 0.14s;0.03;0.08;786;23;0;link-up
+552;i2c_wrapper;i2c_access NVSwitch_2;81%;0m 0.13s;0.05;0.05;812;24;0;link-up
+553;i2c_wrapper;i2c_access NVSwitch_2;87%;0m 0.12s;0.04;0.06;518;24;0;link-up
+554;i2c_wrapper;i2c_access NVSwitch_3;89%;0m 0.12s;0.04;0.06;325;24;0;link-up
+555;i2c_wrapper;i2c_access NVSwitch_3;90%;0m 0.12s;0.03;0.07;335;24;0;link-up
+556;i2c_wrapper;i2c_access PCIeSwitch_0;85%;0m 0.13s;0.02;0.09;643;18;1;Error: device PCIeSwitch0 not found in /usr/share/selftest_i2c_profile.csv
+557;i2c_wrapper;i2c_access PCIeSwitch_0;90%;0m 0.12s;0.02;0.08;365;19;1;Error: device PCIeSwitch0 not found in /usr/share/selftest_i2c_profile.csv
+558;i2c_wrapper;i2c_access StandbyHSC_0;83%;0m 0.11s;0.03;0.06;791;11;1;Error: cannot map deviceID (StandbyHSC_0)
+559;i2c_wrapper;i2c_access StandbyHSC_0;64%;0m 0.19s;0.02;0.09;778;11;1;Error: cannot map deviceID (StandbyHSC_0)
+560;i2c_wrapper;i2c_access ERoT_FPGA_0;94%;0m 0.10s;0.03;0.07;188;13;1;Error: cannot map deviceID (ERoT_FPGA_0)
+561;i2c_wrapper;i2c_access ERoT_FPGA_0;88%;0m 0.10s;0.02;0.06;509;13;1;Error: cannot map deviceID (ERoT_FPGA_0)
+562;i2c_wrapper;i2c_access ERoT_GPU_SXM_1;84%;0m 0.12s;0.03;0.07;575;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_1)
+563;i2c_wrapper;i2c_access ERoT_GPU_SXM_1;63%;0m 0.19s;0.03;0.08;349;12;1;Error: cannot map deviceID (ERoT_GPU_SXM_1)
+564;i2c_wrapper;i2c_access ERoT_GPU_SXM_2;84%;0m 0.13s;0.03;0.08;148;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_2)
+565;i2c_wrapper;i2c_access ERoT_GPU_SXM_2;81%;0m 0.14s;0.03;0.07;123;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_2)
+566;i2c_wrapper;i2c_access ERoT_GPU_SXM_3;85%;0m 0.12s;0.02;0.08;118;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_3)
+567;i2c_wrapper;i2c_access ERoT_GPU_SXM_3;76%;0m 0.16s;0.02;0.09;723;11;1;Error: cannot map deviceID (ERoT_GPU_SXM_3)
+568;i2c_wrapper;i2c_access ERoT_GPU_SXM_4;85%;0m 0.12s;0.02;0.08;613;12;1;Error: cannot map deviceID (ERoT_GPU_SXM_4)
+569;i2c_wrapper;i2c_access ERoT_GPU_SXM_4;92%;0m 0.09s;0.02;0.06;266;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_4)
+570;i2c_wrapper;i2c_access ERoT_GPU_SXM_5;92%;0m 0.11s;0.02;0.07;201;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_5)
+571;i2c_wrapper;i2c_access ERoT_GPU_SXM_5;87%;0m 0.12s;0.04;0.06;538;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_5)
+572;i2c_wrapper;i2c_access ERoT_GPU_SXM_6;82%;0m 0.12s;0.01;0.08;1091;10;1;Error: cannot map deviceID (ERoT_GPU_SXM_6)
+573;i2c_wrapper;i2c_access ERoT_GPU_SXM_6;81%;0m 0.13s;0.03;0.08;952;12;1;Error: cannot map deviceID (ERoT_GPU_SXM_6)
+574;i2c_wrapper;i2c_access ERoT_GPU_SXM_7;79%;0m 0.13s;0.03;0.07;1084;11;1;Error: cannot map deviceID (ERoT_GPU_SXM_7)
+575;i2c_wrapper;i2c_access ERoT_GPU_SXM_7;91%;0m 0.10s;0.03;0.05;317;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_7)
+576;i2c_wrapper;i2c_access ERoT_GPU_SXM_8;78%;0m 0.13s;0.01;0.09;828;10;1;Error: cannot map deviceID (ERoT_GPU_SXM_8)
+577;i2c_wrapper;i2c_access ERoT_GPU_SXM_8;93%;0m 0.10s;0.01;0.08;179;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_8)
+578;i2c_wrapper;i2c_access ERoT_HMC_0;92%;0m 0.09s;0.01;0.07;208;13;1;Error: cannot map deviceID (ERoT_HMC_0)
+579;i2c_wrapper;i2c_access ERoT_HMC_0;91%;0m 0.10s;0.02;0.07;359;12;1;Error: cannot map deviceID (ERoT_HMC_0)
+580;i2c_wrapper;i2c_access ERoT_NVSwitch_0;94%;0m 0.10s;0.02;0.07;192;13;1;Error: cannot map deviceID (ERoT_NVSwitch_0)
+581;i2c_wrapper;i2c_access ERoT_NVSwitch_0;77%;0m 0.13s;0.02;0.08;1248;11;1;Error: cannot map deviceID (ERoT_NVSwitch_0)
+582;i2c_wrapper;i2c_access ERoT_NVSwitch_1;83%;0m 0.13s;0.04;0.06;898;10;1;Error: cannot map deviceID (ERoT_NVSwitch_1)
+583;i2c_wrapper;i2c_access ERoT_NVSwitch_1;89%;0m 0.11s;0.0;0.09;468;12;1;Error: cannot map deviceID (ERoT_NVSwitch_1)
+584;i2c_wrapper;i2c_access ERoT_NVSwitch_2;91%;0m 0.10s;0.01;0.07;245;13;1;Error: cannot map deviceID (ERoT_NVSwitch_2)
+585;i2c_wrapper;i2c_access ERoT_NVSwitch_2;92%;0m 0.09s;0.03;0.06;211;12;1;Error: cannot map deviceID (ERoT_NVSwitch_2)
+586;i2c_wrapper;i2c_access ERoT_NVSwitch_3;87%;0m 0.11s;0.01;0.08;481;13;1;Error: cannot map deviceID (ERoT_NVSwitch_3)
+587;i2c_wrapper;i2c_access ERoT_NVSwitch_3;91%;0m 0.11s;0.01;0.08;233;13;1;Error: cannot map deviceID (ERoT_NVSwitch_3)
+588;i2c_wrapper;i2c_access ERoT_PCIeSwitch_0;94%;0m 0.09s;0.01;0.07;156;13;1;Error: cannot map deviceID (ERoT_PCIeSwitch_0)
+589;i2c_wrapper;i2c_access ERoT_PCIeSwitch_0;87%;0m 0.12s;0.03;0.07;483;12;1;Error: cannot map deviceID (ERoT_PCIeSwitch_0)
+590;i2c_wrapper;i2c_access FPGA_0;75%;0m 0.13s;0.01;0.08;1187;16;0;link-up
+591;i2c_wrapper;i2c_access FPGA_0;87%;0m 0.10s;0.03;0.05;478;15;0;link-up
+592;i2c_wrapper;i2c_access GPU_SXM_1;87%;0m 0.13s;0.06;0.05;405;26;0;link-up
+593;i2c_wrapper;i2c_access GPU_SXM_1;87%;0m 0.14s;0.02;0.1;342;26;0;link-up
+594;i2c_wrapper;i2c_access GPU_SXM_2;88%;0m 0.14s;0.04;0.08;159;26;0;link-up
+595;i2c_wrapper;i2c_access GPU_SXM_2;86%;0m 0.13s;0.03;0.08;462;26;0;link-up
+596;i2c_wrapper;i2c_access GPU_SXM_3;82%;0m 0.15s;0.02;0.09;1001;24;0;link-up
+597;i2c_wrapper;i2c_access GPU_SXM_3;85%;0m 0.14s;0.04;0.07;677;26;0;link-up
+598;i2c_wrapper;i2c_access GPU_SXM_4;54%;0m 0.26s;0.04;0.1;823;24;0;link-up
+599;i2c_wrapper;i2c_access GPU_SXM_4;63%;0m 0.22s;0.03;0.1;790;28;0;link-up
+600;i2c_wrapper;i2c_access GPU_SXM_5;76%;0m 0.19s;0.04;0.1;621;25;0;link-up
+601;i2c_wrapper;i2c_access GPU_SXM_5;89%;0m 0.15s;0.03;0.1;483;28;0;link-up
+602;i2c_wrapper;i2c_access GPU_SXM_6;88%;0m 0.15s;0.04;0.09;450;28;0;link-up
+603;i2c_wrapper;i2c_access GPU_SXM_6;81%;0m 0.16s;0.06;0.07;1015;28;0;link-up
+604;i2c_wrapper;i2c_access GPU_SXM_7;91%;0m 0.15s;0.04;0.09;395;28;0;link-up
+605;i2c_wrapper;i2c_access GPU_SXM_7;88%;0m 0.15s;0.05;0.07;681;27;0;link-up
+606;i2c_wrapper;i2c_access GPU_SXM_8;90%;0m 0.15s;0.08;0.05;428;27;0;link-up
+607;i2c_wrapper;i2c_access GPU_SXM_8;87%;0m 0.15s;0.04;0.09;665;28;0;link-up
+608;i2c_wrapper;i2c_access HSC_0;88%;0m 0.11s;0.01;0.09;560;11;1;Error: cannot map deviceID (HSC_0)
+609;i2c_wrapper;i2c_access HSC_0;84%;0m 0.12s;0.01;0.09;758;11;1;Error: cannot map deviceID (HSC_0)
+610;i2c_wrapper;i2c_access HSC_1;85%;0m 0.11s;0.02;0.07;586;11;1;Error: cannot map deviceID (HSC_1)
+611;i2c_wrapper;i2c_access HSC_1;88%;0m 0.11s;0.02;0.07;346;13;1;Error: cannot map deviceID (HSC_1)
+612;i2c_wrapper;i2c_access HSC_2;90%;0m 0.11s;0.02;0.07;387;12;1;Error: cannot map deviceID (HSC_2)
+613;i2c_wrapper;i2c_access HSC_2;90%;0m 0.10s;0.01;0.08;278;13;1;Error: cannot map deviceID (HSC_2)
+614;i2c_wrapper;i2c_access HSC_3;88%;0m 0.11s;0.02;0.06;480;13;1;Error: cannot map deviceID (HSC_3)
+615;i2c_wrapper;i2c_access HSC_3;91%;0m 0.10s;0.01;0.08;233;13;1;Error: cannot map deviceID (HSC_3)
+616;i2c_wrapper;i2c_access HSC_4;80%;0m 0.13s;0.02;0.08;1225;10;1;Error: cannot map deviceID (HSC_4)
+617;i2c_wrapper;i2c_access HSC_4;84%;0m 0.11s;0.01;0.08;701;10;1;Error: cannot map deviceID (HSC_4)
+618;i2c_wrapper;i2c_access HSC_5;89%;0m 0.10s;0.02;0.06;196;13;1;Error: cannot map deviceID (HSC_5)
+619;i2c_wrapper;i2c_access HSC_5;90%;0m 0.11s;0.02;0.07;270;13;1;Error: cannot map deviceID (HSC_5)
+620;i2c_wrapper;i2c_access HSC_6;94%;0m 0.09s;0.01;0.07;163;13;1;Error: cannot map deviceID (HSC_6)
+621;i2c_wrapper;i2c_access HSC_6;90%;0m 0.11s;0.0;0.09;262;13;1;Error: cannot map deviceID (HSC_6)
+622;i2c_wrapper;i2c_access HSC_7;96%;0m 0.09s;0.03;0.06;71;13;1;Error: cannot map deviceID (HSC_7)
+623;i2c_wrapper;i2c_access HSC_7;89%;0m 0.10s;0.01;0.08;436;12;1;Error: cannot map deviceID (HSC_7)
+624;i2c_wrapper;i2c_access HSC_8;74%;0m 0.15s;0.02;0.08;1313;10;1;Error: cannot map deviceID (HSC_8)
+625;i2c_wrapper;i2c_access HSC_8;61%;0m 0.20s;0.06;0.06;1174;12;1;Error: cannot map deviceID (HSC_8)
+626;i2c_wrapper;i2c_access HSC_9;80%;0m 0.13s;0.03;0.07;1123;10;1;Error: cannot map deviceID (HSC_9)
+627;i2c_wrapper;i2c_access HSC_9;83%;0m 0.13s;0.0;0.1;756;12;1;Error: cannot map deviceID (HSC_9)
+628;i2c_wrapper;i2c_access NVSwitch_0;83%;0m 0.13s;0.02;0.08;730;22;0;link-up
+629;i2c_wrapper;i2c_access NVSwitch_0;67%;0m 0.20s;0.03;0.1;730;23;0;link-up
+630;i2c_wrapper;i2c_access NVSwitch_1;57%;0m 0.21s;0.01;0.11;493;22;0;link-up
+631;i2c_wrapper;i2c_access NVSwitch_1;65%;0m 0.22s;0.02;0.12;674;22;0;link-up
+632;i2c_wrapper;i2c_access NVSwitch_2;79%;0m 0.15s;0.05;0.06;1109;22;0;link-up
+633;i2c_wrapper;i2c_access NVSwitch_2;86%;0m 0.12s;0.03;0.07;408;24;0;link-up
+634;i2c_wrapper;i2c_access NVSwitch_3;86%;0m 0.13s;0.02;0.09;594;24;0;link-up
+635;i2c_wrapper;i2c_access NVSwitch_3;81%;0m 0.14s;0.04;0.06;1100;22;0;link-up
+636;i2c_wrapper;i2c_access PCIeSwitch_0;90%;0m 0.12s;0.04;0.07;350;18;1;Error: device PCIeSwitch0 not found in /usr/share/selftest_i2c_profile.csv
+637;i2c_wrapper;i2c_access PCIeSwitch_0;88%;0m 0.13s;0.05;0.06;408;19;1;Error: device PCIeSwitch0 not found in /usr/share/selftest_i2c_profile.csv
+638;i2c_wrapper;i2c_access StandbyHSC_0;90%;0m 0.10s;0.05;0.03;299;12;1;Error: cannot map deviceID (StandbyHSC_0)
+639;i2c_wrapper;i2c_access StandbyHSC_0;93%;0m 0.10s;0.01;0.08;182;13;1;Error: cannot map deviceID (StandbyHSC_0)
+640;i2c_wrapper;i2c_access ERoT_FPGA_0;87%;0m 0.12s;0.01;0.08;594;12;1;Error: cannot map deviceID (ERoT_FPGA_0)
+641;i2c_wrapper;i2c_access ERoT_FPGA_0;88%;0m 0.10s;0.01;0.08;451;13;1;Error: cannot map deviceID (ERoT_FPGA_0)
+642;i2c_wrapper;i2c_access ERoT_GPU_SXM_1;91%;0m 0.11s;0.03;0.06;301;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_1)
+643;i2c_wrapper;i2c_access ERoT_GPU_SXM_1;76%;0m 0.14s;0.04;0.07;1330;10;1;Error: cannot map deviceID (ERoT_GPU_SXM_1)
+644;i2c_wrapper;i2c_access ERoT_GPU_SXM_2;86%;0m 0.10s;0.02;0.07;488;12;1;Error: cannot map deviceID (ERoT_GPU_SXM_2)
+645;i2c_wrapper;i2c_access ERoT_GPU_SXM_2;94%;0m 0.10s;0.01;0.08;184;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_2)
+646;i2c_wrapper;i2c_access ERoT_GPU_SXM_3;90%;0m 0.11s;0.03;0.06;310;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_3)
+647;i2c_wrapper;i2c_access ERoT_GPU_SXM_3;91%;0m 0.10s;0.02;0.06;235;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_3)
+648;i2c_wrapper;i2c_access ERoT_GPU_SXM_4;87%;0m 0.11s;0.01;0.07;468;12;1;Error: cannot map deviceID (ERoT_GPU_SXM_4)
+649;i2c_wrapper;i2c_access ERoT_GPU_SXM_4;86%;0m 0.11s;0.05;0.04;378;11;1;Error: cannot map deviceID (ERoT_GPU_SXM_4)
+650;i2c_wrapper;i2c_access ERoT_GPU_SXM_5;91%;0m 0.11s;0.01;0.08;239;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_5)
+651;i2c_wrapper;i2c_access ERoT_GPU_SXM_5;92%;0m 0.09s;0.01;0.07;259;12;1;Error: cannot map deviceID (ERoT_GPU_SXM_5)
+652;i2c_wrapper;i2c_access ERoT_GPU_SXM_6;87%;0m 0.11s;0.0;0.09;316;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_6)
+653;i2c_wrapper;i2c_access ERoT_GPU_SXM_6;87%;0m 0.11s;0.02;0.07;368;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_6)
+654;i2c_wrapper;i2c_access ERoT_GPU_SXM_7;94%;0m 0.09s;0.02;0.06;181;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_7)
+655;i2c_wrapper;i2c_access ERoT_GPU_SXM_7;85%;0m 0.12s;0.03;0.07;398;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_7)
+656;i2c_wrapper;i2c_access ERoT_GPU_SXM_8;82%;0m 0.12s;0.04;0.05;995;12;1;Error: cannot map deviceID (ERoT_GPU_SXM_8)
+657;i2c_wrapper;i2c_access ERoT_GPU_SXM_8;82%;0m 0.12s;0.02;0.07;970;11;1;Error: cannot map deviceID (ERoT_GPU_SXM_8)
+658;i2c_wrapper;i2c_access ERoT_HMC_0;67%;0m 0.14s;0.02;0.07;367;12;1;Error: cannot map deviceID (ERoT_HMC_0)
+659;i2c_wrapper;i2c_access ERoT_HMC_0;94%;0m 0.09s;0.0;0.09;97;13;1;Error: cannot map deviceID (ERoT_HMC_0)
+660;i2c_wrapper;i2c_access ERoT_NVSwitch_0;96%;0m 0.09s;0.05;0.03;87;13;1;Error: cannot map deviceID (ERoT_NVSwitch_0)
+661;i2c_wrapper;i2c_access ERoT_NVSwitch_0;93%;0m 0.10s;0.03;0.06;198;12;1;Error: cannot map deviceID (ERoT_NVSwitch_0)
+662;i2c_wrapper;i2c_access ERoT_NVSwitch_1;87%;0m 0.11s;0.01;0.07;317;12;1;Error: cannot map deviceID (ERoT_NVSwitch_1)
+663;i2c_wrapper;i2c_access ERoT_NVSwitch_1;85%;0m 0.13s;0.04;0.07;83;13;1;Error: cannot map deviceID (ERoT_NVSwitch_1)
+664;i2c_wrapper;i2c_access ERoT_NVSwitch_2;62%;0m 0.23s;0.02;0.12;1738;12;1;Error: cannot map deviceID (ERoT_NVSwitch_2)
+665;i2c_wrapper;i2c_access ERoT_NVSwitch_2;67%;0m 0.18s;0.01;0.1;356;10;1;Error: cannot map deviceID (ERoT_NVSwitch_2)
+666;i2c_wrapper;i2c_access ERoT_NVSwitch_3;88%;0m 0.11s;0.03;0.07;357;12;1;Error: cannot map deviceID (ERoT_NVSwitch_3)
+667;i2c_wrapper;i2c_access ERoT_NVSwitch_3;86%;0m 0.11s;0.01;0.08;582;12;1;Error: cannot map deviceID (ERoT_NVSwitch_3)
+668;i2c_wrapper;i2c_access ERoT_PCIeSwitch_0;90%;0m 0.10s;0.02;0.07;478;13;1;Error: cannot map deviceID (ERoT_PCIeSwitch_0)
+669;i2c_wrapper;i2c_access ERoT_PCIeSwitch_0;91%;0m 0.10s;0.02;0.07;234;13;1;Error: cannot map deviceID (ERoT_PCIeSwitch_0)
+670;i2c_wrapper;i2c_access FPGA_0;87%;0m 0.10s;0.03;0.06;417;17;0;link-up
+671;i2c_wrapper;i2c_access FPGA_0;92%;0m 0.09s;0.0;0.07;223;18;0;link-up
+672;i2c_wrapper;i2c_access GPU_SXM_1;89%;0m 0.14s;0.02;0.1;473;25;0;link-up
+673;i2c_wrapper;i2c_access GPU_SXM_1;92%;0m 0.13s;0.03;0.08;269;26;0;link-up
+674;i2c_wrapper;i2c_access GPU_SXM_2;89%;0m 0.12s;0.06;0.05;510;25;0;link-up
+675;i2c_wrapper;i2c_access GPU_SXM_2;85%;0m 0.13s;0.02;0.09;586;24;0;link-up
+676;i2c_wrapper;i2c_access GPU_SXM_3;84%;0m 0.14s;0.02;0.09;823;24;0;link-up
+677;i2c_wrapper;i2c_access GPU_SXM_3;91%;0m 0.12s;0.06;0.04;224;26;0;link-up
+678;i2c_wrapper;i2c_access GPU_SXM_4;88%;0m 0.13s;0.03;0.08;426;25;0;link-up
+679;i2c_wrapper;i2c_access GPU_SXM_4;89%;0m 0.13s;0.05;0.05;399;24;0;link-up
+680;i2c_wrapper;i2c_access GPU_SXM_5;85%;0m 0.15s;0.06;0.07;603;28;0;link-up
+681;i2c_wrapper;i2c_access GPU_SXM_5;82%;0m 0.17s;0.07;0.07;833;27;0;link-up
+682;i2c_wrapper;i2c_access GPU_SXM_6;83%;0m 0.16s;0.05;0.08;1194;27;0;link-up
+683;i2c_wrapper;i2c_access GPU_SXM_6;79%;0m 0.18s;0.06;0.08;1250;24;0;link-up
+684;i2c_wrapper;i2c_access GPU_SXM_7;84%;0m 0.16s;0.03;0.1;1135;25;0;link-up
+685;i2c_wrapper;i2c_access GPU_SXM_7;87%;0m 0.15s;0.06;0.06;473;26;0;link-up
+686;i2c_wrapper;i2c_access GPU_SXM_8;90%;0m 0.15s;0.06;0.07;388;28;0;link-up
+687;i2c_wrapper;i2c_access GPU_SXM_8;81%;0m 0.17s;0.04;0.09;1156;30;0;link-up
+688;i2c_wrapper;i2c_access HSC_0;91%;0m 0.11s;0.01;0.09;238;13;1;Error: cannot map deviceID (HSC_0)
+689;i2c_wrapper;i2c_access HSC_0;86%;0m 0.12s;0.03;0.07;562;13;1;Error: cannot map deviceID (HSC_0)
+690;i2c_wrapper;i2c_access HSC_1;63%;0m 0.17s;0.01;0.09;608;12;1;Error: cannot map deviceID (HSC_1)
+691;i2c_wrapper;i2c_access HSC_1;87%;0m 0.12s;0.03;0.07;536;13;1;Error: cannot map deviceID (HSC_1)
+692;i2c_wrapper;i2c_access HSC_2;82%;0m 0.12s;0.02;0.07;1037;11;1;Error: cannot map deviceID (HSC_2)
+693;i2c_wrapper;i2c_access HSC_2;74%;0m 0.17s;0.01;0.11;684;12;1;Error: cannot map deviceID (HSC_2)
+694;i2c_wrapper;i2c_access HSC_3;58%;0m 0.23s;0.02;0.11;1587;13;1;Error: cannot map deviceID (HSC_3)
+695;i2c_wrapper;i2c_access HSC_3;58%;0m 0.28s;0.02;0.14;2172;12;1;Error: cannot map deviceID (HSC_3)
+696;i2c_wrapper;i2c_access HSC_4;90%;0m 0.10s;0.04;0.04;438;12;1;Error: cannot map deviceID (HSC_4)
+697;i2c_wrapper;i2c_access HSC_4;82%;0m 0.12s;0.02;0.07;694;12;1;Error: cannot map deviceID (HSC_4)
+698;i2c_wrapper;i2c_access HSC_5;85%;0m 0.12s;0.04;0.06;575;11;1;Error: cannot map deviceID (HSC_5)
+699;i2c_wrapper;i2c_access HSC_5;79%;0m 0.13s;0.04;0.06;1180;11;1;Error: cannot map deviceID (HSC_5)
+700;i2c_wrapper;i2c_access HSC_6;88%;0m 0.12s;0.02;0.07;517;13;1;Error: cannot map deviceID (HSC_6)
+701;i2c_wrapper;i2c_access HSC_6;89%;0m 0.10s;0.03;0.06;337;13;1;Error: cannot map deviceID (HSC_6)
+702;i2c_wrapper;i2c_access HSC_7;94%;0m 0.09s;0.01;0.07;104;13;1;Error: cannot map deviceID (HSC_7)
+703;i2c_wrapper;i2c_access HSC_7;85%;0m 0.12s;0.02;0.07;624;11;1;Error: cannot map deviceID (HSC_7)
+704;i2c_wrapper;i2c_access HSC_8;79%;0m 0.14s;0.03;0.07;1248;10;1;Error: cannot map deviceID (HSC_8)
+705;i2c_wrapper;i2c_access HSC_8;92%;0m 0.10s;0.02;0.06;283;13;1;Error: cannot map deviceID (HSC_8)
+706;i2c_wrapper;i2c_access HSC_9;82%;0m 0.12s;0.02;0.08;652;13;1;Error: cannot map deviceID (HSC_9)
+707;i2c_wrapper;i2c_access HSC_9;81%;0m 0.13s;0.01;0.09;732;11;1;Error: cannot map deviceID (HSC_9)
+708;i2c_wrapper;i2c_access NVSwitch_0;92%;0m 0.11s;0.05;0.04;233;24;0;link-up
+709;i2c_wrapper;i2c_access NVSwitch_0;91%;0m 0.12s;0.02;0.08;260;24;0;link-up
+710;i2c_wrapper;i2c_access NVSwitch_1;84%;0m 0.13s;0.05;0.06;636;20;0;link-up
+711;i2c_wrapper;i2c_access NVSwitch_1;82%;0m 0.13s;0.03;0.08;1018;21;0;link-up
+712;i2c_wrapper;i2c_access NVSwitch_2;81%;0m 0.13s;0.05;0.06;732;25;0;link-up
+713;i2c_wrapper;i2c_access NVSwitch_2;82%;0m 0.14s;0.06;0.05;1058;23;0;link-up
+714;i2c_wrapper;i2c_access NVSwitch_3;92%;0m 0.11s;0.04;0.06;238;24;0;link-up
+715;i2c_wrapper;i2c_access NVSwitch_3;85%;0m 0.14s;0.04;0.07;651;24;0;link-up
+716;i2c_wrapper;i2c_access PCIeSwitch_0;87%;0m 0.12s;0.03;0.07;449;17;1;Error: device PCIeSwitch0 not found in /usr/share/selftest_i2c_profile.csv
+717;i2c_wrapper;i2c_access PCIeSwitch_0;79%;0m 0.15s;0.05;0.07;1215;19;1;Error: device PCIeSwitch0 not found in /usr/share/selftest_i2c_profile.csv
+718;i2c_wrapper;i2c_access StandbyHSC_0;91%;0m 0.11s;0.02;0.07;280;13;1;Error: cannot map deviceID (StandbyHSC_0)
+719;i2c_wrapper;i2c_access StandbyHSC_0;82%;0m 0.12s;0.02;0.06;802;11;1;Error: cannot map deviceID (StandbyHSC_0)
+720;i2c_wrapper;i2c_access ERoT_FPGA_0;95%;0m 0.10s;0.02;0.07;179;13;1;Error: cannot map deviceID (ERoT_FPGA_0)
+721;i2c_wrapper;i2c_access ERoT_FPGA_0;61%;0m 0.22s;0.02;0.11;1387;13;1;Error: cannot map deviceID (ERoT_FPGA_0)
+722;i2c_wrapper;i2c_access ERoT_GPU_SXM_1;91%;0m 0.09s;0.03;0.05;273;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_1)
+723;i2c_wrapper;i2c_access ERoT_GPU_SXM_1;79%;0m 0.13s;0.01;0.08;776;11;1;Error: cannot map deviceID (ERoT_GPU_SXM_1)
+724;i2c_wrapper;i2c_access ERoT_GPU_SXM_2;89%;0m 0.10s;0.03;0.06;295;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_2)
+725;i2c_wrapper;i2c_access ERoT_GPU_SXM_2;76%;0m 0.14s;0.02;0.07;31;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_2)
+726;i2c_wrapper;i2c_access ERoT_GPU_SXM_3;95%;0m 0.11s;0.0;0.1;17;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_3)
+727;i2c_wrapper;i2c_access ERoT_GPU_SXM_3;80%;0m 0.13s;0.01;0.09;98;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_3)
+728;i2c_wrapper;i2c_access ERoT_GPU_SXM_4;85%;0m 0.11s;0.01;0.08;22;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_4)
+729;i2c_wrapper;i2c_access ERoT_GPU_SXM_4;59%;0m 0.26s;0.02;0.13;1547;11;1;Error: cannot map deviceID (ERoT_GPU_SXM_4)
+730;i2c_wrapper;i2c_access ERoT_GPU_SXM_5;94%;0m 0.09s;0.02;0.06;135;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_5)
+731;i2c_wrapper;i2c_access ERoT_GPU_SXM_5;91%;0m 0.10s;0.01;0.07;205;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_5)
+732;i2c_wrapper;i2c_access ERoT_GPU_SXM_6;90%;0m 0.10s;0.03;0.05;289;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_6)
+733;i2c_wrapper;i2c_access ERoT_GPU_SXM_6;87%;0m 0.10s;0.02;0.06;460;12;1;Error: cannot map deviceID (ERoT_GPU_SXM_6)
+734;i2c_wrapper;i2c_access ERoT_GPU_SXM_7;93%;0m 0.09s;0.03;0.05;210;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_7)
+735;i2c_wrapper;i2c_access ERoT_GPU_SXM_7;90%;0m 0.10s;0.03;0.06;186;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_7)
+736;i2c_wrapper;i2c_access ERoT_GPU_SXM_8;83%;0m 0.12s;0.02;0.08;705;12;1;Error: cannot map deviceID (ERoT_GPU_SXM_8)
+737;i2c_wrapper;i2c_access ERoT_GPU_SXM_8;90%;0m 0.10s;0.02;0.07;353;13;1;Error: cannot map deviceID (ERoT_GPU_SXM_8)
+738;i2c_wrapper;i2c_access ERoT_HMC_0;87%;0m 0.10s;0.01;0.07;342;12;1;Error: cannot map deviceID (ERoT_HMC_0)
+739;i2c_wrapper;i2c_access ERoT_HMC_0;90%;0m 0.10s;0.03;0.06;381;13;1;Error: cannot map deviceID (ERoT_HMC_0)
+740;i2c_wrapper;i2c_access ERoT_NVSwitch_0;91%;0m 0.09s;0.02;0.06;240;13;1;Error: cannot map deviceID (ERoT_NVSwitch_0)
+741;i2c_wrapper;i2c_access ERoT_NVSwitch_0;90%;0m 0.11s;0.02;0.07;401;13;1;Error: cannot map deviceID (ERoT_NVSwitch_0)
+742;i2c_wrapper;i2c_access ERoT_NVSwitch_1;93%;0m 0.09s;0.03;0.05;152;13;1;Error: cannot map deviceID (ERoT_NVSwitch_1)
+743;i2c_wrapper;i2c_access ERoT_NVSwitch_1;89%;0m 0.10s;0.02;0.07;415;14;1;Error: cannot map deviceID (ERoT_NVSwitch_1)
+744;i2c_wrapper;i2c_access ERoT_NVSwitch_2;75%;0m 0.14s;0.01;0.09;1287;10;1;Error: cannot map deviceID (ERoT_NVSwitch_2)
+745;i2c_wrapper;i2c_access ERoT_NVSwitch_2;80%;0m 0.13s;0.02;0.08;838;10;1;Error: cannot map deviceID (ERoT_NVSwitch_2)
+746;i2c_wrapper;i2c_access ERoT_NVSwitch_3;92%;0m 0.09s;0.01;0.07;195;13;1;Error: cannot map deviceID (ERoT_NVSwitch_3)
+747;i2c_wrapper;i2c_access ERoT_NVSwitch_3;92%;0m 0.10s;0.03;0.06;249;12;1;Error: cannot map deviceID (ERoT_NVSwitch_3)
+748;i2c_wrapper;i2c_access ERoT_PCIeSwitch_0;85%;0m 0.12s;0.03;0.06;624;11;1;Error: cannot map deviceID (ERoT_PCIeSwitch_0)
+749;i2c_wrapper;i2c_access ERoT_PCIeSwitch_0;90%;0m 0.11s;0.02;0.07;318;13;1;Error: cannot map deviceID (ERoT_PCIeSwitch_0)
+750;i2c_wrapper;i2c_access FPGA_0;93%;0m 0.08s;0.02;0.06;148;18;0;link-up
+751;i2c_wrapper;i2c_access FPGA_0;78%;0m 0.12s;0.04;0.05;664;17;0;link-up
+752;i2c_wrapper;i2c_access GPU_SXM_1;78%;0m 0.16s;0.04;0.08;1268;22;0;link-up
+753;i2c_wrapper;i2c_access GPU_SXM_1;87%;0m 0.12s;0.05;0.06;474;26;0;link-up
+754;i2c_wrapper;i2c_access GPU_SXM_2;79%;0m 0.15s;0.04;0.07;1179;24;0;link-up
+755;i2c_wrapper;i2c_access GPU_SXM_2;93%;0m 0.12s;0.04;0.07;223;26;0;link-up
+756;i2c_wrapper;i2c_access GPU_SXM_3;70%;0m 0.18s;0.04;0.08;636;26;0;link-up
+757;i2c_wrapper;i2c_access GPU_SXM_3;84%;0m 0.14s;0.06;0.05;736;25;0;link-up
+758;i2c_wrapper;i2c_access GPU_SXM_4;91%;0m 0.12s;0.06;0.04;337;26;0;link-up
+759;i2c_wrapper;i2c_access GPU_SXM_4;84%;0m 0.14s;0.05;0.07;708;25;0;link-up
+760;i2c_wrapper;i2c_access GPU_SXM_5;72%;0m 0.20s;0.05;0.09;396;27;0;link-up
+761;i2c_wrapper;i2c_access GPU_SXM_5;81%;0m 0.18s;0.05;0.09;163;26;0;link-up
+762;i2c_wrapper;i2c_access GPU_SXM_6;75%;0m 0.20s;0.02;0.12;77;26;0;link-up
+763;i2c_wrapper;i2c_access GPU_SXM_6;93%;0m 0.14s;0.05;0.08;149;24;0;link-up
+764;i2c_wrapper;i2c_access GPU_SXM_7;95%;0m 0.14s;0.05;0.07;165;23;0;link-up
+765;i2c_wrapper;i2c_access GPU_SXM_7;97%;0m 0.12s;0.04;0.08;81;25;0;link-up
+766;i2c_wrapper;i2c_access GPU_SXM_8;85%;0m 0.17s;0.06;0.08;156;28;0;link-up
+767;i2c_wrapper;i2c_access GPU_SXM_8;82%;0m 0.16s;0.06;0.07;141;28;0;link-up
+768;i2c_wrapper;i2c_access HSC_0;79%;0m 0.14s;0.01;0.09;233;13;1;Error: cannot map deviceID (HSC_0)
+769;i2c_wrapper;i2c_access HSC_0;75%;0m 0.14s;0.01;0.09;201;13;1;Error: cannot map deviceID (HSC_0)
+770;i2c_wrapper;i2c_access HSC_1;99%;0m 0.10s;0.01;0.08;15;13;1;Error: cannot map deviceID (HSC_1)
+771;i2c_wrapper;i2c_access HSC_1;99%;0m 0.10s;0.02;0.07;16;13;1;Error: cannot map deviceID (HSC_1)
+772;i2c_wrapper;i2c_access HSC_2;88%;0m 0.11s;0.0;0.09;317;13;1;Error: cannot map deviceID (HSC_2)
+773;i2c_wrapper;i2c_access HSC_2;89%;0m 0.10s;0.02;0.06;337;12;1;Error: cannot map deviceID (HSC_2)
+774;i2c_wrapper;i2c_access HSC_3;80%;0m 0.12s;0.01;0.08;422;11;1;Error: cannot map deviceID (HSC_3)
+775;i2c_wrapper;i2c_access HSC_3;37%;0m 0.39s;0.03;0.11;522;13;1;Error: cannot map deviceID (HSC_3)
+776;i2c_wrapper;i2c_access HSC_4;33%;0m 0.47s;0.02;0.13;1027;13;1;Error: cannot map deviceID (HSC_4)
+777;i2c_wrapper;i2c_access HSC_4;40%;0m 0.47s;0.06;0.12;3116;12;1;Error: cannot map deviceID (HSC_4)
+778;i2c_wrapper;i2c_access HSC_5;41%;0m 0.49s;0.04;0.16;2830;11;1;Error: cannot map deviceID (HSC_5)
+779;i2c_wrapper;i2c_access HSC_5;83%;0m 0.11s;0.01;0.08;503;13;1;Error: cannot map deviceID (HSC_5)
+780;i2c_wrapper;i2c_access HSC_6;85%;0m 0.12s;0.04;0.06;489;13;1;Error: cannot map deviceID (HSC_6)
+781;i2c_wrapper;i2c_access HSC_6;80%;0m 0.13s;0.03;0.07;537;13;1;Error: cannot map deviceID (HSC_6)
+782;i2c_wrapper;i2c_access HSC_7;78%;0m 0.13s;0.02;0.07;550;13;1;Error: cannot map deviceID (HSC_7)
+783;i2c_wrapper;i2c_access HSC_7;66%;0m 0.19s;0.03;0.08;654;13;1;Error: cannot map deviceID (HSC_7)
+784;i2c_wrapper;i2c_access HSC_8;80%;0m 0.14s;0.02;0.08;452;13;1;Error: cannot map deviceID (HSC_8)
+785;i2c_wrapper;i2c_access HSC_8;52%;0m 0.27s;0.04;0.1;2135;13;1;Error: cannot map deviceID (HSC_8)
+786;i2c_wrapper;i2c_access HSC_9;40%;0m 0.46s;0.02;0.16;4206;12;1;Error: cannot map deviceID (HSC_9)
+787;i2c_wrapper;i2c_access HSC_9;78%;0m 0.14s;0.03;0.07;541;11;1;Error: cannot map deviceID (HSC_9)
+788;i2c_wrapper;i2c_access NVSwitch_0;86%;0m 0.13s;0.05;0.05;190;24;0;link-up
+789;i2c_wrapper;i2c_access NVSwitch_0;77%;0m 0.14s;0.04;0.07;605;24;0;link-up
+790;i2c_wrapper;i2c_access NVSwitch_1;66%;0m 0.21s;0.01;0.12;1199;21;0;link-up
+791;i2c_wrapper;i2c_access NVSwitch_1;80%;0m 0.14s;0.01;0.09;606;24;0;link-up
+792;i2c_wrapper;i2c_access NVSwitch_2;77%;0m 0.15s;0.04;0.07;606;24;0;link-up
+793;i2c_wrapper;i2c_access NVSwitch_2;80%;0m 0.18s;0.04;0.1;575;23;0;link-up
+794;i2c_wrapper;i2c_access NVSwitch_3;75%;0m 0.21s;0.05;0.1;1010;23;0;link-up
+795;i2c_wrapper;i2c_access NVSwitch_3;80%;0m 0.18s;0.04;0.09;532;23;0;link-up
+796;i2c_wrapper;i2c_access PCIeSwitch_0;70%;0m 0.17s;0.02;0.09;721;19;1;Error: device PCIeSwitch0 not found in /usr/share/selftest_i2c_profile.csv
+797;i2c_wrapper;i2c_access PCIeSwitch_0;73%;0m 0.16s;0.04;0.07;783;19;1;Error: device PCIeSwitch0 not found in /usr/share/selftest_i2c_profile.csv
+798;i2c_wrapper;i2c_access StandbyHSC_0;77%;0m 0.13s;0.02;0.08;579;13;1;Error: cannot map deviceID (StandbyHSC_0)
+799;i2c_wrapper;i2c_access StandbyHSC_0;79%;0m 0.13s;0.03;0.07;699;13;1;Error: cannot map deviceID (StandbyHSC_0)

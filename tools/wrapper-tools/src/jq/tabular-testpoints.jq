@@ -14,4 +14,4 @@
      ".accessor.object": .accessor.object?,
      ".accessor.property": .accessor.property?
  }
-]
+] | unique

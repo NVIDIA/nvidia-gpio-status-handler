@@ -1,13 +1,7 @@
-#!/usr/bin/python
-
-import pandas as pd
 import sys
-
 import argparse
 
-def readArgs():
-    parser = argparse.ArgumentParser(
-        description = ("""Convert json file to csv format"""))
+def addCsvOptions(parser):
     defaultEncoding = "utf-8"
     parser.add_argument(
         "--encoding",
@@ -42,25 +36,38 @@ def readArgs():
         help = (f"List of columns to reduce the output to. " +
                 f" Default: all"))
     parser.add_argument(
-        "in_json",
+        "--no_header",
+        action = "store_true",
+        help = (f"Whether to omit the header"))
+
+def addInFileOption(parser, fileInArgName):
+    parser.add_argument(
+        fileInArgName,
         type = str,
         action = "store",
         nargs = "?",
         default = "-",
         help = (f"File path to read, or '-' for stdin. " +
                 f"Default: '-'"))
+    
+def addOutFileOption(parser, fileOutArgName = "file_out"):
     parser.add_argument(
-        "out_csv",
+        fileOutArgName,
         type = str,
         action = "store",
         nargs = "?",
         default = "-",
         help = (f"File path to write, or '-' for stdout. " +
                 f"Default: '-'"))
-    parser.add_argument(
-        "--no_header",
-        action = "store_true",
-        help = (f"Whether to omit the header"))
+    
+def csvFileProc(description = "",
+                fileInArgName = "file_in",
+                fileOutArgName = "file_out"):
+    parser = argparse.ArgumentParser(
+        description = description)
+    addCsvOptions(parser)
+    addInFileOption(parser, fileInArgName)
+    addOutFileOption(parser, fileOutArgName)
     return parser.parse_args()
 
 def openInput(filename, **rest):
@@ -70,20 +77,3 @@ def openInput(filename, **rest):
 def openOutput(filename, **rest):
     return (sys.stdout if filename == "-"
             else open(filename, "w", **rest))
-
-def main():
-    args = readArgs()
-    with openInput(args.in_json, encoding='utf-8') as inputfile:
-        df = pd.read_json(inputfile)    
-    with openOutput(args.out_csv, encoding='utf-8') as outputfile:
-        df.to_csv(outputfile,
-                  encoding = args.encoding,
-                  quotechar = args.quotechar,
-                  columns = args.columns,
-                  sep = args.sep,
-                  header = not args.no_header,
-                  index = False)    
-    return 0
-
-if __name__ == "__main__":
-    main()

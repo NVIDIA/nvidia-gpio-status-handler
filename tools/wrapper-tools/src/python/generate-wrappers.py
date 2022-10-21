@@ -8,6 +8,7 @@ import argparse
 from enum import Enum, auto, unique
 import logging
 import pathlib
+import common
 
 logging.basicConfig(force = True, level=logging.DEBUG)
 
@@ -53,12 +54,8 @@ class WrapperMockupDefs:
     #         (execution_time, string_OUTPUT, exit_code) }
     #   }
     
-    def __init__(self, testpointsTsvPath):
+    def __init__(self, testpoints):
         super().__init__()
-        testpoints = pd.read_csv(
-            testpointsTsvPath,
-            quotechar = "'",
-            sep = '	')
         self.wrappersMapping = {}
         for (i, row) in testpoints.iterrows():                
             if row[WrapperMockupDefs.Columns.CMD.val] not in self.wrappersMapping:
@@ -171,16 +168,25 @@ def parseArgs():
         default = default_dir,
         help = (f"The directory in which to place the ganerated wrapper mockups. " +
                 f"Default: {default_dir}"))
+    common.addCsvOptions(parser)
     return parser.parse_args()
 
-args = parseArgs()
+def main():
+    args = parseArgs()
+    logging.info(f"Parsing ‘{args.mockup_definition}’")
+    testpoints = pd.read_csv(
+        args.mockup_definition,
+        quotechar = args.quotechar,
+        sep = args.sep)
+    wrappersDefs = WrapperMockupDefs(testpoints).wrappersMapping
+    for wrapperName in wrappersDefs:
+        destWrapper = pathlib.Path(args.dir) / pathlib.Path(wrapperName)
+        logging.info(f"Generating wrapper ‘{destWrapper}’")
+        content = bashFormMapScr(wrappersDefs[wrapperName],
+                                 "time", "result", "returncode")
+        with open(destWrapper, "w") as destWrapperFile:
+            print(content, file = destWrapperFile)
+    return 0
 
-logging.info(f"Parsing ‘{args.mockup_definition}’")
-wrappersDefs = WrapperMockupDefs(args.mockup_definition).wrappersMapping
-for wrapperName in wrappersDefs:
-    destWrapper = pathlib.Path(args.dir) / pathlib.Path(wrapperName)
-    logging.info(f"Generating wrapper ‘{destWrapper}’")
-    content = bashFormMapScr(wrappersDefs[wrapperName],
-                             "time", "result", "returncode")
-    with open(destWrapper, "w") as destWrapperFile:
-        print(content, file = destWrapperFile)
+if __name__ == "__main__":
+    main()
