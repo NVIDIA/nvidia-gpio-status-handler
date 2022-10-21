@@ -180,11 +180,13 @@ fi
 
 # for device id position configured as:
 #   * 'cmd' put id in id place as assual
-#   * 'arg2' put id in place of arg2; id received from mapping could be empty in
-#      some cases - update arg2 only if valid id received from mapping tool
+#   * 'arg2' put id in place of arg2; 
+# id received from mapping could be empty in some cases - update only if valid
 id=0
 if [ "${id_pos,,}" = "cmd" ]; then
-    id=$deviceIndex
+    if [ -n "$deviceIndex" ]; then
+        id=$deviceIndex
+    fi
     dbg "id placed in id field = ($id)"
 else # [ "${id_pos,,}" = "arg2" ]
     if [ -n "$deviceIndex" ]; then
