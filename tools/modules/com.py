@@ -4,8 +4,18 @@ Common constants and functions
 
 import re
 
+
+## where modules live
+MODULES_DIR   = ""
+# where templates as source for code generation live
+TEMPLATES_DIR = ""
+
 #EVENT_LOG_URI="redfish/v1/Systems/system/LogServices/EventLog/Entries"
 EVENT_LOG_URI="redfish/v1/Systems/HGX_Baseboard_0/LogServices/EventLog/Entries"
+DEVICE_CHASSIS_URI="redfish/v1/Chassis"
+PHOSPHOR_LOG_BUSCTL    = "busctl get-property xyz.openbmc_project.Logging /xyz/openbmc_project/logging/entry"
+PHOSPHOR_LOG_INTERFACE = "xyz.openbmc_project.Logging.Entry"
+PHOSPHOR_LOG_ADDITIOANAL_DATA= "AdditionalData"
 
 LOGGING_SERVICE = "xyz.openbmc_project.Logging"
 LOGGING_OBJECT  = "/xyz/openbmc_project/logging"
@@ -30,6 +40,9 @@ KEY_ACCESSOR_OBJECT    = KEY_ACCESSOR + ".Object"
 KEY_ACCESSOR_INTERFACE = KEY_ACCESSOR + ".Interface"
 KEY_ACCESSOR_PROPERTY  = KEY_ACCESSOR + ".Property"
 KEY_ACCESSOR_CHECK     = KEY_ACCESSOR + ".Check"
+KEY_ACCESSOR_EXECUTABLE =  KEY_ACCESSOR + ".Executable"
+KEY_ACCESSOR_ARGUMENTS =  KEY_ACCESSOR + ".Arguments"
+
 KEY_ACCESSOR_CHECK_BITMASK = KEY_ACCESSOR_CHECK + ".Bitmask"
 KEY_ACCESSOR_CHECK_LOOKUP  = KEY_ACCESSOR_CHECK + ".Lookup"
 KEY_ACCESSOR_CHECK_EQUAL   = KEY_ACCESSOR_CHECK + ".Equal"
@@ -38,6 +51,14 @@ KEY_ACCESSOR_CHECK_NOTEQUAL = KEY_ACCESSOR_CHECK + ".Not_equal"
 KEY_ACCESSOR_DEP           = KEY_ACCESSOR + ".Dependency"
 KEY_ACCESSOR_DEP_TYPE      = KEY_ACCESSOR_DEP + ".Type"
 KEY_ACCESSOR_DEP_PROPERTY  = KEY_ACCESSOR_DEP + ".Property"
+KEY_ACCESSOR_DEP_EXECUTABLE =  KEY_ACCESSOR_DEP + ".Executable"
+KEY_ACCESSOR_DEP_ARGUMENTS =  KEY_ACCESSOR_DEP + ".Arguments"
+
+KEY_DEP_ACCESSOR_CHECK         = KEY_ACCESSOR_DEP + ".Check"
+KEY_ACCESSOR_DEP_CHECK_BITMASK = KEY_DEP_ACCESSOR_CHECK + ".Bitmask"
+KEY_ACCESSOR_DEP_CHECK_LOOKUP  = KEY_DEP_ACCESSOR_CHECK + ".Lookup"
+KEY_ACCESSOR_DEP_CHECK_EQUAL   = KEY_DEP_ACCESSOR_CHECK + ".Equal"
+KEY_ACCESSOR_DEP_CHECK_NOTEQUAL = KEY_DEP_ACCESSOR_CHECK + ".Not_equal"
 
 KEY_EVENT_TRIGGER = "Event_trigger"
 KEY_EVENT_TRIGGER_TYPE      = KEY_EVENT_TRIGGER + ".Type"
@@ -54,7 +75,8 @@ DEVICE_HW = ""
 # common constants, it is used for both KEY_ACCESSOR AND KEY_EVENT_TRIGGER
 ACCESSOR_TYPE_DBUS      = "DBUS"
 ACCESSOR_TYPE_DBUS_CALL = "DBUS CALL"
-ACCESSOR_TYPE_DEVICE_CORE_API = "DEVICECOREAPI"
+ACCESSOR_TYPE_DEVICE_CORE_API = "DeviceCoreAPI"
+ACCESSOR_TYPE_CMDLINE = "CMDLINE"
 
 LOGGING_ENTRY_STR       = "xyz.openbmc_project.Logging.Entry"
 LOGGING_ENTRY_DOT_STR   = f"{LOGGING_ENTRY_STR}."
@@ -99,10 +121,24 @@ SEVERITYDBUSTOREDFISH = {
 
 ## avoid huge range expansion such as:
 ## /xyz/openbmc_project/inventory/system/fabrics/HGX_NVLinkFabric_0/Switches/NVSwitch_[0-3]/Ports/NVLink_[0-39] , in this case the second range will be limited by 2
-DOUBLE_EXPANSION_LIMIT = 2
+DOUBLE_EXPANSION_LIMIT = 1
 
 # Used to say that a previous range must be repeated and not double expanded agains the first one
 RANGE_REPEATER_INDICATOR = '()'
+
+# Data to be used on custom Events
+#------------------------
+
+LIST_EVENTS = False  # True list Devices and exit
+
+# when not empty means the device we want to perform only: GPU,
+SINGLE_DEVICE = ""
+SINGLE_EVENT = ""         # performs just that event name
+SINGLE_DEVICE_INDEX = ""  # performs just that device index
+CUSTOM_EVENT  = False     # True when one of SINGLE customization above is not empty
+INITIAL_DEVICE_RANGE = -1 # integer first value of a range [1-3] => 1
+FINAL_DEVICE_RANGE   = -1
+DEVICE_RANGE = ""         # string such as  "[1-3]" or empty when the device does not have range
 
 def get_logging_entry_level(level):
     """
@@ -143,6 +179,19 @@ def replace_occurrence(string, occurrence):
     return my_string
 
 
+def get_range(name):
+   """
+   return the range string such as [0-8] or an empty string when it does not not exist
+   """
+   range_str = ""
+   open_bracket = name.find('[')
+   if open_bracket != -1:
+      close_bracket = name.find(']', open_bracket)
+      if close_bracket != -1:
+         range_str = name[open_bracket: close_bracket + 1]
+   return range_str
+
+
 def expand_range(name, limit=0):
     """
     expand_range(range_string) returns a list from strings with/without range specification at end
@@ -160,26 +209,24 @@ def expand_range(name, limit=0):
     """
     list_names = []
     open_bracket = name.find('[')
-    if open_bracket != -1:
-        close_bracket = name.find(']', open_bracket)
-        if close_bracket != -1:
-            range_str = name[open_bracket: close_bracket + 1]
-            values_range = range_str.split('-')
-            value = int(values_range[0][1:])
-            final_value = int(values_range[1][:-1])
-            while value <= final_value:
-               replaced = name.replace(range_str, str(value), 1)
-               replaced = replace_occurrence(replaced, str(value))
-               open_bracket = replaced.find('[', open_bracket)
-               if open_bracket != -1:
-                  list_names.extend(expand_range(replaced, DOUBLE_EXPANSION_LIMIT))
-               else:
-                  list_names.append(replaced)
-               value += 1
-               if value == limit:
-                  break
+    range_str = get_range(name)
+    if len(range_str) > 0:
+       values_range = range_str.split('-')
+       value = int(values_range[0][1:])
+       final_value = int(values_range[1][:-1])
+       while value <= final_value:
+          replaced = name.replace(range_str, str(value), 1)
+          replaced = replace_occurrence(replaced, str(value))
+          open_bracket = replaced.find('[', open_bracket)
+          if open_bracket != -1:
+             list_names.extend(expand_range(replaced, DOUBLE_EXPANSION_LIMIT))
+          else:
+             list_names.append(replaced)
+          value += 1
+          if value == limit:
+             break
     else:
-        list_names.append(name)
+         list_names.append(name)
     return list_names
 
 

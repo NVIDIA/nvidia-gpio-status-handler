@@ -18,6 +18,8 @@ Event Inject tests
 import sys
 import tempfile
 import os
+import shutil
+import json
 
 from getpass import getpass
 from shlex import split
@@ -54,9 +56,11 @@ QEMU_PORT=None
 
 JSON_REMOTE_PATHNAME="/usr/share/oobaml/event_info.json"
 JSON_REMOTE_FILE=f"<QEMU_USER>@<QEMU_IP>:<QEMU_PORT>{JSON_REMOTE_PATHNAME}"
+GENERATE_SCRIPT_ONLY = False
 
 # Global variables to access event injector script
-EVENT_INJ_SCRIPT_PATH="/home/root/event_injector.bash"
+EVENT_INJ_SCRIPT_NAME="event_injector.bash"
+EVENT_INJ_SCRIPT_PATH=f"/home/root/{EVENT_INJ_SCRIPT_NAME}"
 EVENT_INJ_SCRIPT_ARGS=""
 JSON_EVENTS_FILE=""
 
@@ -64,6 +68,14 @@ TEST_MODE_EVENTS_LOGGING=1
 TEST_MODE_CHANGE_DEVICE_STATUS=2
 TEST_MODE=TEST_MODE_EVENTS_LOGGING
 NOT_GENERATE_MESSAGE_ARGS = False
+
+RUN_SCRIPT  = True  ## will not run depending on some options
+CLEAR_LOGS  = True  ## clear logs at beginning not necessary to fetch initial logs
+
+CLEAR_LOGS_COMMAND = "busctl call xyz.openbmc_project.Logging /xyz/openbmc_project/logging xyz.openbmc_project.Collection.DeleteAll DeleteAll"
+
+com.MODULES_DIR   = modules_dir_path
+com.TEMPLATES_DIR = com.MODULES_DIR + "/" + "templates"
 
 available_options = [
     {
@@ -129,7 +141,52 @@ available_options = [
         'kwargs': {
             'type': str,
             'default': JSON_REMOTE_FILE,
-            'help': '''[optional] A json file with events to be injected'''
+            'help': '''[optional] A json file with events to be injected.'''
+        }
+    },
+    {
+        'args': [ '-l', '--list-events-only' ],
+        'kwargs': {
+            'action': 'store_true',
+            'help': '''[optional] Prints the event list and exit.'''
+        }
+    },
+    {
+        'args': [ '-g', '--generate-script-only' ],
+        'kwargs': {
+            'action': 'store_true',
+            'help': '''[optional] Just generates the bash Injector script on /tmp and exits.'''
+         }
+    },
+    {
+        'args': [ '-d', '--device' ],
+        'kwargs': {
+            'type': str,
+            'default': '',
+            'help': '''[optional] Perform injections only for specific a device, see also ----list-events-only and --event.'''
+        }
+    },
+    {
+        'args': [ '-e', '--event' ],
+        'kwargs': {
+            'type': str,
+            'default': '',
+            'help': '''[optional] Perform injections only for specific a event, see also ----list-events-only and --device.'''
+        }
+    },
+    {
+        'args': [ '-i', '--device-index' ],
+        'kwargs': {
+            'type': str,
+            'default': '',
+            'help': '''[optional] Perform injections only for specific a device INDEX since the EVENT has range, see also ----list-events-only and --event.'''
+        }
+    },
+    {
+        'args': [ '--keep-existent-logs' ],
+        'kwargs': {
+            'action': 'store_true',
+            'help': '''[optional] If this option is specified, Phosphor Log entries will NOT be cleared before injecting failures.'''
         }
     },
     {
@@ -137,7 +194,7 @@ available_options = [
         'kwargs': {
             'action': 'store_true',
             'help': '''[optional] If this option is specified, no event will be injected.'''
-        }
+         }
     },
 ]
 
@@ -172,7 +229,7 @@ def parse_arguments():
     parser = init_arg_parser()
 
     global QEMU_USER, QEMU_PASS, QEMU_IP, QEMU_PORT, BMCWEB_IP, BMCWEB_PORT, \
-           JSON_EVENTS_FILE, TEST_MODE, EVENT_INJ_SCRIPT_ARGS
+           JSON_EVENTS_FILE, TEST_MODE, EVENT_INJ_SCRIPT_ARGS, RUN_SCRIPT, CLEAR_LOGS, GENERATE_SCRIPT_ONLY
 
     args, remaining = parser.parse_known_args()
     avoid_unused_variable(remaining)
@@ -195,9 +252,29 @@ def parse_arguments():
 
     JSON_EVENTS_FILE=args.json
 
+    GENERATE_SCRIPT_ONLY = args.generate_script_only
+    if GENERATE_SCRIPT_ONLY is True:
+       RUN_SCRIPT = False
+
+    com.LIST_EVENTS = args.list_events_only
+    if com.LIST_EVENTS is True:
+        RUN_SCRIPT = False
+
+    com.SINGLE_DEVICE = args.device
+    com.SINGLE_EVENT  = args.event
+    com.SINGLE_DEVICE_INDEX = args.device_index
+
+    if len(com.SINGLE_DEVICE) > 0 or len(com.SINGLE_EVENT) or \
+       len(com.SINGLE_DEVICE_INDEX) :
+          com.CUSTOM_EVENT = True
+
     # Check for dry run
     if not args.dry_run:
         EVENT_INJ_SCRIPT_ARGS = f"{EVENT_INJ_SCRIPT_ARGS} -r"
+
+    CLEAR_LOGS = not args.keep_existent_logs
+    if args.keep_existent_logs != True:
+         EVENT_INJ_SCRIPT_ARGS += " -keep-existent-logs"
 
     return True
 
@@ -228,6 +305,69 @@ class InjectTest:
         self._ssh_cmd = None
         self.log_cache=None
         self.unverified_events = 0
+
+
+    def clear_logs(self):
+       """
+       Clear Logs at beginning
+       """
+       self.create_ssh_session()
+       try:
+         # Execute the command to invoke event_injector script
+         channel = self._ssh_cmd.get_transport().open_session()
+         channel.exec_command(CLEAR_LOGS_COMMAND)
+         channel.set_combine_stderr(True)
+
+       except Exception as error:
+            msg = f"Exception occurred while running command {CLEAR_LOGS_COMMAND}"
+            raise Exception(f"{msg} over ssh: {str(error)}") from error
+
+
+    def get_asserted_device(self, entryId):
+       """
+       """
+       real_device = ""
+       pipes_extract = " | cut -f3-550 -d' ' | awk -F 'namespace='  '{print $2}' | tr -d '\"' "
+       cmd = f"{com.PHOSPHOR_LOG_BUSCTL}/{entryId} {com.PHOSPHOR_LOG_INTERFACE} {com.PHOSPHOR_LOG_ADDITIOANAL_DATA} {pipes_extract}"
+       try:
+            # Execute the command to invoke event_injector script
+            channel = self._ssh_cmd.get_transport().open_session()
+            channel.exec_command(cmd)
+            channel.set_combine_stderr(True)
+            while True:
+                out = channel.recv(256).decode("utf-8")
+                real_device += out
+                if channel.exit_status_ready():
+                    break
+       except Exception as error:
+            msg = f"Exception occurred while running command {cmd}"
+            raise Exception(f"{msg} over ssh: {str(error)}") from error
+
+        # Check stdout return code
+       if channel.recv_exit_status():
+            msg  = f"Exception occurred while running command {cmd} over ssh:"
+            msg += f"\n{''.join(real_device)}"
+            raise Exception(msg)
+
+       return real_device.rstrip()
+
+
+    def get_device_chassis_health_rollup(self, device):
+       """
+
+       """
+       health_rollup = ""
+       event_log_entries_api= f"http://{BMCWEB_IP}:{BMCWEB_PORT}/{com.DEVICE_CHASSIS_URI}/{device}"
+       try: # Call the API
+            response = get(event_log_entries_api, verify=False,
+                              auth = HTTPBasicAuth(QEMU_USER, QEMU_PASS))
+            if response.status_code == 200:
+               health_rollup = response.json()
+       except Exception as error:
+            msg = f"Exception occurred while converting response to json: {str(error)}"
+            raise Exception(f"{msg}\n Response: {response.text}") from error
+
+       return health_rollup
 
 
     def current_log_count(self, cache=False):
@@ -272,27 +412,29 @@ class InjectTest:
         """
         Fetch current number of logs.
         """
-        print("\nFetching current logs....")
-        try:
-            self.initial_log_count = self.current_log_count()
-        except Exception as error:
-            raise error
+        if RUN_SCRIPT is True:
+            print("\nFetching current logs....")
+            try:
+                  self.initial_log_count = self.current_log_count()
+            except Exception as error:
+                  raise error
 
 
     def create_ssh_session(self):
         """
         Creates a ssh session
         """
-        try:
-            self._ssh_cmd = paramiko.SSHClient()
-            # Set missing host key policy
-            self._ssh_cmd.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            # Connect the SSH client to QEMU
-            self._ssh_cmd.connect(QEMU_IP, username=QEMU_USER, port=QEMU_PORT, \
+        if self._ssh_cmd is None:
+           try:
+              self._ssh_cmd = paramiko.SSHClient()
+              # Set missing host key policy
+              self._ssh_cmd.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+              # Connect the SSH client to QEMU
+              self._ssh_cmd.connect(QEMU_IP, username=QEMU_USER, port=QEMU_PORT, \
                               password=QEMU_PASS, timeout=60)
-        except Exception as error:
-            msg = f"Exception occurred while connecting to {BMCWEB_IP} {QEMU_PORT}"
-            raise Exception(f"{msg}: {str(error)}") from error
+           except Exception as error:
+              msg = f"Exception occurred while connecting to {BMCWEB_IP} {QEMU_PORT}"
+              raise Exception(f"{msg}: {str(error)}") from error
 
 
     def sftp_script_to_emulator(self, source_script):
@@ -448,7 +590,7 @@ class InjectTest:
 
         msg  = f"Parsing Json file {JSON_EVENTS_FILE} and generating event injector "
         msg += f"bash script for mode={TEST_MODE}...."
-        print(f"...\n\n{msg}")
+        print(f"...\n\n{msg}\n")
 
         event_logs_script = EventLogsInjectorScript(json_filename, NOT_GENERATE_MESSAGE_ARGS) \
             if TEST_MODE == TEST_MODE_EVENTS_LOGGING else \
@@ -471,10 +613,21 @@ class InjectTest:
         try:
             # Create the SSH client
             self.create_ssh_session()
+
             event_logs_script = self.generate_script_from_json()
+            if GENERATE_SCRIPT_ONLY is True:
+               source_script = event_logs_script.script_file()
+               destination = tempfile.gettempdir() + "/" + EVENT_INJ_SCRIPT_NAME
+               print(f"...\n\nGenerated Bash Injector Script as {destination}\n...")
+               shutil.copyfile(source_script, destination)
+
+            if RUN_SCRIPT is False:
+                self._ssh_cmd.close()
+                return
+
             self.sftp_script_to_emulator(event_logs_script.script_file())
             result_stdout = self.execute_remote_script_and_get_stdout()
-            # reads the last output line which should have a 'Successful Injections: 23'
+                # reads the last output line which should have a 'Successful Injections: 23'
             try:
                 index=-1
                 while index > -4:  # try a couple on lines at bottom
@@ -492,8 +645,6 @@ class InjectTest:
                 self.get_events_list_from_json_file(result_stdout, event_logs_script)
         except Exception as error:
             raise error
-        finally:
-            self._ssh_cmd.close()
 
 
     def collect_logs_after_injection_and_verify(self):
@@ -522,11 +673,23 @@ class InjectTest:
                 if int(member['Id']) in self.events_injected:
                     log_id = int(member['Id'])
                     temp_dict = self.events_injected[log_id]
+                    real_device = self.get_asserted_device(member['Id'])
                     # Compare all the fields
                     if 'MessageArgs' in member:
-                         print("entryId=%03d device=%-14s event='%-50s' MessageArgs=%s" % (log_id, temp_dict['device'], temp_dict['event'], member['MessageArgs']))
+                         print("entryId=%03d device=%-14s event='%-50s' MessageArgs=%s" % (log_id, real_device, temp_dict['event'], member['MessageArgs']))
                     else:
-                        print("entryId=%03d device=%-14s event='%-50s'" % (log_id, temp_dict['device'], temp_dict['event']))
+                        print("entryId=%03d device=%-14s event='%-50s'" % (log_id, real_device, temp_dict['event']))
+                    if com.CUSTOM_EVENT is True:
+                        print(json.dumps(member, indent=4))
+                        print()
+                        health_rollup = self.get_device_chassis_health_rollup(real_device)
+                        if len(health_rollup) == 0 and real_device.startswith("HGX_") is False:
+                           attempty = "HGX_" + real_device
+                           health_rollup = self.get_device_chassis_health_rollup(attempty)
+                        if len(health_rollup) > 0:
+                           print(json.dumps(health_rollup, indent=4))
+                           print()
+
                     mandatory_fields_match = com.compare_mandatory_event_fields(temp_dict, member)
                     optional_fields_match = com.compare_optional_event_fields(temp_dict, member)
                     if mandatory_fields_match is True and optional_fields_match is True:
@@ -572,6 +735,7 @@ class InjectTest:
         color = 'red' if self.unverified_events > 0 else 'green'
         print("\tUnverified events: ", colored(f"{self.unverified_events}", color))
 
+        self._ssh_cmd.close()
         return self.unverified_events
 
 
@@ -592,10 +756,14 @@ def main():
     try:
         if main_rc == os.EX_OK:
             inject_test = InjectTest()
-            inject_test.collect_logs_before_injections()
+            if CLEAR_LOGS is True:
+               inject_test.clear_logs()
+            else:
+               inject_test.collect_logs_before_injections()
             inject_test.inject_events()
             sleep(2)
-            inject_test.collect_logs_after_injection_and_verify()
+            if RUN_SCRIPT is True:
+               inject_test.collect_logs_after_injection_and_verify()
     except Exception as error:
         print(colored(error, 'red'))
         main_rc = -1

@@ -198,12 +198,15 @@ class InjectorScriptBase(abc.ABC):
 
         if table is None:
             table = self._additional_data
-        accessor_key = f"{com.KEY_ACCESSOR}."
-        for key in list(table.keys()):
-            if key.startswith(accessor_key):
-                del table[key]
-        if com.KEY_ACCESSOR_TYPE in table:
-            del table[com.KEY_ACCESSOR_TYPE]
+            for key in list(table.keys()):
+               del table[key]
+        else:
+            accessor_key = f"{com.KEY_ACCESSOR}."
+            for key in list(table.keys()):
+               if key.startswith(accessor_key):
+                  del table[key]
+            if com.KEY_ACCESSOR_TYPE in table:
+               del table[com.KEY_ACCESSOR_TYPE]
 
 
     def generate_device_busctl_commands(self, device, data):
