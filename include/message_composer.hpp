@@ -98,7 +98,7 @@ class MessageComposer : public event_handler::EventHandler
      */
     static std::string collectDiagData(const event_info::EventNode& event)
     {
-        nlohmann::json output;
+        nlohmann::ordered_json output;
 
         if (!event.trigger.isEmpty())
         {
@@ -108,6 +108,7 @@ class MessageComposer : public event_handler::EventHandler
         {
             output["trigger"] = "empty";
         }
+
         if (!event.accessor.isEmpty())
         {
             output["accessor"] = event.accessor.getDataValue().getString();
