@@ -170,7 +170,9 @@ void PropertyValue::getPropertyDataFromVariant(const PropertyVariant& varVar)
             PropertyValueDataHelper<int64_t>::setInteger(varVar, &_data) ||
             PropertyValueDataHelper<uint64_t>::setInteger(varVar, &_data) ||
             PropertyValueDataHelper<double>::setInteger(varVar, &_data) ||
-            PropertyValueDataHelper<bool>::setBoolean(varVar, &_data);
+            PropertyValueDataHelper<bool>::setBoolean(varVar, &_data) ||
+            PropertyValueDataHelper<std::vector<std::string>>::setVectorStrings(
+                                                             varVar, &_data);
     }
     if (done == false) // varVar.index() == 0 or type not handled above
     {
@@ -255,3 +257,4 @@ PropertyValue getValueFromCriteria(const PropertyVariant& redefCriteria,
 } // namespace criteria
 
 } // namespace data_accessor
+

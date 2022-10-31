@@ -13,6 +13,8 @@
 
 #include "property_variant.hpp"
 
+#include <boost/algorithm/string/join.hpp>
+
 #include <map>
 #include <string>
 
@@ -154,6 +156,31 @@ class PropertyValueDataHelper
             return true;
         }
         return false;
+    }
+
+    /**
+     * @brief  gets the list of strings from varVar and puts it in a
+     *           PropertyValueData
+     *
+     * @param varVar the std::vector<string> as std::variant
+     *
+     * @param pointer of PropertyValueData to store results
+     *
+     * @return true if string data could be extracted from varVar
+     */
+    static bool setVectorStrings(const PropertyVariant& varVar,
+                                 PropertyValueData* data)
+    {
+         if (std::holds_alternative<std::vector<std::string>>(varVar) == true)
+         {
+             std::vector<std::string> list =
+                        std::get<std::vector<std::string>>(varVar);
+             data->strValue = boost::join(list, ", ");
+             data->value64 = 0;
+             data->state = PropertyValueData::StringOnly;
+             return true;
+         }
+         return false;
     }
 };
 
@@ -390,3 +417,4 @@ PropertyValue getValueFromCriteria(const PropertyVariant& redefCriteria,
 } // namespace criteria
 
 } // namespace data_accessor
+
