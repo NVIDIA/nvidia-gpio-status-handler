@@ -36,40 +36,50 @@ void Selftest::updateDeviceHealth(const std::string& device,
     try
     {
         auto bus = sdbusplus::bus::new_default_system();
+        std::string methodName("GetSubTreePaths");
         auto method = bus.new_method_call("xyz.openbmc_project.ObjectMapper",
                                           "/xyz/openbmc_project/object_mapper",
                                           "xyz.openbmc_project.ObjectMapper",
-                                          "GetSubTree");
-        method.append("/xyz/openbmc_project/inventory/system");
-        method.append(2);
-        method.append(std::vector<std::string>());
-
-        using GetSubTreeType = std::vector<std::pair<
-            std::string,
-            std::vector<std::pair<std::string, std::vector<std::string>>>>>;
+                                          methodName.c_str());
+        std::string root("/xyz/openbmc_project/inventory/system");
+        method.append(root);
+        method.append(0);
+        std::string intf("xyz.openbmc_project.State.Decorator.Health");
+        method.append(std::vector<std::string>({intf}));
 
         auto reply = bus.call(method);
-        GetSubTreeType subtree;
+        std::vector<std::string> subtree;
         reply.read(subtree);
 
-        for (auto& objPath : subtree)
+        auto objPathsToAlter =
+            dbus::ObjectMapper::scopeObjectPathsDevId(subtree, device);
+        if (!objPathsToAlter.empty())
         {
-            if (boost::algorithm::ends_with(objPath.first, "/" + device))
+            for (const auto& objPath : objPathsToAlter)
             {
                 std::string healthState =
                     "xyz.openbmc_project.State.Decorator.Health.HealthType." +
                     health;
 
                 log_dbg("Setting Health Property for: %s healthState: %s\n",
-                        objPath.first.c_str(), healthState.c_str());
+                        objPath.c_str(), healthState.c_str());
                 bool ok = dbus::setDbusProperty(
-                    objPath.first, "xyz.openbmc_project.State.Decorator.Health",
+                    objPath, "xyz.openbmc_project.State.Decorator.Health",
                     "Health", PropertyVariant(healthState));
                 if (ok == true)
                 {
                     log_dbg("Changed health property as expected\n");
                 } // else setDbusProperty() prints message on std::cerr
             }
+        }
+        else // ! objPathsToAlter.empty()
+        {
+            log_err("No object paths found in the subtree of '%s' "
+                    "from the tree returned by '%s' "
+                    "corresponding to the '%s' device id "
+                    "and implementing the '%s' interface\n",
+                    root.c_str(), methodName.c_str(), device.c_str(),
+                    intf.c_str());
         }
     }
     catch (const sdbusplus::exception::SdBusError& e)
@@ -463,8 +473,8 @@ void RootCauseTracer::updateRootCause(dat_traverse::Device& dev,
     selftester.updateDeviceHealth(dev.name, status.health);
 }
 
-aml::RcCode
-    RootCauseTracer::process([[maybe_unused]] event_info::EventNode& event)
+aml::RcCode RootCauseTracer::process([
+    [maybe_unused]] event_info::EventNode& event)
 {
     std::string problemDevice = event.device;
     if ((problemDevice.length() == 0) || (_dat.count(problemDevice) == 0))

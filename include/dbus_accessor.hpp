@@ -47,11 +47,9 @@ using DbusAsioConnection = std::shared_ptr<sdbusplus::asio::connection>;
  * @return the match_t register information which cannot be destroyed
  *         while receiving these Dbus signals
  */
-DbusPropertyChangedHandler
-    registerServicePropertyChanged(DbusAsioConnection conn,
-                                   const std::string& objectPath,
-                                   const std::string& interface,
-                                   CallbackFunction callback);
+DbusPropertyChangedHandler registerServicePropertyChanged(
+    DbusAsioConnection conn, const std::string& objectPath,
+    const std::string& interface, CallbackFunction callback);
 
 /**
  * @brief overloaded function
@@ -61,11 +59,9 @@ DbusPropertyChangedHandler
  * @param callback
  * @return
  */
-DbusPropertyChangedHandler
-    registerServicePropertyChanged(sdbusplus::bus::bus& bus,
-                                   const std::string& objectPath,
-                                   const std::string& interface,
-                                   CallbackFunction callback);
+DbusPropertyChangedHandler registerServicePropertyChanged(
+    sdbusplus::bus::bus& bus, const std::string& objectPath,
+    const std::string& interface, CallbackFunction callback);
 
 /**
  *  @brief this is the return type for @sa deviceGetCoreAPI()
@@ -132,5 +128,29 @@ bool setDbusProperty(const std::string& service, const std::string& objPath,
  */
 bool setDbusProperty(const std::string& objPath, const std::string& interface,
                      const std::string& property, const PropertyVariant& val);
+
+/**
+ * @brief Class implementing the ObjectMapper interface of the ObjectMapper
+ * service
+ *
+ * @code
+ * xyz.openbmc_project.ObjectMapper    interface -         -            -
+ * .GetAncestors                       method    sas       a{sa{sas}}   -
+ * .GetObject                          method    sas       a{sas}       -
+ * .GetSubTree                         method    sias      a{sa{sas}}   -
+ * .GetSubTreePaths                    method    sias      as           -
+ * @endcode
+ */
+
+class ObjectMapper
+{
+  public:
+    /**
+     * @brief Return the subset of @c objectPaths which represent the @c devId
+     */
+    static std::vector<std::string>
+        scopeObjectPathsDevId(const std::vector<std::string>& objectPaths,
+                              const std::string& devId);
+};
 
 } // namespace dbus

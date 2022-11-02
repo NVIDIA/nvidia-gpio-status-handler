@@ -14,6 +14,7 @@
 #include "log.hpp"
 #include "util.hpp"
 
+#include <boost/algorithm/string.hpp>
 #include <phosphor-logging/elog.hpp>
 #include <sdbusplus/exception.hpp>
 
@@ -137,9 +138,8 @@ RetCoreApi deviceGetCoreAPI(const int devId, const std::string& property)
 
     if (rc != 0)
     {
-        std::string tmp =
-            errorMsg("deviceGetCoreAPI(): bad return for", std::string{""},
-                     std::string{""}, property);
+        std::string tmp = errorMsg("deviceGetCoreAPI(): bad return for",
+                                   std::string{""}, std::string{""}, property);
         logs_err("%s rc=%ld\n", tmp.c_str(), rc);
     }
     else
@@ -147,15 +147,15 @@ RetCoreApi deviceGetCoreAPI(const int devId, const std::string& property)
         auto data = std::get<std::vector<uint32_t>>(response);
         if (data.size() >= 2)
         {
-        // Per SMBPBI spec: data[0]:dataOut, data[1]:exDataOut
-        value = ((uint64_t)data[1] << 32 | data[0]);
+            // Per SMBPBI spec: data[0]:dataOut, data[1]:exDataOut
+            value = ((uint64_t)data[1] << 32 | data[0]);
         }
 
         // msg example: "Baseboard GPU over temperature info : 0001"
         valueStr = std::get<std::string>(response);
     }
-    logs_dbg("devId: %d property: %s; rc=%ld value=%llu string='%s'\n",
-            devId, property.c_str(), rc, value, valueStr.c_str());
+    logs_dbg("devId: %d property: %s; rc=%ld value=%llu string='%s'\n", devId,
+             property.c_str(), rc, value, valueStr.c_str());
 
     return std::make_tuple(rc, valueStr, value);
 }
@@ -230,8 +230,9 @@ PropertyVariant readDbusProperty(const std::string& objPath,
         auto reply = bus.call(method);
         reply.read(value);
         auto valueStr = data_accessor::PropertyValue(value).getString();
-        logs_dbg("object=%s \n\tinterface=%s property=%s value=%s\n", objPath.c_str(),
-                 interface.c_str(), property.c_str(), valueStr.c_str());
+        logs_dbg("object=%s \n\tinterface=%s property=%s value=%s\n",
+                 objPath.c_str(), interface.c_str(), property.c_str(),
+                 valueStr.c_str());
     }
     catch (const sdbusplus::exception::exception& e)
     {
@@ -268,7 +269,7 @@ DbusPropertyChangedHandler registerServicePropertyChanged(
     catch (const sdbusplus::exception::SdBusError& e)
     {
         std::string tmp = errorMsg("registerServicePropertyChanged(): Error",
-                          objectPath, interface, "", e.what());
+                                   objectPath, interface, "", e.what());
         logs_err("%s\n", tmp.c_str());
         throw std::runtime_error(e.what());
     }
@@ -307,6 +308,22 @@ bool setDbusProperty(const std::string& service, const std::string& objPath,
         logs_err("%s\n", tmp.c_str());
     }
     return ret;
+}
+
+std::vector<std::string> ObjectMapper::scopeObjectPathsDevId(
+    const std::vector<std::string>& objectPaths, const std::string& devId)
+{
+    // marcinw:TODO: use std
+    std::vector<std::string> result;
+    for (const auto& objPath : objectPaths)
+    {
+        if (boost::algorithm::ends_with(objPath, "/" + devId) ||
+            boost::algorithm::ends_with(objPath, "/HGX_" + devId))
+        {
+            result.push_back(objPath);
+        }
+    }
+    return result;
 }
 
 } // namespace dbus
