@@ -10,7 +10,7 @@ DBUS_CALL_CLEAR_ARGS="$DBUS_CALL_ARGS  DeviceClearData is"
 DBUS_CALL_CLEAR_PASS_THROUGH_FPGA="$DBUS_CALL_ARGS clearPassthroughFpga"
 DBUS_CALL_SET_PASS_THROUGH_FPGA="$DBUS_CALL_ARGS setPassthroughFpga is"
 DBUS_CALL_SET_GPU_XID_EVENT_STRING="$DBUS_CALL_ARGS setGpuXidEventString s"
-AML_INJECTOR_SET_WRAPPERS="/tmp/mock-services/set_injector_state.sh"
+
 
 
 # used to clear line message
@@ -76,7 +76,7 @@ fi
 
 ## when specified only --device and --event the user can pass -D to enable debug
 if [ $gl_cmd_line_debug -eq 0 -a "$gl_cmd_line_device_index" = "" ]; then
-    [ "$gl_cmd_line_device" = "" -o "$gl_cmd_line_event" = "" ] && gl_cmd_line_debug=1
+    gl_cmd_line_debug=1
 fi
 
 debug()
@@ -90,6 +90,13 @@ print()
    [ $gl_cmd_line_debug -eq 1 ] && return
    echo "$@"
 }
+
+
+printBusctl()
+{
+   echo "$@"
+}
+
 
 createMapKey()
 {
@@ -131,6 +138,68 @@ getService() # $1 = object path
    fi
 }
 
+
+change_digit()
+{
+   local digit=$1
+   if [ "$digit" = "9" ]; then
+      digit=8
+   else
+      digit=$[ $digit + 1 ]
+   fi
+   echo $digit
+}
+
+change_string()
+{
+   local value="$gl_property_value"
+   [ "$METHOD" = "not_equal" ] && value="${METHOD_VALUE}"
+   ## 1 change last digit if that exists, example "PCIeTypes.Gen5" becomes "PCIeTypes.Gen6"
+   local last_character="${value: -1}"
+   if [[ $last_character =~ [0-9] ]]; then
+      digit=`change_digit $last_character`
+      ret=${value%?}$digit
+      if [ "$ret" = "$gl_property_value" ]
+      then
+         digit=`change_digit $digit`
+         ret=${value%?}$digit
+      fi
+   fi
+   if [ "$ret" = "" ]; then
+     ret=`date +%s`
+   fi
+   echo $ret
+}
+
+calculate_number()
+{
+  result=$1
+  rest=$[ $result % 2]
+  if [ $rest -eq 0 ]; then
+     result=$[ $result * 2 ]
+  else
+     result=$[ $result + 1]
+  fi
+  echo $result
+}
+
+
+change_number() # $1 = value to change
+{
+  local result=${gl_property_value};
+  if [ "$METHOD" = "equal" -o  "$METHOD" = "not_equal" ]; then
+      result=${METHOD_VALUE}
+  fi
+  if [ "$result" = "0" ]; then
+      result=1
+  fi
+  result=`calculate_number $result`
+  if [ "$result" = "${gl_property_value}" ]; then
+      result=`calculate_number $result`
+  fi
+  echo $result
+}
+
 latest_looging_entry()
 {
     [ $gl_injection_only -eq 1 ] && return 0
@@ -148,13 +217,13 @@ property_get() #1=object_path $2=interface, $3=property_name
     gl_property_value=""
     gl_property_type=""
     local cmd="busctl get-property `getService $1`  $@"
-    print "$cmd"
+    printBusctl $cmd
     local get_value=$(eval $cmd 2> $gl_error_file)
     if [ $? -ne 0 -o "$get_value" = "" ]; then
         gl_rc=1
     else
         debug " $get_value"
-        gl_property_value=$(echo $get_value | awk '{print $NF}' 2> $gl_error_file )
+        gl_property_value=$(echo $get_value | awk '{print $NF}' | tr -d '\"' 2> $gl_error_file )
         gl_property_type=$(echo $get_value | awk '{print $(NF-1)}' 2> $gl_error_file)
         [ "$gl_property_value" = "" -o "$gl_property_type" = "" ] && gl_rc=1
     fi
@@ -164,11 +233,10 @@ property_get() #1=object_path $2=interface, $3=property_name
 
 change_value_method() #1=value to change
 {
-    local result=0
     case "$METHOD" in
-       "add")     gl_new_property_value=$[ ${1} + ${METHOD_VALUE} ];;
-       "bitmask") gl_new_property_value=$[ ( ${1} + 1 ) | ${METHOD_VALUE} ];;
-       "lookup" | "equal")  gl_new_property_value=${METHOD_VALUE};;
+       "bitmask") gl_new_property_value=$[ ( ${gl_property_value} + 1 ) | ${METHOD_VALUE} ];;
+       "lookup")  gl_new_property_value=${METHOD_VALUE};;
+       *)         gl_new_property_value=`change_number`;;
     esac
 }
 
@@ -177,7 +245,16 @@ property_set_method() #1=object_path $2=interface, $3=property_name
 {
     gl_new_property_value=""
     gl_old_property_value=$gl_property_value
-    if [ "$METHOD" = "lookup" ]
+    if [ "$METHOD" = "bitmask" ]
+    then
+         export METHOD="force"
+         if [ "$gl_property_value" != "0" ]; then
+            local save_method_value=${METHOD_VALUE}
+            METHOD_VALUE="0" property_set "$@"
+            METHOD_VALUE=$save_method_value
+         fi
+         ## leave method as force to put the right value
+    elif [ "$METHOD" = "lookup" ]
     then
         local save_method_value=${METHOD_VALUE}
         METHOD="add" METHOD_VALUE="1" property_set "$@"
@@ -187,22 +264,16 @@ property_set_method() #1=object_path $2=interface, $3=property_name
         METHOD_VALUE="$save_method_value"
     fi
 
-    if [ "$METHOD" = "not_equal" -a "$gl_property_type" != "b" ]
-    then
-        save_method_value=$METHOD_VALUE
-        METHOD="add" METHOD_VALUE="1" property_set "$@"
-        METHOD="not_equal"
-        METHOD_VALUE="$save_method_value"
-    else
-        property_set "$@"
-    fi
+    # Main call to property_set
+    property_set "$@"
 
+    # extra call to property_set if necessary
     if [ $gl_rc -eq 0 ]; then
        if [ "$METHOD" = "equal" -a "$gl_new_property_value" != "${METHOD_VALUE}" ]
        then
             gl_old_property_value="" # force set
             gl_new_property_value=${METHOD_VALUE}
-            property_set "$@"
+            METHOD="force" property_set "$@"
        fi
        if [ "$METHOD" = "not_equal" -a "$gl_new_property_value" = "${METHOD_VALUE}" ]
        then
@@ -229,18 +300,18 @@ property_set() #1=object_path $2=interface, $3=property_name
                        gl_new_property_value="true"
                   fi
                   ;;
-               s)   gl_new_property_value=$( date +%F%X )
+               s)   gl_new_property_value=`change_string`
                     [ "$METHOD" = "equal" ] && gl_new_property_value=${METHOD_VALUE}
                   sleep 1
                   ;;
               ## that should work for integers and double types
-               *)   change_value_method ${gl_property_value};;
+               *)   change_value_method;
           esac
        fi
     fi
 
     cmd="busctl set-property `getService $1`  $@ $gl_property_type '$gl_new_property_value'"
-    print $cmd
+    printBusctl $cmd
     [ $DRY_RUN -eq 1 ] && return
     eval $cmd 2> $gl_error_file
     gl_rc=$?
@@ -368,55 +439,51 @@ wait_single_injection_to_restore_environment()
 
 set_failure_state()
 {
-    [ $DRY_RUN -eq 1 ] && return
+   [ $DRY_RUN -eq 1 -o "$gl_cmd_line_device_index" = "" ] && return
 
-    ## only for single injection
-    [ "$gl_cmd_line_device_index" = "" ] && return
+   TIMESTAMP_INJECTION_STARTED=`date +%s`
+   ## force return 0 to all calls to " busctl call xyz.openbmc_project.GpuMgr /xyz/openbmc_project/GpuMgr xyz.openbmc_project.GpuMgr.Server DeviceGetData"
+   CMD="busctl call $DBUS_CALL_ARGS setDeviceDataForAll u 0"
+   printBusctl $CMD
+   eval $CMD >/dev/null
+   # clear return for mctp-error-detection that calls PassthroughFpga iyyyau 0 0xb1 0x81 0 0
+   CMD="busctl call $DBUS_CALL_CLEAR_PASS_THROUGH_FPGA"
+   printBusctl $CMD
+   eval $CMD >/dev/null
 
-    state=1
-    [ "$1" = "0" ]  && state=0
-    [ -x "$AML_INJECTOR_SET_WRAPPERS" ] && $AML_INJECTOR_SET_WRAPPERS $state
+   CMD="echo -n \"$AML_INJECTOR_CURRENT_DEVICE_INDEX $DEVICE $AML_INJECTOR_CURRENT_INJECTION_PARAM\"  > $MCTP_WRAPPER_FILE_PARAM"
+   printBusctl $CMD
+   eval $CMD
 
-    if [ "$state" -eq "1" ]; then
-      TIMESTAMP_INJECTION_STARTED=`date +%s`
-    fi
-
-    if [ "$state" -eq "1" -a "$AML_INJECTOR_CURRENT_INJECTION" = "CMDLINE" ]
-    then
-         read -r command args < <(echo $INJECTION_PARAM)
-         if [ "$command" = "mctp-error-detection" ]
-         then
-            CMD="busctl call $DBUS_CALL_SET_PASS_THROUGH_FPGA $AML_INJECTOR_CURRENT_DEVICE_INDEX $DEVICE"
-            print  $CMD
-            eval $CMD
-         fi
-    fi
-
-    [ "$AML_INJECTOR_CURRENT_INJECTION" != "DeviceCoreAPI" ] && return
-
-    ## --device-index must be indentified to mean only one single event must be generated
-    if [ "$gl_cmd_line_device_index" != "" ]; then
-      if [ "$state" -eq "1" ]; then
-         [ "$INJECTION_CHECK_VALUE" = "" ] && INJECTION_CHECK_VALUE=1
-         [ "$INJECTION_CHECK" = "not_equal" ] && INJECTION_CHECK_VALUE=$[ $INJECTION_CHECK_VALUE + 1]
-         if [ "$INJECTION_CHECK" != "" -a $INJECTION_PARAM = "gpu.xid.event" ]
-         then
-               CMD="busctl call $DBUS_CALL_SET_GPU_XID_EVENT_STRING \"$INJECTION_CHECK_VALUE\""
-               print $CMD
-               eval $CMD > /dev/null
-         fi
-         CMD="busctl call $DBUS_CALL_SET_ARGS $AML_INJECTOR_CURRENT_DEVICE_INDEX $INJECTION_PARAM $INJECTION_CHECK_VALUE"
-      else
-         CMD="busctl call $DBUS_CALL_CLEAR_ARGS $AML_INJECTOR_CURRENT_DEVICE_INDEX $INJECTION_PARAM"
-      fi
-      print $CMD
-      eval $CMD > /dev/null
-      if [ $gl_cmd_line_debug -eq 1 ]; then
-         CMD="busctl call  $DBUS_CALL_GET_ARGS $AML_INJECTOR_CURRENT_DEVICE_INDEX $INJECTION_PARAM 1"
-         print $CMD
+   if [ "$AML_INJECTOR_CURRENT_INJECTION" = "CMDLINE" ]
+   then
+      read -r command args < <(echo $INJECTION_PARAM)
+      if [ "$command" = "mctp-error-detection" ]
+      then
+         CMD="busctl call $DBUS_CALL_SET_PASS_THROUGH_FPGA $AML_INJECTOR_CURRENT_DEVICE_INDEX $DEVICE"
+         printBusctl  $CMD
          eval $CMD
       fi
-    fi
+   elif [ "$AML_INJECTOR_CURRENT_INJECTION" = "DeviceCoreAPI" ]
+   then
+      [ "$INJECTION_CHECK_VALUE" = "" ] && INJECTION_CHECK_VALUE=1
+      [ "$INJECTION_CHECK" = "not_equal" ] && INJECTION_CHECK_VALUE=$[ $INJECTION_CHECK_VALUE + 1]
+      if [ "$INJECTION_CHECK" != "" -a $INJECTION_PARAM = "gpu.xid.event" ]
+      then
+            CMD="busctl call $DBUS_CALL_SET_GPU_XID_EVENT_STRING \"$INJECTION_CHECK_VALUE\""
+            printBusctl $CMD
+            eval $CMD > /dev/null
+      fi
+      CMD="busctl call $DBUS_CALL_SET_ARGS $AML_INJECTOR_CURRENT_DEVICE_INDEX $INJECTION_PARAM $INJECTION_CHECK_VALUE"
+      printBusctl $CMD
+      eval $CMD > /dev/null
+      if [ $gl_cmd_line_debug -eq 1 ]
+      then
+         CMD="busctl call  $DBUS_CALL_GET_ARGS $AML_INJECTOR_CURRENT_DEVICE_INDEX $INJECTION_PARAM 1"
+         printBusctl $CMD
+         eval $CMD
+      fi
+   fi ## it is CMDLINE
 }
 
 execute_curl_commmand()
@@ -440,25 +507,44 @@ execute_curl_commmand()
 
 reset_failure_state()
 {
-     local saved_log_id=$gl_log_id
-     set_failure_state 0
-     if [ $saved_log_id -ne 0 ]; then
-      if [ "$gl_cmd_line_device_index" != "" -a "$gl_cmd_line_event" != "" ]; then
-         device=`getAssertedDevice $saved_log_id`
-         print
-         print "Entry id = $saved_log_id asserted device = '$device' "
-         execute_curl_commmand -H 'Content-Type: application/json' -X GET -k --user root:0penBmc ${REDFISH_ENTRIES_URI}/$saved_log_id
-         if [ $? -eq 0 ]
-         then
-             execute_curl_commmand  $REDFISH_CHASSIS_URI/$device
-             if [ $? -ne 0 ]
-             then
-                 execute_curl_commmand  $REDFISH_CHASSIS_URI/HGX_${device}
-             fi
-         fi
-         debug
-         print
+   [ $DRY_RUN -eq 1 -o "$gl_cmd_line_device_index" = "" ] && return
+
+   ## do not do anything if it is not single device mode
+   [ $gl_single_injection_state -eq 1 ] && wait_single_injection_to_restore_environment
+
+
+   CMD="/bin/rm -f $MCTP_WRAPPER_FILE_PARAM"
+   printBusctl $CMD
+   eval $CMD
+   if [ "$AML_INJECTOR_CURRENT_INJECTION" = "DeviceCoreAPI" ]
+   then
+      CMD="busctl call $DBUS_CALL_CLEAR_ARGS $AML_INJECTOR_CURRENT_DEVICE_INDEX $INJECTION_PARAM"
+      printBusctl $CMD
+      eval $CMD > /dev/null
+   fi
+
+   ## also restore  mctp-error-detection
+   CMD="busctl call $DBUS_CALL_ARGS clearDeviceDataForAll" >/dev/null
+   printBusctl $CMD
+   eval $CMD
+
+   local saved_log_id=$gl_log_id
+   gl_log_id=0
+   if [ $saved_log_id -ne 0 ]; then
+      device=`getAssertedDevice $saved_log_id`
+      print
+      print "Entry id = $saved_log_id asserted device = '$device' "
+      execute_curl_commmand -H 'Content-Type: application/json' -X GET -k --user root:0penBmc ${REDFISH_ENTRIES_URI}/$saved_log_id
+      if [ $? -eq 0 ]
+      then
+            execute_curl_commmand  $REDFISH_CHASSIS_URI/$device
+            if [ $? -ne 0 ]
+            then
+               execute_curl_commmand  $REDFISH_CHASSIS_URI/HGX_${device}
+            fi
       fi
+      debug
+      print
    fi
 }
 
@@ -481,28 +567,29 @@ property_change() #1=object_path $2=interface, $3=property_name
 
     [ $go_out -eq 1 ] && return 0
 
-    [ "$gl_cmd_line_device_index" != "" -a "$gl_cmd_line_event" != "" ] && gl_is_single_injection=1
+    if [ "$gl_cmd_line_device_index" != "" -a "$gl_cmd_line_event" != "" ]
+    then
+       print "$DEVICE \"$EVENT\""
+       gl_is_single_injection=1
+    fi
 
   ##  [ "$INJECTION" = "DBUS" -a "$gl_cmd_line_device_index" != "" -a "$gl_cmd_line_device_index" != "$DEVICE_INDEX" ]  && return 0
 
     AML_INJECTOR_CURRENT_DEVICE_INDEX=""
     AML_INJECTOR_CURRENT_INJECTION="$INJECTION"        # external commands will use it
+    AML_INJECTOR_CURRENT_INJECTION_PARAM="$INJECTION_PARAM"  # external commands will use it
     if [ "$gl_cmd_line_device_index" != "" ]
     then
        AML_INJECTOR_CURRENT_DEVICE_INDEX="$gl_cmd_line_device_index"
     else
        AML_INJECTOR_CURRENT_DEVICE_INDEX="$DEVICE_INDEX"  # external commands will use it
     fi
-    AML_INJECTOR_CURRENT_INJECTION_PARAM="$INJECTION_PARAM"  # external commands will use it
-
-    echo -n "$AML_INJECTOR_CURRENT_DEVICE_INDEX $DEVICE $AML_INJECTOR_CURRENT_INJECTION_PARAM"  > $MCTP_WRAPPER_FILE_PARAM
 
 ### Set Failure state to make Event generation
     set_failure_state
     gl_counter_commands=$[ $gl_counter_commands + 1 ]
     debug
     if [ $gl_total_comands -ne 0 ]; then
-       print "Injecting DEVICE='$DEVICE' EVENT='$EVENT'"
        debug -n "Injecting [$gl_counter_commands/$gl_total_comands]"
        debug " DEVICE='$DEVICE' EVENT='$EVENT' ACCESSOR_TYPE='$ACCESSOR_TYPE'"
     else
@@ -563,46 +650,29 @@ start_test()
 {
    /bin/rm -f $MCTP_WRAPPER_FILE_PARAM
 
-   ## do not do anything if it is not single device mode
-   [ "$gl_cmd_line_device_index" = "" ] && return
-
-   ## force return 0 to all calls to " busctl call xyz.openbmc_project.GpuMgr /xyz/openbmc_project/GpuMgr xyz.openbmc_project.GpuMgr.Server DeviceGetData"
-   CMD="busctl call $DBUS_CALL_ARGS setDeviceDataForAll u 0"
-   print $CMD
-   eval $CMD >/dev/null
-
-   # clear return for mctp-error-detection that calls PassthroughFpga iyyyau 0 0xb1 0x81 0 0
-   CMD="busctl call $DBUS_CALL_CLEAR_PASS_THROUGH_FPGA"
-   print $CMD
-   eval $CMD >/dev/null
-
-
 }
 
 finish_test()
 {
-   ## do not do anything if it is not single device mode
-   if [ "$gl_cmd_line_device_index" != "" ]; then
-      [ $gl_single_injection_state -eq 1 ] && wait_single_injection_to_restore_environment
-      ## also restore  mctp-error-detection
-      CMD="busctl call $DBUS_CALL_ARGS clearDeviceDataForAll" >/dev/null
-      print $CMD
-      eval $CMD
-   fi
    /bin/rm -f $MAPFILE $gl_error_file $MCTP_WRAPPER_FILE_PARAM
    /bin/rm -rf $DIR_SAVE_ENTRIES
 
    if [ $gl_cmd_line_debug -eq 1 ]; then
        echo; echo "Failed Injections: $gl_failures"
        cat $FAILURES_FILE
-       /bin/rm -f $FAILURES_FILE
        echo; echo "Successful Injections: $gl_injections"
        gl_rc=$[$gl_total_comands - $gl_injections]
    fi
+   /bin/rm -f $FAILURES_FILE
 }
 
 exit_test()
 {
+   if [ "$gl_cmd_line_device" != "" ]
+   then
+      CMD="busctl call $DBUS_CALL_ARGS clearDeviceDataForAll" >/dev/null
+      eval $CMD
+   fi
    finish_test
    /bin/rm -f $FAILURES_FILE
    exit $gl_rc
@@ -610,9 +680,8 @@ exit_test()
 
 trap exit_test 1 2 3 4 5 6 7 15
 
-
 if [ $gl_cmd_line_keep_existing_logs -eq 0 ]; then
-   print "busctl call xyz.openbmc_project.Logging /xyz/openbmc_project/logging xyz.openbmc_project.Collection.DeleteAll DeleteAll"
+   printBusctl "busctl call xyz.openbmc_project.Logging /xyz/openbmc_project/logging xyz.openbmc_project.Collection.DeleteAll DeleteAll"
    busctl call xyz.openbmc_project.Logging /xyz/openbmc_project/logging xyz.openbmc_project.Collection.DeleteAll DeleteAll
    sleep 2
 fi
