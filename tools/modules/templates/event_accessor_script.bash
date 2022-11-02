@@ -3,6 +3,7 @@
 
 SERVICE_GPUMGR=xyz.openbmc_project.GpuMgr
 SERVICE_GPIO_HANDLER=xyz.openbmc_project.GpioStatusHandler
+SERVICE_GPU_OOB_RECOVERY=xyz.openbmc_project.GpuOobRecovery
 DBUS_CALL_ARGS="$SERVICE_GPUMGR /xyz/openbmc_project/GpuMgr xyz.openbmc_project.GpuMgr.Server"
 DBUS_CALL_GET_ARGS="$DBUS_CALL_ARGS DeviceGetData isi"
 DBUS_CALL_SET_ARGS="$DBUS_CALL_ARGS DeviceSetData isu"
@@ -30,7 +31,7 @@ gl_current_logging_entries=0
 gl_previous_logging_entries=""
 gl_injection_only=0
 gl_failures=0
-gl_error_file=/tmp/_event_error_$$
+gl_error_file=/tmp/.event_error_$$
 gl_cmd_line_device=""
 gl_cmd_line_event=""
 gl_cmd_line_device_index=""
@@ -38,13 +39,22 @@ gl_cmd_line_keep_existing_logs=0
 gl_cmd_line_list_events=0
 gl_cmd_line_property=""
 gl_cmd_line_debug=0
+gl_is_single_injection=0 # 1 means is single injection
 gl_single_injection_state=0  ## 0 not inserted, 1 = insert
+gl_cmd_line_markdown=0
+gl_markdown_file=""
 AML_INJECTOR_CURRENT_DEVICE_INDEX=""
 MAPFILE=/tmp/.mapfile_$$
 TIMESTAMP_INJECTION_STARTED=0            ## control time between insert failure and restore
 WAIT_TIME_FOR_RELASE_INJECTION_DATA=90
 FAILURES_FILE=/tmp/.not_injected_$$
 MCTP_WRAPPER_FILE_PARAM=/tmp/.mctp_param
+gl_busctl_cmd_counter=0
+gl_bustl_cmd_set_failure_title="Failure preparation commands"
+gl_bustl_cmd_unset_failure_title="Failure clearing commands"
+gl_current_bustcl_title=$gl_bustl_cmd_set_failure_title
+gl_current_curl_output_title=""
+
 DIR_SAVE_ENTRIES="/tmp/injected"
 REDFISH_ENTRIES_URI="http://127.0.0.1:80/redfish/v1/Systems/HGX_Baseboard_0/LogServices/EventLog/Entries"
 REDFISH_CHASSIS_URI="http://127.0.0.1:80/redfish/v1/Chassis"
@@ -66,6 +76,7 @@ while [ "$1" != "" ]; do
         -i|--device-index) shift; gl_cmd_line_device_index="$1";;
         -p|--property) shift; gl_cmd_line_property="$1";;
         -D|--debug) gl_cmd_line_debug=1;;
+        -m|--markdown) gl_cmd_line_markdown=1;;
     esac
     shift
 done
@@ -77,6 +88,11 @@ fi
 ## when specified only --device and --event the user can pass -D to enable debug
 if [ $gl_cmd_line_debug -eq 0 -a "$gl_cmd_line_device_index" = "" ]; then
     gl_cmd_line_debug=1
+fi
+
+if [ "$gl_cmd_line_device_index" != "" -a "$gl_cmd_line_event" != "" ]
+    then
+       gl_is_single_injection=1
 fi
 
 debug()
@@ -92,11 +108,76 @@ print()
 }
 
 
+endBusctlMarkDown()
+{
+  if [ $gl_cmd_line_markdown -eq 1 -a $gl_is_single_injection -eq 1 ]
+  then
+     echo  "|"  >> "$gl_markdown_file"
+     gl_busctl_cmd_counter=0
+  fi
+}
+
+## always print bustcl commands on the screen
+## if --markdown is active, also prints saves in the markdown file
 printBusctl()
 {
    echo "$@"
+   if [ $gl_cmd_line_markdown -eq 1 -a $gl_is_single_injection -eq 1 ]
+   then
+      if [ $gl_busctl_cmd_counter -eq 0 ] ## create table
+      then
+         echo >> "$gl_markdown_file"
+         echo    "|$gl_current_bustcl_title|"    >> "$gl_markdown_file"
+         echo    "|:-----------------------|"    >> "$gl_markdown_file"
+         echo -n "|$@"                           >> "$gl_markdown_file"
+      else
+         echo -n "<br>$@"                        >> "$gl_markdown_file"
+      fi
+      gl_busctl_cmd_counter=$[ $gl_busctl_cmd_counter + 1 ]
+   fi
 }
 
+createMarkDownForEvent()
+{
+   device=$1
+   event="$2"
+   print "$device \"$event\""
+   if [ $gl_cmd_line_markdown -eq 1 -a $gl_is_single_injection -eq 1 ]
+   then
+      mkdir -p /tmp/md 2> /dev/null
+      gl_markdown_file="/tmp/md/${device}_\"${event}\".md"
+      echo "## $device \"$event\"" > "$gl_markdown_file"
+      echo                        >> "$gl_markdown_file"
+      echo "|Command line|"       >> "$gl_markdown_file"
+      echo "|:--------|"          >> "$gl_markdown_file"
+      echo "|./test_AML.sh inject --device $device --event \"$event\" --device-index $gl_cmd_line_device_index|"  >> "$gl_markdown_file"
+   fi
+}
+
+createMarkDownForFileContent() # $1=file
+{
+    echo >> "$gl_markdown_file"
+    echo    "|$gl_current_curl_output_title|" >> "$gl_markdown_file"
+    echo    "|:-----------------------|"      >> "$gl_markdown_file"
+    first_line=0
+    save_ifs=$IFS
+    IFS=''
+    while  read -r line; do
+      out=`echo $line | tr -d '\n' | tr -d '\r' | sed -e 's/ /\&nbsp;/g'`
+      if [ "$out" != "" ]
+      then
+         if [ $first_line -eq 0 ]
+         then
+            first_line=1
+            echo -n "|$out"     >> "$gl_markdown_file"
+         else
+            echo -n "<br>$out"  >> "$gl_markdown_file"
+         fi
+      fi
+    done < $1
+    IFS=$save_ifs
+    echo "|" >> "$gl_markdown_file"
+}
 
 createMapKey()
 {
@@ -133,6 +214,8 @@ getService() # $1 = object path
 {
    if [ "$1" = "/xyz/openbmc_project/GpioStatusHandler" ]; then
       echo $SERVICE_GPIO_HANDLER
+   elif [ "$1" = "/xyz/openbmc_project/GpuOobRecovery" ]; then
+     echo $SERVICE_GPU_OOB_RECOVERY
    else
       echo $SERVICE_GPUMGR
    fi
@@ -224,7 +307,7 @@ property_get() #1=object_path $2=interface, $3=property_name
     else
         debug " $get_value"
         gl_property_value=$(echo $get_value | awk '{print $NF}' | tr -d '\"' 2> $gl_error_file )
-        gl_property_type=$(echo $get_value | awk '{print $(NF-1)}' 2> $gl_error_file)
+        gl_property_type=$(echo $get_value | awk '{print $1}' 2> $gl_error_file)
         [ "$gl_property_value" = "" -o "$gl_property_type" = "" ] && gl_rc=1
     fi
     return $gl_rc
@@ -300,7 +383,7 @@ property_set() #1=object_path $2=interface, $3=property_name
                        gl_new_property_value="true"
                   fi
                   ;;
-               s)   gl_new_property_value=`change_string`
+               s|as)   gl_new_property_value=`change_string`
                     [ "$METHOD" = "equal" ] && gl_new_property_value=${METHOD_VALUE}
                   sleep 1
                   ;;
@@ -310,7 +393,10 @@ property_set() #1=object_path $2=interface, $3=property_name
        fi
     fi
 
-    cmd="busctl set-property `getService $1`  $@ $gl_property_type '$gl_new_property_value'"
+    ocurr=""
+    [ "${gl_property_type:0:1}" = "a" ] && ocurr="1"
+
+    cmd="busctl set-property `getService $1`  $@ $gl_property_type $ocurr '$gl_new_property_value'"
     printBusctl $cmd
     [ $DRY_RUN -eq 1 ] && return
     eval $cmd 2> $gl_error_file
@@ -439,7 +525,15 @@ wait_single_injection_to_restore_environment()
 
 set_failure_state()
 {
-   [ $DRY_RUN -eq 1 -o "$gl_cmd_line_device_index" = "" ] && return
+   [ $DRY_RUN -eq 1 -o $gl_is_single_injection -eq 0 ] && return
+
+
+   if [ $gl_cmd_line_keep_existing_logs -eq 0 ]
+   then
+        CMD="busctl call xyz.openbmc_project.Logging /xyz/openbmc_project/logging xyz.openbmc_project.Collection.DeleteAll DeleteAll"
+        printBusctl $CMD
+        eval $CMD >/dev/null
+   fi
 
    TIMESTAMP_INJECTION_STARTED=`date +%s`
    ## force return 0 to all calls to " busctl call xyz.openbmc_project.GpuMgr /xyz/openbmc_project/GpuMgr xyz.openbmc_project.GpuMgr.Server DeviceGetData"
@@ -484,6 +578,7 @@ set_failure_state()
          eval $CMD
       fi
    fi ## it is CMDLINE
+
 }
 
 execute_curl_commmand()
@@ -500,6 +595,10 @@ execute_curl_commmand()
      ret=0
      grep -v "^[A-Z]"  $CUR_STATUS > $CUR_OUTPUT
      cat $CUR_OUTPUT
+     if [ $gl_cmd_line_markdown -eq 1 ]
+     then
+         createMarkDownForFileContent $CUR_OUTPUT
+     fi
   fi
   /bin/rm -f $CUR_OUTPUT $CUR_STATUS
   return $ret
@@ -507,11 +606,13 @@ execute_curl_commmand()
 
 reset_failure_state()
 {
-   [ $DRY_RUN -eq 1 -o "$gl_cmd_line_device_index" = "" ] && return
+   [ $DRY_RUN -eq 1 -o $gl_is_single_injection -eq 0 ] && return
 
    ## do not do anything if it is not single device mode
    [ $gl_single_injection_state -eq 1 ] && wait_single_injection_to_restore_environment
 
+   endBusctlMarkDown
+   gl_current_bustcl_title=$gl_bustl_cmd_unset_failure_title
 
    CMD="/bin/rm -f $MCTP_WRAPPER_FILE_PARAM"
    printBusctl $CMD
@@ -527,6 +628,7 @@ reset_failure_state()
    CMD="busctl call $DBUS_CALL_ARGS clearDeviceDataForAll" >/dev/null
    printBusctl $CMD
    eval $CMD
+   endBusctlMarkDown
 
    local saved_log_id=$gl_log_id
    gl_log_id=0
@@ -534,9 +636,11 @@ reset_failure_state()
       device=`getAssertedDevice $saved_log_id`
       print
       print "Entry id = $saved_log_id asserted device = '$device' "
+      gl_current_curl_output_title="Redfish output"
       execute_curl_commmand -H 'Content-Type: application/json' -X GET -k --user root:0penBmc ${REDFISH_ENTRIES_URI}/$saved_log_id
       if [ $? -eq 0 ]
       then
+            gl_current_curl_output_title="HealthRollup output"
             execute_curl_commmand  $REDFISH_CHASSIS_URI/$device
             if [ $? -ne 0 ]
             then
@@ -567,24 +671,18 @@ property_change() #1=object_path $2=interface, $3=property_name
 
     [ $go_out -eq 1 ] && return 0
 
-    if [ "$gl_cmd_line_device_index" != "" -a "$gl_cmd_line_event" != "" ]
-    then
-       print "$DEVICE \"$EVENT\""
-       gl_is_single_injection=1
-    fi
-
-  ##  [ "$INJECTION" = "DBUS" -a "$gl_cmd_line_device_index" != "" -a "$gl_cmd_line_device_index" != "$DEVICE_INDEX" ]  && return 0
-
     AML_INJECTOR_CURRENT_DEVICE_INDEX=""
     AML_INJECTOR_CURRENT_INJECTION="$INJECTION"        # external commands will use it
     AML_INJECTOR_CURRENT_INJECTION_PARAM="$INJECTION_PARAM"  # external commands will use it
-    if [ "$gl_cmd_line_device_index" != "" ]
+    if [ $gl_is_single_injection -eq 1 ]
     then
        AML_INJECTOR_CURRENT_DEVICE_INDEX="$gl_cmd_line_device_index"
+       echo -n "$AML_INJECTOR_CURRENT_DEVICE_INDEX $DEVICE $AML_INJECTOR_CURRENT_INJECTION_PARAM"  > $MCTP_WRAPPER_FILE_PARAM
     else
        AML_INJECTOR_CURRENT_DEVICE_INDEX="$DEVICE_INDEX"  # external commands will use it
     fi
 
+    createMarkDownForEvent $DEVICE "$EVENT"
 ### Set Failure state to make Event generation
     set_failure_state
     gl_counter_commands=$[ $gl_counter_commands + 1 ]
@@ -680,10 +778,9 @@ exit_test()
 
 trap exit_test 1 2 3 4 5 6 7 15
 
-if [ $gl_cmd_line_keep_existing_logs -eq 0 ]; then
-   printBusctl "busctl call xyz.openbmc_project.Logging /xyz/openbmc_project/logging xyz.openbmc_project.Collection.DeleteAll DeleteAll"
+if [ $gl_cmd_line_keep_existing_logs -eq 0 -a $gl_is_single_injection -eq 0 ]; then
+   print  "busctl call xyz.openbmc_project.Logging /xyz/openbmc_project/logging xyz.openbmc_project.Collection.DeleteAll DeleteAll"
    busctl call xyz.openbmc_project.Logging /xyz/openbmc_project/logging xyz.openbmc_project.Collection.DeleteAll DeleteAll
-   sleep 2
 fi
 
 start_test  ## starts configuration here
