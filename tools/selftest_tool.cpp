@@ -55,7 +55,7 @@ int loadDAT(cmd_line::ArgFuncParamType params)
         return -1;
     }
 
-    fstream f(params[0]);
+    ifstream f(params[0]);
     if (!f.is_open())
     {
         throw std::runtime_error("File (" + params[0] + ") not found!");
