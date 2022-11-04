@@ -22,7 +22,7 @@ namespace util
 {
 
 constexpr auto RANGE_REGX_STR = ".*(\\[[0-9]+\\-[0-9]+\\]).*";
-constexpr auto RangeRepeaterIndicatorLength = ::strlen(RangeRepeaterIndicator);
+const auto RangeRepeaterIndicatorLength = ::strlen(RangeRepeaterIndicator);
 
 /**
  *  this regex matches: "GPU2", "GPU5-ERoT", "NVSwitch2"
