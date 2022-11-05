@@ -234,4 +234,50 @@ void splitDeviceTypeForRegxSearch(const std::string& deviceType,
 std::string determineAssertedDeviceName(const std::string& realDevice,
                                         const std::string& deviceType);
 
+/**
+ * @brief Compares  two strings using regular expression
+ * @param regstr    string that may contain regular expression
+ * @param str       normal string
+ *
+ * @note
+ *      It considers strings used in event_info.json such as
+ *             "HGX_GPU_SXM_[1-8]/PCIeDevices/GPU_SXM_()"
+ *
+ * @return true if both field strings match, otherwise false
+ */
+bool matchRegexString(const std::string& regstr, const std::string& str);
+
+/**
+ * @brief Creates a regular expression to match range in the 'pattern' parameter
+ *
+ *
+ * @param pattern any string such as "GPU_1"
+ *
+ * @example
+ *     createRegexDigitsRange("GPU_1")
+ *        returns std::regex("(GPU_\\[[0-9]*-*[0-9]*\\])")
+ *
+ * @return std::regex
+ *
+ * @sa introduceDeviceInObjectpath()
+ */
+std::regex createRegexDigitsRange(const std::string& pattern);
+
+/**
+ * @brief Replaces occurrencies of 'device' with range in  objPath by device
+ *
+ * @param objPath having range specification such as:
+ *
+ *     "/xyz/inventory/chassis/HGX_GPU_SXM_[1-8]"
+ *  or
+ *     "/xyz/inventory/chassis/HGX_GPU_SXM_[1-8]/PCIeDevices/GPU_SXM_()"
+ *
+ * @param device device name such as "GPU_SMX_1"
+ *
+ * @return an Object path without range if 'device' matches with 'objPath'
+ *         otherwise returns 'objPath'
+ */
+std::string introduceDeviceInObjectpath(const std::string& objPath,
+                                        const std::string& device);
+
 } // namespace util

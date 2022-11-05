@@ -298,3 +298,17 @@ TEST(AssertedDeviceName, Empty)
     auto result =  determineAssertedDeviceName("", "GPU_SXM_[1-8]");
     EXPECT_EQ(result.empty(), true);
 }
+
+TEST(IntroduceDeviceInObjectpath, SingleRange)
+{
+    std::string obj= "/xyz/HGX_GPU_SXM_[1-8]/PCIeDevices";
+    auto result = util::introduceDeviceInObjectpath(obj, "GPU_SXM_3");
+    EXPECT_EQ(result, "/xyz/HGX_GPU_SXM_3/PCIeDevices");
+}
+
+TEST(IntroduceDeviceInObjectpath, DoubleRange)
+{
+    std::string obj= "/xyz/HGX_GPU_SXM_[1-8]/PCIeDevices/HGX_GPU_SXM_()";
+    auto result = util::introduceDeviceInObjectpath(obj, "GPU_SXM_3");
+    EXPECT_EQ(result, "/xyz/HGX_GPU_SXM_3/PCIeDevices/HGX_GPU_SXM_3");
+}

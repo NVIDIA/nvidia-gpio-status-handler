@@ -123,7 +123,8 @@ class MessageComposer : public event_handler::EventHandler
         for (auto telemetry : event.telemetries)
         {
             std::string telemetryName = telemetry[data_accessor::nameKey];
-            std::string telemetryValue = telemetry.read(event.device);
+            // using telemetry.read() at Event level to use Event information
+            std::string telemetryValue = telemetry.read(event);
             output[telemetryName] = telemetryValue;
         }
         return output.dump();

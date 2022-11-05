@@ -21,6 +21,12 @@
 namespace util
 {
 
+/**
+ * @brief This is a regular expression for ranges
+ *        Also matches empty brackets []
+ */
+constexpr auto RANGE_REGEX = "\\[[0-9]*-*[0-9]*\\]";
+
 constexpr auto RANGE_REGX_STR = ".*(\\[[0-9]+\\-[0-9]+\\]).*";
 const auto RangeRepeaterIndicatorLength = ::strlen(RangeRepeaterIndicator);
 
@@ -508,6 +514,63 @@ std::string determineAssertedDeviceName(const std::string& realDevice,
      logs_dbg("realDevice %s deviceType:%s Devname: %s\n.",
               realDevice.c_str(), deviceType.c_str(), name.c_str());
      return name;
+}
+
+bool matchRegexString(const std::string& regstr, const std::string& str)
+{
+    std::string myRegStr{regstr};
+    std::string myStr{str};
+    auto valRangRepeatPos = regstr.find_first_of(util::RangeRepeaterIndicator);
+    if (valRangRepeatPos != std::string::npos)
+    {
+        myRegStr = revertRangeRepeated(regstr, valRangRepeatPos);
+    }
+    auto otherRangeRepeatPos = str.find_first_of(util::RangeRepeaterIndicator);
+    if (otherRangeRepeatPos != std::string::npos)
+    {
+        myStr = util::revertRangeRepeated(str, otherRangeRepeatPos);
+    }
+    const std::regex r{myRegStr};
+    return std::regex_match(myStr, r);
+}
+
+std::regex createRegexDigitsRange(const std::string &pattern)
+{
+    std::string regxStr{"("};
+    bool last_digit = false;
+    for(auto it = pattern.cbegin(); it != pattern.cend(); ++it)
+    {
+        if (std::isdigit(*it) == true )
+        {
+            if (last_digit == false)
+            {
+                last_digit = true;
+                regxStr += RANGE_REGEX;
+            }
+        }
+        else
+        {
+            regxStr.push_back(*it);
+            last_digit = false;
+        }
+    }
+    regxStr += ")" ;
+    std::regex reg;
+    reg.assign(regxStr);
+    return reg;
+}
+
+std::string introduceDeviceInObjectpath(const std::string& objPath,
+                                        const std::string& device)
+{
+    auto regEx = createRegexDigitsRange(device);
+    auto objPathWithoutRangeRepeated = revertRangeRepeated(objPath);
+    auto ret = std::regex_replace(objPathWithoutRangeRepeated, regEx, device);
+    if (ret.empty() == true)
+    {
+        ret = objPath;
+    }
+    return ret;
 }
 
 } // namespace util

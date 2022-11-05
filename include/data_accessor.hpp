@@ -148,23 +148,7 @@ class DataAccessor
 
                 auto otherVal = other._acc[key].get<std::string>();
                 auto myVal = val.get<std::string>();
-                auto valRangRepeatPos =
-                        myVal.find_first_of(util::RangeRepeaterIndicator);
-                if (valRangRepeatPos != std::string::npos)
-                {
-                    myVal = util::revertRangeRepeated(myVal, valRangRepeatPos);
-                }
-                auto otherRangeRepeatPos =
-                        otherVal.find_first_of(util::RangeRepeaterIndicator);
-                if (otherRangeRepeatPos != std::string::npos)
-                {
-                    otherVal = util::revertRangeRepeated(otherVal,
-                                                         otherRangeRepeatPos);
-                }
-
-                const std::regex r{myVal};
-                auto values_match =  std::regex_match(otherVal, r);
-                if (values_match == false)
+                if (util::matchRegexString(myVal, otherVal) == false)
                 {
                     ret = false;
                     break;
@@ -366,7 +350,7 @@ class DataAccessor
 
         if (isTypeDbus() == true)
         {
-            readDbus();
+            readDbus(device);
         }
         else if (isTypeDevice() == true)
         {
@@ -577,7 +561,7 @@ class DataAccessor
         return _dataValue.empty() == false;
     }
 
-   /**
+    /**
      * @brief getDataValue() instead of read() it returns the real data
      *
      * @note  It does not call read(), just returns the data if exists
@@ -642,6 +626,25 @@ class DataAccessor
         return isTypeDeviceName();
     }
 
+    /**
+     * @brief Intends to  behave like DataAccessor::read(device) but using
+     *        information from another DataAccessor
+     *
+     *     Cases when it works:
+     *     1.  otherAcc is equal *this and otherAcc already has data
+     *            [ Copy otherAcc data ]
+     *     2.  both *this and  otherAcc are DBUS
+     *         2.1 *this has range in object path, otherAcces does not have
+     *            2.1.1 But both objects match not considering range
+     *              [ *this perform read() but using otherAcc object path
+     *
+     * @param otherAcc that may match with this
+     *
+     * @return empty string if could not get any valid data from other Accessor
+     *     or a good data based on otherAcc information
+     */
+    std::string readUsingMainAccessor(const DataAccessor& otherAcc);
+
  private:
     /**
      * @brief clearData() clear the _dataValue if it has a previous value
@@ -658,7 +661,7 @@ class DataAccessor
      *
      * @return true if the read operation was successful, false otherwise
      */
-    bool readDbus();
+    bool readDbus(const std::string& device);
 
     /**
      * Runs commands from Accessor type CMDLINE

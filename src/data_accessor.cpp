@@ -200,7 +200,7 @@ InterfaceObjectsMap DataAccessor::getDbusInterfaceObjectsMap() const
     return ret;
 }
 
-bool DataAccessor::readDbus()
+bool DataAccessor::readDbus(const std::string& device)
 {
     log_elapsed();
     clearData();
@@ -213,8 +213,14 @@ bool DataAccessor::readDbus()
          *     2. object path with range specification
          * readDbusProperty() forwards an exception when receives it from Dbus
          */
+        std::string objPath = _acc[objectKey].get<std::string>();
+        if (util::existsRange(objPath) == true && false == device.empty())
+        {
+            // apply the device into the "object" to replace the range
+            objPath = util::introduceDeviceInObjectpath(objPath, device);
+        }
         auto propVariant = dbus::readDbusProperty(
-            _acc[objectKey], _acc[interfaceKey], _acc[propertyKey]);
+            objPath, _acc[interfaceKey], _acc[propertyKey]);
         // setDataValueFromVariant returns false in case variant is invalid
         ret = setDataValueFromVariant(propVariant);
     }
@@ -424,19 +430,79 @@ bool DataAccessor::checkLoopingDevices(const util::DeviceIdMap& devices,
     return ret;
 }
 
+/**
+ *   OtherAcc may be the same accessor, or have at least
+ *          same "object" not considering the range specification
+ *
+ * @example
+ *   Same "object", same "interface" but different "property"
+ *
+ * this                                otherAcc
+   ------                              ----------
+   {                                   {
+    "type": "DBUS",                      "type": "DBUS",
+    "object": "/temp/GPU_SXM_[1-8]",     "object": "/temp/GPU_SXM_3",
+    "interface": "xyz.Sensor",           "interface": "xyz.Sensor",
+    "property": "CriticalHigh"           "property": "CriticalLow"
+   }                                   }
+ */
+std::string DataAccessor::readUsingMainAccessor(const DataAccessor& otherAcc)
+{
+    std::string ret{""};
+    // (1) case
+    //  OtherAcc is the same accessor as *this, just copy otherAcc data
+    if (otherAcc.hasData() && *this == otherAcc)
+    {
+        _dataValue = otherAcc._dataValue;
+        ret =  _dataValue.getString();
+    }
+    // (2) case
+    // otherAcc data does not matter, trying to get otherAcc "object" value
+    // example above: same "object", same "interface" but different "property"
+    else if (this->isTypeDbus() && otherAcc.isTypeDbus())
+    {
+        auto objPath = this->getDbusObjectPath();
+        auto otherObjPath = otherAcc.getDbusObjectPath();
+        if (util::existsRange(objPath) && !util::existsRange(otherObjPath) &&
+                util::matchRegexString(objPath, otherObjPath))
+        {
+            // build another Accessor using otherAcc object path without range
+            auto jsonData = _acc;
+            jsonData[data_accessor::objectKey] =  otherObjPath;
+            DataAccessor tmpAcc(jsonData);
+            ret = tmpAcc.read();
+            _dataValue = tmpAcc._dataValue; // copy tmpAcc data
+        }
+    }
+    std::stringstream ss;
+    ss << "ret: '" << ret << "'"
+       <<  "\n\t_acc: " << _acc
+       << "\n\totherAcc: " << otherAcc;
+    log_dbg("%s\n", ss.str().c_str());
+    return ret;
+}
+
 std::string DataAccessor::read(const event_info::EventNode& event)
 {
-    if (isTypeDeviceName() || isTypeDeviceCoreApi() || isTypeCmdline())
+    if (isTypeDeviceCoreApi() || isTypeCmdline() || isTypeDbus())
     {
-        // just device name, eg. "GPU1", "NVSwitch0", etc
+        auto result = readUsingMainAccessor(event.accessor);
+        if (result.empty())
+        {
+            result = readUsingMainAccessor(event.trigger);
+        }
+        if (false == result.empty())
+        {
+            return result;
+        }
+        // common DataAccessor::read() if attempts above failed
         return read(event.device);
     }
-    else if (isTypeDbus() || isTypeDbus() || isTypeDevice() || isTypeTest() ||
-             isTypeConst())
+    else
+    if (isTypeDevice() || isTypeTest() || isTypeConst() || isTypeDeviceName())
     {
-        // 'read' doesn't use the 'device' argument for those types
-        // apparently
-        return read();
+        // DataAccessor::read() decides when to use device parameter
+        return read(event.device);
     }
     else
     {
