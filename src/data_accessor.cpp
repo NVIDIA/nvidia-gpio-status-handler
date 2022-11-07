@@ -312,7 +312,12 @@ bool DataAccessor::readDeviceCoreApi(const std::string& device)
     bool ret = isValidDeviceCoreApiAccessor();
     if (ret == true)
     {
-        auto deviceId = util::getDeviceId(device);
+        auto deviceId = util::getMappedDeviceId(device);
+        if (deviceId == util::InvalidDeviceId)
+        {
+            // not all devices are mapped, ten use common getDeviceId()
+            deviceId = util::getDeviceId(device);
+        }
         log_elapsed("deviceId=%d api='%s'", deviceId, device.c_str());
         auto tuple = dbus::deviceGetCoreAPI(deviceId, _acc[propertyKey]);
         auto rc = std::get<int>(tuple);

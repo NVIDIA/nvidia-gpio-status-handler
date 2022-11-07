@@ -20,6 +20,8 @@
 namespace util
 {
 
+constexpr int  InvalidDeviceId = -1;
+
 constexpr auto RangeRepeaterIndicator = "()";
 
 using DeviceIdMap = std::map<int, std::string>;
@@ -235,7 +237,14 @@ std::string determineAssertedDeviceName(const std::string& realDevice,
                                         const std::string& deviceType);
 
 /**
- * @brief Compares  two strings using regular expression
+ * @return good deviceId if the deviceName is mapped or
+ *         InvalidDeviceId in case the deviceName is not a mapped one
+ *
+ * @sa getDeviceId()
+ */
+int getMappedDeviceId(const std::string& deviceName);
+
+/** @brief Compares  two strings using regular expression
  * @param regstr    string that may contain regular expression
  * @param str       normal string
  *

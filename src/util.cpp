@@ -9,7 +9,6 @@
 *
 */
 #include "util.hpp"
-
 #include "log.hpp"
 
 #include <boost/algorithm/string.hpp>
@@ -17,9 +16,49 @@
 
 #include <iostream>
 #include <thread>
+#include <utility>
+#include <unordered_map>
 
 namespace util
 {
+/**
+ * With GPU naming changes, 'deviceId' also changed, it is NOT a sequence [1-8]
+ */
+struct MatchDevice
+{
+    std::string name;
+    int deviceId;
+};
+
+std::unordered_map<std::string, struct MatchDevice> deviceNameMap =
+{
+   {"ERoT_GPU_SXM_1", {"ERoT_GPU4", 4}},
+   {"ERoT_GPU_SXM_2", {"ERoT_GPU5", 5}},
+   {"ERoT_GPU_SXM_3", {"ERoT_GPU6", 6}},
+   {"ERoT_GPU_SXM_4", {"ERoT_GPU7", 7}},
+   {"ERoT_GPU_SXM_5", {"ERoT_GPU0", 0}},
+   {"ERoT_GPU_SXM_6", {"ERoT_GPU1", 1}},
+   {"ERoT_GPU_SXM_7", {"ERoT_GPU2", 2}},
+   {"ERoT_GPU_SXM_8", {"ERoT_GPU3", 3}},
+
+   {"GPU_SXM_1", {"GPU4", 4}},
+   {"GPU_SXM_2", {"GPU5", 5}},
+   {"GPU_SXM_3", {"GPU6", 6}},
+   {"GPU_SXM_4", {"GPU7", 7}},
+   {"GPU_SXM_5", {"GPU0", 0}},
+   {"GPU_SXM_6", {"GPU1", 1}},
+   {"GPU_SXM_7", {"GPU2", 2}},
+   {"GPU_SXM_8", {"GPU3", 3}},
+
+   {"GPU_SXM_1_DRAM_0", {"GPUDRAM4", 4}},
+   {"GPU_SXM_2_DRAM_0", {"GPUDRAM5", 5}},
+   {"GPU_SXM_3_DRAM_0", {"GPUDRAM6", 6}},
+   {"GPU_SXM_4_DRAM_0", {"GPUDRAM7", 7}},
+   {"GPU_SXM_5_DRAM_0", {"GPUDRAM0", 0}},
+   {"GPU_SXM_6_DRAM_0", {"GPUDRAM1", 1}},
+   {"GPU_SXM_7_DRAM_0", {"GPUDRAM2", 2}},
+   {"GPU_SXM_8_DRAM_0", {"GPUDRAM3", 3}}
+};
 
 /**
  * @brief This is a regular expression for ranges
@@ -99,6 +138,23 @@ std::string removeRange(const std::string& str)
     return ret;
 }
 
+int getMappedDeviceId(const std::string& deviceName)
+{
+   // check if the deviceName is present on deviceNameMap,
+    // if so returns the 'deviceId' from this name mapping
+    if (util::deviceNameMap.count(deviceName) != 0)
+    {
+       auto deviceNameInfo = util::deviceNameMap.at(deviceName);
+       logs_dbg("deviceName: %s mapToName: %s deviceId: %d\n",
+                deviceName.c_str(), deviceNameInfo.name.c_str(),
+                deviceNameInfo.deviceId);
+       return deviceNameInfo.deviceId;
+    }
+    logs_dbg("deviceName: %s deviceId = util::InvalidDeviceId = -1\n",
+             deviceName.c_str());
+    return util::InvalidDeviceId;
+}
+
 int getDeviceId(const std::string& deviceName, const std::string& range)
 {
     std::string validRange{range};
@@ -113,8 +169,9 @@ int getDeviceId(const std::string& deviceName, const std::string& range)
     auto minMax = std::get<std::vector<int>>(info);
     if (minMax.size() == 2)
     {
-        auto counter = minMax.at(0);
-        for (; counter <= minMax.at(1); ++counter)
+        // it should start from the highiest value,
+        auto counter = minMax.at(1);
+        for (; counter >= minMax.at(0); --counter)
         {
             auto rangeDigit = std::to_string(counter);
             if (deviceName.find(rangeDigit) != std::string::npos)
