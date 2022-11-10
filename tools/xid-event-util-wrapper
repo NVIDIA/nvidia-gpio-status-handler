@@ -71,7 +71,7 @@ rc=$?
 # output -> 06 ab 00 ba ba ba ba ab ab ab ab 48 65 6c 6c 6f 20 57 6f 72 6c 64 00 00 00
 output=`echo $output | cut -d'"' -f 2 | sed 's/.*\: //'`
 
-[ -z "$output" ] && echo "No data found." && exit 1
+[ -z "$output" ] && echo "No data found." && exit 0
 
 # Convert Hex "48 65 6c 6c 6f 20 57 6f 72 6c 64 00 00 00"
 # To ASCII "Hello World"

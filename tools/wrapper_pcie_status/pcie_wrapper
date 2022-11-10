@@ -112,6 +112,12 @@ else
 
 fi
 
+#handle special case
+if [ "${COMMAND,,}" = "pcie_link_status" ]; then
+    POSTPROCESS_COMMAND=$COMMAND
+    COMMAND="pcie_LTSSM_state"
+fi
+
 # Validate / map devname
 mappedDevname=$( $DEVICE_NAME_MAPPER --ext ${DEVNAME} )
 if [ $? -ne 0 ]; then
@@ -276,6 +282,15 @@ dbg "start bit $startBit bit width $bitWidth bit mask $bitMask"
 value=$(( ($reg >> $startBit) & $bitMask ))
 # printf 'value %u 0x%x \n' $value $value
 dbg "$outStatusRegister $outCommandRegister $outData $outExtendedData"
+
+# optinally postprocess in special case
+if [ "${POSTPROCESS_COMMAND,,}" = "pcie_link_status" ]; then
+    if [ $value -eq 16 ]; then
+        value="link-down"
+    else
+        value="link-up"
+    fi
+fi
 
 # return value to shell and last exitcode
 echo $value 
