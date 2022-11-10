@@ -72,15 +72,15 @@ bool DataAccessor::check(const DataAccessor& otherAcc,
          *      “device_id” field or having “device_id” equal “range”
          */
         util::DeviceIdMap devRange{};
-        if (isTypeCmdline() == true)
-        {
-            devRange = getCmdLineRangeArguments(deviceType); // case 1
-        }
-        else if (isTypeDeviceCoreApi() == true && isDeviceIdRange() == true)
-        {
-            // working so far with 'equal' and 'bitmask'
-            devRange = util::expandDeviceRange(deviceType); // case 2
-        }
+            if (isTypeCmdline() == true)
+            {
+                devRange = getCmdLineRangeArguments(deviceType); // case 1
+            }
+            else if (isTypeDeviceCoreApi() == true && isDeviceIdRange() == true)
+            {
+                // working so far with 'equal' and 'bitmask'
+                devRange = util::expandDeviceRange(deviceType); // case 2
+            }
         if (devRange.size() > 0)
         {
             auto tmpAccessor = *this;
@@ -374,6 +374,11 @@ void DataAccessor::buildSingleAssertedDeviceName(
     const std::string& devType) const
 {
     auto deviceName = util::determineAssertedDeviceName(realDevice, devType);
+    if (deviceName.empty() == true && util::existsRange(devType) == false)
+    {
+        // there is no reason to not consider 'device_type' as asserted device
+        deviceName = devType;
+    }
     if (deviceName.empty() == false)
     {
         util::DeviceIdMap map;
