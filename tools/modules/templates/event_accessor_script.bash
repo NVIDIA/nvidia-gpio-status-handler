@@ -63,6 +63,22 @@ CURL_CMD="/tmp/oobaml/bin/curl -i"
 gl_log_id=0  ## entry to be generated for the firt busctl command
 DRY_RUN=0
 
+
+help()
+{
+   echo
+   echo " -l|--list-events           just list current 'device event' list"
+   echo " -D|--debug                 adds few debug messages"
+   echo " -k|--keep-existent-logs    do not remove phosphor log entries at beginning"
+   echo " -d|--device <device>       a device defined in event_info.json such as GPU, HMC, etc"
+   echo " -e|--event <event-name>    the event as defined in event_info.json (use double quotes)"
+   echo " -i|--device-index <index>  plus --device and --event it sets the 'single injection' use index zero when there is no range in the 'device'"
+   echo " -p|--property <prop-name>  performs injections on all events that has that DBUS property, e.g., I2C3_ALERT"
+   echo " -m|--markdown              only for 'single injection' generates markdown output suitable to create documents, inside '/tmp/md' directory"
+   echo " -h|--help                  shows the help"
+   echo
+}
+
 while [ "$1" != "" ]; do
     case "$1"  in
         -r|--run)    DRY_RUN=0;;  # run, default DRY_RUN
@@ -72,11 +88,12 @@ while [ "$1" != "" ]; do
         -d|--device) shift; gl_cmd_line_device="$1";;
         -e|--event) shift; gl_cmd_line_event="$1";;
         -k|--keep-existent-logs) gl_cmd_line_keep_existing_logs=1;;
-        -l|--list_events) gl_cmd_line_list_events=1;;
+        -l|--list-events) gl_cmd_line_list_events=1;;
         -i|--device-index) shift; gl_cmd_line_device_index="$1";;
         -p|--property) shift; gl_cmd_line_property="$1";;
         -D|--debug) gl_cmd_line_debug=1;;
         -m|--markdown) gl_cmd_line_markdown=1;;
+        -h|--help) help; exit 0;;
     esac
     shift
 done
@@ -451,6 +468,10 @@ matchDeviceAndEvent() # $1=entryid to check, #2 optional the object path
        fi
        if [[ "$device" == "$device_to_compare"* ]]; then
            echo $1 ## correct entry id
+       else
+          if [[ $device_to_compare =~ $device ]]; then
+            echo $1 ## correct entry id
+          fi
        fi
     fi
 }
@@ -694,7 +715,7 @@ property_change() #1=object_path $2=interface, $3=property_name
        debug ============
     fi
 
-    existsMapKey $*   ## verify if path/interface/property was already inserted
+    existsMapKey $* $METHOD $METHOD_VALUE  ## verify if path/interface/property was already inserted
     if [ $? -ne 0 ]; then # already inserted
        gl_current_logging_entries=$(latest_looging_entry)
        local logid=""
@@ -720,7 +741,7 @@ property_change() #1=object_path $2=interface, $3=property_name
        reset_failure_state
        return
     fi
-    insertMapKey $* ## save that injection
+    insertMapKey $* $METHOD $METHOD_VALUE  ## save that injection
     gl_current_logging_entries=0
     if [ "$METHOD" = "skip" ]; then
        debug "[skipping '$METHOD_VALUE'] $@"
@@ -756,9 +777,10 @@ finish_test()
    /bin/rm -rf $DIR_SAVE_ENTRIES
 
    if [ $gl_cmd_line_debug -eq 1 ]; then
-       echo; echo "Failed Injections: $gl_failures"
+       debug; debug "Failed Injections: $gl_failures"
        cat $FAILURES_FILE
-       echo; echo "Successful Injections: $gl_injections"
+       debug; debug "Successful Injections: $gl_injections"
+       debug "finished at `date +"%Y-%m-%dT%T"`"
        gl_rc=$[$gl_total_comands - $gl_injections]
    fi
    /bin/rm -f $FAILURES_FILE
@@ -778,8 +800,9 @@ exit_test()
 
 trap exit_test 1 2 3 4 5 6 7 15
 
-if [ $gl_cmd_line_keep_existing_logs -eq 0 -a $gl_is_single_injection -eq 0 ]; then
-   print  "busctl call xyz.openbmc_project.Logging /xyz/openbmc_project/logging xyz.openbmc_project.Collection.DeleteAll DeleteAll"
+if [ $gl_cmd_line_keep_existing_logs -eq 0 ]; then
+   [ $gl_is_single_injection -eq 0 ] &&  \
+       print  "busctl call xyz.openbmc_project.Logging /xyz/openbmc_project/logging xyz.openbmc_project.Collection.DeleteAll DeleteAll"
    busctl call xyz.openbmc_project.Logging /xyz/openbmc_project/logging xyz.openbmc_project.Collection.DeleteAll DeleteAll
 fi
 
@@ -791,6 +814,9 @@ gl_previous_logging_entries=$(latest_looging_entry)
 if [ "$gl_previous_logging_entries" = "" ]; then # empty first time
        gl_previous_logging_entries=0
 fi
-debug; debug existent log entries = $gl_previous_logging_entries
+debug;
+debug  "started at `date +"%Y-%m-%dT%T"`"
+debug existent log entries = $gl_previous_logging_entries
+
 
 
