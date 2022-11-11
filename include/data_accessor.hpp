@@ -241,6 +241,12 @@ class DataAccessor
     bool check(const PropertyVariant& redefCriteria,
                const std::string& device = std::string{""}) const;
 
+    /** Special overloaded version that uses the assertedDeviceList
+     *    from a previous performed check (event.trigger)
+     */
+    bool check(const util::DeviceIdMap& assertedDeviceList,
+               const std::string& device);
+
     /**
      * @brief [overloaded] using otherAcc = *this,
      *                           redefCriteria = PropertyVariant()
@@ -771,6 +777,9 @@ class DataAccessor
      * @brief after calling check() it may contain the list of device names
      */
     util::DeviceIdMap _latestAssertedDevices;
+
+    /** it can have asserted device from a previous check */
+    std::string _triggerAssertedDevice;
 };
 
 } // namespace data_accessor

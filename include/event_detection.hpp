@@ -118,7 +118,8 @@ class EventDetection : public object::Object
                         // be a temporary object as it keeps data from read()
                         // and assertedDevices list
                         auto tmpAccessor = event.accessor;
-                        if (tmpAccessor.check(event.deviceType) == true)
+                        if (tmpAccessor.check(acc.getAssertedDeviceNames(),
+                                              event.deviceType) == true)
                         {
                             auto assertedDevices =
                                     tmpAccessor.getAssertedDeviceNames();

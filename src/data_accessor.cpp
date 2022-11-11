@@ -57,6 +57,12 @@ bool DataAccessor::check(const DataAccessor& otherAcc,
 {
     bool ret = true; // defaults to true if accessor["check"] does not exist
     std::string deviceToRead = findDeviceName(otherAcc, deviceType);
+    if (deviceToRead.empty() && false == _triggerAssertedDevice.empty())
+    {
+        deviceToRead = _triggerAssertedDevice;
+        log_dbg("using deviceToRead = _triggerAssertedDevice = %s\n",
+                _triggerAssertedDevice.c_str());
+    }
     DataAccessor& accNonConst = const_cast<DataAccessor&>(otherAcc);
     if (existsCheckKey() == true)
     {
@@ -72,6 +78,8 @@ bool DataAccessor::check(const DataAccessor& otherAcc,
          *      “device_id” field or having “device_id” equal “range”
          */
         util::DeviceIdMap devRange{};
+        if (true == deviceToRead.empty())
+        {
             if (isTypeCmdline() == true)
             {
                 devRange = getCmdLineRangeArguments(deviceType); // case 1
@@ -81,6 +89,7 @@ bool DataAccessor::check(const DataAccessor& otherAcc,
                 // working so far with 'equal' and 'bitmask'
                 devRange = util::expandDeviceRange(deviceType); // case 2
             }
+        }
         if (devRange.size() > 0)
         {
             auto tmpAccessor = *this;
@@ -115,6 +124,18 @@ bool DataAccessor::check(const PropertyVariant& redefCriteria,
                          const std::string& device) const
 {
     return check(*this, redefCriteria, device);
+}
+
+bool DataAccessor::check(const util::DeviceIdMap& assertedDeviceList,
+                         const std::string& device)
+{
+    if (1 == assertedDeviceList.size())
+    {
+        _triggerAssertedDevice = assertedDeviceList.cbegin()->second;
+        log_dbg("using _triggerAssertedDevice:%s\n",
+                _triggerAssertedDevice.c_str());
+    }
+    return check(device);
 }
 
 bool DataAccessor::check(const std::string& device,
