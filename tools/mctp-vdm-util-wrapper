@@ -29,7 +29,7 @@ DEVICENAME_EID_LIST=`cat "$DEV_EID_PROFILE"`
 
 DOWNLOAD_LOG_CMD="download_log"
 GLACIER_LOG_FILE="/var/mctp-vdm-output.bin"
-
+SELFTEST_CMD="selftest 08 00 00 00"
 
 DEVNAME=""
 
@@ -142,6 +142,34 @@ cmd_requires_special_output_handling() # $1=$dev_eid $2=mctp_cmd $3=cmd output
                            echo 1 # no /var/mctp-vdm-output.bin
                       fi
                       return 0;;
+       "$SELFTEST_CMD")  rc=1
+# needs different handling because:
+# 1. script 'cmd' arg is used in passthrough mode 
+# 2. additional TX data isn't present in RX packet, eg. 
+# root@hgx:~# mctp-vdm-util -c selftest 8 0 0 0 -t 13
+#                                       ^^^^^^^> additional tx data
+# Test command = selftest
+# teid = 13
+# TX: 47 16 00 00 80 01 08 01 08 00 00 00 
+#                             ^^^^^^^^^^^> additional data in fact sent
+# RX: 47 16 00 00 00 01 08 01 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+#                 ^^>80->00   ^^^^^^^^> RX mirrors TX without additional data, then continues with read payload
+                    local additional_tx_payload=${mctp_cmd#${mctp_cmd%% *} }
+                    # output parsing
+                    [[ $output =~ .*TX:(([ ][0-9A-Fa-f]{2})+)\ RX:(([ ][0-9A-Fa-f]{2})+) ]]
+                    local tx=${BASH_REMATCH[1]}
+                    local rx=${BASH_REMATCH[3]}
+                    local tx_tmp=${tx/80/00}
+                    tx_tmp=${tx_tmp/$additional_tx_payload/}
+                    local dataInfo=${rx#$tx_tmp} # remove tx data from rx
+                    local retCode=${dataInfo%% *} # extract mctp return code
+                    if [ "$retCode" = "00" ]; then
+                        echo "$dataInfo"
+                    else
+                        echo "retcode != 00 ($retCode); rx: $rx" 
+                    fi
+
+                    return 0;;
 
        *)             return 0;; # returns without printing anything
     esac
@@ -297,7 +325,7 @@ if [ $rc -ne 0 ]; then
     >&2 echo "Error: EID of ${DEVNAME} not found, rc=$rc!"
     exit $rc
 fi
-mctp_access $device_id $PCOMMAND;rc=$?
+mctp_access $device_id "$PCOMMAND";rc=$?
 if [ $rc -ne 0 ]; then
     >&2 echo "Error: MCTP cmd for ${PCOMMAND} on ${device_id} failed, rc=$rc!"
     exit $rc
