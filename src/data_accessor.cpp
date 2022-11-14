@@ -101,7 +101,7 @@ bool DataAccessor::check(const DataAccessor& otherAcc,
             // if DBus aleady contains data no need to read it again
             if (otherAcc.isTypeDbus() == false || otherAcc.hasData() == false)
             {
-                accNonConst.read(deviceToRead);
+                accNonConst.read(deviceToRead, deviceType);
             }
             ret = subCheck(otherAcc, redefCriteria, deviceType, deviceToRead);
         }
@@ -248,7 +248,8 @@ bool DataAccessor::readDbus(const std::string& device)
     return ret;
 }
 
-bool DataAccessor::runCommandLine(const std::string& device)
+bool DataAccessor::runCommandLine(const std::string& device,
+                                  const std::string& devType)
 {
     log_elapsed();
     clearData();
@@ -261,7 +262,8 @@ bool DataAccessor::runCommandLine(const std::string& device)
             auto args = _acc[argumentsKey].get<std::string>();
             if (device.empty() == false)
             {
-                args = util::replaceRangeByMatchedValue(args, device);
+                // if args does not have range, it does nothing
+                args = util::replaceRangeByMatchedValue(args, device, devType);
             }
             else // expand the range inside args
             {
@@ -445,7 +447,8 @@ bool DataAccessor::checkLoopingDevices(const util::DeviceIdMap& devices,
     DataAccessor& accNonConst = const_cast<DataAccessor&>(otherAcc);
     for (auto& arg : devices)
     {
-        read(arg.second); // arg.first=deviceId, arg.second=deviceName
+        // arg.first=deviceId, arg.second=deviceName
+        read(arg.second, deviceType);
         if (subCheck(*this, redefCriteria, deviceType, arg.second) == true)
         {
             ret = true;

@@ -225,6 +225,42 @@ TEST(UtilreplaceRangeByMatchedValue, DeviceRange)
     EXPECT_EQ(ret, "GPU6");
 }
 
+TEST(UtilreplaceRangeByMatchedValue, DoubleRangeDependingOnDeviceType)
+{
+    auto ret =
+       replaceRangeByMatchedValue("FPGA_SXM[0-7]_EROT_RECOV_L GPU_SXM_[1-8]",
+                                  "GPU6", "GPU_SXM_[1-8]");
+
+    // device is "GPU6", [0-7] is replaced by 5 and [1-8] is repalced by 6
+    EXPECT_EQ(ret, "FPGA_SXM5_EROT_RECOV_L GPU_SXM_6");
+
+    ret =
+        replaceRangeByMatchedValue("FPGA_SXM[0-7]_EROT_RECOV_L GPU_SXM_[1-8]",
+                                   "GPU6", "GPU_SXM_[0-7]");
+
+    // as device_type is [1-8], [0-7] i replaced by 6 and [1-8] is replaced by 7
+    EXPECT_EQ(ret, "FPGA_SXM6_EROT_RECOV_L GPU_SXM_7");
+}
+
+TEST(UtilreplaceRangeByMatchedValue, DoubleRangeWithoutDeviceType)
+{
+    auto ret =
+       replaceRangeByMatchedValue("FPGA_SXM[0-7]_EROT_RECOV_L GPU_SXM_[1-8]",
+                                  "GPU6");
+    // without 'device type' replaceRangeByMatchedValue() is not able
+    // to perform adjustments, just replaces the range which in this case is 6
+    EXPECT_EQ(ret, "FPGA_SXM6_EROT_RECOV_L GPU_SXM_6");
+}
+
+TEST(UtilreplaceRangeByMatchedValue, TripleRangeDependingOnDeviceType)
+{
+    auto ret =
+            replaceRangeByMatchedValue("one_[0-7] two_[0-6] three_[1-8]",
+                                       "GPU6", "_[1-8]");
+    // three diffrent range specifications, expected indexes: 5, 4 and 6
+    EXPECT_EQ(ret, "one_5 two_4 three_6");
+}
+
 TEST(Util, GetRangeInformation)
 {
     auto info = getRangeInformation("");

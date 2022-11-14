@@ -66,7 +66,7 @@ std::unordered_map<std::string, struct MatchDevice> deviceNameMap =
  */
 constexpr auto RANGE_REGEX = "\\[[0-9]*-*[0-9]*\\]";
 
-constexpr auto RANGE_REGX_STR = ".*(\\[[0-9]+\\-[0-9]+\\]).*";
+constexpr auto RANGE_REGX_STR = ".*(\\[[0-9]*\\-*[0-9]*\\]).*";
 const auto RangeRepeaterIndicatorLength = ::strlen(RangeRepeaterIndicator);
 
 /**
@@ -274,23 +274,53 @@ DeviceIdMap expandDeviceRange(const std::string& deviceRegx)
     return deviceMap;
 }
 
-std::string replaceRangeByMatchedValue(const std::string& regxValue,
-                                       const std::string& matchedValue)
+std::string
+replaceRangeByMatchedValue(const std::string& regxValue,
+                           const std::string& matchedValue,
+                           const std::string& deviceType)
 {
-    std::string newString{regxValue};
-    if (matchedValue.empty() == false)
+    auto ret{regxValue};
+    // only deviceType can be empty
+    if (matchedValue.empty() || ret.empty())
     {
-        auto info = getRangeInformation(regxValue);
-        auto rangeSize = std::get<0>(info);
-        if (rangeSize > 0)
+        return ret;
+    }
+    auto patternRangeInfo = util::getMinMaxRange(ret);
+    auto patternRangeVec = std::get<0>(patternRangeInfo);
+    // check using the string because empty range '[]' is allowed
+    auto patternRange = std::get<1>(patternRangeInfo);
+    if (false == patternRange.empty())
         {
-
-            auto rangePosition = std::get<1>(info);
-            auto rangeStr = std::get<2>(info);
-            newString.replace(rangePosition, rangeSize, matchedValue);
+        auto deviceTypeRangeInfo = util::getMinMaxRange(deviceType);
+        auto deviceTypeRangeVec = std::get<0>(deviceTypeRangeInfo);
+        auto deviceId = util::getDeviceId(matchedValue, deviceType);
+        while (false == patternRange.empty())
+        {
+            auto position = ret.find(patternRange);
+            if (position == std::string::npos)
+            {
+                break;
+            }
+            auto deviceIdStr = matchedValue;
+            if (patternRangeVec.size() == 2 && position != 0 &&
+                    ret.at(position -1) != ' ')
+            {
+                auto adjustedDeviceId = deviceId;
+                // deviceType cannot be present or pattern may have empty range '[]'
+                if (deviceTypeRangeVec.size())
+                {
+                    adjustedDeviceId +=  patternRangeVec.at(1) -
+                            deviceTypeRangeVec.at(1);
+        }
+                deviceIdStr = std::to_string(adjustedDeviceId);
+    }
+            ret =  ret.replace(position, patternRange.size(), deviceIdStr);
+            patternRangeInfo = util::getMinMaxRange(ret);
+            patternRangeVec = std::get<0>(patternRangeInfo);
+            patternRange = std::get<1>(patternRangeInfo);
         }
     }
-    return newString;
+    return ret;
 }
 
 std::tuple<std::vector<int>, std::string> getMinMaxRange(const std::string& rgx)
@@ -310,8 +340,11 @@ std::tuple<std::vector<int>, std::string> getMinMaxRange(const std::string& rgx)
         regxStr.erase(0, 1);
         std::vector<std::string> values;
         boost::split(values, regxStr, boost::is_any_of("-"));
+        if (values.size() == 2)
+        {
         minMax.push_back(std::stoi(values[0]));
         minMax.push_back(std::stoi(values[1]));
+    }
     }
     return std::make_tuple(minMax, matchedRegex);
 }

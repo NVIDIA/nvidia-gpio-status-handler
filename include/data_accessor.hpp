@@ -348,7 +348,8 @@ class DataAccessor
      *
      * @return std::string
      */
-    std::string read(const std::string& device = std::string{""})
+    std::string read(const std::string& device = std::string{""},
+                     const std::string& deviceType = std::string{""})
     {
         log_elapsed();
         std::string ret{"123"};
@@ -364,7 +365,7 @@ class DataAccessor
         }
         else if (isTypeCmdline() == true)
         {
-            runCommandLine(device);
+            runCommandLine(device, deviceType);
         }
         else if (isTypeDeviceCoreApi() == true)
         {
@@ -680,7 +681,8 @@ class DataAccessor
      *             "lookup": "00 02 40"
      *       }
      */
-    bool runCommandLine(const std::string& device = std::string{""});
+    bool runCommandLine(const std::string& device = std::string{""},
+                        const std::string& devType = std::string{""});
 
     /**
      * @brief   just initializes the _dataValue creating a PropertyVariant

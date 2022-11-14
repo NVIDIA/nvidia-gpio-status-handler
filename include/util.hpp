@@ -103,13 +103,22 @@ int getDeviceId(const std::string& deviceName,
  */
 DeviceIdMap expandDeviceRange(const std::string& deviceRegx);
 
-/**
- * @brief replaceRangeByMatchedValue
- * @param value
- * @return a replaced string or regxValue in case matchedValue does not match
- */
-std::string replaceRangeByMatchedValue(const std::string& regxValue,
-                                       const std::string& matchedValue);
+
+/** Allows multiple range replacement, uses deviceType to adjust the deviceId
+ *
+ *  @example:
+ *  replaceRangeByMatchedValue("FPGA_SXM[0-7]_EROT_RECOV_L GPU_SXM_[1-8]",
+ *                         "GPU_SXM_4", "GPU_SXM_[1-8]");
+ *
+ *  returns:  "FPGA_SXM3_EROT_RECOV_L GPU_SXM_4" // deviceId 4 is adjust to 3
+ *
+ *  @return  the string replaced or the 'pattern' if there is no range
+ *
+*/
+std::string
+replaceRangeByMatchedValue(const std::string& regxValue,
+                           const std::string& matchedValue,
+                           const std::string& deviceType = std::string{""});
 
 /**
  * @brief determine device name from DBus object path.
