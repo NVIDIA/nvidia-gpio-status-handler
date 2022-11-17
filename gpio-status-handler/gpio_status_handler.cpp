@@ -160,8 +160,11 @@ void syncAlertGpioPin(
 {
     struct timespec timeout
     {
-        0, lineEventWaitTimeoutNs
+        lineEventWaitTimeoutNs / 1000000000, lineEventWaitTimeoutNs % 1000000000
     };
+
+    struct gpiod_line_event event;
+
     uint64_t ticks = 0;
     bool setDBusPropOk = true;
     int lineGetResult = 0;
@@ -201,7 +204,14 @@ void syncAlertGpioPin(
         if (lineGetResult >= 0 && setDBusPropOk)
         {
             waitResult = gpiod_line_event_wait(line, &timeout);
-            if (waitResult < 0)
+            if (waitResult > 0)
+            {
+                // Use it only to clear the event flags, the
+                // actual values of the pins will be obtained by
+                // 'gpiod_line_get_value'
+                gpiod_line_event_read(line, &event);
+            }
+            else if (waitResult < 0)
             {
                 int lastErrno = errno;
                 stringstream funcall;
@@ -210,7 +220,9 @@ void syncAlertGpioPin(
                 logLibgpioCallError(funcall, waitResult, lastErrno, pinName,
                                     chipName, pinNum);
             }
+            // otherwise timeout
         }
+        // if condition not met the loop will end in next iteration
         ticks = (ticks + 1) % readPeriodTicks;
     }
     // If the loop exited for any other reason than globally stopped threads
