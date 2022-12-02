@@ -11,3 +11,16 @@ selftest_tool = executable('selftest_tool',
     ],
     install: true,
 )
+
+dbus_tester_sources = [
+    'dbus_tester.cpp']
+
+dbus_tester_bin = executable(
+    'dbus_tester',
+    dbus_tester_sources,
+    dependencies: aml_dependencies + [
+        sdbusplus_dep,
+        meson.get_compiler('cpp').find_library('rt')
+    ],
+    install: false,
+)
