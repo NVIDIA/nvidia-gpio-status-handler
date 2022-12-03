@@ -1,6 +1,8 @@
 
 #include "dat_traverse.hpp"
 
+#include "dbus_accessor.hpp"
+
 #include <nlohmann/json.hpp>
 #include <sdbusplus/bus.hpp>
 
@@ -59,14 +61,14 @@ void Device::populateMap(std::map<std::string, dat_traverse::Device>& dat,
 std::ostream& operator<<(std::ostream& os, const Device& device)
 {
     os << "\tname:\t" << device.name << "\n";
-    
-    os << "\tchildren:" ;
+
+    os << "\tchildren:";
     for (auto& assoc : device.association)
     {
         os << "\t" << assoc;
     }
-    
-    os << "\n\tparents:" ;
+
+    os << "\n\tparents:";
     for (auto& par : device.parents)
     {
         os << "\t" << par;
@@ -80,7 +82,7 @@ std::ostream& operator<<(std::ostream& os, const Device& device)
 
     for (auto& layer : device.test)
     {
-        os << "\ttest layer [" << layer.first <<"]\n";
+        os << "\ttest layer [" << layer.first << "]\n";
         for (auto& tp : layer.second.testPoints)
         {
             os << "\t\tTP [" << tp.first << "]";
@@ -287,11 +289,9 @@ std::vector<std::string> DATTraverse::getSubAssociations(
 std::vector<std::string>
     DATTraverse::getAssociationConnectedDevices(const std::string& rootDevice)
 {
-    auto allVisited = childTraverse(
+    return childTraverse(
         dat, rootDevice,
         []([[maybe_unused]] const auto& ignored) { return true; }, {});
-    // Omit the first element which is always 'rootDevice'
-    return std::vector<std::string>(allVisited.begin() + 1, allVisited.end());
 }
 
 std::vector<std::string> DATTraverse::childTraverse(
@@ -395,68 +395,6 @@ using PropertyType =
     std::vector<std::tuple<std::string, std::string, std::string>>;
 
 /**
- * @brief Query 'xyz.openbmc_project.ObjectMapper' for the name of the service
- * managing the given device.
- *
- * Equivalent of
- *
- *   busctl call                                     \
- *     xyz.openbmc_project.ObjectMapper              \
- *     /xyz/openbmc_project/object_mapper            \
- *     xyz.openbmc_project.ObjectMapper              \
- *     GetObject sas                                 \
- *     @devicePath                                   \
- *     1 xyz.openbmc_project.Association.Definitions
- *
- * It's assumed the call above returns an array of length no greater than 1
- * (that is, the service implementing 'Association.Definitions' interface is
- * unambiguous. In case more services are given it's unspecified which one will
- * be returned.)
- *
- * @param[in] devicePath
- *
- * @return Name of the service analogous (or equal) to
- * 'xyz.openbmc_project.GpuMgr'
- */
-
-std::string dbusGetManagerServiceName(const std::string& devicePath)
-{
-    using namespace sdbusplus;
-    using namespace std;
-    map<string, vector<string>> dbusResult;
-    auto theBus = bus::new_default_system();
-    try
-    {
-        auto method = theBus.new_method_call(
-            "xyz.openbmc_project.ObjectMapper",
-            "/xyz/openbmc_project/object_mapper",
-            "xyz.openbmc_project.ObjectMapper", "GetObject");
-
-        string assocIntf = "xyz.openbmc_project.Association.Definitions";
-
-        method.append(devicePath);
-        vector<string> interfaces = {assocIntf};
-        method.append(interfaces);
-        auto reply = theBus.call(method);
-        reply.read(dbusResult);
-    }
-    catch (const sdbusplus::exception::exception& e)
-    {
-        logs_err(" Dbus Error: %s\n", e.what());
-        throw std::runtime_error(e.what());
-    }
-
-    if (dbusResult.empty())
-    {
-        std::cerr << "No manager associated with the device '" << devicePath
-                  << "'" << std::endl;
-        return "";
-    }
-
-    return dbusResult.begin()->first;
-}
-
-/**
  * @brief Get the 'Associations' property of the @devicePath object
  *
  * Equivalent of
@@ -490,7 +428,6 @@ std::string dbusGetManagerServiceName(const std::string& devicePath)
  *
  * or empty vector if error in method call occured.
  */
-
 std::vector<std::tuple<std::string, std::string, std::string>>
     dbusGetDeviceAssociations(const std::string& manager,
                               const std::string& devicePath)
@@ -606,12 +543,17 @@ void dbusSetDeviceAssociations(
  *
  */
 
-void dbusAddHealthRollupAssociations(
+void DATTraverse::dbusSetHealthRollupAssociations(
     const std::string& manager, const std::string& devicePath,
     const std::vector<std::string>& subAssocDevicePaths)
 {
     using namespace std;
     PropertyType values = dbusGetDeviceAssociations(manager, devicePath);
+    // Remove existing "health_rollup" associations
+    std::erase_if(values, [](const tuple<string, string, string>& elem) {
+        return get<0>(elem) == "health_rollup";
+    });
+    // Add the newly created ones
     for (const auto& devicePath : subAssocDevicePaths)
     {
         tuple<string, string, string> newAssoc("health_rollup", "", devicePath);
@@ -620,182 +562,13 @@ void dbusAddHealthRollupAssociations(
     dbusSetDeviceAssociations(manager, devicePath, values);
 }
 
-/**
- * @brief Get the list of device object paths for future
- * "health_rollup" setting.
- *
- * Get the list of device object paths which are sub-objects of
- * '/xyz/openbmc_project/inventory/system/chassis/' and implement
- * 'xyz.openbmc_project.Association.Definitions' interface.
- *
- * The equivalent of calling
- *
- *   busctl call                                      \
- *     xyz.openbmc_project.ObjectMapper               \
- *     /xyz/openbmc_project/object_mapper             \
- *     xyz.openbmc_project.ObjectMapper               \
- *     GetSubTreePaths sias                           \
- *     /xyz/openbmc_project/inventory/system/chassis/ \
- *     0                                              \
- *     1 xyz.openbmc_project.Association.Definitions
- *
- * @return Something along
- *
- *   [
- *     ...
- *     "/xyz/openbmc_project/inventory/system/chassis/GPU5"
- *     "/xyz/openbmc_project/inventory/system/chassis/GPU6"
- *     "/xyz/openbmc_project/inventory/system/chassis/GPU7"
- *     "/xyz/openbmc_project/inventory/system/chassis/NVSwitch0"
- *     "/xyz/openbmc_project/inventory/system/chassis/NVSwitch1"
- *     ...
- *   ]
- *
- * or an empty vector if error in method call occured.
- */
-
-std::vector<std::string> dbusGetDeviceObjectPaths()
-{
-
-    using namespace sdbusplus;
-    std::vector<std::string> result;
-    auto theBus = bus::new_default_system();
-    try
-    {
-        auto method = theBus.new_method_call(
-            "xyz.openbmc_project.ObjectMapper",
-            "/xyz/openbmc_project/object_mapper",
-            "xyz.openbmc_project.ObjectMapper", "GetSubTreePaths");
-
-        std::string assocIntf = "xyz.openbmc_project.Association.Definitions";
-        std::string rootObject =
-            "/xyz/openbmc_project/inventory/system/chassis/";
-
-        method.append(rootObject);
-        method.append(0);
-        std::vector<std::string> interfaces = {assocIntf};
-        method.append(interfaces);
-        auto reply = theBus.call(method);
-        reply.read(result);
-    }
-    catch (const sdbusplus::exception::exception& e)
-    {
-        logs_err(" Dbus Error: %s\n", e.what());
-        throw std::runtime_error(e.what());
-    }
-
-    return result;
-}
-
-/**
- * https://stackoverflow.com/questions/236129/how-do-i-iterate-over-the-words-of-a-string
- */
-template <typename Out>
-void split(const std::string& s, char delim, Out result)
-{
-    std::istringstream iss(s);
-    std::string item;
-    while (std::getline(iss, item, delim))
-    {
-        *result++ = item;
-    }
-}
-
-std::vector<std::string> split(const std::string& s, char delim)
-{
-    std::vector<std::string> elems;
-    split(s, delim, std::back_inserter(elems));
-    return elems;
-}
-
-/**
- * Given
- *
- *   [
- *     ...
- *     "/xyz/openbmc_project/inventory/system/chassis/GPU5"
- *     "/xyz/openbmc_project/inventory/system/chassis/GPU6"
- *     "/xyz/openbmc_project/inventory/system/chassis/GPU7"
- *     "/xyz/openbmc_project/inventory/system/chassis/NVSwitch0"
- *     "/xyz/openbmc_project/inventory/system/chassis/NVSwitch1"
- *     ...
- *   ]
- *
- * convert it to
- *
- *   [
- *     ...
- *     "GPU5"      -> "/xyz/openbmc_project/inventory/system/chassis/GPU5"
- *     "GPU6"      -> "/xyz/openbmc_project/inventory/system/chassis/GPU6"
- *     "GPU7"      -> "/xyz/openbmc_project/inventory/system/chassis/GPU7"
- *     "NVSwitch0" -> "/xyz/openbmc_project/inventory/system/chassis/NVSwitch0"
- *     "NVSwitch1" -> "/xyz/openbmc_project/inventory/system/chassis/NVSwitch1"
- *     ...
- *   ]
- *
- * @param[in] deviceObjectPaths
- */
-
-std::map<std::string, std::string> createDeviceNameMapDeviceObjectPath(
-    const std::vector<std::string>& deviceObjectPaths)
-{
-    std::map<std::string, std::string> result;
-    for (const auto& objectPath : deviceObjectPaths)
-    {
-        auto elems = split(objectPath, '/');
-        auto lastElem = elems.back();
-        result[lastElem] = objectPath;
-    }
-    return result;
-}
-
-/**
- * Limits of the current implementation
- *
- * Note 1: Service 'xyz.openbmc_project.ObjectMapper' is assumed to be ready and
- * populated with all devices.
- *
- * Note 2: Function doesn't check for duplicates for now. When executed multiple
- * times (eg. restarted oobaml) the 'Associations' property of the devices will
- * be filled with redundant data.
- *
- * Note 3: It's assumed '/xyz/openbmc_project/object_mapper' returns exactly one
- * manager for every given device. If no managers are returned the code will
- * fail, if more than one - it's unspecified which one will be used.
- *
- * Note 4: No error logging to systemd is being done currently.
- *
- */
 void DATTraverse::datToDbusAssociation()
 {
     using namespace std;
-
-    auto devNameMapDevObjPath =
-        createDeviceNameMapDeviceObjectPath(dbusGetDeviceObjectPaths());
-
-    for (const auto& [devName, dev] : dat)
+    dbus::CachingObjectMapper om;
+    for (const auto& [devId, dev] : dat)
     {
-        if (devNameMapDevObjPath.contains(devName))
-        {
-            std::string devObjPath = devNameMapDevObjPath.at(devName);
-            auto associations = this->getAssociationConnectedDevices(devName);
-
-            // Remove the devices which don't occur in 'devNameMapDevObjPath'
-            // map, that is which aren't modeled in the ObjectMapper.
-            std::erase_if(associations,
-                          [&devNameMapDevObjPath](const std::string& elem) {
-                              return !devNameMapDevObjPath.contains(elem);
-                          });
-
-            std::transform(associations.begin(), associations.end(),
-                           associations.begin(),
-                           [&devNameMapDevObjPath](const std::string& elem) {
-                               return devNameMapDevObjPath.at(elem);
-                           });
-
-            std::string manager = dbusGetManagerServiceName(devObjPath);
-            dbusAddHealthRollupAssociations(manager, devObjPath, associations);
-        }
+        datToDbusAssociation(om, devId);
     }
 }
 

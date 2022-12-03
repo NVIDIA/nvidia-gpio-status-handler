@@ -13,15 +13,19 @@
 
 #include "property_accessor.hpp"
 
+#include <boost/algorithm/string.hpp>
+#include <log.hpp>
 #include <nlohmann/json.hpp>
 #include <sdbusplus/asio/object_server.hpp>
 #include <sdbusplus/bus.hpp>
 
+#include <cassert>
 #include <functional>
 #include <iostream>
 #include <map>
 #include <memory>
 #include <regex>
+#include <sstream>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -140,17 +144,452 @@ bool setDbusProperty(const std::string& objPath, const std::string& interface,
  * .GetSubTree                         method    sias      a{sa{sas}}   -
  * .GetSubTreePaths                    method    sias      as           -
  * @endcode
+ *
+ * Of the 4 methods only 'GetObject' and 'GetSubTreePaths' proved to be useful,
+ * so the rest is not supported atm.
  */
 
+template <typename T>
 class ObjectMapper
 {
   public:
+    // It's useful to have this field public for when a user wants to call a
+    // method on some other service than ObjectMapper, but using the same bus.
+    sdbusplus::bus::bus bus;
+
+    /** @brief Manager -> Interface* */
+    using ValueType = std::map<std::string, std::vector<std::string>>;
+
     /**
-     * @brief Return the subset of @c objectPaths which represent the @c devId
+     * @brief Object -> (Manager -> Interface*)
+     *
+     * A dictionary mapping each object to a dictionay mapping a manager to a
+     * list of defined interfaces. In dbus terminology "a{sa{sas}}"
      */
-    static std::vector<std::string>
-        scopeObjectPathsDevId(const std::vector<std::string>& objectPaths,
-                              const std::string& devId);
+    using FullTreeType = std::map<std::string, ValueType>;
+
+    ObjectMapper() : bus(sdbusplus::bus::new_default_system())
+    {}
+
+    ObjectMapper(sdbusplus::bus::bus&& bus) : bus(std::move(bus))
+    {}
+
+    /**
+     * @brief Mimic the 'GetObject' method of 'ObjectMapper'
+     * without actually using the dbus
+     *
+     * @code
+     * - name: GetObject
+     *   description: >
+     *       Obtain a dictionary of service -> implemented interface(s)
+     *       for the given path.
+     *   parameters:
+     *       - name: path
+     *         type: path
+     *         description: >
+     *             The object path for which the result should be fetched.
+     *       - name: interfaces
+     *         type: array[string]
+     *         description: >
+     *             An array of result set constraining interfaces.
+     *   returns:
+     *       - name: services
+     *         type: dict[string,array[string]]
+     *         description: >
+     *             A dictionary of service -> implemented interface(s).
+     *   errors:
+     *       - xyz.openbmc_project.Common.Error.ResourceNotFound
+     * @endcode
+     */
+
+    ValueType getObject(const std::string& objectPath,
+                        const std::vector<std::string>& interfaces = {})
+    {
+        return static_cast<T*>(this)->getObjectImpl(this->bus, objectPath,
+                                                    interfaces);
+    }
+
+    ValueType getObject(const std::string& objectPath,
+                        const std::string& interface)
+    {
+        return getObject(objectPath, std::vector<std::string>{interface});
+    }
+
+    /**
+     * @brief Mimic the 'GetSubTreePaths' method of 'ObjectMapper' without
+     * actually using the dbus.
+     *
+     * From the "ObjectMapper.interface.yaml":
+     *
+     * @code
+     * - name: GetSubTreePaths
+     *   description: >
+     *       Obtain an array of paths where array elements are in subtree.
+     *   parameters:
+     *       - name: subtree
+     *         type: path
+     *         description: >
+     *             The subtree path for which the result should be fetched.
+     *       - name: depth
+     *         type: int32
+     *         description: >
+     *             The maximum subtree depth for which results should be
+     * fetched. For unconstrained fetches use a depth of zero.
+     *       - name: interfaces
+     *         type: array[string]
+     *         description: >
+     *             An array of result set constraining interfaces.
+     *   returns:
+     *       - name: paths
+     *         type: array[path]
+     *         description: >
+     *             An array of paths.
+     *   errors:
+     *       - xyz.openbmc_project.Common.Error.ResourceNotFound
+     * @endcode
+     *
+     * From the command line perspective this function corresponds to a call
+     *
+     *   busctl call                                      \
+     *     xyz.openbmc_project.ObjectMapper               \
+     *     /xyz/openbmc_project/object_mapper             \
+     *     xyz.openbmc_project.ObjectMapper               \
+     *     GetSubTreePaths sias                           \
+     *     @subtree                                       \
+     *     @depth                                         \
+     *     N @interfaces[0] ... @interfaces[N-1]
+     *
+     * @return Something along
+     *
+     *   [
+     *     ...
+     *     "/xyz/openbmc_project/inventory/system/chassis/GPU5"
+     *     "/xyz/openbmc_project/inventory/system/chassis/GPU6"
+     *     "/xyz/openbmc_project/inventory/system/chassis/GPU7"
+     *     "/xyz/openbmc_project/inventory/system/chassis/NVSwitch0"
+     *     "/xyz/openbmc_project/inventory/system/chassis/NVSwitch1"
+     *     ...
+     *   ]
+     *
+     * or an empty vector if error in method call occured.
+     */
+    std::vector<std::string>
+        getSubTreePaths(const std::string& subtree, int depth,
+                        const std::vector<std::string>& interfaces = {})
+    {
+        return static_cast<T*>(this)->getSubTreePathsImpl(this->bus, subtree,
+                                                          depth, interfaces);
+    }
+
+    std::vector<std::string> getSubTreePaths(const std::string& subtree,
+                                             const std::string& interface)
+    {
+        return getSubTreePaths(subtree, 0, std::vector<std::string>{interface});
+    }
+
+    std::vector<std::string> getSubTreePaths(const std::string& interface)
+    {
+        return getSubTreePaths("/", interface);
+    }
+
+    std::vector<std::string> getSubTreePaths()
+    {
+        return getSubTreePaths("/", 0);
+    }
+
+    /**
+     * @brief Mimic the 'GetSubTree' method of 'ObjectMapper' without actually
+     * using the dbus.
+     *
+     * From the "ObjectMapper.interface.yaml":
+     *
+     * @code
+     * - name: GetSubTree
+     *   description: >
+     *       Obtain a dictionary of path -> services where path is in
+     *       sutbtree and services is of the type returned by the
+     *       GetObject method.
+     *   parameters:
+     *       - name: subtree
+     *         type: path
+     *         description: >
+     *             The subtree path for which the result should be fetched.
+     *       - name: depth
+     *         type: int32
+     *         description: >
+     *             The maximum subtree depth for which results should be
+     * fetched. For unconstrained fetches use a depth of zero.
+     *       - name: interfaces
+     *         type: array[string]
+     *         description: >
+     *             An array of result set constraining interfaces.
+     *   returns:
+     *       - name: objects
+     *         type: dict[path,dict[string,array[string]]]
+     *         description: >
+     *             A dictionary of path -> services.
+     *   errors:
+     *       - xyz.openbmc_project.Common.Error.ResourceNotFound
+     * @endcode
+     */
+    FullTreeType getSubtree(const std::string& subtree, int depth,
+                            const std::vector<std::string>& interfaces = {})
+    {
+        return static_cast<T*>(this)->getSubtreeImpl(this->bus, subtree, depth,
+                                                     interfaces);
+    }
+
+    /**
+     * @brief Get a list of all object paths from @c
+     * xyz.openbmc_project.ObjectMapper tree corresponding to the given @c devId
+     * under any possible context, and implementing any of the @c interfaces.
+     *
+     * For example, for the @c GPU_SXM_3 return a list similar to
+     *
+     * "/xyz/openbmc_project/inventory/system/chassis/HGX_GPU_SXM_3",
+     * "/xyz/openbmc_project/inventory/system/chassis/HGX_GPU_SXM_3/PCIeDevices/GPU_SXM_3",
+     * "/xyz/openbmc_project/inventory/system/fabrics/HGX_NVLinkFabric_0/Endpoints/GPU_SXM_3",
+     * "/xyz/openbmc_project/inventory/system/fabrics/HGX_PCIeRetimerTopology_2/Endpoints/GPU_SXM_3",
+     * "/xyz/openbmc_project/inventory/system/processors/GPU_SXM_3"
+     *
+     */
+
+    std::vector<std::string>
+        getAllDevIdObjPaths(const std::string& devId,
+                            const std::vector<std::string>& interfaces = {})
+    {
+        return getDevIdPaths(interfaces, [&devId](const std::string& objPath) {
+            return !(isObjPathDirectDevId(objPath, devId) ||
+                     isObjPathDerivativeDevId(objPath, devId));
+        });
+    }
+
+    std::vector<std::string> getAllDevIdObjPaths(const std::string& devId,
+                                                 const std::string& interface)
+    {
+        return getAllDevIdObjPaths(devId, std::vector<std::string>{interface});
+    }
+
+    /**
+     * @brief Get a list of all object paths from @c
+     * xyz.openbmc_project.ObjectMapper tree corresponding directly to the given
+     * @c devId, and implementing any of the @c interfaces.
+     *
+     * For example, for the @c GPU_SXM_3 return a list similar to
+     *
+     * "/xyz/openbmc_project/inventory/system/chassis/HGX_GPU_SXM_3"
+     *
+     */
+
+    std::vector<std::string>
+        getDirectDevIdPaths(const std::string& devId,
+                            const std::vector<std::string>& interfaces = {})
+    {
+        return getDevIdPaths(interfaces, [&devId](const std::string& objPath) {
+            return !isObjPathDirectDevId(objPath, devId);
+        });
+    }
+
+    /**
+     * @brief
+     *
+     * Simplified version of @c getObject.
+     */
+    std::string getManager(const std::string& objectPath,
+                           const std::string& interface)
+    {
+        ValueType ret =
+            this->getObject(objectPath, std::vector<std::string>{interface});
+        if (ret.size() == 0)
+        {
+            log_err("Requested a manager for the object path '%s'"
+                    "of the 'xyz.openbmc_project.ObjectMapper', "
+                    "but none found\n",
+                    objectPath.c_str());
+            return "";
+        }
+        else if (ret.size() > 1)
+        {
+            std::stringstream ss;
+            int i = 0;
+            for (const auto& [key, value] : ret)
+            {
+                ss << (i++ == 0 ? "" : ", ") << "'" << key << "'";
+            }
+            log_err("Requested a manager for the object path '%s'"
+                    "of the 'xyz.openbmc_project.ObjectMapper', "
+                    "but multiple managers found (%s)\n",
+                    objectPath.c_str(), ss.str().c_str());
+            return "";
+        }
+        else
+        {
+            return ret.cbegin()->first;
+        }
+    }
+
+    sdbusplus::message::message getMethod(const std::string& objectPath,
+                                          const std::string& managerInterface,
+                                          const std::string& callInterface,
+                                          const std::string& method)
+    {
+        return this->bus.new_method_call(
+            this->getManager(objectPath, managerInterface), objectPath,
+            callInterface, method);
+    }
+
+  private:
+    std::vector<std::string> getDevIdPaths(
+        const std::vector<std::string>& interfaces,
+        const std::function<bool(const std::string& objPath)>& antiPredicate)
+    {
+        return scopeObjectPathsDevId(
+            this->getSubTreePaths(std::string("/"), 0, interfaces),
+            antiPredicate);
+    }
+
+    static std::vector<std::string> scopeObjectPathsDevId(
+        std::vector<std::string> objectPaths,
+        const std::function<bool(const std::string& objPath)>& antiPredicate)
+    {
+        std::erase_if(objectPaths, antiPredicate);
+        return objectPaths;
+    }
+
+    static bool isObjPathDirectDevId(const std::string& objPath,
+                                     const std::string& devId)
+    {
+        return boost::algorithm::ends_with(objPath, "/HGX_" + devId);
+    }
+
+    static bool isObjPathDerivativeDevId(const std::string& objPath,
+                                         const std::string& devId)
+    {
+        return boost::algorithm::ends_with(objPath, "/" + devId);
+    }
 };
+
+class DirectObjectMapper : public ObjectMapper<DirectObjectMapper>
+{
+
+  public:
+    DirectObjectMapper()
+    {}
+
+    DirectObjectMapper(sdbusplus::bus::bus&& bus) : ObjectMapper(std::move(bus))
+    {}
+
+    ValueType getObjectImpl(sdbusplus::bus::bus& bus,
+                            const std::string& objectPath,
+                            const std::vector<std::string>& interfaces) const;
+
+    std::vector<std::string>
+        getSubTreePathsImpl(sdbusplus::bus::bus& bus,
+                            const std::string& subtree, int depth,
+                            const std::vector<std::string>& interfaces) const;
+
+    FullTreeType
+        getSubtreeImpl(sdbusplus::bus::bus& bus, const std::string& subtree,
+                       int depth,
+                       const std::vector<std::string>& interfaces) const;
+};
+
+class CachingObjectMapper : public ObjectMapper<CachingObjectMapper>
+{
+
+  public:
+    CachingObjectMapper() : ObjectMapper(), isInitialized(false)
+    {}
+
+    CachingObjectMapper(sdbusplus::bus::bus&& bus) :
+        ObjectMapper(std::move(bus)), isInitialized(false)
+    {}
+
+    ValueType getObjectImpl(sdbusplus::bus::bus& bus,
+                            const std::string& objectPath,
+                            const std::vector<std::string>& interfaces);
+
+    std::vector<std::string>
+        getSubTreePathsImpl(sdbusplus::bus::bus& bus,
+                            const std::string& subtree, int depth,
+                            const std::vector<std::string>& interfaces);
+    std::vector<std::string>
+        getSubTreePathsImpl(sdbusplus::bus::bus& bus,
+                            const std::vector<std::string>& interfaces);
+
+    // Not implemented for now
+    FullTreeType getSubtreeImpl(sdbusplus::bus::bus& bus,
+                                const std::string& subtree, int depth,
+                                const std::vector<std::string>& interfaces);
+
+    /** @brief Synchronize the internal mirror data (@c
+     * objectsServicesMapping) with dbus **/
+    void refresh();
+    // void refresh(sdbusplus::bus::bus& bus);
+
+    /**
+     * @brief Given one of the values from the main dictionary return the set of
+     * managers implementing a given interfaces (disjunction).
+     */
+    static ValueType scopeManagers(const ValueType& implementations,
+                                   const std::vector<std::string>& interfaces);
+
+  private:
+    bool isInitialized;
+    FullTreeType objectsServicesMapping;
+
+    void ensureIsInitialized();
+};
+
+template <class CharT>
+std::basic_ostream<CharT>& operator<<(std::basic_ostream<CharT>& os,
+                                      const sdbusplus::message::message& method)
+{
+    return os << method.get_destination() << " " << method.get_path() << " "
+              << method.get_interface() << " " << method.get_member() << " "
+              << method.get_signature();
+}
+
+/**
+ * @brief A wrapper around sdbus' @c call method
+ *
+ * Provides a common error logging logic and simplifies obtainng results.
+ */
+template <typename T>
+T call(sdbusplus::bus::bus& bus, sdbusplus::message::message& method,
+       const T& defaultValue, std::string& errMsg) noexcept
+{
+    T result = defaultValue;
+    try
+    {
+        auto reply = bus.call(method);
+        reply.read(result);
+    }
+    catch (const sdbusplus::exception::exception& e)
+    {
+        std::stringstream ss;
+        ss << "Dbus error in method call '" << method << "': " << e.what();
+        errMsg = ss.str();
+    }
+    return result;
+}
+
+/**
+ * @brief A wrapper around sdbus' @c call method
+ *
+ * Provides a common error logging logic and simplifies obtainng results.
+ */
+template <typename T>
+T call(sdbusplus::bus::bus& bus, sdbusplus::message::message& method,
+       const T& defaultValue) noexcept
+{
+    std::string errMsg;
+    T res = call(bus, method, defaultValue, errMsg);
+    if (res == defaultValue)
+    {
+        logs_err("%s\n", errMsg.c_str());
+    }
+    return res;
+}
 
 } // namespace dbus

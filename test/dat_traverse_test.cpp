@@ -153,7 +153,7 @@ TEST(DatTraverseTest, gettingAssociations)
     nlohmann::json jgpu0 = j;
     jgpu0["name"] = "GPU0";
     jgpu0["association"] = {"HSC0", "GPU0-ERoT", "Retimer0"};
- 
+
     jDevTp["name"] = "1";
     jDevTp["accessor"]["device_name"] = "HSC0";
     jgpu0["power_rail"] += jDevTp;
@@ -212,7 +212,7 @@ TEST(DatTraverseTest, gettingAssociations)
     EXPECT_EQ(childVecAssoc[4], hsc8.name);
 
     std::vector<std::string> childVecTps =
-    datTraverser.getSubAssociations(dat, gpu0.name, true);
+        datTraverser.getSubAssociations(dat, gpu0.name, true);
 
     EXPECT_EQ(childVecTps.size(), 5);
     EXPECT_EQ(childVecTps[0], gpu0.name);

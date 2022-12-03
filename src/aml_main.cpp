@@ -238,9 +238,8 @@ int main(int argc, char* argv[])
 
     event_handler::ClearEvent clearEvent("ClearEvent");
     event_handler::EventHandlerManager eventHdlrMgr("EventHandlerManager");
-    event_handler::RootCauseTracer rootCauseTracer(
-        "RootCauseTracer", aml::profile::datMap,
-        event_handler::checkDeviceDBus);
+    event_handler::RootCauseTracer rootCauseTracer("RootCauseTracer",
+                                                   aml::profile::datMap);
 
     /* Event handlers registration order is important - msgComposer uses data
     acquired by previous handlers; handlers are used in registration order. */

@@ -151,23 +151,24 @@ srcfiles_unittest = ['test/dat_test.cpp',
                      'test/selftest_test.cpp',
                      'test/propertyvalue_variant_test.cpp',
                      'test/util_test.cpp',
-                     'test/dat_to_dbus_test.cpp'
+                     'test/dat_to_dbus_test.cpp',
+                     'test/dbus_accessor_test.cpp'
                     ]
 
 amllib_sources = [
-                'src/config_parser.cpp',
-                'src/dat_traverse.cpp',
-                'src/data_accessor.cpp',
-                'src/property_accessor.cpp',
-                'src/dbus_accessor.cpp',
-                'src/util.cpp',
-                'src/event_detection.cpp',
-                'src/event_handler.cpp',
-                'src/event_info.cpp',
-                'src/message_composer.cpp',
-                'src/message_dispatcher.cpp',
-                'src/oobaml_api.cpp',
-                'src/log.cpp']
+    'src/config_parser.cpp',
+    'src/dat_traverse.cpp',
+    'src/data_accessor.cpp',
+    'src/property_accessor.cpp',
+    'src/dbus_accessor.cpp',
+    'src/util.cpp',
+    'src/event_detection.cpp',
+    'src/event_handler.cpp',
+    'src/event_info.cpp',
+    'src/message_composer.cpp',
+    'src/message_dispatcher.cpp',
+    'src/oobaml_api.cpp',
+    'src/log.cpp']
 
 selftestlib_sources = ['src/selftest.cpp']
 

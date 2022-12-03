@@ -310,19 +310,135 @@ bool setDbusProperty(const std::string& service, const std::string& objPath,
     return ret;
 }
 
-std::vector<std::string> ObjectMapper::scopeObjectPathsDevId(
-    const std::vector<std::string>& objectPaths, const std::string& devId)
+// CachingObjectMapper ////////////////////////////////////////////////////////
+
+CachingObjectMapper::ValueType CachingObjectMapper::getObjectImpl(
+    [[maybe_unused]] sdbusplus::bus::bus& bus, const std::string& objectPath,
+    const std::vector<std::string>& interfaces)
 {
-    // marcinw:TODO: use std
+    ensureIsInitialized();
+    return scopeManagers(objectsServicesMapping.at(objectPath), interfaces);
+}
+
+std::vector<std::string> CachingObjectMapper::getSubTreePathsImpl(
+    [[maybe_unused]] sdbusplus::bus::bus& bus, const std::string& subtree,
+    int depth, const std::vector<std::string>& interfaces)
+{
+    ensureIsInitialized();
+    // "'getSubTreePathsImpl' not implemented for 'depth != 0'"
+    assert(depth == 0);
+    // "'getSubTreePathsImpl' not implemented for 'subtree != \"\"'"
+    assert(subtree == "/");
+    return getSubTreePathsImpl(bus, interfaces);
+}
+
+std::vector<std::string> CachingObjectMapper::getSubTreePathsImpl(
+    [[maybe_unused]] sdbusplus::bus::bus& bus,
+    const std::vector<std::string>& interfaces)
+{
+    ensureIsInitialized();
     std::vector<std::string> result;
-    for (const auto& objPath : objectPaths)
+    for (const auto& keyValPair : objectsServicesMapping)
     {
-        if (boost::algorithm::ends_with(objPath, "/" + devId) ||
-            boost::algorithm::ends_with(objPath, "/HGX_" + devId))
+        if (scopeManagers(keyValPair.second, interfaces).size() != 0)
         {
-            result.push_back(objPath);
+            result.push_back(keyValPair.first);
         }
     }
+    return result;
+}
+
+void CachingObjectMapper::refresh()
+{
+    this->objectsServicesMapping = DirectObjectMapper().getSubtreeImpl(
+        this->bus, "/", 0, std::vector<std::string>({}));
+    this->isInitialized = true;
+}
+
+CachingObjectMapper::ValueType CachingObjectMapper::scopeManagers(
+    const ValueType& implementations,
+    const std::vector<std::string>& interfaces)
+{
+    CachingObjectMapper::ValueType result;
+    for (const auto& keyValPair : implementations)
+    {
+        const auto& intfs = keyValPair.second;
+        bool implementsAny = true;
+        // Yes, the original xyz.openbmc_project.ObjectMapper's logic of the
+        // object paths scoping based on a list of interfaces is whether a
+        // particular path implements any of them, not all
+        for (std::vector<std::string>::const_iterator it = interfaces.cbegin();
+             it != interfaces.cend() && implementsAny; ++it)
+        {
+            implementsAny =
+                std::find(intfs.cbegin(), intfs.cend(), *it) != intfs.cend();
+        }
+        if (implementsAny)
+        {
+            result[keyValPair.first] = intfs;
+        }
+    }
+    return result;
+}
+
+void CachingObjectMapper::ensureIsInitialized()
+{
+    if (!this->isInitialized)
+    {
+        this->refresh();
+    }
+}
+
+// DirectObjectMapper /////////////////////////////////////////////////////////
+
+DirectObjectMapper::ValueType DirectObjectMapper::getObjectImpl(
+    sdbusplus::bus::bus& bus, const std::string& objectPath,
+    const std::vector<std::string>& interfaces) const
+{
+    ValueType result;
+    auto method =
+        bus.new_method_call("xyz.openbmc_project.ObjectMapper",
+                            "/xyz/openbmc_project/object_mapper",
+                            "xyz.openbmc_project.ObjectMapper", "GetObject");
+    method.append(objectPath);
+    method.append(interfaces);
+    auto reply = bus.call(method);
+    reply.read(result);
+    return result;
+}
+
+std::vector<std::string> DirectObjectMapper::getSubTreePathsImpl(
+    sdbusplus::bus::bus& bus, const std::string& subtree, int depth,
+    const std::vector<std::string>& interfaces) const
+{
+
+    std::vector<std::string> result;
+    auto method = bus.new_method_call("xyz.openbmc_project.ObjectMapper",
+                                      "/xyz/openbmc_project/object_mapper",
+                                      "xyz.openbmc_project.ObjectMapper",
+                                      "GetSubTreePaths");
+    method.append(subtree);
+    method.append(depth);
+    method.append(interfaces);
+    auto reply = bus.call(method);
+    reply.read(result);
+    return result;
+}
+
+DirectObjectMapper::FullTreeType DirectObjectMapper::getSubtreeImpl(
+    sdbusplus::bus::bus& bus, const std::string& subtree, int depth,
+    const std::vector<std::string>& interfaces) const
+{
+    FullTreeType result;
+    auto method =
+        bus.new_method_call("xyz.openbmc_project.ObjectMapper",
+                            "/xyz/openbmc_project/object_mapper",
+                            "xyz.openbmc_project.ObjectMapper", "GetSubTree");
+    method.append(subtree);
+    method.append(depth);
+    method.append(interfaces);
+    auto reply = bus.call(method);
+    reply.read(result);
     return result;
 }
 

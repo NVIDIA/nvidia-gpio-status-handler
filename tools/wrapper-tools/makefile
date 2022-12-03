@@ -141,7 +141,6 @@ datFree: .gitignore wrapperRunsResults
 	@ echo "$(testpCmdList)" >> $@
 	@ echo "$(perfRunProg)" >> $@
 	@ echo "$(perfDeployPkg)" >> $@
-	@ echo ".gitignore" >> $@
 stdTargets += .gitignore
 
 $(perfDeployPkg): $(perfDeployProg) $(testpCmdList) $(perfRunProg) $(perfDeployDir)

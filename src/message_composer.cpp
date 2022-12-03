@@ -6,9 +6,11 @@
 #include "message_composer.hpp"
 
 #include "aml.hpp"
+#include "dbus_accessor.hpp"
 #include "event_handler.hpp"
 #include "event_info.hpp"
 
+#include <boost/algorithm/string.hpp>
 #include <phosphor-logging/log.hpp>
 #include <sdbusplus/bus.hpp>
 #include <sdbusplus/exception.hpp>
@@ -16,10 +18,10 @@
 #include <array>
 #include <cstdint>
 #include <iostream>
+#include <map>
 #include <numeric>
 #include <utility>
 #include <vector>
-#include <map>
 
 namespace message_composer
 {
@@ -32,17 +34,38 @@ using phosphor::logging::log;
  * This maps Json severity to Phosphor Logging severity
  */
 std::map<std::string, std::string> severityMapper{
-    {"OK", "Informational"},
-    {"Ok", "Informational"},
-    {"ok", "Informational"},
-    {"Warning", "Warning"},
-    {"warning", "Warning"},
-    {"Critical", "Critical"},
-    {"critical", "Critical"}
-};
+    {"OK", "Informational"}, {"Ok", "Informational"}, {"ok", "Informational"},
+    {"Warning", "Warning"},  {"warning", "Warning"},  {"Critical", "Critical"},
+    {"critical", "Critical"}};
 
 MessageComposer::~MessageComposer()
 {}
+
+std::string
+    MessageComposer::getOriginOfConditionObjectPath(const std::string& deviceId)
+{
+    dbus::DirectObjectMapper om;
+    auto paths = om.getDirectDevIdPaths(deviceId);
+    if (paths.size() == 0)
+    {
+        logs_err("No object path found in ObjectMapper subtree "
+                 "corresponding to the device '%s'. "
+                 "Returning empty origin of condition. ",
+                 deviceId.c_str());
+        return "";
+    }
+    else
+    {
+        if (paths.size() > 1)
+        {
+            logs_wrn("Multiple object paths in ObjectMapper subtree "
+                     "corresponding to the device '%s'. "
+                     "Choosing the first one as origin of condition. ",
+                     deviceId.c_str());
+        }
+        return *paths.begin();
+    }
+}
 
 bool MessageComposer::createLog(event_info::EventNode& event)
 {
@@ -68,12 +91,11 @@ bool MessageComposer::createLog(event_info::EventNode& event)
         return false;
     }
 
-    auto originOfCondition = getDeviceDBusPath(oocDevice);
+    auto originOfCondition = getOriginOfConditionObjectPath(oocDevice);
 
     // TODO: auto telemetries = Compression(telemetries);
 
-    log_err("OOC device for %s is %s !!!!\n", event.device.c_str(),
-            originOfCondition.c_str());
+    log_dbg("originOfCondition = '%s'\n", originOfCondition.c_str());
 
     auto pNamespace = getPhosphorLoggingNamespace(event);
 

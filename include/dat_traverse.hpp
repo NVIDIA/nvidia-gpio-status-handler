@@ -7,6 +7,7 @@
 
 #include "aml.hpp"
 #include "data_accessor.hpp"
+#include "dbus_accessor.hpp"
 #include "event_handler.hpp"
 #include "event_info.hpp"
 
@@ -199,6 +200,36 @@ class DATTraverse : public event_handler::EventHandler
      */
     void datToDbusAssociation();
 
+    template <typename T>
+    void datToDbusAssociation(dbus::ObjectMapper<T>& om,
+                              const std::string& devId)
+    {
+        using namespace std;
+
+        std::vector<std::string> objPathAssociations;
+        for (const auto& devAssoc : this->getAssociationConnectedDevices(devId))
+        {
+            for (const auto& objPathAssoc : om.getAllDevIdObjPaths(devAssoc))
+            {
+                objPathAssociations.push_back(objPathAssoc);
+            }
+        }
+        for (const auto& devObjPath : om.getAllDevIdObjPaths(
+                 devId, "xyz.openbmc_project.Association.Definitions"))
+        {
+            std::string manager = om.getManager(
+                devObjPath, "xyz.openbmc_project.Association.Definitions");
+            if (manager != "")
+            {
+                auto assocs = objPathAssociations;
+                std::erase_if(assocs, [&devObjPath](const string& elem) {
+                    return elem == devObjPath;
+                });
+                dbusSetHealthRollupAssociations(manager, devObjPath, assocs);
+            }
+        }
+    }
+
     //  private:
 
     /**
@@ -206,8 +237,8 @@ class DATTraverse : public event_handler::EventHandler
      *
      * @param dat device association tree in memory
      * @param device device to return associations
-     * @param doTraverseTestpoints should return all associations by testpoints
-     * or by explicit association key (default) of DAT?
+     * @param doTraverseTestpoints should return all associations by
+     * testpoints or by explicit association key (default) of DAT?
      *
      * @return vector of associated devices to device argument
      */
@@ -313,6 +344,11 @@ class DATTraverse : public event_handler::EventHandler
     std::map<std::string, dat_traverse::Device> dat;
 
     // TODO: define Device Association Tree pointer here
+
+  private:
+    static void dbusSetHealthRollupAssociations(
+        const std::string& manager, const std::string& devicePath,
+        const std::vector<std::string>& subAssocDevicePaths);
 };
 
 } // namespace event_handler

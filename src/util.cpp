@@ -9,6 +9,7 @@
 *
 */
 #include "util.hpp"
+
 #include "log.hpp"
 
 #include <boost/algorithm/string.hpp>
@@ -16,8 +17,8 @@
 
 #include <iostream>
 #include <thread>
-#include <utility>
 #include <unordered_map>
+#include <utility>
 
 namespace util
 {
@@ -30,35 +31,33 @@ struct MatchDevice
     int deviceId;
 };
 
-std::unordered_map<std::string, struct MatchDevice> deviceNameMap =
-{
-   {"ERoT_GPU_SXM_1", {"ERoT_GPU4", 4}},
-   {"ERoT_GPU_SXM_2", {"ERoT_GPU5", 5}},
-   {"ERoT_GPU_SXM_3", {"ERoT_GPU6", 6}},
-   {"ERoT_GPU_SXM_4", {"ERoT_GPU7", 7}},
-   {"ERoT_GPU_SXM_5", {"ERoT_GPU0", 0}},
-   {"ERoT_GPU_SXM_6", {"ERoT_GPU1", 1}},
-   {"ERoT_GPU_SXM_7", {"ERoT_GPU2", 2}},
-   {"ERoT_GPU_SXM_8", {"ERoT_GPU3", 3}},
+std::unordered_map<std::string, struct MatchDevice> deviceNameMap = {
+    {"ERoT_GPU_SXM_1", {"ERoT_GPU4", 4}},
+    {"ERoT_GPU_SXM_2", {"ERoT_GPU5", 5}},
+    {"ERoT_GPU_SXM_3", {"ERoT_GPU6", 6}},
+    {"ERoT_GPU_SXM_4", {"ERoT_GPU7", 7}},
+    {"ERoT_GPU_SXM_5", {"ERoT_GPU0", 0}},
+    {"ERoT_GPU_SXM_6", {"ERoT_GPU1", 1}},
+    {"ERoT_GPU_SXM_7", {"ERoT_GPU2", 2}},
+    {"ERoT_GPU_SXM_8", {"ERoT_GPU3", 3}},
 
-   {"GPU_SXM_1", {"GPU4", 4}},
-   {"GPU_SXM_2", {"GPU5", 5}},
-   {"GPU_SXM_3", {"GPU6", 6}},
-   {"GPU_SXM_4", {"GPU7", 7}},
-   {"GPU_SXM_5", {"GPU0", 0}},
-   {"GPU_SXM_6", {"GPU1", 1}},
-   {"GPU_SXM_7", {"GPU2", 2}},
-   {"GPU_SXM_8", {"GPU3", 3}},
+    {"GPU_SXM_1", {"GPU4", 4}},
+    {"GPU_SXM_2", {"GPU5", 5}},
+    {"GPU_SXM_3", {"GPU6", 6}},
+    {"GPU_SXM_4", {"GPU7", 7}},
+    {"GPU_SXM_5", {"GPU0", 0}},
+    {"GPU_SXM_6", {"GPU1", 1}},
+    {"GPU_SXM_7", {"GPU2", 2}},
+    {"GPU_SXM_8", {"GPU3", 3}},
 
-   {"GPU_SXM_1_DRAM_0", {"GPUDRAM4", 4}},
-   {"GPU_SXM_2_DRAM_0", {"GPUDRAM5", 5}},
-   {"GPU_SXM_3_DRAM_0", {"GPUDRAM6", 6}},
-   {"GPU_SXM_4_DRAM_0", {"GPUDRAM7", 7}},
-   {"GPU_SXM_5_DRAM_0", {"GPUDRAM0", 0}},
-   {"GPU_SXM_6_DRAM_0", {"GPUDRAM1", 1}},
-   {"GPU_SXM_7_DRAM_0", {"GPUDRAM2", 2}},
-   {"GPU_SXM_8_DRAM_0", {"GPUDRAM3", 3}}
-};
+    {"GPU_SXM_1_DRAM_0", {"GPUDRAM4", 4}},
+    {"GPU_SXM_2_DRAM_0", {"GPUDRAM5", 5}},
+    {"GPU_SXM_3_DRAM_0", {"GPUDRAM6", 6}},
+    {"GPU_SXM_4_DRAM_0", {"GPUDRAM7", 7}},
+    {"GPU_SXM_5_DRAM_0", {"GPUDRAM0", 0}},
+    {"GPU_SXM_6_DRAM_0", {"GPUDRAM1", 1}},
+    {"GPU_SXM_7_DRAM_0", {"GPUDRAM2", 2}},
+    {"GPU_SXM_8_DRAM_0", {"GPUDRAM3", 3}}};
 
 /**
  * @brief This is a regular expression for ranges
@@ -140,15 +139,15 @@ std::string removeRange(const std::string& str)
 
 int getMappedDeviceId(const std::string& deviceName)
 {
-   // check if the deviceName is present on deviceNameMap,
+    // check if the deviceName is present on deviceNameMap,
     // if so returns the 'deviceId' from this name mapping
     if (util::deviceNameMap.count(deviceName) != 0)
     {
-       auto deviceNameInfo = util::deviceNameMap.at(deviceName);
-       logs_dbg("deviceName: %s mapToName: %s deviceId: %d\n",
-                deviceName.c_str(), deviceNameInfo.name.c_str(),
-                deviceNameInfo.deviceId);
-       return deviceNameInfo.deviceId;
+        auto deviceNameInfo = util::deviceNameMap.at(deviceName);
+        logs_dbg("deviceName: %s mapToName: %s deviceId: %d\n",
+                 deviceName.c_str(), deviceNameInfo.name.c_str(),
+                 deviceNameInfo.deviceId);
+        return deviceNameInfo.deviceId;
     }
     logs_dbg("deviceName: %s deviceId = util::InvalidDeviceId = -1\n",
              deviceName.c_str());
@@ -185,7 +184,7 @@ int getDeviceId(const std::string& deviceName, const std::string& range)
 }
 
 int priv_expandRange(const std::string& deviceRegx, int initialValue,
-                     DeviceIdMap& deviceMap )
+                     DeviceIdMap& deviceMap)
 {
     int globalValue = 0;
     std::string matchedStr =
@@ -223,8 +222,8 @@ int priv_expandRange(const std::string& deviceRegx, int initialValue,
         {
             std::string rangeValue = std::to_string(value);
             std::string original = deviceRegx;
-            auto expanded = original.replace(regex_position, sizeRegxStr,
-                                             rangeValue);
+            auto expanded =
+                original.replace(regex_position, sizeRegxStr, rangeValue);
 
             auto nextRepeatIndPos = expanded.find_first_of("[");
             /** Curly brackets follow an occurrence from a previous range
@@ -237,8 +236,8 @@ int priv_expandRange(const std::string& deviceRegx, int initialValue,
             auto repIndPos = expanded.find_first_of(RangeRepeaterIndicator);
             while (repIndPos != std::string::npos)
             {
-                if (nextRepeatIndPos != std::string::npos && repIndPos >
-                        nextRepeatIndPos)
+                if (nextRepeatIndPos != std::string::npos &&
+                    repIndPos > nextRepeatIndPos)
                 {
                     break;
                 }
@@ -248,8 +247,8 @@ int priv_expandRange(const std::string& deviceRegx, int initialValue,
 
             if (nextRepeatIndPos != std::string::npos)
             {
-               globalValue += priv_expandRange(expanded, globalValue,
-                                               deviceMap);
+                globalValue +=
+                    priv_expandRange(expanded, globalValue, deviceMap);
             }
             else
             {
@@ -262,22 +261,20 @@ int priv_expandRange(const std::string& deviceRegx, int initialValue,
     return globalValue - initialValue;
 }
 
-
 DeviceIdMap expandDeviceRange(const std::string& deviceRegx)
 {
     DeviceIdMap deviceMap;
     if (deviceRegx.empty() == false)
     {
-        int start=-1;
+        int start = -1;
         priv_expandRange(deviceRegx, start, deviceMap);
     }
     return deviceMap;
 }
 
-std::string
-replaceRangeByMatchedValue(const std::string& regxValue,
-                           const std::string& matchedValue,
-                           const std::string& deviceType)
+std::string replaceRangeByMatchedValue(const std::string& regxValue,
+                                       const std::string& matchedValue,
+                                       const std::string& deviceType)
 {
     auto ret{regxValue};
     // only deviceType can be empty
@@ -290,7 +287,7 @@ replaceRangeByMatchedValue(const std::string& regxValue,
     // check using the string because empty range '[]' is allowed
     auto patternRange = std::get<1>(patternRangeInfo);
     if (false == patternRange.empty())
-        {
+    {
         auto deviceTypeRangeInfo = util::getMinMaxRange(deviceType);
         auto deviceTypeRangeVec = std::get<0>(deviceTypeRangeInfo);
         auto deviceId = util::getDeviceId(matchedValue, deviceType);
@@ -303,18 +300,19 @@ replaceRangeByMatchedValue(const std::string& regxValue,
             }
             auto deviceIdStr = matchedValue;
             if (patternRangeVec.size() == 2 && position != 0 &&
-                    ret.at(position -1) != ' ')
+                ret.at(position - 1) != ' ')
             {
                 auto adjustedDeviceId = deviceId;
-                // deviceType cannot be present or pattern may have empty range '[]'
+                // deviceType cannot be present or pattern may have empty range
+                // '[]'
                 if (deviceTypeRangeVec.size())
                 {
-                    adjustedDeviceId +=  patternRangeVec.at(1) -
-                            deviceTypeRangeVec.at(1);
-        }
+                    adjustedDeviceId +=
+                        patternRangeVec.at(1) - deviceTypeRangeVec.at(1);
+                }
                 deviceIdStr = std::to_string(adjustedDeviceId);
-    }
-            ret =  ret.replace(position, patternRange.size(), deviceIdStr);
+            }
+            ret = ret.replace(position, patternRange.size(), deviceIdStr);
             patternRangeInfo = util::getMinMaxRange(ret);
             patternRangeVec = std::get<0>(patternRangeInfo);
             patternRange = std::get<1>(patternRangeInfo);
@@ -342,9 +340,9 @@ std::tuple<std::vector<int>, std::string> getMinMaxRange(const std::string& rgx)
         boost::split(values, regxStr, boost::is_any_of("-"));
         if (values.size() == 2)
         {
-        minMax.push_back(std::stoi(values[0]));
-        minMax.push_back(std::stoi(values[1]));
-    }
+            minMax.push_back(std::stoi(values[0]));
+            minMax.push_back(std::stoi(values[1]));
+        }
     }
     return std::make_tuple(minMax, matchedRegex);
 }
@@ -400,8 +398,8 @@ std::string determineDeviceName(const std::string& objPath,
             // name =  expandDeviceRange(devType)[0];
         }
     }
-    logs_dbg("objPath %s devType:%s Devname: %s\n.",
-             objPath.c_str(), devType.c_str(), name.c_str());
+    logs_dbg("objPath %s devType:%s Devname: %s\n.", objPath.c_str(),
+             devType.c_str(), name.c_str());
     return name;
 }
 
@@ -474,7 +472,7 @@ std::string revertRangeRepeated(const std::string& str, size_t pos)
     auto position = pos;
     if (pos == std::string::npos)
     {
-       position = str.find_first_of(RangeRepeaterIndicator);
+        position = str.find_first_of(RangeRepeaterIndicator);
     }
 
     // TODO create a vector of Regular expressions for cases more than one
@@ -485,14 +483,14 @@ std::string revertRangeRepeated(const std::string& str, size_t pos)
         if (matchedRegex.empty() == false)
         {
             auto nextRegRegxPosition = strRegex.find_first_of("[", position);
-            while (position != std::string::npos && (
-                   nextRegRegxPosition == std::string::npos ||
-                       position < nextRegRegxPosition))
+            while (position != std::string::npos &&
+                   (nextRegRegxPosition == std::string::npos ||
+                    position < nextRegRegxPosition))
             {
                 strRegex.replace(position, RangeRepeaterIndicatorLength,
                                  matchedRegex);
-                position = strRegex.find_first_of(RangeRepeaterIndicator,
-                                                 position + matchedRegex.size());
+                position = strRegex.find_first_of(
+                    RangeRepeaterIndicator, position + matchedRegex.size());
             }
         }
     }
@@ -510,22 +508,22 @@ std::string makeRangeForRegexSearch(const std::string& rangeStr)
     std::string matchRegx{rangeStr};
     while (rangePosition != std::string::npos)
     {
-        auto size = matchRegx.find_first_of("]", rangePosition) -
-                rangePosition + 1;
+        auto size =
+            matchRegx.find_first_of("]", rangePosition) - rangePosition + 1;
         matchRegx.replace(rangePosition, size, match);
         rangePosition = matchRegx.find_first_of("[", rangePosition + size - 1);
     }
-    auto rangeRepeaterPosition = matchRegx.find_first_of(RangeRepeaterIndicator);
+    auto rangeRepeaterPosition =
+        matchRegx.find_first_of(RangeRepeaterIndicator);
     while (rangeRepeaterPosition != std::string::npos)
     {
-         matchRegx.replace(rangeRepeaterPosition, RangeRepeaterIndicatorLength,
-                           match);
-         rangeRepeaterPosition = matchRegx.find_first_of(RangeRepeaterIndicator,
+        matchRegx.replace(rangeRepeaterPosition, RangeRepeaterIndicatorLength,
+                          match);
+        rangeRepeaterPosition = matchRegx.find_first_of(RangeRepeaterIndicator,
                                                         rangeRepeaterPosition);
     }
     return matchRegx;
 }
-
 
 void splitDeviceTypeForRegxSearch(const std::string& deviceType,
                                   std::vector<std::string>& devTypePieces)
@@ -534,8 +532,8 @@ void splitDeviceTypeForRegxSearch(const std::string& deviceType,
     decltype(start) counter = 0;
     std::regex regxUnderscore{"_[A-Za-z]+"};
     std::sregex_token_iterator noMatches;
-    std::sregex_token_iterator piece(
-                     deviceType.begin(), deviceType.end(), regxUnderscore, -1);
+    std::sregex_token_iterator piece(deviceType.begin(), deviceType.end(),
+                                     regxUnderscore, -1);
     /**  split the device type by undescore applying some criteria
                does not  split if next character is a digit nor '['
             GPU_SXM_[1-8]_DRAM_0 => "GPU", "SMX_[1-8]+", "DRAM_0"
@@ -550,7 +548,7 @@ void splitDeviceTypeForRegxSearch(const std::string& deviceType,
             // it is also necessary to consider parts that do not match
             if (start > 0 && counter > 0)
             {
-                prevPart = deviceType.substr(start+1, counter - start -1);
+                prevPart = deviceType.substr(start + 1, counter - start - 1);
                 start = counter;
             }
             start += subStr.size();
@@ -566,44 +564,44 @@ void splitDeviceTypeForRegxSearch(const std::string& deviceType,
 std::string determineAssertedDeviceName(const std::string& realDevice,
                                         const std::string& deviceType)
 {
-     std::string name{""};
-     if (realDevice.empty() == false && deviceType.empty() == false)
-     {
-         std::vector<std::string> devTypePieces;
-         splitDeviceTypeForRegxSearch(deviceType, devTypePieces);
-         auto counter = devTypePieces.size();
-         bool matchedFlag = false;
-         while (counter--)
-         {
-             auto part = devTypePieces.at(counter);
-             const std::regex r{".*(" + part + ").*"};
-             std::smatch m;
+    std::string name{""};
+    if (realDevice.empty() == false && deviceType.empty() == false)
+    {
+        std::vector<std::string> devTypePieces;
+        splitDeviceTypeForRegxSearch(deviceType, devTypePieces);
+        auto counter = devTypePieces.size();
+        bool matchedFlag = false;
+        while (counter--)
+        {
+            auto part = devTypePieces.at(counter);
+            const std::regex r{".*(" + part + ").*"};
+            std::smatch m;
             /* if a part from deviceType matches in device uses matched part,
              *  otherwise uses the deviceType part as always based on deviceType
              */
-             if (std::regex_search(realDevice.begin(), realDevice.end(), m, r))
-             {
-                 devTypePieces[counter] = m[1];
-                 matchedFlag = true;
-             }
-         }
-         /**
-          * If not match exists, return empty string */
-         if (matchedFlag == true)
-         {
+            if (std::regex_search(realDevice.begin(), realDevice.end(), m, r))
+            {
+                devTypePieces[counter] = m[1];
+                matchedFlag = true;
+            }
+        }
+        /**
+         * If not match exists, return empty string */
+        if (matchedFlag == true)
+        {
             if (devTypePieces.size() == 1)
             {
-               name = devTypePieces.back();
+                name = devTypePieces.back();
             }
             else
             {
-               name = boost::join(devTypePieces, "_");
+                name = boost::join(devTypePieces, "_");
             }
-         }
-     }
-     logs_dbg("realDevice %s deviceType:%s Devname: %s\n.",
-              realDevice.c_str(), deviceType.c_str(), name.c_str());
-     return name;
+        }
+    }
+    logs_dbg("realDevice %s deviceType:%s Devname: %s\n.", realDevice.c_str(),
+             deviceType.c_str(), name.c_str());
+    return name;
 }
 
 bool matchRegexString(const std::string& regstr, const std::string& str)
@@ -624,13 +622,13 @@ bool matchRegexString(const std::string& regstr, const std::string& str)
     return std::regex_match(myStr, r);
 }
 
-std::regex createRegexDigitsRange(const std::string &pattern)
+std::regex createRegexDigitsRange(const std::string& pattern)
 {
     std::string regxStr{"("};
     bool last_digit = false;
-    for(auto it = pattern.cbegin(); it != pattern.cend(); ++it)
+    for (auto it = pattern.cbegin(); it != pattern.cend(); ++it)
     {
-        if (std::isdigit(*it) == true )
+        if (std::isdigit(*it) == true)
         {
             if (last_digit == false)
             {
@@ -644,7 +642,7 @@ std::regex createRegexDigitsRange(const std::string &pattern)
             last_digit = false;
         }
     }
-    regxStr += ")" ;
+    regxStr += ")";
     std::regex reg;
     reg.assign(regxStr);
     return reg;

@@ -10,6 +10,7 @@
 
 using namespace nlohmann;
 using namespace std;
+using namespace testing;
 
 json getStandardDatJson()
 {
@@ -228,6 +229,124 @@ json getStandardDatJson()
         "}");
 }
 
+void ensureProperFormat(json& j)
+{
+    for (auto& [key, value] : j.items())
+    {
+        std::cout << key << " : " << value << "\n";
+        if (!j[key].contains("association"))
+        {
+            j[key]["association"] = json::array();
+        }
+        if (!j[key].contains("power_rail"))
+        {
+            j[key]["power_rail"] = json::array();
+        }
+        if (!j[key].contains("erot_control"))
+        {
+            j[key]["erot_control"] = json::array();
+        }
+        if (!j[key].contains("pin_status"))
+        {
+            j[key]["pin_status"] = json::array();
+        }
+        if (!j[key].contains("interface_status"))
+        {
+            j[key]["interface_status"] = json::array();
+        }
+        if (!j[key].contains("protocol_status"))
+        {
+            j[key]["protocol_status"] = json::array();
+        }
+        if (!j[key].contains("firmware_status"))
+        {
+            j[key]["firmware_status"] = json::array();
+        }
+    }
+}
+
+json getDatJson_60742061()
+{
+    json j;
+    j["Baseboard_0"]["association"] = {
+        "GPU_SXM_1",  "GPU_SXM_2",  "GPU_SXM_3",  "GPU_SXM_4",
+        "GPU_SXM_5",  "GPU_SXM_6",  "GPU_SXM_7",  "GPU_SXM_8",
+        "NVSwitch_0", "NVSwitch_1", "NVSwitch_2", "NVSwitch_3"};
+    j["GPU_SXM_1"]["association"] = {"HSC_0", "ERoT_GPU_SXM_1",
+                                     "GPU_SXM_1_DRAM_0", "PCIeRetimer_0"};
+    j["GPU_SXM_2"]["association"] = {"HSC_1", "ERoT_GPU_SXM_2",
+                                     "GPU_SXM_2_DRAM_0", "PCIeRetimer_1"};
+    j["GPU_SXM_3"]["association"] = {"HSC_2", "ERoT_GPU_SXM_3",
+                                     "GPU_SXM_3_DRAM_0", "PCIeRetimer_2"};
+    j["GPU_SXM_4"]["association"] = {"HSC_3", "ERoT_GPU_SXM_4",
+                                     "GPU_SXM_4_DRAM_0", "PCIeRetimer_3"};
+    j["GPU_SXM_5"]["association"] = {"HSC_4", "ERoT_GPU_SXM_5",
+                                     "GPU_SXM_5_DRAM_0", "PCIeRetimer_4"};
+    j["GPU_SXM_6"]["association"] = {"HSC_5", "ERoT_GPU_SXM_6",
+                                     "GPU_SXM_6_DRAM_0", "PCIeRetimer_5"};
+    j["GPU_SXM_7"]["association"] = {"HSC_6", "ERoT_GPU_SXM_7",
+                                     "GPU_SXM_7_DRAM_0", "PCIeRetimer_6"};
+    j["GPU_SXM_8"]["association"] = {"HSC_7", "ERoT_GPU_SXM_8",
+                                     "GPU_SXM_8_DRAM_0", "PCIeRetimer_7"};
+    j["GPU_SXM_1_DRAM_0"]["association"] = json::array();
+    j["GPU_SXM_2_DRAM_0"]["association"] = json::array();
+    j["GPU_SXM_3_DRAM_0"]["association"] = json::array();
+    j["GPU_SXM_4_DRAM_0"]["association"] = json::array();
+    j["GPU_SXM_5_DRAM_0"]["association"] = json::array();
+    j["GPU_SXM_6_DRAM_0"]["association"] = json::array();
+    j["GPU_SXM_7_DRAM_0"]["association"] = json::array();
+    j["GPU_SXM_8_DRAM_0"]["association"] = json::array();
+    j["NVSwitch_0"]["association"] = {"VR", "HSC_8", "ERoT_NVSwitch_0",
+                                      "PCIeSwitch_0"};
+    j["NVSwitch_1"]["association"] = {"VR", "HSC_8", "ERoT_NVSwitch_1",
+                                      "PCIeSwitch_0"};
+    j["NVSwitch_2"]["association"] = {"VR", "HSC_9", "ERoT_NVSwitch_2",
+                                      "PCIeSwitch_0"};
+    j["NVSwitch_3"]["association"] = {"VR", "HSC_9", "ERoT_NVSwitch_3",
+                                      "PCIeSwitch_0"};
+    j["PCIeRetimer_0"]["association"] = {"HSC_8"};
+    j["PCIeRetimer_1"]["association"] = {"HSC_8"};
+    j["PCIeRetimer_2"]["association"] = {"HSC_8"};
+    j["PCIeRetimer_3"]["association"] = {"HSC_8"};
+    j["PCIeRetimer_4"]["association"] = {"HSC_9"};
+    j["PCIeRetimer_5"]["association"] = {"HSC_9"};
+    j["PCIeRetimer_6"]["association"] = {"HSC_9"};
+    j["PCIeRetimer_7"]["association"] = {"HSC_9"};
+    j["PCIeSwitch_0"]["association"] = {"StandbyHSC_0", "ERoT_PCIeSwitch_0"};
+    j["FPGA_0"]["association"] = {"StandbyHSC_0", "ERoT_FPGA_0", "InletSensor"};
+    j["InletSensor"]["association"] = {"StandbyHSC_0"};
+    j["HMC_0"]["association"] = {"StandbyHSC_0", "ERoT_HMC_0"};
+    j["ERoT_GPU_SXM_1"]["association"] = {"StandbyHSC_0"};
+    j["ERoT_GPU_SXM_2"]["association"] = {"StandbyHSC_0"};
+    j["ERoT_GPU_SXM_3"]["association"] = {"StandbyHSC_0"};
+    j["ERoT_GPU_SXM_4"]["association"] = {"StandbyHSC_0"};
+    j["ERoT_GPU_SXM_5"]["association"] = {"StandbyHSC_0"};
+    j["ERoT_GPU_SXM_6"]["association"] = {"StandbyHSC_0"};
+    j["ERoT_GPU_SXM_7"]["association"] = {"StandbyHSC_0"};
+    j["ERoT_GPU_SXM_8"]["association"] = {"StandbyHSC_0"};
+    j["HSC_0"]["association"] = json::array();
+    j["HSC_1"]["association"] = json::array();
+    j["HSC_2"]["association"] = json::array();
+    j["HSC_3"]["association"] = json::array();
+    j["HSC_4"]["association"] = json::array();
+    j["HSC_5"]["association"] = json::array();
+    j["HSC_6"]["association"] = json::array();
+    j["HSC_7"]["association"] = json::array();
+    j["HSC_8"]["association"] = json::array();
+    j["HSC_9"]["association"] = json::array();
+    j["ERoT_NVSwitch_0"]["association"] = {"StandbyHSC_0"};
+    j["ERoT_NVSwitch_1"]["association"] = {"StandbyHSC_0"};
+    j["ERoT_NVSwitch_2"]["association"] = {"StandbyHSC_0"};
+    j["ERoT_NVSwitch_3"]["association"] = {"StandbyHSC_0"};
+    j["ERoT_PCIeSwitch_0"]["association"] = {"StandbyHSC_0"};
+    j["ERoT_FPGA_0"]["association"] = {"StandbyHSC_0"};
+    j["ERoT_HMC_0"]["association"] = {"StandbyHSC_0"};
+    j["StandbyHSC_0"]["association"] = json::array();
+    j["VR"]["association"] = json::array();
+    ensureProperFormat(j);
+    return j;
+}
+
 std::map<std::string, dat_traverse::Device> jsonToDeviceMap(json jsonConfig)
 {
     std::map<std::string, dat_traverse::Device> result;
@@ -291,139 +410,134 @@ TEST(DatToDbusTest, JsonTest)
     event_handler::DATTraverse datTraverser("");
     datTraverser.setDAT(devMap);
 
-    EXPECT_EQ(datTraverser.getAssociationConnectedDevices("Baseboard"),
-              std::vector<std::string>(
-                  {"NVSwitch3",    "PCIeSwitch",     "PCIeSwitch_ERoT",
-                   "HSC_STBY",     "NVSwitch3_ERoT", "HSC9",
-                   "VR",           "NVSwitch2",      "NVSwitch2_ERoT",
-                   "NVSwitch1",    "NVSwitch1_ERoT", "HSC8",
-                   "NVSwitch0",    "NVSwitch0_ERoT", "GPU7",
-                   "PCIeRetimer7", "GPU7_ERoT",      "HSC7",
-                   "GPU6",         "PCIeRetimer6",   "GPU6_ERoT",
-                   "HSC6",         "GPU5",           "PCIeRetimer5",
-                   "GPU5_ERoT",    "HSC5",           "GPU4",
-                   "PCIeRetimer4", "GPU4_ERoT",      "HSC4",
-                   "GPU3",         "PCIeRetimer3",   "GPU3_ERoT",
-                   "HSC3",         "GPU2",           "PCIeRetimer2",
-                   "GPU2_ERoT",    "HSC2",           "GPU1",
-                   "PCIeRetimer1", "GPU1_ERoT",      "HSC1",
-                   "GPU0",         "PCIeRetimer0",   "GPU0_ERoT",
-                   "HSC0"}));
-    EXPECT_EQ(
-        datTraverser.getAssociationConnectedDevices("FPGA"),
-        std::vector<std::string>({"HMC", "HMC_ERoT", "HSC_STBY", "FPGA_ERoT"}));
-    EXPECT_EQ(datTraverser.getAssociationConnectedDevices("FPGA_ERoT"),
-              std::vector<std::string>({}));
-    EXPECT_EQ(datTraverser.getAssociationConnectedDevices("GPU0"),
-              std::vector<std::string>(
-                  {"PCIeRetimer0", "HSC8", "GPU0_ERoT", "HSC0"}));
-    EXPECT_EQ(datTraverser.getAssociationConnectedDevices("GPU0_ERoT"),
-              std::vector<std::string>({}));
-    EXPECT_EQ(datTraverser.getAssociationConnectedDevices("GPU1"),
-              std::vector<std::string>(
-                  {"PCIeRetimer1", "HSC8", "GPU1_ERoT", "HSC1"}));
-    EXPECT_EQ(datTraverser.getAssociationConnectedDevices("GPU1_ERoT"),
-              std::vector<std::string>({}));
-    EXPECT_EQ(datTraverser.getAssociationConnectedDevices("GPU2"),
-              std::vector<std::string>(
-                  {"PCIeRetimer2", "HSC8", "GPU2_ERoT", "HSC2"}));
-    EXPECT_EQ(datTraverser.getAssociationConnectedDevices("GPU2_ERoT"),
-              std::vector<std::string>({}));
-    EXPECT_EQ(datTraverser.getAssociationConnectedDevices("GPU3"),
-              std::vector<std::string>(
-                  {"PCIeRetimer3", "HSC8", "GPU3_ERoT", "HSC3"}));
-    EXPECT_EQ(datTraverser.getAssociationConnectedDevices("GPU3_ERoT"),
-              std::vector<std::string>({}));
-    EXPECT_EQ(datTraverser.getAssociationConnectedDevices("GPU4"),
-              std::vector<std::string>(
-                  {"PCIeRetimer4", "HSC9", "GPU4_ERoT", "HSC4"}));
-    EXPECT_EQ(datTraverser.getAssociationConnectedDevices("GPU4_ERoT"),
-              std::vector<std::string>({}));
-    EXPECT_EQ(datTraverser.getAssociationConnectedDevices("GPU5"),
-              std::vector<std::string>(
-                  {"PCIeRetimer5", "HSC9", "GPU5_ERoT", "HSC5"}));
-    EXPECT_EQ(datTraverser.getAssociationConnectedDevices("GPU5_ERoT"),
-              std::vector<std::string>({}));
-    EXPECT_EQ(datTraverser.getAssociationConnectedDevices("GPU6"),
-              std::vector<std::string>(
-                  {"PCIeRetimer6", "HSC9", "GPU6_ERoT", "HSC6"}));
-    EXPECT_EQ(datTraverser.getAssociationConnectedDevices("GPU6_ERoT"),
-              std::vector<std::string>({}));
-    EXPECT_EQ(datTraverser.getAssociationConnectedDevices("GPU7"),
-              std::vector<std::string>(
-                  {"PCIeRetimer7", "HSC9", "GPU7_ERoT", "HSC7"}));
-    EXPECT_EQ(datTraverser.getAssociationConnectedDevices("GPU7_ERoT"),
-              std::vector<std::string>({}));
-    EXPECT_EQ(datTraverser.getAssociationConnectedDevices("HMC"),
-              std::vector<std::string>({"HMC_ERoT", "HSC_STBY"}));
-    EXPECT_EQ(datTraverser.getAssociationConnectedDevices("HMC_ERoT"),
-              std::vector<std::string>({}));
-    EXPECT_EQ(datTraverser.getAssociationConnectedDevices("HSC0"),
-              std::vector<std::string>({}));
-    EXPECT_EQ(datTraverser.getAssociationConnectedDevices("HSC1"),
-              std::vector<std::string>({}));
-    EXPECT_EQ(datTraverser.getAssociationConnectedDevices("HSC2"),
-              std::vector<std::string>({}));
-    EXPECT_EQ(datTraverser.getAssociationConnectedDevices("HSC3"),
-              std::vector<std::string>({}));
-    EXPECT_EQ(datTraverser.getAssociationConnectedDevices("HSC4"),
-              std::vector<std::string>({}));
-    EXPECT_EQ(datTraverser.getAssociationConnectedDevices("HSC5"),
-              std::vector<std::string>({}));
-    EXPECT_EQ(datTraverser.getAssociationConnectedDevices("HSC6"),
-              std::vector<std::string>({}));
-    EXPECT_EQ(datTraverser.getAssociationConnectedDevices("HSC7"),
-              std::vector<std::string>({}));
-    EXPECT_EQ(datTraverser.getAssociationConnectedDevices("HSC8"),
-              std::vector<std::string>({}));
-    EXPECT_EQ(datTraverser.getAssociationConnectedDevices("HSC9"),
-              std::vector<std::string>({}));
-    EXPECT_EQ(datTraverser.getAssociationConnectedDevices("HSC_STBY"),
-              std::vector<std::string>({}));
-    EXPECT_EQ(
-        datTraverser.getAssociationConnectedDevices("NVSwitch0"),
-        std::vector<std::string>({"PCIeSwitch", "PCIeSwitch_ERoT", "HSC_STBY",
-                                  "NVSwitch0_ERoT", "HSC8", "VR"}));
-    EXPECT_EQ(datTraverser.getAssociationConnectedDevices("NVSwitch0_ERoT"),
-              std::vector<std::string>({}));
-    EXPECT_EQ(
-        datTraverser.getAssociationConnectedDevices("NVSwitch1"),
-        std::vector<std::string>({"PCIeSwitch", "PCIeSwitch_ERoT", "HSC_STBY",
-                                  "NVSwitch1_ERoT", "HSC8", "VR"}));
-    EXPECT_EQ(datTraverser.getAssociationConnectedDevices("NVSwitch1_ERoT"),
-              std::vector<std::string>({}));
-    EXPECT_EQ(
-        datTraverser.getAssociationConnectedDevices("NVSwitch2"),
-        std::vector<std::string>({"PCIeSwitch", "PCIeSwitch_ERoT", "HSC_STBY",
-                                  "NVSwitch2_ERoT", "HSC9", "VR"}));
-    EXPECT_EQ(datTraverser.getAssociationConnectedDevices("NVSwitch2_ERoT"),
-              std::vector<std::string>({}));
-    EXPECT_EQ(
-        datTraverser.getAssociationConnectedDevices("NVSwitch3"),
-        std::vector<std::string>({"PCIeSwitch", "PCIeSwitch_ERoT", "HSC_STBY",
-                                  "NVSwitch3_ERoT", "HSC9", "VR"}));
-    EXPECT_EQ(datTraverser.getAssociationConnectedDevices("NVSwitch3_ERoT"),
-              std::vector<std::string>({}));
-    EXPECT_EQ(datTraverser.getAssociationConnectedDevices("PCIeSwitch"),
-              std::vector<std::string>({"PCIeSwitch_ERoT", "HSC_STBY"}));
-    EXPECT_EQ(datTraverser.getAssociationConnectedDevices("PCIeSwitch_ERoT"),
-              std::vector<std::string>({}));
-    EXPECT_EQ(datTraverser.getAssociationConnectedDevices("PCIeRetimer0"),
-              std::vector<std::string>({"HSC8"}));
-    EXPECT_EQ(datTraverser.getAssociationConnectedDevices("PCIeRetimer1"),
-              std::vector<std::string>({"HSC8"}));
-    EXPECT_EQ(datTraverser.getAssociationConnectedDevices("PCIeRetimer2"),
-              std::vector<std::string>({"HSC8"}));
-    EXPECT_EQ(datTraverser.getAssociationConnectedDevices("PCIeRetimer3"),
-              std::vector<std::string>({"HSC8"}));
-    EXPECT_EQ(datTraverser.getAssociationConnectedDevices("PCIeRetimer4"),
-              std::vector<std::string>({"HSC9"}));
-    EXPECT_EQ(datTraverser.getAssociationConnectedDevices("PCIeRetimer5"),
-              std::vector<std::string>({"HSC9"}));
-    EXPECT_EQ(datTraverser.getAssociationConnectedDevices("PCIeRetimer6"),
-              std::vector<std::string>({"HSC9"}));
-    EXPECT_EQ(datTraverser.getAssociationConnectedDevices("PCIeRetimer7"),
-              std::vector<std::string>({"HSC9"}));
-    EXPECT_EQ(datTraverser.getAssociationConnectedDevices("VR"),
-              std::vector<std::string>({}));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("Baseboard"),
+                UnorderedElementsAre(
+                    "Baseboard", "NVSwitch3", "PCIeSwitch", "PCIeSwitch_ERoT",
+                    "HSC_STBY", "NVSwitch3_ERoT", "HSC9", "VR", "NVSwitch2",
+                    "NVSwitch2_ERoT", "NVSwitch1", "NVSwitch1_ERoT", "HSC8",
+                    "NVSwitch0", "NVSwitch0_ERoT", "GPU7", "PCIeRetimer7",
+                    "GPU7_ERoT", "HSC7", "GPU6", "PCIeRetimer6", "GPU6_ERoT",
+                    "HSC6", "GPU5", "PCIeRetimer5", "GPU5_ERoT", "HSC5", "GPU4",
+                    "PCIeRetimer4", "GPU4_ERoT", "HSC4", "GPU3", "PCIeRetimer3",
+                    "GPU3_ERoT", "HSC3", "GPU2", "PCIeRetimer2", "GPU2_ERoT",
+                    "HSC2", "GPU1", "PCIeRetimer1", "GPU1_ERoT", "HSC1", "GPU0",
+                    "PCIeRetimer0", "GPU0_ERoT", "HSC0"));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("FPGA"),
+                UnorderedElementsAre("FPGA", "HMC", "HMC_ERoT", "HSC_STBY",
+                                     "FPGA_ERoT"));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("FPGA_ERoT"),
+                UnorderedElementsAre("FPGA_ERoT"));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("GPU0"),
+                UnorderedElementsAre("GPU0", "PCIeRetimer0", "HSC8",
+                                     "GPU0_ERoT", "HSC0"));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("GPU0_ERoT"),
+                UnorderedElementsAre("GPU0_ERoT"));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("GPU1"),
+                UnorderedElementsAre("GPU1", "PCIeRetimer1", "HSC8",
+                                     "GPU1_ERoT", "HSC1"));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("GPU1_ERoT"),
+                UnorderedElementsAre("GPU1_ERoT"));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("GPU2"),
+                UnorderedElementsAre("GPU2", "PCIeRetimer2", "HSC8",
+                                     "GPU2_ERoT", "HSC2"));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("GPU2_ERoT"),
+                UnorderedElementsAre("GPU2_ERoT"));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("GPU3"),
+                UnorderedElementsAre("GPU3", "PCIeRetimer3", "HSC8",
+                                     "GPU3_ERoT", "HSC3"));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("GPU3_ERoT"),
+                UnorderedElementsAre("GPU3_ERoT"));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("GPU4"),
+                UnorderedElementsAre("GPU4", "PCIeRetimer4", "HSC9",
+                                     "GPU4_ERoT", "HSC4"));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("GPU4_ERoT"),
+                UnorderedElementsAre("GPU4_ERoT"));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("GPU5"),
+                UnorderedElementsAre("GPU5", "PCIeRetimer5", "HSC9",
+                                     "GPU5_ERoT", "HSC5"));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("GPU5_ERoT"),
+                UnorderedElementsAre("GPU5_ERoT"));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("GPU6"),
+                UnorderedElementsAre("GPU6", "PCIeRetimer6", "HSC9",
+                                     "GPU6_ERoT", "HSC6"));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("GPU6_ERoT"),
+                UnorderedElementsAre("GPU6_ERoT"));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("GPU7"),
+                UnorderedElementsAre("GPU7", "PCIeRetimer7", "HSC9",
+                                     "GPU7_ERoT", "HSC7"));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("GPU7_ERoT"),
+                UnorderedElementsAre("GPU7_ERoT"));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("HMC"),
+                UnorderedElementsAre("HMC", "HMC_ERoT", "HSC_STBY"));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("HMC_ERoT"),
+                UnorderedElementsAre("HMC_ERoT"));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("HSC0"),
+                UnorderedElementsAre("HSC0"));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("HSC1"),
+                UnorderedElementsAre("HSC1"));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("HSC2"),
+                UnorderedElementsAre("HSC2"));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("HSC3"),
+                UnorderedElementsAre("HSC3"));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("HSC4"),
+                UnorderedElementsAre("HSC4"));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("HSC5"),
+                UnorderedElementsAre("HSC5"));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("HSC6"),
+                UnorderedElementsAre("HSC6"));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("HSC7"),
+                UnorderedElementsAre("HSC7"));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("HSC8"),
+                UnorderedElementsAre("HSC8"));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("HSC9"),
+                UnorderedElementsAre("HSC9"));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("HSC_STBY"),
+                UnorderedElementsAre("HSC_STBY"));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("NVSwitch0"),
+                UnorderedElementsAre("NVSwitch0", "PCIeSwitch",
+                                     "PCIeSwitch_ERoT", "HSC_STBY",
+                                     "NVSwitch0_ERoT", "HSC8", "VR"));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("NVSwitch0_ERoT"),
+                UnorderedElementsAre("NVSwitch0_ERoT"));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("NVSwitch1"),
+                UnorderedElementsAre("NVSwitch1", "PCIeSwitch",
+                                     "PCIeSwitch_ERoT", "HSC_STBY",
+                                     "NVSwitch1_ERoT", "HSC8", "VR"));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("NVSwitch1_ERoT"),
+                UnorderedElementsAre("NVSwitch1_ERoT"));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("NVSwitch2"),
+                UnorderedElementsAre("NVSwitch2", "PCIeSwitch",
+                                     "PCIeSwitch_ERoT", "HSC_STBY",
+                                     "NVSwitch2_ERoT", "HSC9", "VR"));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("NVSwitch2_ERoT"),
+                UnorderedElementsAre("NVSwitch2_ERoT"));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("NVSwitch3"),
+                UnorderedElementsAre("NVSwitch3", "PCIeSwitch",
+                                     "PCIeSwitch_ERoT", "HSC_STBY",
+                                     "NVSwitch3_ERoT", "HSC9", "VR"));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("NVSwitch3_ERoT"),
+                UnorderedElementsAre("NVSwitch3_ERoT"));
+    EXPECT_THAT(
+        datTraverser.getAssociationConnectedDevices("PCIeSwitch"),
+        UnorderedElementsAre("PCIeSwitch", "PCIeSwitch_ERoT", "HSC_STBY"));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("PCIeSwitch_ERoT"),
+                UnorderedElementsAre("PCIeSwitch_ERoT"));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("PCIeRetimer0"),
+                UnorderedElementsAre("PCIeRetimer0", "HSC8"));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("PCIeRetimer1"),
+                UnorderedElementsAre("PCIeRetimer1", "HSC8"));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("PCIeRetimer2"),
+                UnorderedElementsAre("PCIeRetimer2", "HSC8"));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("PCIeRetimer3"),
+                UnorderedElementsAre("PCIeRetimer3", "HSC8"));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("PCIeRetimer4"),
+                UnorderedElementsAre("PCIeRetimer4", "HSC9"));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("PCIeRetimer5"),
+                UnorderedElementsAre("PCIeRetimer5", "HSC9"));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("PCIeRetimer6"),
+                UnorderedElementsAre("PCIeRetimer6", "HSC9"));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("PCIeRetimer7"),
+                UnorderedElementsAre("PCIeRetimer7", "HSC9"));
+    EXPECT_THAT(datTraverser.getAssociationConnectedDevices("VR"),
+                UnorderedElementsAre("VR"));
 }

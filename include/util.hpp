@@ -20,7 +20,7 @@
 namespace util
 {
 
-constexpr int  InvalidDeviceId = -1;
+constexpr int InvalidDeviceId = -1;
 
 constexpr auto RangeRepeaterIndicator = "()";
 
@@ -103,7 +103,6 @@ int getDeviceId(const std::string& deviceName,
  */
 DeviceIdMap expandDeviceRange(const std::string& deviceRegx);
 
-
 /** Allows multiple range replacement, uses deviceType to adjust the deviceId
  *
  *  @example:
@@ -114,11 +113,11 @@ DeviceIdMap expandDeviceRange(const std::string& deviceRegx);
  *
  *  @return  the string replaced or the 'pattern' if there is no range
  *
-*/
+ */
 std::string
-replaceRangeByMatchedValue(const std::string& regxValue,
-                           const std::string& matchedValue,
-                           const std::string& deviceType = std::string{""});
+    replaceRangeByMatchedValue(const std::string& regxValue,
+                               const std::string& matchedValue,
+                               const std::string& deviceType = std::string{""});
 
 /**
  * @brief determine device name from DBus object path.
@@ -187,8 +186,8 @@ void print(const std::vector<T>& vec, std::basic_ostream<CharT>& os,
 }
 
 /**
- * @brief Replace any occurrence of "()" in a string by a previous range specification,
- *        It reverts what @sa expandDeviceRange() made
+ * @brief Replace any occurrence of "()" in a string by a previous range
+ * specification, It reverts what @sa expandDeviceRange() made
  *
  * @example
  *   Having a range specification such as: "xyz_[-1-5]/another_()"
@@ -205,7 +204,6 @@ std::string revertRangeRepeated(const std::string& str,
  *   revertRangeRepeated("test[1-5]") returns "test[0-9]+"
  */
 std::string makeRangeForRegexSearch(const std::string& rangeStr);
-
 
 /**
  * @brief Splits a device_type string definition such as "GPU_SXM_[1-8]_DRAM_0"

@@ -35,24 +35,11 @@ void Selftest::updateDeviceHealth(const std::string& device,
 {
     try
     {
-        auto bus = sdbusplus::bus::new_default_system();
-        std::string methodName("GetSubTreePaths");
-        auto method = bus.new_method_call("xyz.openbmc_project.ObjectMapper",
-                                          "/xyz/openbmc_project/object_mapper",
-                                          "xyz.openbmc_project.ObjectMapper",
-                                          methodName.c_str());
-        std::string root("/xyz/openbmc_project/inventory/system");
-        method.append(root);
-        method.append(0);
-        std::string intf("xyz.openbmc_project.State.Decorator.Health");
-        method.append(std::vector<std::string>({intf}));
-
-        auto reply = bus.call(method);
-        std::vector<std::string> subtree;
-        reply.read(subtree);
-
-        auto objPathsToAlter =
-            dbus::ObjectMapper::scopeObjectPathsDevId(subtree, device);
+        const std::string healthInterface(
+            "xyz.openbmc_project.State.Decorator.Health");
+        dbus::DirectObjectMapper om;
+        std::vector<std::string> objPathsToAlter =
+            om.getAllDevIdObjPaths(device, healthInterface);
         if (!objPathsToAlter.empty())
         {
             for (const auto& objPath : objPathsToAlter)
@@ -69,17 +56,16 @@ void Selftest::updateDeviceHealth(const std::string& device,
                 if (ok == true)
                 {
                     log_dbg("Changed health property as expected\n");
-                } // else setDbusProperty() prints message on std::cerr
+                }
             }
         }
         else // ! objPathsToAlter.empty()
         {
-            log_err("No object paths found in the subtree of '%s' "
-                    "from the tree returned by '%s' "
+            log_err("No object paths found in the subtree of "
+                    "'xyz.openbmc_project.ObjectMapper' "
                     "corresponding to the '%s' device id "
                     "and implementing the '%s' interface\n",
-                    root.c_str(), methodName.c_str(), device.c_str(),
-                    intf.c_str());
+                    device.c_str(), healthInterface.c_str());
         }
     }
     catch (const sdbusplus::exception::SdBusError& e)
@@ -388,41 +374,6 @@ aml::RcCode DoSelftest([[maybe_unused]] const dat_traverse::Device& dev,
 namespace event_handler
 {
 
-/* TODO: cleanup, this method duplicated here and in message composer
-    used to check if device exists (present on dbus) */
-static std::string getDeviceDBusPath(const std::string& device)
-{
-
-    auto bus = sdbusplus::bus::new_default_system();
-    auto method = bus.new_method_call("xyz.openbmc_project.ObjectMapper",
-                                      "/xyz/openbmc_project/object_mapper",
-                                      "xyz.openbmc_project.ObjectMapper",
-                                      "GetSubTreePaths");
-    int depth = 6;
-    method.append("/xyz/openbmc_project", depth, std::vector<std::string>());
-    auto reply = bus.call(method);
-    std::vector<std::string> dbusPaths;
-    reply.read(dbusPaths);
-
-    for (auto& objPath : dbusPaths)
-    {
-        if (boost::algorithm::ends_with(objPath, "/" + device))
-        {
-            return objPath;
-        }
-    }
-
-    std::cerr << "Found no path in ObjectMapper ending with device: " << device
-              << "\n";
-    return "";
-}
-
-bool checkDeviceDBus(const std::string& device)
-{
-    auto devPath = getDeviceDBusPath(device);
-    return !devPath.empty();
-}
-
 bool RootCauseTracer::findRootCause(const std::string& triggeringDevice,
                                     const selftest::ReportResult& report,
                                     std::string& rootCauseDevice)
@@ -442,13 +393,6 @@ bool RootCauseTracer::findRootCause(const std::string& triggeringDevice,
     tracing */
     for (auto it = childVec.rbegin(); it != childVec.rend(); it++)
     {
-        if (!checkDeviceExists(*it))
-        {
-            //            std::cout << "device " << *it << " not found on dbus"
-            //            << "\n";
-            continue;
-        }
-
         if (!selftest::Selftest::evaluateDevice(report.at(*it)))
         {
             rootCauseDevice = *it;

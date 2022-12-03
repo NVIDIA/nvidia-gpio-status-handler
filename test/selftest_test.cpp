@@ -934,11 +934,6 @@ TEST(selftestReportTest, fieldOrder)
 
 /* ===================== rootCauseTracer tests ============================ */
 
-bool isDevicePresentMock([[maybe_unused]] const std::string& dev)
-{
-    return true;
-}
-
 TEST(rootCauseTraceTest, test1)
 {
     /*  Associations:
@@ -1001,8 +996,7 @@ TEST(rootCauseTraceTest, test1)
         std::pair<std::string, dat_traverse::Device>(retimer0.name, retimer0));
     dat.insert(std::pair<std::string, dat_traverse::Device>(hsc8.name, hsc8));
 
-    event_handler::RootCauseTracer rootCauseTracer("testTracer", dat,
-                                                   isDevicePresentMock);
+    event_handler::RootCauseTracer rootCauseTracer("testTracer", dat);
     event_info::EventNode event("test event");
     event.device = "GPU0";
 

@@ -266,10 +266,9 @@ class RootCauseTracer : public EventHandler
 {
   public:
     RootCauseTracer(const std::string& name,
-                    std::map<std::string, dat_traverse::Device>& dat,
-                    std::function<bool(const std::string&)> checkDeviceExists) :
+                    std::map<std::string, dat_traverse::Device>& dat) :
         EventHandler(name),
-        _dat(dat), checkDeviceExists(checkDeviceExists)
+        _dat(dat)
     {}
 
     ~RootCauseTracer() = default;
@@ -319,10 +318,6 @@ class RootCauseTracer : public EventHandler
 
     /** @brief Internal DAT reference. **/
     std::map<std::string, dat_traverse::Device>& _dat;
-
-    /** @brief Used to check if device exists and is implemented and is present
-     * on DBUS. **/
-    std::function<bool(const std::string&)> checkDeviceExists;
 };
 
 } // namespace event_handler

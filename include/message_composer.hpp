@@ -56,38 +56,20 @@ class MessageComposer : public event_handler::EventHandler
     }
 
     /**
-     * @brief Return device path for REDFISH_ORIGIN_OF_CONDITION
+     * @brief Return an object path from @c xyz.openbmc_project.ObjectMapper
+     * service which corresponds to the given @c deviceId.
      *
-     * @param event
-     * @return std::string&
+     * This will be put in the REDFISH_ORIGIN_OF_CONDITION Log additional's data
+     * property.
+     *
+     * For example, for the "PCIeRetimer_0" given as the @c deviceId a
+     * "/xyz/openbmc_project/inventory/system/chassis/HGX_PCIeRetimer_0" path
+     * should be returned.
+     *
+     * If no associated object path could be found return an empty string.
      */
-    static std::string getDeviceDBusPath(const std::string& device)
-    {
-
-        auto bus = sdbusplus::bus::new_default_system();
-        auto method = bus.new_method_call("xyz.openbmc_project.ObjectMapper",
-                                          "/xyz/openbmc_project/object_mapper",
-                                          "xyz.openbmc_project.ObjectMapper",
-                                          "GetSubTreePaths");
-        int depth = 6;
-        method.append("/xyz/openbmc_project", depth,
-                      std::vector<std::string>());
-        auto reply = bus.call(method);
-        std::vector<std::string> dbusPaths;
-        reply.read(dbusPaths);
-
-        for (auto& objPath : dbusPaths)
-        {
-            if (boost::algorithm::ends_with(objPath, "/" + device))
-            {
-                return objPath;
-            }
-        }
-
-        std::cerr << "Found no path in ObjectMapper ending with device: "
-                  << device << "\n";
-        return "";
-    }
+    static std::string
+        getOriginOfConditionObjectPath(const std::string& deviceId);
 
     /**
      * @brief Return phosphor logging Namespace to be used for log
