@@ -11,8 +11,9 @@ DBUS_CALL_CLEAR_ARGS="$DBUS_CALL_ARGS  DeviceClearData is"
 DBUS_CALL_CLEAR_PASS_THROUGH_FPGA="$DBUS_CALL_ARGS clearPassthroughFpga"
 DBUS_CALL_SET_PASS_THROUGH_FPGA="$DBUS_CALL_ARGS setPassthroughFpga is"
 DBUS_CALL_SET_GPU_XID_EVENT_STRING="$DBUS_CALL_ARGS setGpuXidEventString s"
+DBUS_OBJECT_MAPPER_GET_OBJECT="xyz.openbmc_project.ObjectMapper /xyz/openbmc_project/object_mapper xyz.openbmc_project.ObjectMapper GetObject sas"
 
-
+CURRENT_INJECTED_SERVICE_FILE=/tmp/.current_injected_service
 
 # used to clear line message
 big_space="                                                                                             "
@@ -227,15 +228,22 @@ insertMapKey()
   fi
 }
 
-getService() # $1 = object path
+getService() # $1 = object path $2 = interface
 {
-   if [ "$1" = "/xyz/openbmc_project/GpioStatusHandler" ]; then
-      echo $SERVICE_GPIO_HANDLER
-   elif [ "$1" = "/xyz/openbmc_project/GpuOobRecovery" ]; then
-     echo $SERVICE_GPU_OOB_RECOVERY
-   else
-      echo $SERVICE_GPUMGR
+   local obj=$1
+   local intf=$2
+   service=`busctl call $DBUS_OBJECT_MAPPER_GET_OBJECT ${obj} 1 ${intf} | awk '{print $3}' | tr -d '"'`
+   if [ "$service" = "" ]; then
+      if [ "$1" = "/xyz/openbmc_project/GpioStatusHandler" ]; then
+         service=$SERVICE_GPIO_HANDLER
+      elif [ "$1" = "/xyz/openbmc_project/GpuOobRecovery" ]; then
+      service=$SERVICE_GPU_OOB_RECOVERY
+      else
+         service=$SERVICE_GPUMGR
+      fi
    fi
+   echo -n $service > $CURRENT_INJECTED_SERVICE_FILE
+   echo $service
 }
 
 
@@ -316,7 +324,7 @@ property_get() #1=object_path $2=interface, $3=property_name
 {
     gl_property_value=""
     gl_property_type=""
-    local cmd="busctl get-property `getService $1`  $@"
+    local cmd="busctl get-property `getService $1 $2`  $@"
     printBusctl $cmd
     local get_value=$(eval $cmd 2> $gl_error_file)
     if [ $? -ne 0 -o "$get_value" = "" ]; then
@@ -413,7 +421,7 @@ property_set() #1=object_path $2=interface, $3=property_name
     ocurr=""
     [ "${gl_property_type:0:1}" = "a" ] && ocurr="1"
 
-    cmd="busctl set-property `getService $1`  $@ $gl_property_type $ocurr '$gl_new_property_value'"
+    cmd="busctl set-property `getService $1 $2`  $@ $gl_property_type $ocurr '$gl_new_property_value'"
     printBusctl $cmd
     [ $DRY_RUN -eq 1 ] && return
     eval $cmd 2> $gl_error_file
@@ -773,7 +781,7 @@ start_test()
 
 finish_test()
 {
-   /bin/rm -f $MAPFILE $gl_error_file $MCTP_WRAPPER_FILE_PARAM
+   /bin/rm -f $MAPFILE $gl_error_file $MCTP_WRAPPER_FILE_PARAM $CURRENT_INJECTED_SERVICE_FILE
    /bin/rm -rf $DIR_SAVE_ENTRIES
 
    if [ $gl_cmd_line_debug -eq 1 ]; then

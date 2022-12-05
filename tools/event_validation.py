@@ -54,7 +54,8 @@ QEMU_USER=""
 QEMU_PASS=""
 QEMU_PORT=None
 
-JSON_REMOTE_PATHNAME="/usr/share/oobaml/event_info.json"
+JSON_FILE="event_info.json"
+JSON_REMOTE_PATHNAME=f"/usr/share/oobaml/{JSON_FILE}"
 JSON_REMOTE_FILE=f"<QEMU_USER>@<QEMU_IP>:<QEMU_PORT>{JSON_REMOTE_PATHNAME}"
 GENERATE_SCRIPT_ONLY = False
 
@@ -62,7 +63,7 @@ GENERATE_SCRIPT_ONLY = False
 EVENT_INJ_SCRIPT_NAME="event_injector.bash"
 EVENT_INJ_SCRIPT_PATH=f"/home/root/{EVENT_INJ_SCRIPT_NAME}"
 EVENT_INJ_SCRIPT_ARGS=""
-JSON_EVENTS_FILE=""
+JSON_EVENTS_FILE = None
 
 TEST_MODE_EVENTS_LOGGING=1
 TEST_MODE_CHANGE_DEVICE_STATUS=2
@@ -242,7 +243,7 @@ def parse_arguments():
 
     # QEMU Access info
     QEMU_USER= args.user
-    QEMU_PASS=args.passwd if args.passwd else getpass(prompt='Password: ')
+    QEMU_PASS=args.passwd
     QEMU_IP=args.qemu_ip
     QEMU_PORT=args.qemu_port
 
@@ -269,12 +270,16 @@ def parse_arguments():
           com.CUSTOM_EVENT = True
 
     # Check for dry run
-    if not args.dry_run:
-        EVENT_INJ_SCRIPT_ARGS = f"{EVENT_INJ_SCRIPT_ARGS} -r"
+    if args.dry_run:
+        EVENT_INJ_SCRIPT_ARGS = f"{EVENT_INJ_SCRIPT_ARGS} -dry-run"
 
     CLEAR_LOGS = not args.keep_existent_logs
     if args.keep_existent_logs != True:
          EVENT_INJ_SCRIPT_ARGS += " -keep-existent-logs"
+
+
+    if args.passwd is None and (RUN_SCRIPT is True or JSON_EVENTS_FILE == JSON_REMOTE_FILE):
+         getpass(prompt='Password: ')
 
     return True
 
@@ -418,6 +423,14 @@ class InjectTest:
                   self.initial_log_count = self.current_log_count()
             except Exception as error:
                   raise error
+
+
+    def close_ssh_session(self):
+       """
+       Closes the ssh session if it is open
+       """
+       if self._ssh_cmd is not None:
+          self._ssh_cmd.close()
 
 
     def create_ssh_session(self):
@@ -575,6 +588,7 @@ class InjectTest:
         is_remote = 0
         if JSON_EVENTS_FILE == JSON_REMOTE_FILE:
             try:
+                self.create_ssh_session()
                 is_remote = 1
                 JSON_EVENTS_FILE=f"{QEMU_USER}@{QEMU_IP}:{QEMU_PORT}{JSON_REMOTE_PATHNAME}"
                 sftp =  self._ssh_cmd.open_sftp()
@@ -597,13 +611,28 @@ class InjectTest:
                 EventAccessorInjectorScript(json_filename)
         event_logs_script.generate_script_from_json()
 
+        ## always create a copy of event_info.json in /tmp, useful to export the file when using a remote HMC
+        tmp_json_filename = tempfile.gettempdir() + "/" + JSON_FILE
+        if os.path.exists(tmp_json_filename):
+            os.unlink(tmp_json_filename)
+        print(f"...\n\nSaved event list json file as {tmp_json_filename}\n...")
+        shutil.copyfile(json_filename, tmp_json_filename)
+        os.chmod(tmp_json_filename, 0o666);
+
         if fd_temp != 0 and is_remote != 0:
             os.unlink(json_filename)
+
+        if GENERATE_SCRIPT_ONLY is True:
+            self.close_ssh_session()
+            source_script = event_logs_script.script_file()
+            destination = tempfile.gettempdir() + "/" + EVENT_INJ_SCRIPT_NAME
+            print(f"...\n\nGenerated Bash Injector Script as {destination}\n...")
+            shutil.copyfile(source_script, destination)
 
         return event_logs_script
 
 
-    def inject_events(self):
+    def inject_events(self, event_logs_script):
         """
         *  Inject events using event_injector script over SSH
         *  Check stdout, stderr for any errors/exceptions
@@ -611,20 +640,8 @@ class InjectTest:
             cache useful data in dictionaries
         """
         try:
-            # Create the SSH client
+            # Create the SSH client, iif it is not created yet
             self.create_ssh_session()
-
-            event_logs_script = self.generate_script_from_json()
-            if GENERATE_SCRIPT_ONLY is True:
-               source_script = event_logs_script.script_file()
-               destination = tempfile.gettempdir() + "/" + EVENT_INJ_SCRIPT_NAME
-               print(f"...\n\nGenerated Bash Injector Script as {destination}\n...")
-               shutil.copyfile(source_script, destination)
-
-            if RUN_SCRIPT is False:
-                self._ssh_cmd.close()
-                return
-
             self.sftp_script_to_emulator(event_logs_script.script_file())
             result_stdout = self.execute_remote_script_and_get_stdout()
                 # reads the last output line which should have a 'Successful Injections: 23'
@@ -735,7 +752,7 @@ class InjectTest:
         color = 'red' if self.unverified_events > 0 else 'green'
         print("\tUnverified events: ", colored(f"{self.unverified_events}", color))
 
-        self._ssh_cmd.close()
+        self.close_ssh_session()
         return self.unverified_events
 
 
@@ -756,13 +773,15 @@ def main():
     try:
         if main_rc == os.EX_OK:
             inject_test = InjectTest()
-            if CLEAR_LOGS is True:
-               inject_test.clear_logs()
-            else:
-               inject_test.collect_logs_before_injections()
-            inject_test.inject_events()
-            sleep(2)
+            event_logs_script= None
+            if RUN_SCRIPT is True or GENERATE_SCRIPT_ONLY is True or com.LIST_EVENTS is True:
+               event_logs_script = inject_test.generate_script_from_json()
             if RUN_SCRIPT is True:
+               if CLEAR_LOGS is True:
+                  inject_test.clear_logs()
+               inject_test.collect_logs_before_injections()
+               inject_test.inject_events(event_logs_script)
+               sleep(2)
                inject_test.collect_logs_after_injection_and_verify()
     except Exception as error:
         print(colored(error, 'red'))
