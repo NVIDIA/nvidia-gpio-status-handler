@@ -13,6 +13,7 @@ TEST(EventTest, LoadJson)
     nlohmann::json j;
     j["event"] = "Event0";
     j["device_type"] = "GPU";
+    j["sub_type"] = "";
     j["severity"] = "Critical";
     j["resolution"] = "Contact NVIDIA Support";
     j["redfish"]["message_id"] = "ResourceEvent.1.0.ResourceErrorsDetected";
@@ -41,6 +42,7 @@ TEST(MsgCompTest, MakeCall)
     nlohmann::json j;
     j["event"] = "Event0";
     j["device_type"] = "GPU";
+    j["sub_type"] = "";
     j["severity"] = "Critical";
     j["resolution"] = "Contact NVIDIA Support";
     j["redfish"]["message_id"] = "ResourceEvent.1.0.ResourceErrorsDetected";
@@ -75,6 +77,7 @@ TEST(EventTelemtries, MakeCall)
     nlohmann::json j;
     j["event"] = "Event0";
     j["device_type"] = "GPU";
+    j["sub_type"] = "";
     j["severity"] = "Critical";
     j["resolution"] = "Contact NVIDIA Support";
     j["redfish"]["message_id"] = "ResourceEvent.1.0.ResourceErrorsDetected";

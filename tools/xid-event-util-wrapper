@@ -12,9 +12,9 @@ show_help()
     echo "  ${APP_NAME} [-dry-run] <device_id> <oob_property> <xid_data>"
     echo
     echo "<options>"
-    echo "  -dry-run          - Only print ${APP_NAME} cmdline."
+    echo "  --dry-run         - Only print ${APP_NAME} cmdline."
     echo
-    echo "  device_id         - Device ID: For NVSwitch->HGX_NVSwitch_[1-8], For GPU->HGX_GPU_SXM_[0-3]"
+    echo "  device_id         - Device ID: For NVSwitch->HGX_NVSwitch_[0-3], For GPU->HGX_GPU_SXM_[1-8]"
     echo
     echo "  oob_property      - OOB properties Supported: gpu.xid.event, nvswitch.Sxid.event"
     echo
@@ -24,19 +24,43 @@ show_help()
 
 
 ## MAIN
-
 DRY_RUN=0
 
+# GPU device names "GPU_SXM_[1-8]" does not follow the conventional device id sequence [1-8] nor [0-7]
+#  "GPU_SXM_1" : 4
+#  "GPU_SXM_2" : 5
+#  "GPU_SXM_3" : 6
+#  "GPU_SXM_4" : 7
+#  "GPU_SXM_5" : 0
+#  "GPU_SXM_6" : 1
+#  "GPU_SXM_7" : 2
+#  "GPU_SXM_8" : 3
+#   GPU_SXM_N  ->  0 1 2 3 4 5 6 7 8
+gpu_device_name=( -1 4 5 6 7 0 1 2 3 )
+
 ## -dry-run just prints the xid-event-util-wrapper command line
-if [ "$1"  = "-dry-run" ]; then
+if [ "$1"  = "--dry-run" ]; then
    DRY_RUN=1
    shift
 fi
 
-device_id=$(echo "$1" | grep -Eo '[0-9]+$')
+device=$(echo "$1" | grep -Eo '[0-9]+$')
 
-if [ -z $device_id ]; then
-  echo "Unsupported Device Name. Exiting!"
+if [ -z $device ]; then
+  echo "Invalid Device $1. Exiting!"
+  show_help
+  exit 1
+fi
+
+if [[ $1 == *"GPU"* ]]; then
+   device_id=${gpu_device_name[$device]}
+else
+  device_id=$device
+fi
+
+if [ -z $device_id ] || [ $device_id -eq -1 ]; then
+  echo "Unsupported GPU Device $device_id. Exiting!"
+  show_help
   exit 1
 fi
 

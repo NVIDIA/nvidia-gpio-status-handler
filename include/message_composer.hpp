@@ -90,6 +90,23 @@ class MessageComposer : public event_handler::EventHandler
     }
 
     /**
+     * @brief Return phosphor logging Namespace to be used for log
+     *
+     * @param event
+     * @return std::string&
+     */
+    static std::string getPhosphorLoggingNamespace(const event_info::EventNode& event)
+    {
+        std::string pNamespace = event.device;
+        if (event.subType != "")
+        {
+            pNamespace += "_" + event.subType;
+        }
+        
+        return pNamespace;
+    }
+
+    /**
      * @brief Use stored in event node data; Collect event related telemetries
      *        values as diag data.
      *

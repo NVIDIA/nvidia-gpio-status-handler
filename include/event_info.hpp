@@ -315,6 +315,9 @@ class EventNode : public object::Object
     /** @brief Type of device **/
     std::string deviceType;
 
+    /** @brief Type of device subtype **/
+    std::string subType;
+
     /** @brief What triggered event **/
     std::string eventTrigger;
 

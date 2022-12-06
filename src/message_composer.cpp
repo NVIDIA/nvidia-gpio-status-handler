@@ -75,12 +75,14 @@ bool MessageComposer::createLog(event_info::EventNode& event)
     log_err("OOC device for %s is %s !!!!\n", event.device.c_str(),
             originOfCondition.c_str());
 
+    auto pNamespace = getPhosphorLoggingNamespace(event);
+
     method.append(std::array<std::pair<std::string, std::string>, 6>(
         {{{"xyz.openbmc_project.Logging.Entry.Resolution",
            event.messageRegistry.message.resolution},
           {"REDFISH_MESSAGE_ID", event.messageRegistry.messageId},
           {"DEVICE_EVENT_DATA", telemetries},
-          {"namespace", event.device},
+          {"namespace", pNamespace},
           {"REDFISH_MESSAGE_ARGS", messageArgs},
           {"REDFISH_ORIGIN_OF_CONDITION", originOfCondition}}}));
 

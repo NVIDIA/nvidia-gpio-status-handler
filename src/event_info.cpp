@@ -381,6 +381,7 @@ void EventNode::loadFrom(const json& j)
     // this->eventTrigger = j["event_trigger"];
 
     this->trigger = j["event_trigger"];
+    this->subType = j.value("sub_type", "");
 
     for (auto& entry : j["telemetries"])
     {
@@ -406,7 +407,7 @@ void EventNode::loadFrom(const json& j)
     this->accessor = j["accessor"];
 
     std::stringstream ss;
-    ss << "Loaded accessor: " << this->accessor << ", j: " << j;
+    ss << "Loaded accessor: "  << this->accessor << ", j: " << j;
     log_dbg("%s\n", ss.str().c_str());
 
     this->valueAsCount =

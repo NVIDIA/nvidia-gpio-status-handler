@@ -12,6 +12,7 @@ static bool setup_event_cnt_test(event_info::EventNode& ev,
     nlohmann::json j;
     j["event"] = "Event0";
     j["device_type"] = "GPU";
+    j["sub_type"] = "";
     j["severity"] = "Critical";
     j["resolution"] = "Contact NVIDIA Support";
     j["redfish"]["message_id"] = "ResourceEvent.1.0.ResourceErrorsDetected";
@@ -40,6 +41,7 @@ TEST(EventLookupTest, TriggerAccessor)
     nlohmann::json j;
     j["event"] = "Event0";
     j["device_type"] = "GPU";
+    j["sub_type"] = "";
     j["severity"] = "Critical";
     j["resolution"] = "Contact NVIDIA Support";
     j["redfish"]["message_id"] = "ResourceEvent.1.0.ResourceErrorsDetected";
@@ -61,6 +63,7 @@ TEST(EventLookupTest, TriggerAccessor)
     nlohmann::json j2;
     j2["event"] = "Event0";
     j2["device_type"] = "GPU";
+    j2["sub_type"] = "";
     j2["severity"] = "Critical";
     j2["resolution"] = "Contact NVIDIA Support";
     j2["redfish"]["message_id"] = "ResourceEvent.1.0.ResourceErrorsDetected";
