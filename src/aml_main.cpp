@@ -274,7 +274,7 @@ int main(int argc, char* argv[])
 
         iface->initialize();
 
-        std::cerr << "NVIDIA OOB AML daemon is ready.\n";
+        logs_err("NVIDIA OOB AML daemon is ready.\n");
         io->run();
     }
     catch (const std::exception& e)

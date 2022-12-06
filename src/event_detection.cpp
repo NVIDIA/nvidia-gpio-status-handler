@@ -65,7 +65,7 @@ void EventDetection::dbusEventHandlerCallback(sdbusplus::message::message& msg)
         auto index = variant.index();
         if (eventProperty.empty() || isValidVariant(variant) == false)
         {
-            logs_err("sdbusplus::message: empty or invalid Property, skipping "
+            logs_err("[sdbusplus::message] empty or invalid Property, skipping "
                      "Path: %s, Intf: %s, Prop: '%s', VarIndex: %d\n",
                             objectPath.c_str(),  msgInterface.c_str(),
                             eventProperty.c_str(), index);
@@ -73,11 +73,6 @@ void EventDetection::dbusEventHandlerCallback(sdbusplus::message::message& msg)
         }
 
         data_accessor::PropertyValue propertyValue(variant);
-        logs_dbg("sdbusplus::message: sender: %s, Path: %s, Intf: %s, Prop: %s,"
-                 " VarIndex: %d, Value: '%s'\n", msg.get_sender(),
-                objectPath.c_str(),  msgInterface.c_str(),
-                eventProperty.c_str(), index, propertyValue.getString().c_str());
-
         const std::string type = "DBUS";
         nlohmann::json j;
         j[data_accessor::typeKey] = type;
@@ -91,6 +86,13 @@ void EventDetection::dbusEventHandlerCallback(sdbusplus::message::message& msg)
             logs_dbg("No event found in the supporting list.\n");
             continue;
         }
+        // printing DBUS trigger here as one trigger can generate several events
+        logs_err("[sdbusplus::message] sender: %s, Path: %s, "
+                 " Intf: %s, Prop: %s,VarIndex: %d, Value: '%s'\n",
+                 msg.get_sender(), objectPath.c_str(),
+                 msgInterface.c_str(),eventProperty.c_str(), index,
+                 propertyValue.getString().c_str());
+
         for (auto& assertedEvent : assertedEventsList)
         {
             auto& candidate = *assertedEvent.first;
@@ -113,11 +115,11 @@ void EventDetection::dbusEventHandlerCallback(sdbusplus::message::message& msg)
             for (const auto& device : assertedDeviceNames)
             {
                 event.device = device.second;
-                logs_dbg(
-                    "Throw out an eventHdlrMgr. device: %s event: %s\n",
-                    event.device.c_str(), event.event.c_str());
                 if (eventDetectionPtr->IsEvent(candidate, eventValue))
                 {
+                    logs_err(
+                        "Throw out an eventHdlrMgr. device: %s event: %s\n",
+                        event.device.c_str(), event.event.c_str());
                     eventDetectionPtr->RunEventHandlers(event);
                 }
             }
