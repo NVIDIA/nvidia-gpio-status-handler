@@ -74,17 +74,24 @@ class MessageComposer : public event_handler::EventHandler
     /**
      * @brief Return phosphor logging Namespace to be used for log
      *
-     * @param event
-     * @return std::string&
+     * This will be put in the REDFISH_ORIGIN_OF_CONDITION Log additional's data
+     * property.
+     *
+     * For example, for the "PCIeRetimer_0" given as the @c deviceId a
+     * "/xyz/openbmc_project/inventory/system/chassis/HGX_PCIeRetimer_0" path
+     * should be returned.
+     *
+     * If no associated object path could be found return an empty string.
      */
-    static std::string getPhosphorLoggingNamespace(const event_info::EventNode& event)
+    static std::string
+        getPhosphorLoggingNamespace(const event_info::EventNode& event)
     {
         std::string pNamespace = event.device;
         if (event.subType != "")
         {
             pNamespace += "_" + event.subType;
         }
-        
+
         return pNamespace;
     }
 

@@ -21,6 +21,8 @@
 namespace dbus
 {
 
+DbusDelayerConstLowerBound defaultDbusDelayer;
+
 using namespace phosphor::logging;
 
 static std::string errorMsg(const std::string& description,
@@ -75,10 +77,12 @@ std::string getService(const std::string& objectPath,
     auto bus = sdbusplus::bus::new_default();
     try
     {
-        auto method = bus.new_method_call(mapperBusBame, mapperObjectPath,
-                                          mapperInterface, "GetObject");
-        method.append(objectPath, std::vector<std::string>({interface}));
-        auto reply = bus.call(method);
+        DelayedMethod method(&defaultDbusDelayer, bus, mapperBusBame,
+                             mapperObjectPath, mapperInterface, "GetObject");
+        method.append(std::string(objectPath));
+        method.append(std::vector<std::string>({interface}));
+        auto reply = method.call();
+
         reply.read(response);
         if (response.empty() == false)
         {
@@ -115,11 +119,12 @@ RetCoreApi deviceGetCoreAPI(const int devId, const std::string& property)
     auto bus = sdbusplus::bus::new_default();
     try
     {
-        auto method = bus.new_method_call(service, object, interface, callName);
+        DelayedMethod method(&defaultDbusDelayer, bus, service, object,
+                             interface, callName);
         method.append(devId);
         method.append(property);
         method.append(accMode);
-        auto reply = bus.call(method);
+        auto reply = method.call();
         reply.read(response);
     }
     catch (const sdbusplus::exception::SdBusError& e)
@@ -173,10 +178,11 @@ int deviceClearCoreAPI(const int devId, const std::string& property)
     auto bus = sdbusplus::bus::new_default();
     try
     {
-        auto method = bus.new_method_call(service, object, interface, callName);
+        DelayedMethod method(&defaultDbusDelayer, bus, service, object,
+                             interface, callName);
         method.append(devId);
         method.append(property);
-        auto reply = bus.call(method);
+        auto reply = method.call();
         reply.read(rc);
     }
     catch (const sdbusplus::exception::SdBusError& error)
@@ -224,10 +230,12 @@ PropertyVariant readDbusProperty(const std::string& objPath,
     auto bus = sdbusplus::bus::new_default();
     try
     {
-        auto method = bus.new_method_call(service.c_str(), objPath.c_str(),
-                                          freeDesktopInterface, getCall);
-        method.append(interface, property);
-        auto reply = bus.call(method);
+        DelayedMethod method(&defaultDbusDelayer, bus, service.c_str(),
+                             objPath.c_str(), freeDesktopInterface, getCall);
+        method.append(interface);
+        method.append(property);
+        auto reply = method.call();
+
         reply.read(value);
         auto valueStr = data_accessor::PropertyValue(value).getString();
         logs_dbg("object=%s \n\tinterface=%s property=%s value=%s\n",
@@ -292,11 +300,14 @@ bool setDbusProperty(const std::string& service, const std::string& objPath,
     bool ret = false;
     try
     {
-        auto method = bus.new_method_call(service.c_str(), objPath.c_str(),
-                                          freeDesktopInterface, setCall);
-        method.append(interface, property, val);
+        DelayedMethod method(&defaultDbusDelayer, bus, service.c_str(),
+                             objPath.c_str(), freeDesktopInterface, setCall);
+        method.append(interface);
+        method.append(property);
+        method.append(val);
+
         ret = true;
-        if (!bus.call(method))
+        if (!method.call())
         {
             ret = false;
         }
@@ -325,11 +336,16 @@ std::vector<std::string> CachingObjectMapper::getSubTreePathsImpl(
     int depth, const std::vector<std::string>& interfaces)
 {
     ensureIsInitialized();
-    // "'getSubTreePathsImpl' not implemented for 'depth != 0'"
-    assert(depth == 0);
-    // "'getSubTreePathsImpl' not implemented for 'subtree != \"\"'"
-    assert(subtree == "/");
-    return getSubTreePathsImpl(bus, interfaces);
+    if (depth == 0 && subtree == "/")
+    {
+        return getSubTreePathsImpl(bus, interfaces);
+    }
+    else
+    {
+        throw std::runtime_error(
+            "CachingObjectMapper::getSubTreePathsImpl not implemented"
+            "for depth != and subtree != '/'");
+    }
 }
 
 std::vector<std::string> CachingObjectMapper::getSubTreePathsImpl(
@@ -389,6 +405,139 @@ void CachingObjectMapper::ensureIsInitialized()
     }
 }
 
+// DbusDelayer ////////////////////////////////////////////////////////////////
+
+const char* DbusDelayer::stateToStr(State state)
+{
+    static std::map<State, const char*> stateToNameMap(
+        {{State::idle, "idle"},
+         {State::waiting, "waiting"},
+         {State::calling, "calling"}});
+    return stateToNameMap.at(state);
+}
+
+std::string timeToStringMsec(
+    const std::chrono::time_point<std::chrono::steady_clock>& time)
+{
+    std::stringstream ss;
+    ss << std::chrono::duration_cast<std::chrono::milliseconds>(
+              time.time_since_epoch())
+              .count();
+    return ss.str();
+}
+
+std::chrono::milliseconds
+    DbusDelayer::callStartAttempt(const std::string& signature)
+{
+    if (this->state == State::idle)
+    {
+        auto now = std::chrono::steady_clock::now();
+        std::chrono::milliseconds waitTime =
+            this->callStartAttemptImpl(signature, now);
+        this->state = State::waiting;
+        return waitTime;
+    }
+    else // ! this->state == State::idle
+    {
+        log_dbg("Function called on object in an incorrect state (%s). "
+                "Expected state: %s. Ignoring the call.\n",
+                stateToStr(this->state), stateToStr(State::idle));
+        return std::chrono::milliseconds(0);
+    }
+}
+
+void DbusDelayer::callStartActual(const std::string& signature)
+{
+    if (this->state == State::waiting)
+    {
+        auto now = std::chrono::steady_clock::now();
+        this->callStartActualImpl(signature, now);
+        this->state = State::calling;
+    }
+    else // ! this->state == State::waiting
+    {
+        log_dbg("Function called on object in an incorrect state (%s). "
+                "Expected state: %s. Ignoring the call.\n",
+                stateToStr(this->state), stateToStr(State::waiting));
+    }
+}
+
+void DbusDelayer::callFinished(const std::string& signature)
+{
+    if (this->state == State::calling)
+    {
+        auto now = std::chrono::steady_clock::now();
+        this->callFinishedImpl(signature, now);
+        this->state = State::idle;
+    }
+    else // ! this->state == State::calling
+    {
+        log_dbg("Function called on object in an incorrect state (%s). "
+                "Expected state: %s. Ignoring the call.\n",
+                stateToStr(this->state), stateToStr(State::calling));
+    }
+}
+
+std::chrono::milliseconds DbusDelayer::callStartAttemptImpl(
+    [[maybe_unused]] const std::string& signature,
+    [[maybe_unused]] const std::chrono::time_point<std::chrono::steady_clock>&
+        now)
+{
+    return std::chrono::milliseconds(0);
+}
+
+void DbusDelayer::callStartActualImpl(
+    [[maybe_unused]] const std::string& signature,
+    [[maybe_unused]] const std::chrono::time_point<std::chrono::steady_clock>&
+        now)
+{}
+
+void DbusDelayer::callFinishedImpl(
+    [[maybe_unused]] const std::string& signature,
+    [[maybe_unused]] const std::chrono::time_point<std::chrono::steady_clock>&
+        now)
+{}
+
+// DbusDelayerConstLowerBound /////////////////////////////////////////////////
+
+void DbusDelayerConstLowerBound::setDelayTime(
+    const std::chrono::milliseconds& waitTimeLowerBound)
+{
+    _waitTimeLowerBound = waitTimeLowerBound;
+}
+
+void DbusDelayerConstLowerBound::callFinishedImpl(
+    [[maybe_unused]] const std::string& signature,
+    const std::chrono::time_point<std::chrono::steady_clock>& now)
+{
+    _lastCallFinish = now;
+}
+
+std::chrono::milliseconds DbusDelayerConstLowerBound::callStartAttemptImpl(
+    [[maybe_unused]] const std::string& signature,
+    [[maybe_unused]] const std::chrono::time_point<std::chrono::steady_clock>&
+        now)
+{
+    return std::max(_waitTimeLowerBound -
+                        std::chrono::duration_cast<std::chrono::milliseconds>(
+                            now - _lastCallFinish),
+                    std::chrono::milliseconds(0));
+}
+
+// DbusDelayerStateGuard //////////////////////////////////////////////////////
+
+DbusDelayerStateGuard::~DbusDelayerStateGuard()
+{
+    if (_dbusDelayer->getState() == DbusDelayer::State::waiting)
+    {
+        _dbusDelayer->callStartActual(_repr);
+    }
+    if (_dbusDelayer->getState() == DbusDelayer::State::calling)
+    {
+        _dbusDelayer->callFinished(_repr);
+    }
+}
+
 // DirectObjectMapper /////////////////////////////////////////////////////////
 
 DirectObjectMapper::ValueType DirectObjectMapper::getObjectImpl(
@@ -396,13 +545,12 @@ DirectObjectMapper::ValueType DirectObjectMapper::getObjectImpl(
     const std::vector<std::string>& interfaces) const
 {
     ValueType result;
-    auto method =
-        bus.new_method_call("xyz.openbmc_project.ObjectMapper",
-                            "/xyz/openbmc_project/object_mapper",
-                            "xyz.openbmc_project.ObjectMapper", "GetObject");
+    DelayedMethod method(bus, "xyz.openbmc_project.ObjectMapper",
+                         "/xyz/openbmc_project/object_mapper",
+                         "xyz.openbmc_project.ObjectMapper", "GetObject");
     method.append(objectPath);
     method.append(interfaces);
-    auto reply = bus.call(method);
+    auto reply = method.call();
     reply.read(result);
     return result;
 }
@@ -413,14 +561,13 @@ std::vector<std::string> DirectObjectMapper::getSubTreePathsImpl(
 {
 
     std::vector<std::string> result;
-    auto method = bus.new_method_call("xyz.openbmc_project.ObjectMapper",
-                                      "/xyz/openbmc_project/object_mapper",
-                                      "xyz.openbmc_project.ObjectMapper",
-                                      "GetSubTreePaths");
+    DelayedMethod method(bus, "xyz.openbmc_project.ObjectMapper",
+                         "/xyz/openbmc_project/object_mapper",
+                         "xyz.openbmc_project.ObjectMapper", "GetSubTreePaths");
     method.append(subtree);
     method.append(depth);
     method.append(interfaces);
-    auto reply = bus.call(method);
+    auto reply = method.call();
     reply.read(result);
     return result;
 }
@@ -430,16 +577,51 @@ DirectObjectMapper::FullTreeType DirectObjectMapper::getSubtreeImpl(
     const std::vector<std::string>& interfaces) const
 {
     FullTreeType result;
-    auto method =
-        bus.new_method_call("xyz.openbmc_project.ObjectMapper",
-                            "/xyz/openbmc_project/object_mapper",
-                            "xyz.openbmc_project.ObjectMapper", "GetSubTree");
+    DelayedMethod method(bus, "xyz.openbmc_project.ObjectMapper",
+                         "/xyz/openbmc_project/object_mapper",
+                         "xyz.openbmc_project.ObjectMapper", "GetSubTree");
     method.append(subtree);
     method.append(depth);
     method.append(interfaces);
-    auto reply = bus.call(method);
+    auto reply = method.call();
     reply.read(result);
     return result;
+}
+
+// DelayedMethod //////////////////////////////////////////////////////////////
+
+sdbusplus::message::message
+    DelayedMethod::call(std::optional<sdbusplus::SdBusDuration> timeout)
+{
+    const std::lock_guard<std::mutex> lock(_dbusDelayer->mutex);
+    // 'ddsg' makes sure that '_dbusDelayer' is always left in
+    // the 'State::idle' state after leving this function, even
+    // if exception occurs in dbus read
+    DbusDelayerStateGuard ddsg(_dbusDelayer, _repr);
+    if (_dbusDelayer->getState() == DbusDelayer::State::idle)
+    {
+        auto waitTime = _dbusDelayer->callStartAttempt(_repr);
+        {
+            std::stringstream ss;
+            ss << "Delayed for " << waitTime.count() << " ms dbus call '"
+               << _repr << "'" << std::endl;
+            log_dbg("%s", ss.str().c_str());
+        }
+        std::this_thread::sleep_for(waitTime);
+        _dbusDelayer->callStartActual(_repr);
+        auto reply = _bus.call(_method, timeout);
+        _dbusDelayer->callFinished(_repr);
+        return reply;
+    }
+    else // ! _dbusDelayer->getState() == DbusDelayer::State::idle
+    {
+        log_err("_dbusDelayer object expected to be in '%s' state. "
+                "(actual state: '%s'). "
+                "Falling back to regular, non-delayed dbus call.\n",
+                DbusDelayer::stateToStr(DbusDelayer::State::idle),
+                DbusDelayer::stateToStr(_dbusDelayer->getState()));
+        return _bus.call(_method, timeout);
+    }
 }
 
 } // namespace dbus

@@ -438,12 +438,11 @@ std::vector<std::tuple<std::string, std::string, std::string>>
     auto theBus = bus::new_default_system();
     try
     {
-        auto method =
-            theBus.new_method_call(manager.c_str(), devicePath.c_str(),
+        dbus::DelayedMethod method(theBus, manager, devicePath,
                                    "org.freedesktop.DBus.Properties", "Get");
         method.append("xyz.openbmc_project.Association.Definitions");
         method.append("Associations");
-        auto reply = theBus.call(method);
+        auto reply = method.call();
         reply.read(dbusResult);
     }
     catch (const sdbusplus::exception::exception& e)
@@ -481,14 +480,13 @@ void dbusSetDeviceAssociations(
     auto theBus = bus::new_default_system();
     try
     {
-        auto method =
-            theBus.new_method_call(manager.c_str(), devicePath.c_str(),
+        dbus::DelayedMethod method(theBus, manager, devicePath,
                                    "org.freedesktop.DBus.Properties", "Set");
         method.append("xyz.openbmc_project.Association.Definitions");
         method.append("Associations");
         variant<vector<tuple<string, string, string>>> variantValues = values;
         method.append(variantValues);
-        auto reply = theBus.call(method);
+        auto reply = method.call();
     }
     catch (const sdbusplus::exception::exception& e)
     {

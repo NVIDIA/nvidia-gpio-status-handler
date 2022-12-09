@@ -11,6 +11,7 @@
 
 #pragma once
 
+#include "log.hpp"
 #include "property_accessor.hpp"
 
 #include <boost/algorithm/string.hpp>
@@ -24,6 +25,7 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <regex>
 #include <sstream>
 #include <string>
@@ -541,55 +543,161 @@ class CachingObjectMapper : public ObjectMapper<CachingObjectMapper>
     void ensureIsInitialized();
 };
 
-template <class CharT>
-std::basic_ostream<CharT>& operator<<(std::basic_ostream<CharT>& os,
-                                      const sdbusplus::message::message& method)
-{
-    return os << method.get_destination() << " " << method.get_path() << " "
-              << method.get_interface() << " " << method.get_member() << " "
-              << method.get_signature();
-}
+// DbusDelayer ////////////////////////////////////////////////////////////////
 
 /**
- * @brief A wrapper around sdbus' @c call method
+ * @brief
  *
- * Provides a common error logging logic and simplifies obtainng results.
+ * +---------------------+
+ * |        idle         | <+
+ * +---------------------+  |
+ *   |                      |
+ *   | callStartAttempt()   |
+ *   v                      |
+ * +---------------------+  |
+ * |       waiting       |  | callFinished()
+ * +---------------------+  |
+ *   |                      |
+ *   | callStartActual()    |
+ *   v                      |
+ * +---------------------+  |
+ * |       calling       | -+
+ * +---------------------+
  */
-template <typename T>
-T call(sdbusplus::bus::bus& bus, sdbusplus::message::message& method,
-       const T& defaultValue, std::string& errMsg) noexcept
+
+class DbusDelayer
 {
-    T result = defaultValue;
-    try
+  public:
+    enum State
     {
-        auto reply = bus.call(method);
-        reply.read(result);
-    }
-    catch (const sdbusplus::exception::exception& e)
+        idle,
+        waiting,
+        calling
+    };
+
+    static const char* stateToStr(State state);
+
+    DbusDelayer() : mutex(), state(State::idle)
+    {}
+    virtual ~DbusDelayer() = default;
+
+    std::chrono::milliseconds callStartAttempt(const std::string& signature);
+    void callStartActual(const std::string& signature);
+    void callFinished(const std::string& signature);
+
+    State getState() const
     {
-        std::stringstream ss;
-        ss << "Dbus error in method call '" << method << "': " << e.what();
-        errMsg = ss.str();
+        return this->state;
     }
-    return result;
-}
+
+    std::mutex mutex;
+
+  protected:
+    virtual std::chrono::milliseconds callStartAttemptImpl(
+        const std::string& signature,
+        const std::chrono::time_point<std::chrono::steady_clock>& now);
+    virtual void callStartActualImpl(
+        const std::string& signature,
+        const std::chrono::time_point<std::chrono::steady_clock>& now);
+    virtual void callFinishedImpl(
+        const std::string& signature,
+        const std::chrono::time_point<std::chrono::steady_clock>& now);
+
+  private:
+    State state;
+};
+
+class DbusDelayerConstLowerBound : public DbusDelayer
+{
+  public:
+    DbusDelayerConstLowerBound() :
+        _waitTimeLowerBound(std::chrono::milliseconds(0)),
+        _lastCallFinish(std::chrono::steady_clock::now())
+    {}
+    DbusDelayerConstLowerBound(
+        const std::chrono::milliseconds& waitTimeLowerBound) :
+        _waitTimeLowerBound(waitTimeLowerBound),
+        _lastCallFinish(std::chrono::steady_clock::now())
+    {}
+
+    void setDelayTime(const std::chrono::milliseconds& waitTimeLowerBound);
+
+  protected:
+    std::chrono::milliseconds callStartAttemptImpl(
+        const std::string& signature,
+        const std::chrono::time_point<std::chrono::steady_clock>& now);
+    void callFinishedImpl(
+        const std::string& signature,
+        const std::chrono::time_point<std::chrono::steady_clock>& now);
+
+  private:
+    std::chrono::milliseconds _waitTimeLowerBound;
+    std::chrono::time_point<std::chrono::steady_clock> _lastCallFinish;
+};
+
+extern DbusDelayerConstLowerBound defaultDbusDelayer;
 
 /**
- * @brief A wrapper around sdbus' @c call method
- *
- * Provides a common error logging logic and simplifies obtainng results.
+ * @brief Makes sure the underlying DbusDelayer object is in proper state
  */
-template <typename T>
-T call(sdbusplus::bus::bus& bus, sdbusplus::message::message& method,
-       const T& defaultValue) noexcept
+
+class DbusDelayerStateGuard
 {
-    std::string errMsg;
-    T res = call(bus, method, defaultValue, errMsg);
-    if (res == defaultValue)
+  public:
+    DbusDelayerStateGuard(DbusDelayer* dbusDelayer, const std::string& repr) :
+        _dbusDelayer(dbusDelayer), _repr(repr)
+    {}
+
+    ~DbusDelayerStateGuard();
+
+  private:
+    DbusDelayer* _dbusDelayer;
+    const std::string& _repr;
+};
+
+class DelayedMethod
+{
+
+  public:
+    DelayedMethod(DbusDelayer* dbusDelayer, sdbusplus::bus::bus& bus,
+                  const std::string& service, const std::string& object,
+                  const std::string& interface, const std::string& method) :
+        _dbusDelayer(dbusDelayer),
+        _repr(service + " " + object + " " + interface + " " + method),
+        _bus(bus),
+        _method(bus.new_method_call(service.c_str(), object.c_str(),
+                                    interface.c_str(), method.c_str()))
     {
-        logs_err("%s\n", errMsg.c_str());
+        if (dbusDelayer == nullptr)
+        {
+            throw std::runtime_error("'dbusDelayer' argument must be non-null");
+        }
     }
-    return res;
-}
+
+    DelayedMethod(sdbusplus::bus::bus& bus, const std::string& service,
+                  const std::string& object, const std::string& interface,
+                  const std::string& method) :
+        _dbusDelayer(&defaultDbusDelayer),
+        _repr(service + " " + object + " " + interface + " " + method),
+        _bus(bus),
+        _method(bus.new_method_call(service.c_str(), object.c_str(),
+                                    interface.c_str(), method.c_str()))
+    {}
+
+    template <typename T>
+    void append(const T& arg)
+    {
+        _method.append(arg);
+    }
+
+    sdbusplus::message::message
+        call(std::optional<sdbusplus::SdBusDuration> timeout = std::nullopt);
+
+  private:
+    DbusDelayer* _dbusDelayer;
+    std::string _repr;
+    sdbusplus::bus::bus& _bus;
+    sdbusplus::message::message _method;
+};
 
 } // namespace dbus

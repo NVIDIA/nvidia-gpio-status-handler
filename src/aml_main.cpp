@@ -128,6 +128,17 @@ int setLogFile(cmd_line::ArgFuncParamType params)
     return 0;
 }
 
+int setDbusDelay(cmd_line::ArgFuncParamType params)
+{
+    int delay = std::stoi(params[0]);
+    if (delay < 0)
+    {
+        throw std::runtime_error("Dbus delay cannot be lesser than 0");
+    }
+    dbus::defaultDbusDelayer.setDelayTime(std::chrono::milliseconds(delay));
+    return 0;
+}
+
 int show_help([[maybe_unused]] cmd_line::ArgFuncParamType params);
 
 cmd_line::CmdLineArgs cmdLineArgs = {
@@ -143,7 +154,11 @@ cmd_line::CmdLineArgs cmdLineArgs = {
     {"-L", "", cmd_line::OptFlag::overwrite, "<file>",
      cmd_line::ActFlag::normal, "Debug Log file. Use stdout if omitted.",
      setLogFile},
-};
+    {"-s", "--dbus-space", cmd_line::OptFlag::overwrite, "<file>",
+     cmd_line::ActFlag::normal,
+     "Minimal amount of time (in ms) between dbus calls"
+     " (from the finish of the last one to the start of the current)",
+     setDbusDelay}};
 
 int show_help([[maybe_unused]] cmd_line::ArgFuncParamType params)
 {
