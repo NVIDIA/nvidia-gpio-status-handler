@@ -14,7 +14,7 @@
 set -o pipefail
 
 APP_NAME="mctp-vdm-util-wrapper"
-APP_VER="0.1"
+APP_VER="0.2"
 
 # Platform dependent profile.
 # Use Case 1:
@@ -30,6 +30,7 @@ DEVICENAME_EID_LIST=`cat "$DEV_EID_PROFILE"`
 DOWNLOAD_LOG_CMD="download_log"
 GLACIER_LOG_FILE="/var/mctp-vdm-output.bin"
 SELFTEST_CMD="selftest 08 00 00 00"
+AUTH_STAT_CMD="active_auth_status"
 
 DEVNAME=""
 
@@ -55,7 +56,7 @@ getDeviceEid() #1=device name
 
 # Per
 # [Glacier Firmware Design Document](https://docs.google.com/document/d/12VnlI_eX4hvsMVXzOhS4SkwLsvUHZEl5-g-OEBJhGRw/edit#heading=h.yv8pagajiaef)
-#<pretty_cmd>:<mctp-vdm-util_cmd>,<output_bits>
+#<pretty_cmd>:<mctp-vdm-util_cmd>,[<output_bits>]
 MCTP_CMD_LIST="
 EC_TAG0_AUTH_ERROR:query_boot_status,0
 EC_TAG1_COPY_ERROR:query_boot_status,1
@@ -74,7 +75,25 @@ AP0_SPI_ACCESS_VIOLCATION_OPCODE:query_boot_status,24
 AP0_SPI_ACCESS_VIOLATION_RANGE:query_boot_status,25
 AP0_HEARTBEAT_TIMEOUT:query_boot_status,26
 AP0_BOOTCOMPLETE_TIMEOUT:query_boot_status,27
+${AUTH_STAT_CMD}:query_boot_status,
 "
+
+# Extended cmd list.
+#<pretty_cmd>:<output_handler>
+MCTP_CMD_EX_LIST="
+${AUTH_STAT_CMD}:get_active_auth_status
+"
+
+get_active_auth_status() #(raw_value) => <active_auth_status>
+{
+    local raw_value=$1;shift
+
+    local slot_id=$((($value >> 20) & 1)) # AP0_ACTIVE_SLOT at bit20
+    local auth_status=$((($value >> 8) & 0xF)) # Primary Auth Status at bit8-11
+    [ "$slot_id" -eq 1 ] && auth_status=$((($value >> 12) & 0xF)) # Secondary Auth Status at bit8-11
+
+    echo $auth_status
+}
 
 mctp_cmd_lookup() #(pretty_cmd) => <mctp_cmd>
 {
@@ -95,19 +114,40 @@ mctp_cmd_lookup() #(pretty_cmd) => <mctp_cmd>
     return 1
 }
 
+ext_cmd_handler() #(pretty_cmd, raw_value) => <value>
+{
+    local target=$1;shift
+    local raw_value=$1;shift
 
-## This function can be used to put any proxy before running the mct-vdm-util command
-## it should return NOT 0 if for some reason mct-vdm-util should not be invoked
+    local line
+    for line in $MCTP_CMD_EX_LIST; do
+        [ -z "$line" ] && continue
+
+        local pretty_cmd=${line%:*}
+        [ "$pretty_cmd" = "$target" ] || continue
+        ${line#*:} "$raw_value"
+        return $?
+    done
+
+    # Passthrough the unknown cmd but indicate that by rc.
+    echo $target
+    return 1
+}
+
+
+## This function can be used to put any proxy before running the mct-vdm-util
+## command. It should return NOT 0 if for some reason mct-vdm-util should not
+## be invoked.
 cmd_requires_special_pre_start_handling()
 {
     local dev_eid="$1"
     local mctp_cmd="$2"
     local rc=0
     case "$mctp_cmd" in
-       "$DOWNLOAD_LOG_CMD")  ## here will be some lock file handling
-                             return 0
-                             ;;
-       *)                    return 0;; # returns without printing anything
+        "$DOWNLOAD_LOG_CMD")  ## here will be some lock file handling
+            return 0
+            ;;
+        *) return 0;; # returns without printing anything
     esac
     return 0
 }
@@ -127,51 +167,53 @@ cmd_requires_special_output_handling() # $1=$dev_eid $2=mctp_cmd $3=cmd output
     local output=$3
     local rc=0
     case "$mctp_cmd" in
-       "$DOWNLOAD_LOG_CMD")  rc=1
-                      LOG_OUT="/tmp/downloaded_glacier_log_${DEVNAME}.bin"
-                      if [ -f "$GLACIER_LOG_FILE" ]; then
-                         /bin/cp $GLACIER_LOG_FILE $LOG_OUT
-                         rc=0
-                      fi
-                      if [ $rc -eq 0 ]; then
-                           >&2 echo "parsing log $LOG_OUT, please wait..."
-                           LOG=`print_glacier_log_raw_bytes $LOG_OUT`
-                           ## output for selftest
-                           echo "$LOG"
-                      else
-                           echo 1 # no /var/mctp-vdm-output.bin
-                      fi
-                      return 0;;
-       "$SELFTEST_CMD")  rc=1
+        "$DOWNLOAD_LOG_CMD")
+            rc=1
+            LOG_OUT="/tmp/downloaded_glacier_log_${DEVNAME}.bin"
+            if [ -f "$GLACIER_LOG_FILE" ]; then
+                /bin/cp $GLACIER_LOG_FILE $LOG_OUT
+                rc=0
+            fi
+            if [ $rc -eq 0 ]; then
+                >&2 echo "parsing log $LOG_OUT, please wait..."
+                LOG=`print_glacier_log_raw_bytes $LOG_OUT`
+                ## output for selftest
+                echo "$LOG"
+            else
+                echo 1 # no /var/mctp-vdm-output.bin
+            fi
+            return 0;;
+        "$SELFTEST_CMD")
+            rc=1
 # needs different handling because:
-# 1. script 'cmd' arg is used in passthrough mode 
-# 2. additional TX data isn't present in RX packet, eg. 
+# 1. script 'cmd' arg is used in passthrough mode
+# 2. additional TX data isn't present in RX packet, eg.
 # root@hgx:~# mctp-vdm-util -c selftest 8 0 0 0 -t 13
 #                                       ^^^^^^^> additional tx data
 # Test command = selftest
 # teid = 13
-# TX: 47 16 00 00 80 01 08 01 08 00 00 00 
+# TX: 47 16 00 00 80 01 08 01 08 00 00 00
 #                             ^^^^^^^^^^^> additional data in fact sent
-# RX: 47 16 00 00 00 01 08 01 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+# RX: 47 16 00 00 00 01 08 01 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 #                 ^^>80->00   ^^^^^^^^> RX mirrors TX without additional data, then continues with read payload
-                    local additional_tx_payload=${mctp_cmd#${mctp_cmd%% *} }
-                    # output parsing
-                    [[ $output =~ .*TX:(([ ][0-9A-Fa-f]{2})+)\ RX:(([ ][0-9A-Fa-f]{2})+) ]]
-                    local tx=${BASH_REMATCH[1]}
-                    local rx=${BASH_REMATCH[3]}
-                    local tx_tmp=${tx/80/00}
-                    tx_tmp=${tx_tmp/$additional_tx_payload/}
-                    local dataInfo=${rx#$tx_tmp} # remove tx data from rx
-                    local retCode=${dataInfo%% *} # extract mctp return code
-                    if [ "$retCode" = "00" ]; then
-                        echo "$dataInfo"
-                    else
-                        echo "retcode != 00 ($retCode); rx: $rx" 
-                    fi
+            local additional_tx_payload=${mctp_cmd#${mctp_cmd%% *} }
+            # output parsing
+            [[ $output =~ .*TX:(([ ][0-9A-Fa-f]{2})+)\ RX:(([ ][0-9A-Fa-f]{2})+) ]]
+            local tx=${BASH_REMATCH[1]}
+            local rx=${BASH_REMATCH[3]}
+            local tx_tmp=${tx/80/00}
+            tx_tmp=${tx_tmp/$additional_tx_payload/}
+            local dataInfo=${rx#$tx_tmp} # remove tx data from rx
+            local retCode=${dataInfo%% *} # extract mctp return code
+            if [ "$retCode" = "00" ]; then
+                echo "$dataInfo"
+            else
+                echo "retcode != 00 ($retCode); rx: $rx"
+            fi
 
-                    return 0;;
+            return 0;;
 
-       *)             return 0;; # returns without printing anything
+       *) return 0;; # returns without printing anything
     esac
     return 0
 }
@@ -193,7 +235,7 @@ mctp_access() #(dev_eid, pretty_cmd) => <value>
     [ -z "$mctp_cmd" ] && return 1
 
     local bits=${cmd_info#*,}
-    [ -z "$bits" ] && return 1
+    [ -z "$bits" ] && skip_bitmask=1
 
     local cmdline="mctp-vdm-util -c $mctp_cmd -t $dev_eid"
     if [ "$DRY_RUN" -eq 1 ]; then
@@ -237,6 +279,9 @@ mctp_access() #(dev_eid, pretty_cmd) => <value>
     local value=0x${data// /} # compose return data into hex
 
     if [ "$skip_bitmask" -eq 1 ]; then
+        local val;val=`ext_cmd_handler "$pretty_cmd" "$value"`;rc=$?
+        [ "$rc" -eq 0 ] && value=$val
+
         echo $(($value)) # to decimal
         return 0
     fi
@@ -300,7 +345,7 @@ show_help()
 ## MAIN
 DRY_RUN=0
 
-if [ ! -f "$DEV_EID_PROFILE" ]; then
+if [ ! -f "$DEV_EID_PROFILE" ] & [ -z "$DEVICENAME_EID_LIST" ]; then
     >&2 echo "Error: [$DEV_EID_PROFILE] not found!"
     exit 1
 fi
