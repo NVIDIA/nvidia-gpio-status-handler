@@ -32,6 +32,8 @@ GLACIER_LOG_FILE="/var/mctp-vdm-output.bin"
 SELFTEST_CMD="selftest 08 00 00 00"
 AUTH_STAT_CMD="active_auth_status"
 
+MCTP_CACHE_DIR="/tmp/aml_mctp_cache"
+
 DEVNAME=""
 
 getDeviceEid() #1=device name
@@ -251,10 +253,45 @@ mctp_access() #(dev_eid, pretty_cmd) => <value>
        return $rc
     fi
 
-    local output;output=`$cmdline`;rc=$?
-    if [ "$rc" -ne 0 ]
+
+    ## If command is query_boot_status cache the output so other commands
+    ## for the same EID (and subsequent commands) can reuse the result.
+    ## We are currently assuming that the output will not change for
+    ## the remainder of the HMC boot. There are corner cases that will
+    ## be addressed later.
+
+    if [ "$mctp_cmd" == "query_boot_status" ]
     then
-       return $rc
+        mkdir -p -m "0700" "$MCTP_CACHE_DIR"
+        local cachefile="$MCTP_CACHE_DIR/query_boot_status_$dev_eid"
+        # safely open a new fd to hold the cache, lock the file when modifying it
+        # create the file if it does not exist, store fd number in $cachefd
+        exec {cachefd}<>"$cachefile"
+        flock -x "$cachefd"  # lock the file by fd
+        if [ ! -s "/dev/fd/$cachefd" ]
+        then
+            # cachefile is currently empty, so populate it (if the command is successful)
+            local output;output=`$cmdline`;rc=$?
+            if [ "$rc" -ne 0 ]
+            then
+                flock -u "$cachefd"  # unlock the file by fd
+                return $rc
+            else
+                echo -n "$output" > "/dev/fd/$cachefd"  # write the output to the cache file
+            fi
+        else
+            # cachefile contains the result, read from there
+            local output;output=`cat "/dev/fd/$cachefd"`
+        fi
+        flock -u "$cachefd"  # unlock the file by fd
+
+
+    else
+        local output;output=`$cmdline`;rc=$?
+        if [ "$rc" -ne 0 ]
+        then
+            return $rc
+        fi
     fi
 
     output=`echo $output`
