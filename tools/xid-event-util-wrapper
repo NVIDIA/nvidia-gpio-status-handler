@@ -3,7 +3,7 @@
 set -o pipefail
 
 APP_NAME="xid-event-util-wrapper"
-APP_VER="0.1"
+APP_VER="1.0"
 
 show_help()
 {
@@ -26,24 +26,18 @@ show_help()
 ## MAIN
 DRY_RUN=0
 
-# GPU device names "GPU_SXM_[1-8]" does not follow the conventional device id sequence [1-8] nor [0-7]
-#  "GPU_SXM_1" : 4
-#  "GPU_SXM_2" : 5
-#  "GPU_SXM_3" : 6
-#  "GPU_SXM_4" : 7
-#  "GPU_SXM_5" : 0
-#  "GPU_SXM_6" : 1
-#  "GPU_SXM_7" : 2
-#  "GPU_SXM_8" : 3
-#   GPU_SXM_N  ->  0 1 2 3 4 5 6 7 8
-gpu_device_name=( -1 4 5 6 7 0 1 2 3 )
-
 ## -dry-run just prints the xid-event-util-wrapper command line
 if [ "$1"  = "--dry-run" ]; then
    DRY_RUN=1
    shift
 fi
 
+if [ $# -ne 3 ]; then
+    show_help
+    exit 1
+fi
+
+deviceName=$1
 device=$(echo "$1" | grep -Eo '[0-9]+$')
 
 if [ -z $device ]; then
@@ -53,9 +47,13 @@ if [ -z $device ]; then
 fi
 
 if [[ $1 == *"GPU"* ]]; then
-   device_id=${gpu_device_name[$device]}
+   device_id=$(($device-1))
+   event="XID"
+   eventsPendingProp="gpu.events.PendingRegister"
 else
   device_id=$device
+  event="SXID"
+  eventsPendingProp="nvswitch.events.PendingRegister"
 fi
 
 if [ -z $device_id ] || [ $device_id -eq -1 ]; then
@@ -65,6 +63,11 @@ if [ -z $device_id ] || [ $device_id -eq -1 ]; then
 fi
 
 cmdline="busctl call xyz.openbmc_project.GpuMgr /xyz/openbmc_project/GpuMgr xyz.openbmc_project.GpuMgr.Server DeviceGetData isi $device_id \"$2\" 1"
+
+if [ "$DRY_RUN" -eq 1 ]; then
+    echo $cmdline
+    exit 0
+fi
 
 # Sample Output: (isau) 0 "GPU Driver Event Message - xid Event : 06 ab 00 ba ba ba ba ab ab ab ab 48 65 6c 6c 6f 57 6f 72 6c 64 00 00 00" 2 3120605958 2881141434
 # Indexes:                                                        1   2  3  4           5           6  
@@ -76,26 +79,35 @@ cmdline="busctl call xyz.openbmc_project.GpuMgr /xyz/openbmc_project/GpuMgr xyz.
 #          5 timeStamp      32-bits
 #          6 textMessage[0] Null terminated
 
-if [ "$DRY_RUN" -eq 1 ]; then
-    echo $cmdline
-    exit 0
-fi
 
-if [ $# -ne 3 ]; then
-    show_help
-    exit 1
-fi
+function fetchDem()
+{
+  local output;output=`$cmdline`
+  rc=$?
+  [ "$rc" -eq 0 ] || exit $rc
 
-output=$(eval $cmdline)
-rc=$?
-[ "$rc" -eq 0 ] || exit $rc
+  # output='(isau) 0 "GPU Driver Event Message - xid Event : 06 ab 00 ba ba ba ba ab ab ab ab 48 65 6c 6c 6f 20 57 6f 72 6c 64 00 00 00" 2 3120605958 2881141434'
+  # Cut on delimiter ' ' to get the data after the ':'
+  # output -> 06 ab 00 ba ba ba ba ab ab ab ab 48 65 6c 6c 6f 20 57 6f 72 6c 64 00 00 00
+  output=`echo $output | cut -d'"' -f 2 | sed 's/.*\: //'`
 
-# output='(isau) 0 "GPU Driver Event Message - xid Event : 06 ab 00 ba ba ba ba ab ab ab ab 48 65 6c 6c 6f 20 57 6f 72 6c 64 00 00 00" 2 3120605958 2881141434'
-# Cut on delimiter ' ' to get the data after the ':'
-# output -> 06 ab 00 ba ba ba ba ab ab ab ab 48 65 6c 6c 6f 20 57 6f 72 6c 64 00 00 00
-output=`echo $output | cut -d'"' -f 2 | sed 's/.*\: //'`
+  # if no data is found, we return XID: 0 No Data found!!
+  [ -z "$output" ] && echo "20 00 00 ba ba ba ba ab ab ab ab 4e 6f 20 64 61 74 61 20 66 6f 75 6e 64 21" && exit 1
 
-[ -z "$output" ] && echo "No data found." && exit 0
+  echo "$output"
+}
+
+# Create a phosphor log, using Phosphor-logging Create method
+function createLog()
+{
+  xid="_XID"
+  createlogCmd="busctl call xyz.openbmc_project.Logging /xyz/openbmc_project/logging xyz.openbmc_project.Logging.Create Create ssa{ss} \""$event" Error\" \"xyz.openbmc_project.Logging.Entry.Level.Error\" 3 \"REDFISH_MESSAGE_ARGS\" \""$deviceName" Driver Event Message, "$event": "$1"\" \"REDFISH_MESSAGE_ID\" \"ResourceEvent.1.0.ResourceErrorsDetected\" \"namespace\" \""$deviceName$xid"\""
+  # createlogCmd="busctl call xyz.openbmc_project.Logging /xyz/openbmc_project/logging xyz.openbmc_project.Logging.Create Create ssa{ss} \"$event Error\" \"xyz.openbmc_project.Logging.Entry.Level.Error\" 3 \"REDFISH_MESSAGE_ARGS\" \"$deviceName Driver Event Message, $event: $1\" \"REDFISH_MESSAGE_ID\" \"ResourceEvent.1.0.ResourceErrorsDetected\" \"namespace\" \"$deviceName$xid\""
+  bash -c "$createlogCmd"
+  rc=$?
+  [ "$rc" -eq 0 ] || exit $rc
+  
+}
 
 # Convert Hex "48 65 6c 6c 6f 20 57 6f 72 6c 64 00 00 00"
 # To ASCII "Hello World"
@@ -110,41 +122,81 @@ function convertHexToAscii()
   done
 }
 
-# Check for the arguments
-case $3 in
+eventPendingRegister=1
 
-   XidId)
-    # Return XID ID or index 2 from the output
-    result=`echo $output | cut -d ' ' -f 2`
-    result=$(( 16#$result ))
-    ;;
+function readEventsPendingRegister()
+{
+  local eventsPendingcmd="busctl call xyz.openbmc_project.GpuMgr /xyz/openbmc_project/GpuMgr xyz.openbmc_project.GpuMgr.Server DeviceGetData isi $device_id \"$eventsPendingProp\" 1"
+  pendingRegisterOut=$(eval $eventsPendingcmd)
+  pendingRegister=`echo $pendingRegisterOut | cut -d'"' -f 2 | sed 's/.*\: //'`
+  if [ -z "$pendingRegister" ];then
+    echo $pendingRegisterOut
+    exit 1
+  fi
+  pendingRegister=$(( 16#$pendingRegister ))
+  echo $(( $pendingRegister & 0x4 ))
 
-  TextMessage)
-    # Return Text Message or index 6 from the output
-    result=`echo $output | cut -d ' ' -f12- | sed 's/00//g'`
-    convertHexToAscii $TextMessage
-    result="$ascii"
-    ;;
+}
 
-  XidTextMessage)
-    # Return XID ID or index 2 from the output
-    XidId=`echo $output | cut -d ' ' -f 2`
-    XidId=$(( 16#$XidId ))
+# 1. Read DEM
+# 2. Extract required information from DEM
+# 3. Create a log entry for Phosphor-logging
+# 4. Sleep 1s - to give SMBPBI some time to update EventsPendingRegister
+# 5. Read EventsPendingRegister
+# 6. If EventsPendingRegister DEM bit is set repeat Step #1 else exit
+while [ $eventPendingRegister -ne 0 ]
+do
+  # Check for the arguments
+  case $3 in
 
-    # Return Text Message or index 6 from the output
-    TextMessage=`echo $output | cut -d ' ' -f12- | sed 's/00//g'`
-    # TextMessage=`echo -n $TextMessage | xxd -r -p`
-    convertHexToAscii $TextMessage
+    XidId)
 
-    # Concatinate XidID and Text Message
-    result="$XidId $ascii"
-    ;;
+      dem=$(fetchDem)
+      # Return XID ID or index 2 from the output
+      result=`echo $dem | cut -d ' ' -f 2`
+      result=$(( 16#$result ))
+      ;;
 
-  *)
-    show_help
-    exit -1
-    ;;
-esac
+    TextMessage)
 
-echo $result
+      dem=$(fetchDem)
+      # Return Text Message or index 6 from the output
+      result=`echo $dem | cut -d ' ' -f12- | sed 's/00//g'`
+      convertHexToAscii $TextMessage
+      result="$ascii"
+      ;;
+
+    XidTextMessage)
+    
+      dem=$(fetchDem)
+      # Return XID ID or index 2 from the output
+      XidId=`echo $dem | cut -d ' ' -f 2`
+      XidId=$(( 16#$XidId ))
+
+      # Return Text Message or index 6 from the output
+      TextMessage=`echo $dem | cut -d ' ' -f12- | sed 's/00//g'`
+      # TextMessage=`echo -n $TextMessage | xxd -r -p`
+      convertHexToAscii $TextMessage
+
+      # Concatinate XidID and Text Message
+      result="$XidId $ascii"
+      ;;
+
+    *)
+      show_help
+      exit -1
+      ;;
+  esac
+  createLog "$result"
+  rc=$?
+  [ "$rc" -eq 0 ] || exit $rc
+  
+  sleep 1s
+
+  eventPendingRegister=$(readEventsPendingRegister)
+  rc=$?
+  [ "$rc" -eq 0 ] || exit $rc
+
+done
+
 exit 0

@@ -175,6 +175,11 @@ class EventDetection : public object::Object
                                          : compareCount;
         }
 
+        if (candidate.triggerCount == -1)
+        {
+            return false;
+        }
+
         auto countDiff = candidate.triggerCount - count;
 
         if (countDiff <= 0)
