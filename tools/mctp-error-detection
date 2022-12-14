@@ -56,10 +56,20 @@ fi
 #echo $output
 
 output=`$cmdline`
-rc=$?
-[ "$rc" -eq 0 ] || return $rc
+# rc to contain first number from
+# output of 
+# busctl call xyz.openbmc_project.GpuMgr /xyz/openbmc_project/GpuMgr xyz.openbmc_project.GpuMgr.Server PassthroughFpga iyyyau 0 0xb1 0x81 0 0
+
+rc=`echo $output |  awk -F'[^0-9]+' '{ print $2 }'`
+if [ $rc -ne 0 ]
+then
+    echo "MCTP Error Detection, SMBPBI Error:" $rc
+    exit $rc
+fi
+
 # Cut on delimiter ' ' to get 6 index, the data output
 output=`echo $output | cut -d ' ' -f 6`
+
 
 case $1 in
 
