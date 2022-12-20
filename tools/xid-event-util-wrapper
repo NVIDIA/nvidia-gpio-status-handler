@@ -82,7 +82,7 @@ fi
 
 function fetchDem()
 {
-  local output;output=`$cmdline`
+  local output;output=$(eval $cmdline)
   rc=$?
   [ "$rc" -eq 0 ] || exit $rc
 
