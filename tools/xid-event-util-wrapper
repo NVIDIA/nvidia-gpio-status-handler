@@ -69,6 +69,11 @@ if [ "$DRY_RUN" -eq 1 ]; then
     exit 0
 fi
 
+# DEM fail counter is used to keep track of failed fetch DEM calls
+# If we are not able to read DEM for maxDemFailCounter times, we would exit
+demFailCounter=0
+maxDemFailCounter=20
+
 # Sample Output: (isau) 0 "GPU Driver Event Message - xid Event : 06 ab 00 ba ba ba ba ab ab ab ab 48 65 6c 6c 6f 57 6f 72 6c 64 00 00 00" 2 3120605958 2881141434
 # Indexes:                                                        1   2  3  4           5           6  
 # Index Meaning:
@@ -78,13 +83,11 @@ fi
 #          4 seqNumber      32-bits
 #          5 timeStamp      32-bits
 #          6 textMessage[0] Null terminated
-
-
 function fetchDem()
 {
   local output;output=$(eval $cmdline)
   rc=$?
-  [ "$rc" -eq 0 ] || exit $rc
+  [ "$rc" -eq 0 ] || return 1
 
   # output='(isau) 0 "GPU Driver Event Message - xid Event : 06 ab 00 ba ba ba ba ab ab ab ab 48 65 6c 6c 6f 20 57 6f 72 6c 64 00 00 00" 2 3120605958 2881141434'
   # Cut on delimiter ' ' to get the data after the ':'
@@ -92,9 +95,16 @@ function fetchDem()
   output=`echo $output | cut -d'"' -f 2 | sed 's/.*\: //'`
 
   # if no data is found, we return XID: 0 No Data found!!
-  [ -z "$output" ] && echo "20 00 00 ba ba ba ba ab ab ab ab 4e 6f 20 64 61 74 61 20 66 6f 75 6e 64 21" && exit 1
+  # Increase the DEM fail counter
+  # Return exit code 2
+  if [ -z "$output" ]; then
+    echo "20 00 00 ba ba ba ba ab ab ab ab 4e 6f 20 64 61 74 61 20 66 6f 75 6e 64 21"
+    return 2
+  fi
 
   echo "$output"
+
+  return 0
 }
 
 # Create a phosphor log, using Phosphor-logging Create method
@@ -105,7 +115,7 @@ function createLog()
   # createlogCmd="busctl call xyz.openbmc_project.Logging /xyz/openbmc_project/logging xyz.openbmc_project.Logging.Create Create ssa{ss} \"$event Error\" \"xyz.openbmc_project.Logging.Entry.Level.Error\" 3 \"REDFISH_MESSAGE_ARGS\" \"$deviceName Driver Event Message, $event: $1\" \"REDFISH_MESSAGE_ID\" \"ResourceEvent.1.0.ResourceErrorsDetected\" \"namespace\" \"$deviceName$xid\""
   bash -c "$createlogCmd"
   rc=$?
-  [ "$rc" -eq 0 ] || exit $rc
+  return $rc
   
 }
 
@@ -122,8 +132,6 @@ function convertHexToAscii()
   done
 }
 
-eventPendingRegister=1
-
 function readEventsPendingRegister()
 {
   local eventsPendingcmd="busctl call xyz.openbmc_project.GpuMgr /xyz/openbmc_project/GpuMgr xyz.openbmc_project.GpuMgr.Server DeviceGetData isi $device_id \"$eventsPendingProp\" 1"
@@ -131,12 +139,16 @@ function readEventsPendingRegister()
   pendingRegister=`echo $pendingRegisterOut | cut -d'"' -f 2 | sed 's/.*\: //'`
   if [ -z "$pendingRegister" ];then
     echo $pendingRegisterOut
-    exit 1
+    return 1
   fi
   pendingRegister=$(( 16#$pendingRegister ))
   echo $(( $pendingRegister & 0x4 ))
-
+  return 0
 }
+
+eventPendingRegister=$(readEventsPendingRegister)
+rc=$?
+[ "$rc" -eq 0 ] || exit $rc
 
 # 1. Read DEM
 # 2. Extract required information from DEM
@@ -152,6 +164,11 @@ do
     XidId)
 
       dem=$(fetchDem)
+      rc=$?
+      # Reset DEM fail counter
+      [ "$rc" -eq 0 ] && demFailCounter=0
+      [ "$rc" -eq 1 ] && exit $rc
+      [ "$rc" -eq 2 ] && demFailCounter=$(($demFailCounter+1))
       # Return XID ID or index 2 from the output
       result=`echo $dem | cut -d ' ' -f 2`
       result=$(( 16#$result ))
@@ -160,6 +177,11 @@ do
     TextMessage)
 
       dem=$(fetchDem)
+      rc=$?
+      # Reset DEM fail counter
+      [ "$rc" -eq 0 ] && demFailCounter=0
+      [ "$rc" -eq 1 ] && exit $rc
+      [ "$rc" -eq 2 ] && demFailCounter=$(($demFailCounter+1))
       # Return Text Message or index 6 from the output
       result=`echo $dem | cut -d ' ' -f12- | sed 's/00//g'`
       convertHexToAscii $TextMessage
@@ -169,6 +191,11 @@ do
     XidTextMessage)
     
       dem=$(fetchDem)
+      rc=$?
+      # Reset DEM fail counter
+      [ "$rc" -eq 0 ] && demFailCounter=0
+      [ "$rc" -eq 1 ] && exit $rc
+      [ "$rc" -eq 2 ] && demFailCounter=$(($demFailCounter+1))
       # Return XID ID or index 2 from the output
       XidId=`echo $dem | cut -d ' ' -f 2`
       XidId=$(( 16#$XidId ))
@@ -190,6 +217,10 @@ do
   createLog "$result"
   rc=$?
   [ "$rc" -eq 0 ] || exit $rc
+
+  if [ $demFailCounter -gt $maxDemFailCounter ]; then
+    exit 1
+  fi
   
   sleep 1s
 

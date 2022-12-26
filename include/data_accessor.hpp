@@ -43,6 +43,7 @@ constexpr auto argumentsKey = "arguments";
 constexpr auto deviceNameKey = "device_name";
 constexpr auto testValueKey = "test_value";
 constexpr auto deviceidKey = "device_id";
+constexpr auto executeBgKey = "execute_bg";
 
 static std::map<std::string, std::vector<std::string>> accessorTypeKeys = {
     {"DBUS", {"object", "interface", "property"}},

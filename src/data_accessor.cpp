@@ -282,6 +282,11 @@ bool DataAccessor::runCommandLine(const std::string& device,
             boost::process::ipstream pipe_stream;
             boost::process::child process(cmd, boost::process::std_out >
                                                    pipe_stream);
+            if (_acc.count(executeBgKey) != 0 && _acc[executeBgKey].get<bool>() == true)
+            {
+                process.detach();
+                return ret;
+            }
             while (pipe_stream && std::getline(pipe_stream, line) &&
                    line.empty() == false)
             {
