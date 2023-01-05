@@ -32,32 +32,32 @@ struct MatchDevice
 };
 
 std::unordered_map<std::string, struct MatchDevice> deviceNameMap = {
-    {"ERoT_GPU_SXM_1", {"ERoT_GPU4", 4}},
-    {"ERoT_GPU_SXM_2", {"ERoT_GPU5", 5}},
-    {"ERoT_GPU_SXM_3", {"ERoT_GPU6", 6}},
-    {"ERoT_GPU_SXM_4", {"ERoT_GPU7", 7}},
-    {"ERoT_GPU_SXM_5", {"ERoT_GPU0", 0}},
-    {"ERoT_GPU_SXM_6", {"ERoT_GPU1", 1}},
-    {"ERoT_GPU_SXM_7", {"ERoT_GPU2", 2}},
-    {"ERoT_GPU_SXM_8", {"ERoT_GPU3", 3}},
+    {"ERoT_GPU_SXM_1", {"ERoT_GPU0", 0}},
+    {"ERoT_GPU_SXM_2", {"ERoT_GPU1", 1}},
+    {"ERoT_GPU_SXM_3", {"ERoT_GPU2", 2}},
+    {"ERoT_GPU_SXM_4", {"ERoT_GPU3", 3}},
+    {"ERoT_GPU_SXM_5", {"ERoT_GPU4", 4}},
+    {"ERoT_GPU_SXM_6", {"ERoT_GPU5", 5}},
+    {"ERoT_GPU_SXM_7", {"ERoT_GPU6", 6}},
+    {"ERoT_GPU_SXM_8", {"ERoT_GPU7", 7}},
 
-    {"GPU_SXM_1", {"GPU4", 4}},
-    {"GPU_SXM_2", {"GPU5", 5}},
-    {"GPU_SXM_3", {"GPU6", 6}},
-    {"GPU_SXM_4", {"GPU7", 7}},
-    {"GPU_SXM_5", {"GPU0", 0}},
-    {"GPU_SXM_6", {"GPU1", 1}},
-    {"GPU_SXM_7", {"GPU2", 2}},
-    {"GPU_SXM_8", {"GPU3", 3}},
+    {"GPU_SXM_1", {"GPU0", 0}},
+    {"GPU_SXM_2", {"GPU1", 1}},
+    {"GPU_SXM_3", {"GPU2", 2}},
+    {"GPU_SXM_4", {"GPU3", 3}},
+    {"GPU_SXM_5", {"GPU4", 4}},
+    {"GPU_SXM_6", {"GPU5", 5}},
+    {"GPU_SXM_7", {"GPU6", 6}},
+    {"GPU_SXM_8", {"GPU7", 7}},
 
-    {"GPU_SXM_1_DRAM_0", {"GPUDRAM4", 4}},
-    {"GPU_SXM_2_DRAM_0", {"GPUDRAM5", 5}},
-    {"GPU_SXM_3_DRAM_0", {"GPUDRAM6", 6}},
-    {"GPU_SXM_4_DRAM_0", {"GPUDRAM7", 7}},
-    {"GPU_SXM_5_DRAM_0", {"GPUDRAM0", 0}},
-    {"GPU_SXM_6_DRAM_0", {"GPUDRAM1", 1}},
-    {"GPU_SXM_7_DRAM_0", {"GPUDRAM2", 2}},
-    {"GPU_SXM_8_DRAM_0", {"GPUDRAM3", 3}}};
+    {"GPU_SXM_1_DRAM_0", {"GPUDRAM0", 0}},
+    {"GPU_SXM_2_DRAM_0", {"GPUDRAM1", 1}},
+    {"GPU_SXM_3_DRAM_0", {"GPUDRAM2", 2}},
+    {"GPU_SXM_4_DRAM_0", {"GPUDRAM3", 3}},
+    {"GPU_SXM_5_DRAM_0", {"GPUDRAM4", 4}},
+    {"GPU_SXM_6_DRAM_0", {"GPUDRAM5", 5}},
+    {"GPU_SXM_7_DRAM_0", {"GPUDRAM6", 6}},
+    {"GPU_SXM_8_DRAM_0", {"GPUDRAM7", 7}}};
 
 /**
  * @brief This is a regular expression for ranges
