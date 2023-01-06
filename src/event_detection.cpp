@@ -27,8 +27,18 @@ namespace event_detection
  */
 static EventDetection* eventDetectionPtr = nullptr;
 
+std::unique_ptr<ThreadpoolManager> threadpoolManager;
+
 void EventDetection::dbusEventHandlerCallback(sdbusplus::message::message& msg)
 {
+    ThreadpoolGuard guard(threadpoolManager.get());
+    if (!guard.was_successful())
+    {
+        // the threadpool has reached the max queued tasks limit,
+        // this D-Bus signal will be ignored
+        logs_err("Thread pool over maxTotal tasks limit, exiting dbusEventHandlerCallback\n");
+        return;
+    }
     std::string msgInterface;
     boost::container::flat_map<std::string, PropertyVariant> propertiesChanged;
 

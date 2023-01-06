@@ -9,6 +9,7 @@
 #include "event_handler.hpp"
 #include "event_info.hpp"
 #include "object.hpp"
+#include "threadpool_manager.hpp"
 
 #include <boost/container/flat_map.hpp>
 #include <sdbusplus/asio/object_server.hpp>
@@ -20,6 +21,8 @@
 
 namespace event_detection
 {
+
+extern std::unique_ptr<ThreadpoolManager> threadpoolManager;
 
 constexpr int invalidIntParam = -1;
 using DbusEventHandlerList =
@@ -206,12 +209,22 @@ class EventDetection : public object::Object
     void RunEventHandlers(event_info::EventNode& event)
     {
         auto thread = std::make_unique<std::thread>([this, event]() mutable {
+            log_wrn("started event thread\n");
+            ThreadpoolGuard guard(threadpoolManager.get());
+            if (!guard.was_successful())
+            {
+                // the threadpool has reached the max queued tasks limit,
+                // don't run this event thread
+                log_err("Thread pool over maxTotal tasks limit, exiting event thread\n");
+                return;
+            }
             std::stringstream ss;
             ss << "calling hdlrMgr: " << this->_hdlrMgr->getName()
                       << " event: " << event.event;
             log_dbg("%s\n", ss.str().c_str());
             auto hdlrMgr = *this->_hdlrMgr;
             hdlrMgr.RunAllHandlers(event);
+            log_wrn("finished event thread\n");
         });
 
         if (thread != nullptr)

@@ -17,6 +17,7 @@
 #include "event_info.hpp"
 #include "message_composer.hpp"
 #include "selftest.hpp"
+#include "threadpool_manager.hpp"
 
 #include <unistd.h>
 
@@ -44,6 +45,14 @@ const auto APPVER = "0.1";
 constexpr int RETRY_DBUS_INFO_COUNTER = 60;
 constexpr int RETRY_SLEEP = 5;
 
+#ifndef DEFAULT_RUNNING_THREAD_LIMIT
+#define DEFAULT_RUNNING_THREAD_LIMIT 3
+#endif
+
+#ifndef DEFAULT_TOTAL_THREAD_LIMIT
+#define DEFAULT_TOTAL_THREAD_LIMIT 50
+#endif
+
 namespace aml
 {
 namespace profile
@@ -58,6 +67,8 @@ struct Configuration
 {
     std::string dat;
     std::string event;
+    int running_thread_limit = DEFAULT_RUNNING_THREAD_LIMIT;
+    int total_thread_limit = DEFAULT_TOTAL_THREAD_LIMIT;
 };
 
 Configuration configuration;
@@ -139,6 +150,28 @@ int setDbusDelay(cmd_line::ArgFuncParamType params)
     return 0;
 }
 
+int setRunningThreadLimit(cmd_line::ArgFuncParamType params)
+{
+    int threads = std::stoi(params[0]);
+    if (threads <= 0)
+    {
+        throw std::runtime_error("Event thread count cannot be less than 1");
+    }
+    configuration.running_thread_limit = threads;
+    return 0;
+}
+
+int setTotalThreadLimit(cmd_line::ArgFuncParamType params)
+{
+    int threads = std::stoi(params[0]);
+    if (threads <= 0)
+    {
+        throw std::runtime_error("Event thread count cannot be less than 1");
+    }
+    configuration.total_thread_limit = threads;
+    return 0;
+}
+
 int show_help([[maybe_unused]] cmd_line::ArgFuncParamType params);
 
 cmd_line::CmdLineArgs cmdLineArgs = {
@@ -158,7 +191,17 @@ cmd_line::CmdLineArgs cmdLineArgs = {
      cmd_line::ActFlag::normal,
      "Minimal amount of time (in ms) between dbus calls"
      " (from the finish of the last one to the start of the current)",
-     setDbusDelay}};
+     setDbusDelay},
+    {"-t", "--running-threads", cmd_line::OptFlag::overwrite, "<num>",
+     cmd_line::ActFlag::normal,
+     "Maximum number of simultaneous running event handling threads"
+     " (from the finish of the last one to the start of the current)",
+     setRunningThreadLimit},
+    {"-T", "--total-threads", cmd_line::OptFlag::overwrite, "<num>",
+     cmd_line::ActFlag::normal,
+     "Maximum number of simultaneous running + queued event handling threads"
+     " (from the finish of the last one to the start of the current)",
+     setTotalThreadLimit}};
 
 int show_help([[maybe_unused]] cmd_line::ArgFuncParamType params)
 {
@@ -211,7 +254,6 @@ int main(int argc, char* argv[])
         aml::show_help({});
         return rc;
     }
-
     logs_err("Trying to load Events from file\n");
 
     // Initialization
@@ -250,6 +292,12 @@ int main(int argc, char* argv[])
                 "HealthRollup & OriginOfCondition can't be supported at the moment due to Dbus Error.\n");
         }
     }
+
+    // Create threadpool manager
+    event_detection::threadpoolManager =
+        std::make_unique<ThreadpoolManager>(
+            aml::configuration.running_thread_limit,
+            aml::configuration.total_thread_limit);
 
     event_handler::ClearEvent clearEvent("ClearEvent");
     event_handler::EventHandlerManager eventHdlrMgr("EventHandlerManager");
