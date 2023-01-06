@@ -262,4 +262,11 @@ if [ $VERBOSE -eq 1 ]; then
     echo "bit value = $bit_value"
 fi
 echo "$bit_value"
+# QueryBootStatus invalidation trigger:
+# If the command was for *_EROT_RECOV_L and this signal is asserted (active low),
+# invalidate the corresponding ERoT QueryBootStatus cache.
+# This is a short-term fix, a longer-term solution will be worked on.
+if [ $DRY_RUN -eq 0 ] && [ $bit_value -eq 0 ] && [[ $COMMAND == *_EROT_RECOV_L ]]; then
+    mctp-vdm-util-wrapper -invalidate "$DEVNAME" 1>&2
+fi
 exit $rc

@@ -27,12 +27,16 @@ APP_VER="0.2"
 [ -z "$DEV_EID_PROFILE" ] && DEV_EID_PROFILE="device_mctp_eid.csv"
 DEVICENAME_EID_LIST=`cat "$DEV_EID_PROFILE"`
 
+[ -z "$CACHE_STALE_AGE" ] && CACHE_STALE_AGE=180
+[ -z "$MCTP_CACHE_COMMAND_TIMEOUT" ] && MCTP_CACHE_COMMAND_TIMEOUT=30
+
 DOWNLOAD_LOG_CMD="download_log"
 GLACIER_LOG_FILE="/var/mctp-vdm-output.bin"
 SELFTEST_CMD="selftest 08 00 00 00"
 AUTH_STAT_CMD="active_auth_status"
 
 MCTP_CACHE_DIR="/tmp/aml_mctp_cache"
+MCTP_CACHE_FILE_PREFIX="${MCTP_CACHE_DIR:?}/query_boot_status_"
 
 DEVNAME=""
 
@@ -263,15 +267,16 @@ mctp_access() #(dev_eid, pretty_cmd) => <value>
     if [ "$mctp_cmd" == "query_boot_status" ]
     then
         mkdir -p -m "0700" "$MCTP_CACHE_DIR"
-        local cachefile="$MCTP_CACHE_DIR/query_boot_status_$dev_eid"
+        local cachefile="${MCTP_CACHE_FILE_PREFIX}${dev_eid}"
         # safely open a new fd to hold the cache, lock the file when modifying it
         # create the file if it does not exist, store fd number in $cachefd
         exec {cachefd}<>"$cachefile"
         flock -x "$cachefd"  # lock the file by fd
-        if [ ! -s "/dev/fd/$cachefd" ]
+        local age=$(( $(date '+%s') - $(date -r "/dev/fd/$cachefd" '+%s') ))
+        if [ $age -gt $CACHE_STALE_AGE ] || [ ! -s "/dev/fd/$cachefd" ]
         then
-            # cachefile is currently empty, so populate it (if the command is successful)
-            local output;output=`$cmdline`;rc=$?
+            # cachefile is currently empty or stale, so populate it (if the command is successful)
+            local output;output=`timeout $MCTP_CACHE_COMMAND_TIMEOUT $cmdline`;rc=$?
             if [ "$rc" -ne 0 ]
             then
                 flock -u "$cachefd"  # unlock the file by fd
@@ -339,17 +344,40 @@ mctp_access() #(dev_eid, pretty_cmd) => <value>
     return 0
 }
 
+invalidate()
+{
+    while [ $# -gt 0 ]; do
+        local DEVNAME=$1;shift
+        local rc=0
+        local device_id=`getDeviceEid ${DEVNAME}`;rc=$? # Find the right device eid for it
+        if [ $rc -ne 0 ]; then
+            >&2 echo "Error: EID of ${DEVNAME} not found, rc=$rc!"
+            exit $rc
+        fi
+
+        local cmdline="rm -f ""${MCTP_CACHE_FILE_PREFIX}${device_id}"
+        if [ "$DRY_RUN" -eq 1 ]; then
+            echo "$cmdline"
+        else
+            $cmdline
+        fi
+    done
+    return 0
+}
+
 show_help()
 {
     echo "A wrapper of mctp-vdm-util for prettier usage and output, ver=${APP_VER}."
     echo "<usage>"
     echo "  ${APP_NAME} [-dry-run] <prettier_mctp_cmd> <dev_name>"
+    echo "  ${APP_NAME} [-dry-run] -invalidate <dev_name>..."
     echo
     echo "<options>"
-    echo "  -dry-run          - Only print mctp-vdm-util cmdline."
+    echo "  -dry-run             - Only print mctp-vdm-util cmdline."
+    echo "  -invalidate          - Invalidate QueryBootStatus cache."
     echo
-    echo "  prettier_mctp_cmd - Available cmd list as below."
-    echo "  dev_name          - ERoT of the device by this. The list is at below."
+    echo "  prettier_mctp_cmd    - Available cmd list as below."
+    echo "  dev_name             - ERoT of the device by this. The list is at below."
     echo
     printf "=%.0s" {1..80};echo
     printf "%-40s%-20s%s\n" "PrettierCmd" "MctpCmd" "Bits"
@@ -382,7 +410,7 @@ show_help()
 ## MAIN
 DRY_RUN=0
 
-if [ ! -f "$DEV_EID_PROFILE" ] & [ -z "$DEVICENAME_EID_LIST" ]; then
+if [ ! -f "$DEV_EID_PROFILE" ] && [ -z "$DEVICENAME_EID_LIST" ]; then
     >&2 echo "Error: [$DEV_EID_PROFILE] not found!"
     exit 1
 fi
@@ -391,6 +419,12 @@ fi
 if [ "$1"  = "-dry-run" ]; then
    DRY_RUN=1
    shift
+fi
+
+if [ "$1" = "-invalidate" ]; then
+    shift
+    invalidate "$@";rc=$?
+    exit $rc
 fi
 
 if [ $# -ne 2 ]; then
