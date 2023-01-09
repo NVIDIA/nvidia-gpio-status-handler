@@ -140,6 +140,8 @@ INITIAL_DEVICE_RANGE = -1 # integer first value of a range [1-3] => 1
 FINAL_DEVICE_RANGE   = -1
 DEVICE_RANGE = ""         # string such as  "[1-3]" or empty when the device does not have range
 
+range_expansion_list = [] ## global variable used in expand_range
+
 def get_logging_entry_level(level):
     """
     Just formats a entry level
@@ -192,6 +194,30 @@ def get_range(name):
    return range_str
 
 
+
+def replace_last_range_if_repeated(current_string, value):
+   """
+   takes the last range from range_expansion_list and checks if the same range
+   is present in 'current_string' but having an index to inform to not double
+   exapand it, then and if so replaces that range with index by value.
+   Example:
+
+     current_string = "test[1|[1-8]/more"
+     range_expansion_list has two elements and the latest is "[1-8]", meaning a
+        that had already been replace by 'value' once.
+
+     returns a string with all ocurrences of "[1|[1-8]" replaced by 'value'
+
+   """
+   last_range_index = len(range_expansion_list) -1
+   range_repeated_begin = f"[{last_range_index}|"
+   last_range =   range_expansion_list[last_range_index]
+   range_repeated = last_range.replace("[", range_repeated_begin, 1)
+   replaced = current_string.replace(range_repeated, value)
+   return replaced
+
+
+
 def expand_range(name, limit=0):
     """
     expand_range(range_string) returns a list from strings with/without range specification at end
@@ -207,19 +233,39 @@ def expand_range(name, limit=0):
               ['chars0', 'chars1', 'charsg', 'charsh', 'charsi', 'charsj', 'charsk']
 
     """
+    if limit == 0:
+       range_expansion_list.clear()
+
     list_names = []
     open_bracket = name.find('[')
     range_str = get_range(name)
     if len(range_str) > 0:
+       range_expansion_list.append(range_str)
        values_range = range_str.split('-')
-       value = int(values_range[0][1:])
+       value = 0
+       ## check if exists [0|value-final_value] -> 0=index_range
+       index_range = range_str.find("|")
+       if index_range != -1:
+          value = int(values_range[0][3:])
+       else:
+          value = int(values_range[0][1:])
        final_value = int(values_range[1][:-1])
        while value <= final_value:
-          replaced = name.replace(range_str, str(value), 1)
+          ## index_range DOES NOT exist,  search for other referencing that one
+          if index_range == -1:
+             replaced = name.replace(range_str, str(value), 1)
+             replaced = replace_last_range_if_repeated(replaced, str(value))
+          else:
+             ## replace all ocurrences
+             replaced = name.replace(range_str, str(value))
           replaced = replace_occurrence(replaced, str(value))
           open_bracket = replaced.find('[', open_bracket)
           if open_bracket != -1:
-             list_names.extend(expand_range(replaced, DOUBLE_EXPANSION_LIMIT))
+             sub_list = expand_range(replaced, DOUBLE_EXPANSION_LIMIT)
+             if len(sub_list) > 0:
+                first_sub_list = sub_list.pop(0)
+                list_names.insert(value, first_sub_list)
+             list_names.extend(sub_list)
           else:
              list_names.append(replaced)
           value += 1

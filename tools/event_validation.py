@@ -191,6 +191,15 @@ available_options = [
         }
     },
     {
+        'args': [ '--second-range-limit'],
+        'kwargs': {
+            'type': int,
+            'default': 5,
+            'help': '''[optional] Specify a limit to expand the second range (specify 0 (zero) to expand all, example /NVSwitch_[0-3]/Ports/NVLink_[0-39], 0 (zero) generates 160 items'''
+        }
+    },
+
+    {
         'args': [ '--dry-run' ],
         'kwargs': {
             'action': 'store_true',
@@ -280,6 +289,9 @@ def parse_arguments():
 
     if args.passwd is None and (RUN_SCRIPT is True or JSON_EVENTS_FILE == JSON_REMOTE_FILE):
          getpass(prompt='Password: ')
+
+    com.DOUBLE_EXPANSION_LIMIT = args.second_range_limit
+
 
     return True
 

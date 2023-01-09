@@ -131,7 +131,16 @@ class EventAccessorInjectorScript(InjectorScriptBase):
         if com.KEY_ACCESSOR_PROPERTY in self._additional_data:
             information[com.KEY_ACCESSOR_PROPERTY] = \
                 self._additional_data[com.KEY_ACCESSOR_PROPERTY]
-        self._commands_information_list.append(information.copy())
+
+        ## handling single quote and quotes, making scape characters in strings
+        copy_information = {}
+        for info_key in information.keys():
+           value = str(information[info_key])
+           value = value.replace('"', '\\"')
+           value = value.replace("'", "\\'")
+           copy_information[info_key] = value
+
+        self._commands_information_list.append(copy_information)
 
         return True
 
@@ -252,9 +261,13 @@ class EventAccessorInjectorScript(InjectorScriptBase):
             if len(range_str) > 0:
                com.DEVICE_RANGE = range_str
                values_range = range_str.split('-')
-               com.INITIAL_DEVICE_RANGE = int(values_range[0][1:])
+               index_range = range_str.find("|")
+               if index_range == -1:
+                   com.INITIAL_DEVICE_RANGE = int(values_range[0][1:])
+               else:
+                   com.INITIAL_DEVICE_RANGE = int(values_range[0][3:])
                device_index = com.INITIAL_DEVICE_RANGE
-               com.FINAL_DEVICE_RANGE   = int(values_range[0][1:])
+               com.FINAL_DEVICE_RANGE   = int(values_range[1][:-1])
             device_range = com.expand_range(self._additional_data[com.KEY_ACCESSOR_OBJECT])
             for device_item in device_range:
                 information["device_item"] = device_item
