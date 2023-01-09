@@ -142,20 +142,22 @@ if get_option('tests').enabled()
   endif
 endif
 
-srcfiles_unittest = ['test/dat_test.cpp',
-                     'test/event_test.cpp',
-                     'test/dat_traverse_test.cpp',
-                     'test/accessor_test.cpp',
-                     'test/propertyvalue_string_test.cpp',
-                     'test/event_detection_test.cpp',
-                     'test/selftest_test.cpp',
-                     'test/propertyvalue_variant_test.cpp',
-                     'test/util_test.cpp',
-                     'test/dat_to_dbus_test.cpp',
-                     'test/dbus_accessor_test.cpp'
-                    ]
+srcfiles_unittest = [
+    'test/device_id_test.cpp',
+    'test/dat_test.cpp',
+    'test/event_test.cpp',
+    'test/dat_traverse_test.cpp',
+    'test/accessor_test.cpp',
+    'test/propertyvalue_string_test.cpp',
+    'test/event_detection_test.cpp',
+    'test/selftest_test.cpp',
+    'test/propertyvalue_variant_test.cpp',
+    'test/util_test.cpp',
+    'test/dat_to_dbus_test.cpp',
+    'test/dbus_accessor_test.cpp']
 
 amllib_sources = [
+    'src/device_id.cpp',
     'src/config_parser.cpp',
     'src/dat_traverse.cpp',
     'src/data_accessor.cpp',

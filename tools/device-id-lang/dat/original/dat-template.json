@@ -1,0 +1,1701 @@
+{
+  "Baseboard_0": {
+    "association": [
+      "GPU_SXM_[1-8]",
+      "NVSwitch_[0-3]"
+    ],
+    "power_rail": [],
+    "erot_control": [],
+    "pin_status": [],
+    "interface_status": [],
+    "protocol_status": [],
+    "firmware_status": []
+  },
+  "GPU_SXM_[0|1-8]": {
+    "association": [
+      "HSC_[0|1-8:0-7]",
+      "ERoT_GPU_SXM_[0|1-8]",
+      "GPU_SXM_[0|1-8]_DRAM_0",
+      "PCIeRetimer_[0|1-8:0-7]"
+    ],
+    "power_rail": [
+      {
+        "name": "HSC_[0|1-8:0-7]",
+        "accessor": {
+          "type": "DEVICE",
+          "device_name": "HSC_[0|1-8:0-7]"
+        },
+        "expected_value": "PASS"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "Power Enablement",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "fpga_regtbl_wrapper",
+          "arguments": "FPGA_SXM[0|1-8:0-7]_PWR_EN GPU_SXM_[0|1-8]"
+        },
+        "expected_value": "1"
+      },
+      {
+        "name": "PGOOD Status From GPU",
+        "accessor": {
+          "type": "DBUS",
+          "object": "/xyz/openbmc_project/inventory/system/chassis/HGX_GPU_SXM_[0|1-8]",
+          "interface": "xyz.openbmc_project.State.Chassis",
+          "property": "CurrentPowerState"
+        },
+        "expected_value": "xyz.openbmc_project.State.Chassis.PowerState.On"
+      },
+      {
+        "name": "PGOOD Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "fpga_regtbl_wrapper",
+          "arguments": "GPU[0|1-8]_PWRGD GPU_SXM_[0|1-8]"
+        },
+        "expected_value": "1"
+      },
+      {
+        "name": "PGOOD Interrupt",
+        "accessor": {
+          "type": "DeviceCoreAPI",
+          "property": "gpu.interrupt.powerGoodAbnormalChange"
+        },
+        "expected_value": "0"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "ERoT_GPU_SXM_[0|1-8]",
+        "accessor": {
+          "type": "DEVICE",
+          "device_name": "ERoT_GPU_SXM_[0|1-8]"
+        },
+        "expected_value": "PASS"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "I2CDirect Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "i2c_wrapper",
+          "arguments": "i2c_access GPU_SXM_[0|1-8]"
+        },
+        "expected_value": "link-up"
+      },
+      {
+        "name": "SPI Flash",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "mctp-vdm-util-wrapper",
+          "arguments": "AP0_SPI_READ_FAILURE GPU_SXM_[0|1-8]"
+        },
+        "expected_value": "0"
+      },
+      {
+        "name": "Clock Enablement",
+        "accessor": {
+          "type": "DeviceCoreAPI",
+          "property": "gpu.pcie.clockOutputEnableState"
+        },
+        "expected_value": "1"
+      },
+      {
+        "name": "PCIe AER Status - non-fatal error count",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "pcie_wrapper",
+          "arguments": "pcie_non_fatal_error_count GPU_SXM_[0|1-8]"
+        },
+        "expected_value": "0"
+      },
+      {
+        "name": "PCIe AER Status - fatal error count",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "pcie_wrapper",
+          "arguments": "pcie_fatal_error_count GPU_SXM_[0|1-8]"
+        },
+        "expected_value": "0"
+      },
+      {
+        "name": "PCIeRetimer_[0|1-8:0-7]",
+        "accessor": {
+          "type": "DEVICE",
+          "device_name": "PCIeRetimer_[0|1-8:0-7]"
+        },
+        "expected_value": "PASS"
+      },
+      {
+        "name": "NVLink Clock Enablement",
+        "accessor": {
+          "type": "DeviceCoreAPI",
+          "property": "gpu.nvlink.clockOutputEnableState"
+        },
+        "expected_value": "1"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "I2CDirect Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "i2c_wrapper",
+          "arguments": "i2c_access GPU_SXM_[0|1-8]"
+        },
+        "expected_value": "link-up"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "Authentication Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "mctp-vdm-util-wrapper",
+          "arguments": "AP0_PRIMARY_FW_AUTHENTICATION_STATUS GPU_SXM_[0|1-8]"
+        },
+        "expected_value": "1"
+      },
+      {
+        "name": "Boot Completion Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "mctp-vdm-util-wrapper",
+          "arguments": "AP0_BOOTCOMPLETE_TIMEOUT GPU_SXM_[0|1-8]"
+        },
+        "expected_value": "0"
+      },
+      {
+        "name": "Heartbeat Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "mctp-vdm-util-wrapper",
+          "arguments": "AP0_HEARTBEAT_TIMEOUT GPU_SXM_[0|1-8]"
+        },
+        "expected_value": "0"
+      },
+      {
+        "name": "Firmware",
+        "accessor": {
+          "type": "DBUS",
+          "object": "/xyz/openbmc_project/software/HGX_FW_GPU_SXM_[0|1-8]",
+          "interface": "xyz.openbmc_project.Software.Version",
+          "property": "Version"
+        },
+        "expected_value": ""
+      },
+      {
+        "name": "InfoROM",
+        "accessor": {
+          "type": "DBUS",
+          "object": "/xyz/openbmc_project/software/HGX_InfoROM_GPU_SXM_[0|1-8]",
+          "interface": "xyz.openbmc_project.Software.Version",
+          "property": "Version"
+        },
+        "expected_value": ""
+      },
+      {
+        "name": "WriteProtect Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "nvlink-wp-status-wrapper",
+          "arguments": "gpu_spiflash_wp_status GPU_SXM_[0|1-8]"
+        },
+        "expected_value": ""
+      }
+    ],
+    "data_dump": [
+      {
+        "name": "Boot status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "mctp-vdm-util-wrapper",
+          "arguments": "query_boot_status GPU_SXM_[0|1-8]"
+        },
+        "expected_value": ""
+      },
+      {
+        "name": "XID event",
+        "accessor": {
+          "type": "DeviceCoreAPI",
+          "property": "gpu.xid.event"
+        },
+        "expected_value": ""
+      },
+      {
+        "name": "Download log",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "mctp-vdm-util-wrapper",
+          "arguments": "download_log GPU_SXM_[0|1-8]"
+        },
+        "expected_value": ""
+      }
+    ]
+  },
+  "GPU_SXM_[0|1-8]_DRAM_0": {
+    "association": [],
+    "power_rail": [],
+    "erot_control": [],
+    "pin_status": [],
+    "interface_status": [],
+    "protocol_status": [],
+    "firmware_status": []
+  },
+  "NVSwitch_[0|0-3]": {
+    "association": [
+      "VR",
+      "HSC_[0|0-1:8,2-3:9]",
+      "ERoT_NVSwitch_[0|0-3]",
+      "PCIeSwitch_0"
+    ],
+    "power_rail": [
+      {
+        "name": "HSC_[0|0-1:8,2-3:9]",
+        "accessor": {
+          "type": "DEVICE",
+          "device_name": "HSC_[0|0-1:8,2-3:9]"
+        },
+        "expected_value": "PASS"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "VDD1V8 Power Enablement",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "fpga_regtbl_wrapper",
+          "arguments": "FPGA_NVSW_[0|0-1:0,2-3:2][0|0-1:1,2-3:3]_VDD1V8_PWR_EN NVSwitch_[0|0-3]"
+        },
+        "expected_value": "1"
+      },
+      {
+        "name": "VDD1V8 PGOOD Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "fpga_regtbl_wrapper",
+          "arguments": "NVSW_[0|0-1:1,2-3:3][0|0-1:2,2-3:4]_VDD1V8_PG NVSwitch_[0|0-3]"
+        },
+        "expected_value": "1"
+      },
+      {
+        "name": "VDD1V8 PGOOD Interrupt",
+        "accessor": {
+          "type": "DeviceCoreAPI",
+          "property": "nvswitch.1V8.abnormalPowerChange"
+        },
+        "expected_value": "0"
+      },
+      {
+        "name": "HVDD Power Enablement",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "fpga_regtbl_wrapper",
+          "arguments": "FPGA_NVSW_[0|0-1:0,2-3:2][0|0-1:1,2-3:3]_HVDD_PWR_EN NVSwitch_[0|0-3]"
+        },
+        "expected_value": "1"
+      },
+      {
+        "name": "HVDD PGOOD Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "fpga_regtbl_wrapper",
+          "arguments": "NVSW_[0|0-3:1-4]_HVDD_PG NVSwitch_[0|0-3]"
+        },
+        "expected_value": "1"
+      },
+      {
+        "name": "HVDD PGOOD Interrupt",
+        "accessor": {
+          "type": "DeviceCoreAPI",
+          "property": "nvswitch.hvdd.abnormalPowerChange"
+        },
+        "expected_value": "0"
+      },
+      {
+        "name": "DVDD Power Enablement",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "fpga_regtbl_wrapper",
+          "arguments": "FPGA_NVSW_[0|0-1:0,2-3:2][0|0-1:1,2-3:3]_DVDD_PWR_EN NVSwitch_[0|0-3]"
+        },
+        "expected_value": "1"
+      },
+      {
+        "name": "DVDD PGOOD Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "fpga_regtbl_wrapper",
+          "arguments": "NVSW_[0|0-3:1-4]_DVDD_PG NVSwitch_[0|0-3]"
+        },
+        "expected_value": "1"
+      },
+      {
+        "name": "DVDD PGOOD Interrupt",
+        "accessor": {
+          "type": "DeviceCoreAPI",
+          "property": "nvswitch.dvdd.abnormalPowerChange"
+        },
+        "expected_value": "0"
+      },
+      {
+        "name": "VDD Power Enablement",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "fpga_regtbl_wrapper",
+          "arguments": "FPGA_NVSW_[0|0-1:0,2-3:2][0|0-1:1,2-3:3]_VDD_PWR_EN NVSwitch_[0|0-3]"
+        },
+        "expected_value": "1"
+      },
+      {
+        "name": "VDD PGOOD Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "fpga_regtbl_wrapper",
+          "arguments": "NVSW_[0|0-3:1-4]_VDD_PG NVSwitch_[0|0-3]"
+        },
+        "expected_value": "1"
+      },
+      {
+        "name": "VDD PGOOD Interrupt",
+        "accessor": {
+          "type": "DeviceCoreAPI",
+          "property": "nvswitch.vdd.abnormalPowerChange"
+        },
+        "expected_value": "0"
+      },
+      {
+        "name": "3V3 Power Enablement",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "fpga_regtbl_wrapper",
+          "arguments": "FPGA_NVSW_[0|0-1:0,2-3:2][0|0-1:1,2-3:3]_3V3_PWR_EN NVSwitch_[0|0-3]"
+        },
+        "expected_value": "1"
+      },
+      {
+        "name": "3V3 PGOOD Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "fpga_regtbl_wrapper",
+          "arguments": "NVSW_[0|0-1:1,2-3:3][0|0-1:2,2-3:4]_3V3_PG NVSwitch_[0|0-3]"
+        },
+        "expected_value": "1"
+      },
+      {
+        "name": "3V3 PGOOD Interrupt",
+        "accessor": {
+          "type": "DeviceCoreAPI",
+          "property": "nvswitch.3V3.abnormalPowerChange"
+        },
+        "expected_value": "0"
+      },
+      {
+        "name": "5V Power Enablement",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "fpga_regtbl_wrapper",
+          "arguments": "FPGA_NVSW_[0|0-1:0,2-3:2][0|0-1:1,2-3:3]_5V_PWR_EN NVSwitch_[0|0-3]"
+        },
+        "expected_value": "1"
+      },
+      {
+        "name": "5V PGOOD Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "fpga_regtbl_wrapper",
+          "arguments": "NVSW_[0|0-1:1,2-3:3][0|0-1:2,2-3:4]_5V_PG NVSwitch_[0|0-3]"
+        },
+        "expected_value": "1"
+      },
+      {
+        "name": "5V PGOOD Interrupt",
+        "accessor": {
+          "type": "DeviceCoreAPI",
+          "property": "nvswitch.5V.abnormalPowerChange"
+        },
+        "expected_value": "0"
+      },
+      {
+        "name": "PGOOD Status",
+        "accessor": {
+          "type": "DBUS",
+          "object": "/xyz/openbmc_project/inventory/system/chassis/HGX_NVSwitch_[0|0-3]",
+          "interface": "xyz.openbmc_project.State.Chassis",
+          "property": "CurrentPowerState"
+        },
+        "expected_value": "xyz.openbmc_project.State.Chassis.PowerState.On"
+      },
+      {
+        "name": "PERST Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "fpga_regtbl_wrapper",
+          "arguments": "FPGA_NVSW[0|0-3:1-4]_PERST_L NVSwitch_[0|0-3]"
+        },
+        "expected_value": "1"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "ERoT_NVSwitch_[0|0-3]",
+        "accessor": {
+          "type": "DEVICE",
+          "device_name": "ERoT_NVSwitch_[0|0-3]"
+        },
+        "expected_value": "PASS"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "I2CDirect Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "i2c_wrapper",
+          "arguments": "i2c_access NVSwitch_[0|0-3]"
+        },
+        "expected_value": "link-up"
+      },
+      {
+        "name": "SPI Flash",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "mctp-vdm-util-wrapper",
+          "arguments": "AP0_SPI_READ_FAILURE NVSwitch_[0|0-3]"
+        },
+        "expected_value": "0"
+      },
+      {
+        "name": "Clock Enablement",
+        "accessor": {
+          "type": "DeviceCoreAPI",
+          "property": "nvswitch.pcie.clockOutputEnableState"
+        },
+        "expected_value": "1"
+      },
+      {
+        "name": "PCIe AER Status non-fatal error count",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "pcie_wrapper",
+          "arguments": "pcie_non_fatal_error_count NVSwitch_[0|0-3]"
+        },
+        "expected_value": "0"
+      },
+      {
+        "name": "PCIe AER Status fatal error count",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "pcie_wrapper",
+          "arguments": "pcie_fatal_error_count NVSwitch_[0|0-3]"
+        },
+        "expected_value": "0"
+      },
+      {
+        "name": "PCIeSwitch_0",
+        "accessor": {
+          "type": "DEVICE",
+          "device_name": "PCIeSwitch_0"
+        },
+        "expected_value": "PASS"
+      },
+      {
+        "name": "NVLink Clock Enablement",
+        "accessor": {
+          "type": "DeviceCoreAPI",
+          "property": "nvswitch.nvlink.clockOutputEnableState"
+        },
+        "expected_value": "1"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "I2CDirect Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "i2c_wrapper",
+          "arguments": "i2c_access NVSwitch_[0|0-3]"
+        },
+        "expected_value": "link-up"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "Authentication Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "mctp-vdm-util-wrapper",
+          "arguments": "AP0_PRIMARY_FW_AUTHENTICATION_STATUS NVSwitch_[0|0-3]"
+        },
+        "expected_value": "1"
+      },
+      {
+        "name": "Boot Completion Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "mctp-vdm-util-wrapper",
+          "arguments": "AP0_BOOTCOMPLETE_TIMEOUT NVSwitch_[0|0-3]"
+        },
+        "expected_value": "0"
+      },
+      {
+        "name": "Heartbeat Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "mctp-vdm-util-wrapper",
+          "arguments": "AP0_HEARTBEAT_TIMEOUT NVSwitch_[0|0-3]"
+        },
+        "expected_value": "0"
+      },
+      {
+        "name": "Firmware",
+        "accessor": {
+          "type": "DBUS",
+          "object": "/xyz/openbmc_project/software/HGX_FW_NVSwitch_[0|0-3]",
+          "interface": "xyz.openbmc_project.Software.Version",
+          "property": "Version"
+        },
+        "expected_value": ""
+      },
+      {
+        "name": "InfoROM",
+        "accessor": {
+          "type": "DBUS",
+          "object": "/xyz/openbmc_project/software/HGX_InfoROM_NVSwitch_[0|0-3]",
+          "interface": "xyz.openbmc_project.Software.Version",
+          "property": "Version"
+        },
+        "expected_value": ""
+      },
+      {
+        "name": "WriteProtect Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "nvlink-wp-status-wrapper",
+          "arguments": "nvswitch_eeprom_wp_status NVSwitch_[0|0-3]"
+        },
+        "expected_value": ""
+      }
+    ],
+    "data_dump": [
+      {
+        "name": "Boot status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "mctp-vdm-util-wrapper",
+          "arguments": "query_boot_status NVSwitch_[0|0-3]"
+        },
+        "expected_value": ""
+      },
+      {
+        "name": "SXID event",
+        "accessor": {
+          "type": "DeviceCoreAPI",
+          "property": "nvswitch.Sxid.event"
+        },
+        "expected_value": ""
+      },
+      {
+        "name": "Download log",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "mctp-vdm-util-wrapper",
+          "arguments": "download_log NVSwitch_[0|0-3]"
+        },
+        "expected_value": ""
+      }
+    ]
+  },
+  "PCIeRetimer_[0|0-7]": {
+    "association": [
+      "HSC_[0|0-3:8,4-7:9]"
+    ],
+    "power_rail": [
+      {
+        "name": "HSC_[0|0-3:8,4-7:9]",
+        "accessor": {
+          "type": "DEVICE",
+          "device_name": "HSC_[0|0-3:8,4-7:9]"
+        },
+        "expected_value": "PASS"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "PGOOD Status",
+        "accessor": {
+          "type": "DBUS",
+          "object": "/xyz/openbmc_project/inventory/system/chassis/HGX_PCIeRetimer_[0|0-7]",
+          "interface": "xyz.openbmc_project.State.Chassis",
+          "property": "CurrentPowerState"
+        },
+        "expected_value": "xyz.openbmc_project.State.Chassis.PowerState.On"
+      },
+      {
+        "name": "0V9 Power Enablement",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "fpga_regtbl_wrapper",
+          "arguments": "FPGA_RET_[0|0-3:0,4-7:4][0|0-3:123,4-7:567]_0V9_PWR_EN PCIeRetimer_[0|0-7]"
+        },
+        "expected_value": "1"
+      },
+      {
+        "name": "0V9 PGOOD Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "fpga_regtbl_wrapper",
+          "arguments": "RET[0|0-3,4-7:0-3]_[0|0-3:0,4-7:4][0|0-3:123,4-7:567]_0V9_PG PCIeRetimer_[0|0-7]"
+        },
+        "expected_value": "1"
+      },
+      {
+        "name": "0V9 PGOOD Interrupt",
+        "accessor": {
+          "type": "DeviceCoreAPI",
+          "property": "pcieretimer.0V9.abnormalPowerChange"
+        },
+        "expected_value": "0"
+      },
+      {
+        "name": "1V8LDO Power Enablement",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "fpga_regtbl_wrapper",
+          "arguments": "FPGA_RET_[0|0-3:0,4-7:4][0|0-3:123,4-7:567]_1V8LDO_PWR_EN PCIeRetimer_[0|0-7]"
+        },
+        "expected_value": "1"
+      },
+      {
+        "name": "1V8LDO PGOOD Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "fpga_regtbl_wrapper",
+          "arguments": "RET_[0|0-3:0,4-7:4][0|0-3:123,4-7:567]_1V8LDO_PG PCIeRetimer_[0|0-7]"
+        },
+        "expected_value": "1"
+      },
+      {
+        "name": "1V8LDO PGOOD Interrupt",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "fpga_regtbl_wrapper",
+          "arguments": "RET_[0|0-3:0,4-7:4][0|0-3:123,4-7:567]_1V8LDO_INT_PG PCIeRetimer_[0|0-7]"
+        },
+        "expected_value": "0"
+      },
+      {
+        "name": "1V8VDD Power Enablement",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "fpga_regtbl_wrapper",
+          "arguments": "FPGA_RET_[0|0-3:0,4-7:4][0|0-3:123,4-7:567]_1V8VDD_PWR_EN PCIeRetimer_[0|0-7]"
+        },
+        "expected_value": "1"
+      },
+      {
+        "name": "1V8VDD PGOOD Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "fpga_regtbl_wrapper",
+          "arguments": "RET_[0|0-3:0,4-7:4][0|0-3:123,4-7:567]_1V8VDD_PG PCIeRetimer_[0|0-7]"
+        },
+        "expected_value": "1"
+      },
+      {
+        "name": "1V8VDD PGOOD Interrupt",
+        "accessor": {
+          "type": "DeviceCoreAPI",
+          "property": "pcieretimer.1V8VDD.abnormalPowerChange"
+        },
+        "expected_value": "0"
+      }
+    ],
+    "erot_control": [],
+    "interface_status": [
+      {
+        "name": "Clock Enablement",
+        "accessor": {
+          "type": "DeviceCoreAPI",
+          "property": "pcieretimer.pcie.clockOutputEnableState"
+        },
+        "expected_value": "1"
+      },
+      {
+        "name": "PCIe AER Status non-fatal error count",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "pcie_wrapper",
+          "arguments": "pcie_non_fatal_error_count PCIeRetimer_[0|0-7]"
+        },
+        "expected_value": "0"
+      },
+      {
+        "name": "PCIe AER Status fatal error count",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "pcie_wrapper",
+          "arguments": "pcie_fatal_error_count PCIeRetimer_[0|0-7]"
+        },
+        "expected_value": "0"
+      }
+    ],
+    "protocol_status": [],
+    "firmware_status": [
+      {
+        "name": "Firmware",
+        "accessor": {
+          "type": "DBUS",
+          "object": "/xyz/openbmc_project/software/HGX_FW_PCIeRetimer_[0|0-7]",
+          "interface": "xyz.openbmc_project.Software.Version",
+          "property": "Version"
+        },
+        "expected_value": ""
+      },
+      {
+        "name": "WriteProtect Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "nvlink-wp-status-wrapper",
+          "arguments": "pcieretimer_eeprom_wp_status PCIeRetimer_[0|0-7]"
+        },
+        "expected_value": ""
+      }
+    ],
+    "data_dump": []
+  },
+  "PCIeSwitch_0": {
+    "association": [
+      "StandbyHSC_0",
+      "ERoT_PCIeSwitch_0"
+    ],
+    "power_rail": [
+      {
+        "name": "StandbyHSC_0",
+        "accessor": {
+          "type": "DEVICE",
+          "device_name": "StandbyHSC_0"
+        },
+        "expected_value": "PASS"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "Power Enablement",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "fpga_regtbl_wrapper",
+          "arguments": "PEX_SWITCH_PWR_EN PCIeSwitch_0"
+        },
+        "expected_value": "1"
+      },
+      {
+        "name": "PGOOD Status",
+        "accessor": {
+          "type": "DBUS",
+          "object": "/xyz/openbmc_project/inventory/system/chassis/HGX_PCIeSwitch_0",
+          "interface": "xyz.openbmc_project.State.Chassis",
+          "property": "CurrentPowerState"
+        },
+        "expected_value": "xyz.openbmc_project.State.Chassis.PowerState.On"
+      },
+      {
+        "name": "0V8 PGOOD Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "fpga_regtbl_wrapper",
+          "arguments": "PEXSW_PEX0V8_PG PCIeSwitch_0"
+        },
+        "expected_value": "1"
+      },
+      {
+        "name": "0V8 PGOOD Interrupt",
+        "accessor": {
+          "type": "DeviceCoreAPI",
+          "property": "pcieswitch.0V8.abnormalPowerChange"
+        },
+        "expected_value": "0"
+      }
+    ],
+    "erot_control": [
+      {
+        "name": "ERoT_PCIeSwitch_0",
+        "accessor": {
+          "type": "DEVICE",
+          "device_name": "ERoT_PCIeSwitch_0"
+        },
+        "expected_value": "PASS"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "I2CDirect Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "i2c_wrapper",
+          "arguments": "i2c_access PCIeSwitch_0"
+        },
+        "expected_value": "link-up"
+      },
+      {
+        "name": "SPI Flash",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "mctp-vdm-util-wrapper",
+          "arguments": "AP0_SPI_READ_FAILURE PCIeSwitch_0"
+        },
+        "expected_value": "0"
+      },
+      {
+        "name": "Clock Enablement",
+        "accessor": {
+          "type": "DeviceCoreAPI",
+          "property": "gpu.pcie.clockOutputEnableState"
+        },
+        "expected_value": "1"
+      },
+      {
+        "name": "PCIe AER Status non-fatal error count",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "pcie_wrapper",
+          "arguments": "pcie_non_fatal_error_count PCIeSwitch_0"
+        },
+        "expected_value": "0"
+      },
+      {
+        "name": "PCIe AER Status fatal error count",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "pcie_wrapper",
+          "arguments": "pcie_fatal_error_count PCIeSwitch_0"
+        },
+        "expected_value": "0"
+      },
+      {
+        "name": "PCIe AER Status uncorrectable pcie errors combined",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "pcie_wrapper",
+          "arguments": "pcie_uncorrectable_error_bitmap PCIeSwitch_0"
+        },
+        "expected_value": "0"
+      },
+      {
+        "name": "PCIe Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "pcie_wrapper",
+          "arguments": "pcie_LTSSM_state PCIeSwitch_0"
+        },
+        "expected_value": "17"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "I2CDirect Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "i2c_wrapper",
+          "arguments": "i2c_access PCIeSwitch_0"
+        },
+        "expected_value": "link-up"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "Authentication Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "mctp-vdm-util-wrapper",
+          "arguments": "AP0_PRIMARY_FW_AUTHENTICATION_STATUS PCIeSwitch_0"
+        },
+        "expected_value": "1"
+      },
+      {
+        "name": "Boot Completion Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "mctp-vdm-util-wrapper",
+          "arguments": "AP0_BOOTCOMPLETE_TIMEOUT PCIeSwitch_0"
+        },
+        "expected_value": "0"
+      },
+      {
+        "name": "Heartbeat Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "mctp-vdm-util-wrapper",
+          "arguments": "AP0_HEARTBEAT_TIMEOUT PCIeSwitch_0"
+        },
+        "expected_value": "0"
+      },
+      {
+        "name": "Firmware",
+        "accessor": {
+          "type": "DBUS",
+          "object": "/xyz/openbmc_project/software/HGX_FW_PCIeSwitch_0",
+          "interface": "xyz.openbmc_project.Software.Version",
+          "property": "Version"
+        },
+        "expected_value": ""
+      },
+      {
+        "name": "EEPROM WriteProtect Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "nvlink-wp-status-wrapper",
+          "arguments": "pcieswitch_eeprom_wp_status PCIeSwitch_0"
+        },
+        "expected_value": ""
+      },
+      {
+        "name": "SPI Flash WriteProtect Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "nvlink-wp-status-wrapper",
+          "arguments": "pcieswitch_spi_mode_status PCIeSwitch_0"
+        },
+        "expected_value": ""
+      }
+    ],
+    "data_dump": [
+      {
+        "name": "Boot status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "mctp-vdm-util-wrapper",
+          "arguments": "query_boot_status PCIeSwitch_0"
+        },
+        "expected_value": ""
+      },
+      {
+        "name": "Download log",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "mctp-vdm-util-wrapper",
+          "arguments": "download_log PCIeSwitch_0"
+        },
+        "expected_value": ""
+      }
+    ]
+  },
+  "FPGA_0": {
+    "association": [
+      "StandbyHSC_0",
+      "ERoT_FPGA_0",
+      "InletSensor"
+    ],
+    "power_rail": [
+      {
+        "name": "StandbyHSC_0",
+        "accessor": {
+          "type": "DEVICE",
+          "device_name": "StandbyHSC_0"
+        },
+        "expected_value": "PASS"
+      }
+    ],
+    "pin_status": [],
+    "erot_control": [
+      {
+        "name": "ERoT_FPGA_0",
+        "accessor": {
+          "type": "DEVICE",
+          "device_name": "ERoT_FPGA_0"
+        },
+        "expected_value": "PASS"
+      }
+    ],
+    "interface_status": [
+      {
+        "name": "I2CDirect Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "i2c_wrapper",
+          "arguments": "i2c_access FPGA_0"
+        },
+        "expected_value": "link-up"
+      },
+      {
+        "name": "SPI Flash",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "mctp-vdm-util-wrapper",
+          "arguments": "AP0_SPI_READ_FAILURE FPGA_0"
+        },
+        "expected_value": "0"
+      },
+      {
+        "name": "PCIe AER Status non-fatal error count",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "pcie_wrapper",
+          "arguments": "pcie_non_fatal_error_count FPGA_0"
+        },
+        "expected_value": "0"
+      },
+      {
+        "name": "PCIe AER Status fatal error count",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "pcie_wrapper",
+          "arguments": "pcie_fatal_error_count FPGA_0"
+        },
+        "expected_value": "0"
+      },
+      {
+        "name": "PCIe AER Status uncorrectable pcie errors combined",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "pcie_wrapper",
+          "arguments": "pcie_uncorrectable_error_bitmap FPGA_0"
+        },
+        "expected_value": "0"
+      },
+      {
+        "name": "PCIe Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "pcie_wrapper",
+          "arguments": "pcie_LTSSM_state FPGA_0"
+        },
+        "expected_value": "17"
+      }
+    ],
+    "protocol_status": [
+      {
+        "name": "I2CDirect Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "i2c_wrapper",
+          "arguments": "i2c_access FPGA_0"
+        },
+        "expected_value": "link-up"
+      }
+    ],
+    "firmware_status": [
+      {
+        "name": "Authentication Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "mctp-vdm-util-wrapper",
+          "arguments": "AP0_PRIMARY_FW_AUTHENTICATION_STATUS FPGA_0"
+        },
+        "expected_value": "1"
+      },
+      {
+        "name": "Boot Completion Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "mctp-vdm-util-wrapper",
+          "arguments": "AP0_BOOTCOMPLETE_TIMEOUT FPGA_0"
+        },
+        "expected_value": "0"
+      },
+      {
+        "name": "Heartbeat Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "mctp-vdm-util-wrapper",
+          "arguments": "AP0_HEARTBEAT_TIMEOUT FPGA_0"
+        },
+        "expected_value": "0"
+      },
+      {
+        "name": "Firmware",
+        "accessor": {
+          "type": "DBUS",
+          "object": "/xyz/openbmc_project/software/HGX_FW_FPGA_0",
+          "interface": "xyz.openbmc_project.Software.Version",
+          "property": "Version"
+        },
+        "expected_value": ""
+      }
+    ],
+    "data_dump": [
+      {
+        "name": "Boot status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "mctp-vdm-util-wrapper",
+          "arguments": "query_boot_status FPGA_0"
+        },
+        "expected_value": ""
+      },
+      {
+        "name": "Download log",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "mctp-vdm-util-wrapper",
+          "arguments": "download_log FPGA_0"
+        },
+        "expected_value": ""
+      }
+    ]
+  },
+  "InletSensor": {
+    "association": [
+      "StandbyHSC_0"
+    ],
+    "power_rail": [],
+    "erot_control": [],
+    "pin_status": [],
+    "interface_status": [],
+    "protocol_status": [],
+    "firmware_status": []
+  },
+  "HMC_0": {
+    "association": [
+      "StandbyHSC_0",
+      "ERoT_HMC_0"
+    ],
+    "power_rail": [],
+    "erot_control": [],
+    "pin_status": [],
+    "interface_status": [],
+    "protocol_status": [],
+    "firmware_status": []
+  },
+  "ERoT_GPU_SXM_[0|1-8]": {
+    "association": [
+      "StandbyHSC_0"
+    ],
+    "power_rail": [
+      {
+        "name": "StandbyHSC_0",
+        "accessor": {
+          "type": "DEVICE",
+          "device_name": "StandbyHSC_0"
+        },
+        "expected_value": "PASS"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "Fatal Error Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "fpga_regtbl_wrapper",
+          "arguments": "GPU[0|1-8]_EROT_FATAL_ERROR_N GPU_SXM_[0|1-8]"
+        },
+        "expected_value": "1"
+      },
+      {
+        "name": "Recovery Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "fpga_regtbl_wrapper",
+          "arguments": "FPGA_SXM[0|1-8:0-7]_EROT_RECOV_L GPU_SXM_[0|1-8]"
+        },
+        "expected_value": "1"
+      }
+    ],
+    "erot_control": [],
+    "interface_status": [],
+    "protocol_status": [],
+    "firmware_status": [
+      {
+        "name": "Authentication Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "mctp-vdm-util-wrapper",
+          "arguments": "EC_TAG0_AUTH_ERROR GPU_SXM_[0|1-8]"
+        },
+        "expected_value": "0"
+      },
+      {
+        "name": "Firmware",
+        "accessor": {
+          "type": "DBUS",
+          "object": "/xyz/openbmc_project/software/HGX_FW_ERoT_GPU_SXM_[0|1-8]",
+          "interface": "xyz.openbmc_project.Software.Version",
+          "property": "Version"
+        },
+        "expected_value": ""
+      }
+    ],
+    "data_dump": [
+      {
+        "name": "Boot status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "mctp-vdm-util-wrapper",
+          "arguments": "query_boot_status GPU_SXM_[0|1-8]"
+        },
+        "expected_value": ""
+      },
+      {
+        "name": "Download log",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "mctp-vdm-util-wrapper",
+          "arguments": "download_log GPU_SXM_[0|1-8]"
+        },
+        "expected_value": ""
+      }
+    ]
+  },
+  "HSC_[0|0-3,8]": {
+    "association": [],
+    "power_rail": [],
+    "pin_status": [
+      {
+        "name": "Power Enablement (left)",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "fpga_regtbl_wrapper",
+          "arguments": "FPGA_HSC[0|0-3:1-4,8:9]_LEFT_EN HSC_[0|0-3,8]"
+        },
+        "expected_value": "1"
+      },
+      {
+        "name": "PGOOD Status",
+        "accessor": {
+          "type": "DeviceCoreAPI",
+          "property": "hsc.powerSupply.enablement"
+        },
+        "expected_value": "1"
+      },
+      {
+        "name": "PGOOD Interrupt",
+        "accessor": {
+          "type": "DeviceCoreAPI",
+          "property": "hsc.power.abnormalPowerChange"
+        },
+        "expected_value": "0"
+      },
+      {
+        "name": "Alert Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "fpga_regtbl_wrapper",
+          "arguments": "HSC[0|0-9:1-10]_ALERT_N HSC_[0|0-9]"
+        },
+        "expected_value": "0"
+      },
+      {
+        "name": "Alert Interrupt",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "fpga_regtbl_wrapper",
+          "arguments": "HSC[0|0-9:1-10]_ALERT_INT_N HSC_[0|0-9]"
+        },
+        "expected_value": "0"
+      }
+    ],
+    "erot_control": [],
+    "interface_status": [],
+    "protocol_status": [],
+    "firmware_status": [],
+    "data_dump": []
+  },
+  "HSC_[0|4-7,9]": {
+    "association": [],
+    "power_rail": [],
+    "pin_status": [
+      {
+        "name": "Power Enablement (right)",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "fpga_regtbl_wrapper",
+          "arguments": "FPGA_HSC[0|4-7:5-8,9:10]_RIGHT_EN HSC_[0|4-7,9]"
+        },
+        "expected_value": "1"
+      },
+      {
+        "name": "PGOOD Status",
+        "accessor": {
+          "type": "DeviceCoreAPI",
+          "property": "hsc.powerSupply.enablement"
+        },
+        "expected_value": "1"
+      },
+      {
+        "name": "PGOOD Interrupt",
+        "accessor": {
+          "type": "DeviceCoreAPI",
+          "property": "hsc.power.abnormalPowerChange"
+        },
+        "expected_value": "0"
+      },
+      {
+        "name": "Alert Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "fpga_regtbl_wrapper",
+          "arguments": "HSC[0|0-9:1-10]_ALERT_N HSC_[0|0-9]"
+        },
+        "expected_value": "0"
+      },
+      {
+        "name": "Alert Interrupt",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "fpga_regtbl_wrapper",
+          "arguments": "HSC[0|0-9:1-10]_ALERT_INT_N HSC_[0|0-9]"
+        },
+        "expected_value": "0"
+      }
+    ],
+    "erot_control": [],
+    "interface_status": [],
+    "protocol_status": [],
+    "firmware_status": [],
+    "data_dump": []
+  },
+  "ERoT_NVSwitch_[0|0-3]": {
+    "association": [
+      "StandbyHSC_0"
+    ],
+    "power_rail": [
+      {
+        "name": "StandbyHSC_0",
+        "accessor": {
+          "type": "DEVICE",
+          "device_name": "StandbyHSC_0"
+        },
+        "expected_value": "PASS"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "Fatal Error Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "fpga_regtbl_wrapper",
+          "arguments": "NVSW[0|0-3:1-4]_EROT_FATAL_ERROR_N NVSwitch_[0|0-3]"
+        },
+        "expected_value": "1"
+      },
+      {
+        "name": "Recovery Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "fpga_regtbl_wrapper",
+          "arguments": "FPGA_NVSW[0|0-3]_EROT_RECOV_L NVSwitch_[0|0-3]"
+        },
+        "expected_value": "1"
+      }
+    ],
+    "erot_control": [],
+    "interface_status": [],
+    "protocol_status": [],
+    "firmware_status": [
+      {
+        "name": "Authentication Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "mctp-vdm-util-wrapper",
+          "arguments": "EC_TAG0_AUTH_ERROR NVSwitch_[0|0-3]"
+        },
+        "expected_value": "0"
+      },
+      {
+        "name": "Firmware",
+        "accessor": {
+          "type": "DBUS",
+          "object": "/xyz/openbmc_project/software/HGX_FW_ERoT_NVSwitch_[0|0-3]",
+          "interface": "xyz.openbmc_project.Software.Version",
+          "property": "Version"
+        },
+        "expected_value": ""
+      }
+    ],
+    "data_dump": [
+      {
+        "name": "Boot status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "mctp-vdm-util-wrapper",
+          "arguments": "query_boot_status NVSwitch_[0|0-3]"
+        },
+        "expected_value": ""
+      },
+      {
+        "name": "Download log",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "mctp-vdm-util-wrapper",
+          "arguments": "download_log NVSwitch_[0|0-3]"
+        },
+        "expected_value": ""
+      }
+    ]
+  },
+    "ERoT_PCIeSwitch_0": {
+    "association": [
+      "StandbyHSC_0"
+    ],
+    "power_rail": [
+      {
+        "name": "StandbyHSC_0",
+        "accessor": {
+          "type": "DEVICE",
+          "device_name": "StandbyHSC_0"
+        },
+        "expected_value": "PASS"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "Fatal Error Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "fpga_regtbl_wrapper",
+          "arguments": "PEXSW_EROT_FATAL_ERROR_N PCIeSwitch_0"
+        },
+        "expected_value": "1"
+      },
+      {
+        "name": "Recovery Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "fpga_regtbl_wrapper",
+          "arguments": "FPGA_PEXSW_EROT_RECOV_L PCIeSwitch_0"
+        },
+        "expected_value": "1"
+      }
+    ],
+    "erot_control": [],
+    "interface_status": [],
+    "protocol_status": [],
+    "firmware_status": [
+      {
+        "name": "Authentication Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "mctp-vdm-util-wrapper",
+          "arguments": "EC_TAG0_AUTH_ERROR PCIeSwitch_0"
+        },
+        "expected_value": "0"
+      },
+      {
+        "name": "Firmware",
+        "accessor": {
+          "type": "DBUS",
+          "object": "/xyz/openbmc_project/software/HGX_FW_ERoT_PCIeSwitch_0",
+          "interface": "xyz.openbmc_project.Software.Version",
+          "property": "Version"
+        },
+        "expected_value": ""
+      }
+    ],
+    "data_dump": [
+      {
+        "name": "Boot status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "mctp-vdm-util-wrapper",
+          "arguments": "query_boot_status PCIeSwitch_0"
+        },
+        "expected_value": ""
+      },
+      {
+        "name": "Download log",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "mctp-vdm-util-wrapper",
+          "arguments": "download_log PCIeSwitch_0"
+        },
+        "expected_value": ""
+      }
+    ]
+  },
+  "ERoT_FPGA_0": {
+    "association": [
+      "StandbyHSC_0"
+    ],
+    "power_rail": [
+      {
+        "name": "StandbyHSC_0",
+        "accessor": {
+          "type": "DEVICE",
+          "device_name": "StandbyHSC_0"
+        },
+        "expected_value": "PASS"
+      }
+    ],
+    "pin_status": [],
+    "erot_control": [],
+    "interface_status": [],
+    "protocol_status": [],
+    "firmware_status": [
+      {
+        "name": "Authentication Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "mctp-vdm-util-wrapper",
+          "arguments": "EC_TAG0_AUTH_ERROR FPGA_0"
+        },
+        "expected_value": "0"
+      },
+      {
+        "name": "Firmware",
+        "accessor": {
+          "type": "DBUS",
+          "object": "/xyz/openbmc_project/software/HGX_FW_ERoT_FPGA_0",
+          "interface": "xyz.openbmc_project.Software.Version",
+          "property": "Version"
+        },
+        "expected_value": ""
+      }
+    ],
+    "data_dump": [
+      {
+        "name": "Boot status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "mctp-vdm-util-wrapper",
+          "arguments": "query_boot_status FPGA_0"
+        },
+        "expected_value": ""
+      },
+      {
+        "name": "Download log",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "mctp-vdm-util-wrapper",
+          "arguments": "download_log FPGA_0"
+        },
+        "expected_value": ""
+      }
+    ]
+  },
+  "ERoT_HMC_0": {
+    "association": [
+      "StandbyHSC_0"
+    ],
+    "power_rail": [
+      {
+        "name": "StandbyHSC_0",
+        "accessor": {
+          "type": "DEVICE",
+          "device_name": "StandbyHSC_0"
+        },
+        "expected_value": "PASS"
+      }
+    ],
+    "pin_status": [
+      {
+        "name": "Fatal Error Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "fpga_regtbl_wrapper",
+          "arguments": "HMC_EROT_FATAL_ERROR_N HMC_0"
+        },
+        "expected_value": "1"
+      },
+      {
+        "name": "Recovery Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "fpga_regtbl_wrapper",
+          "arguments": "FPGA_HMC_EROT_RECOV_L HMC_0"
+        },
+        "expected_value": "1"
+      }
+    ],
+    "erot_control": [],
+    "interface_status": [],
+    "protocol_status": [],
+    "firmware_status": [
+      {
+        "name": "Authentication Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "mctp-vdm-util-wrapper",
+          "arguments": "EC_TAG0_AUTH_ERROR HMC_0"
+        },
+        "expected_value": "0"
+      },
+      {
+        "name": "Firmware",
+        "accessor": {
+          "type": "DBUS",
+          "object": "/xyz/openbmc_project/software/HGX_FW_ERoT_HMC_0",
+          "interface": "xyz.openbmc_project.Software.Version",
+          "property": "Version"
+        },
+        "expected_value": ""
+      }
+    ],
+    "data_dump": [
+      {
+        "name": "Boot status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "mctp-vdm-util-wrapper",
+          "arguments": "query_boot_status HMC_0"
+        },
+        "expected_value": ""
+      },
+      {
+        "name": "Download log",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "mctp-vdm-util-wrapper",
+          "arguments": "download_log HMC_0"
+        },
+        "expected_value": ""
+      }
+    ]
+  },
+  "StandbyHSC_0": {
+    "association": [],
+    "power_rail": [],
+    "pin_status": [
+      {
+        "name": "PGOOD Status",
+        "accessor": {
+          "type": "DeviceCoreAPI",
+          "property": "hsc.powerSupply.enablement"
+        },
+        "expected_value": "1"
+      },
+      {
+        "name": "PGOOD Interrupt",
+        "accessor": {
+          "type": "DeviceCoreAPI",
+          "property": "hsc.power.abnormalPowerChange"
+        },
+        "expected_value": "0"
+      },
+      {
+        "name": "Alert Status",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "fpga_regtbl_wrapper",
+          "arguments": "HSC_STBY_ALERT_N StandbyHSC_0"
+        },
+        "expected_value": "0"
+      },
+      {
+        "name": "Alert Interrupt",
+        "accessor": {
+          "type": "CMDLINE",
+          "executable": "fpga_regtbl_wrapper",
+          "arguments": "HSC_STBY_ALERT_INT_N StandbyHSC_0"
+        },
+        "expected_value": "0"
+      }
+    ],
+    "erot_control": [],
+    "interface_status": [],
+    "protocol_status": [],
+    "firmware_status": [],
+    "data_dump": []
+  },
+  "VR": {
+    "association": [],
+    "power_rail": [],
+    "erot_control": [],
+    "pin_status": [],
+    "interface_status": [],
+    "protocol_status": [],
+    "firmware_status": []
+  }
+}

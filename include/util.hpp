@@ -10,12 +10,60 @@
 */
 
 #pragma once
+#include "log.hpp"
+
 #include <iostream>
 #include <map>
 #include <regex>
+#include <sstream>
 #include <string>
 #include <tuple>
 #include <vector>
+
+/**
+ * A small set of macros to make Simple log safer and easier to use.
+ * - Use familiar std::cout-like syntax, leveraging overloaded
+ *   'operator<<' definitions for custom objects.
+ * - Avoid printf-like format specifiers ('%s', '%d', etc) which
+ *   aren't checked at compilation time and are prone to errors.
+ * - Always add newline at the end, avoiding mangled logs.
+ * - Preserve the exact same context information (method, class,
+ *   line number, etc) the raw macros would log.
+ *
+ * Usage example:
+ *
+ * @code
+ * shortlog_wrn(<< "Incomplete mapping: bracket at position " << bracketPos
+ *              << " maps " << key << " to " << value
+ *              << ", but bracket at position " << *notDefinedPos
+ *              << " bound to the same input position " << inputPos
+ *              << " doesn't specify any mapping for " << key
+ *              << ". Dropping from the input domain.");
+ * @endcode
+ */
+#define shortlog(expr, log_method)                                             \
+    {                                                                          \
+        std::stringstream ss;                                                  \
+        ss expr;                                                               \
+        log_method("%s\n", ss.str().c_str());                                  \
+    }
+
+/** @brief Log using  @c log_err macro **/
+#define shortlog_err(expr) shortlog(expr, log_err)
+/** @brief Log using @c log_wrn macro **/
+#define shortlog_wrn(expr) shortlog(expr, log_wrn)
+/** @brief Log using @c log_dbg macro **/
+#define shortlog_dbg(expr) shortlog(expr, log_dbg)
+/** @brief Log using @c log_info macro **/
+#define shortlog_info(expr) shortlog(expr, log_info)
+/** @brief Log using @c logs_err macro **/
+#define shortlogs_err(expr) shortlog(expr, logs_err)
+/** @brief Log using @c logs_wrn macro **/
+#define shortlogs_wrn(expr) shortlog(expr, logs_wrn)
+/** @brief Log using @c logs_dbg macro **/
+#define shortlogs_dbg(expr) shortlog(expr, logs_dbg)
+/** @brief Log using @c logs_info macro **/
+#define shortlogs_info(expr) shortlog(expr, logs_info)
 
 namespace util
 {
