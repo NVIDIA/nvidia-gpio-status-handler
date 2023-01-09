@@ -106,27 +106,27 @@ void EventDetection::dbusEventHandlerCallback(sdbusplus::message::message& msg)
         for (auto& assertedEvent : assertedEventsList)
         {
             auto& candidate = *assertedEvent.first;
-            auto event = candidate;
             int eventValue = invalidIntParam;
             if (candidate.valueAsCount)
             {
                 eventValue = propertyValue.getInteger();
             }
-            const auto& assertedDeviceNames = assertedEvent.second;
-            // this is the case when the "check" operation is not 'bitmap'
-            //   that means, the check does not loop over device range
-            if (assertedDeviceNames.empty() == true)
+            const auto& assertedDeviceList = assertedEvent.second;
+            if (assertedDeviceList.empty() == true)
             {
-               logs_err("event: '%s' no assertedDeviceNames, exiting...\n",
-                       event.event.c_str());
+               logs_err("event: '%s' no asserted devices, exiting...\n",
+                       candidate.event.c_str());
                 continue;
             }
-            // now loop thru candidate.assertedDeviceNames
-            for (const auto& device : assertedDeviceNames)
+            // now loop thru assertedDeviceList
+            for (const auto& assertedDevice : assertedDeviceList)
             {
-                event.device = device.second;
                 if (eventDetectionPtr->IsEvent(candidate, eventValue))
                 {
+                    auto event = candidate;
+                    event.trigger  = assertedDevice.trigger;
+                    event.accessor = assertedDevice.accessor;
+                    event.device = assertedDevice.device;
                     logs_err(
                         "Throw out an eventHdlrMgr. device: %s event: %s\n",
                         event.device.c_str(), event.event.c_str());

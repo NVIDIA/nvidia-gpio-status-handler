@@ -170,7 +170,8 @@ amllib_sources = [
     'src/message_composer.cpp',
     'src/message_dispatcher.cpp',
     'src/oobaml_api.cpp',
-    'src/log.cpp']
+    'src/log.cpp',
+    'src/check_accessor.cpp']
 
 selftestlib_sources = ['src/selftest.cpp']
 

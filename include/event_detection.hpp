@@ -8,6 +8,7 @@
 #include "aml.hpp"
 #include "event_handler.hpp"
 #include "event_info.hpp"
+#include "check_accessor.hpp"
 #include "object.hpp"
 #include "threadpool_manager.hpp"
 
@@ -31,10 +32,11 @@ using DbusEventHandlerList =
 /**
  *  This list is used in LookupEventFrom(),
  *
- *  Per each event in the list there is a assertedDevices map assigned to it
+ *  Each event carries an assertedDeviceList (list of devices and their data)
  */
 using AssertedEventList =
-         std::vector<std::pair<event_info::EventNode*, util::DeviceIdMap>>;
+       std::vector<std::pair<event_info::EventNode*,
+                                            data_accessor::AssertedDeviceList>>;
 
 /**
  *   A map to check if a pair object-path + interface has already been
@@ -82,17 +84,9 @@ class EventDetection : public object::Object
                             std::shared_ptr<sdbusplus::asio::connection> conn);
 
     /**
-     * @brief Lookup EventNode per the accessor info, which list all the
-     *       asserted EventNode per device instance.
-     *
-     * @param acc
-     * @return event_info::EventNode*
-     */
-
-    /**
      * @brief LookupEventFrom
-     * @param acc
-     * @return
+     * @param acc the DataAccessor which came from DBus and will trigger Events
+     * @return an AssertedEventList with the Events to be generated
      */
     AssertedEventList LookupEventFrom(const data_accessor::DataAccessor& acc)
     {
@@ -101,6 +95,7 @@ class EventDetection : public object::Object
         {
             for (auto& event : eventPerDevType.second)
             {
+                auto& deviceType = event.deviceType;
                 std::stringstream ss;
                 ss << "\n\tevent.accessor: " << event.accessor
                     << "\n\tevent.trigger: " << event.trigger
@@ -111,53 +106,46 @@ class EventDetection : public object::Object
                  * event.trigger is compared first, when it macthes:
                  *   1. event.trigger performs a check against the data from acc
                  *   2. if check passes and event.accessor is not empty
-                 *     2.1 event.accessor performs a check against its own data
+                 *     2.1 event.accessor reads its data
                  */
-                if (event.trigger.isEmpty() == false && event.trigger == acc)
+                const auto& trigger  = acc;
+                if (!event.trigger.isEmpty() && event.trigger == trigger)
                 {
-                    if (event.trigger.check(acc, event.deviceType) == true)
+                    data_accessor::CheckAccessor triggerCheck;
+                    const auto& accessor = event.trigger;
+                    if (triggerCheck.check(accessor, trigger, deviceType))
                     {
-                        // the Accessor which receives the check should always
-                        // be a temporary object as it keeps data from read()
-                        // and assertedDevices list
-                        auto tmpAccessor = event.accessor;
-                        if (tmpAccessor.check(acc.getAssertedDeviceNames(),
-                                              event.deviceType) == true)
+                        data_accessor::CheckAccessor accCheck;
+                        /* Note: accCheck uses info stored in triggerCheck
+                         *   1. the original trigger
+                         *   2. Maybe needs triggerCheck asserted devices data
+                         *      for example the event "DRAM Contained ECC Error"
+                         */
+                        // redefines accessor
+                        const auto& accessor = event.accessor;
+                        if (accCheck.check(accessor, triggerCheck, deviceType))
                         {
-                            auto assertedDevices =
-                                    tmpAccessor.getAssertedDeviceNames();
-                            /**
-                             * the assertedDeviceNames can be in either
-                             * event.accessor (most of the times)
-                             * or in acc which is the DBUS accessor
-                             */
-                            if (assertedDevices.empty() == true)
-                            {
-                                assertedDevices = acc.getAssertedDeviceNames();
-                            }
                             eventList.push_back(std::make_pair(
-                                                      &event, assertedDevices));
+                                        &event, accCheck.getAssertedDevices()));
                             continue;
                         }
                     }
                 }
-                else if (event.accessor == acc)
+                else if (event.accessor == trigger)
                 {
-                    if (event.accessor.check(acc, event.deviceType) == true)
+                    data_accessor::CheckAccessor accCheck;
+                    const auto& accessor = event.accessor;
+                    if (accCheck.check(accessor, trigger, deviceType))
                     {
                         eventList.push_back(std::make_pair(
-                                       &event,  acc.getAssertedDeviceNames()));
+                                        &event, accCheck.getAssertedDevices()));
                         continue;
                     }
                 }
-                ss.str(std::string()); // Clear the stream
-                ss << "skipping event :" << event.event;
-                log_dbg("%s\n", ss.str().c_str());
+                log_dbg("skipping event : %s\n", event.event.c_str());
             }
         }
-        std::stringstream ss;
-        ss << "got total events :" << eventList.size();
-        log_dbg("%s\n", ss.str().c_str());
+        log_dbg("got total events : %lu\n", eventList.size());
         return eventList;
     }
 

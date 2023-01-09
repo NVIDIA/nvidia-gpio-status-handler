@@ -173,89 +173,6 @@ class DataAccessor
     bool contains(const DataAccessor& other) const;
 
     /**
-     * @brief performs a check operation of its criteria against otherAcc data
-     *
-     *   This DataAccessor has the DataAccessor operation criteria
-     *
-     * @param otherAcc contains the data the checked again this criteria*
-     *        otherAcc calls read() get its data.
-     *
-     * @param [optional] redefCriteria  other value to be used in this
-     *                   DataAccessor criteria.
-     *
-     * @param [optional] device  the device name passed into read()
-     *
-     * redefinition of 'bitmask' criteria'
-     * @code:
-     *   const nlohmann::json json = {
-     *     {"type", "DBUS"},
-     *     {"object", "/xyz/openbmc_project/inventory/system/chassis/GPU0"},
-     *     {"interface", "xyz.openbmc_project.Inventory.Decorator.Dimension"},
-     *     {"property", "Depth"},
-     *     {"check", {{"bitmask", "0x01"}}}
-     *   };
-     *
-     * // supposing the property above of GPU0 having the value 271 = 0x10
-     *   DataAccessor(json).check() // true using 0x01 from current criteria
-     *
-     * // The following Criteria call examples with redefinition return true:
-     *   DataAccessor(json).check(PropertyVariant(uint64_t(0x02)); // bit 1 set
-     *   DataAccessor(json).check(PropertyVariant(uint64_t(0x04)); // bit 2 set
-     *   DataAccessor(json).check(PropertyVariant(uint64_t(0x08)); // bit 3 set
-     *
-     * // The following call returns false
-     *   DataAccessor(json).check(PropertyVariant(uint64_t(0x10)); // bit 4 NOT
-     * @endcode
-     *
-     * redefinition of 'lookup' criteria
-     * @code
-     *  const nlohmann::json json = {
-     *      {"type", "CMDLINE"},
-     *      {"executable", "/bin/echo"},
-     *      {"arguments", "ff 00 00 00 00 00 02 40 66 28"},
-     *      {"check", {{"lookup", "00 02 40"}}}
-     *  };
-     *
-     *  DataAccessor(json).check(PropertyVariant(std::string{"40 6"})); // true
-     *  DataAccessor(json).check(PropertyVariant(std::string{"zz"}));   // false
-     * @endcode
-     *
-     * @return true of the criteria matches the value
-     */
-    bool check(const DataAccessor& otherAcc,
-               const PropertyVariant& redefCriteria = PropertyVariant(),
-               const std::string& deviceType = std::string{""}) const;
-
-    /**
-     * @brief [overloaded] with inverted order of device and redefCriteria
-     */
-    bool check(const DataAccessor& otherAcc, const std::string& device,
-               const PropertyVariant& redefCriteria = PropertyVariant()) const;
-    /**
-     * @brief [overloaded] using otherAcc = *this and device
-     */
-    bool check(const std::string& device,
-               const PropertyVariant& redefCriteria = PropertyVariant()) const;
-    /**
-     * @brief [overloaded] using otherAcc = *this and redefCriteria
-     */
-    bool check(const PropertyVariant& redefCriteria,
-               const std::string& device = std::string{""}) const;
-
-    /** Special overloaded version that uses the assertedDeviceList
-     *    from a previous performed check (event.trigger)
-     */
-    bool check(const util::DeviceIdMap& assertedDeviceList,
-               const std::string& device);
-
-    /**
-     * @brief [overloaded] using otherAcc = *this,
-     *                           redefCriteria = PropertyVariant()
-     *                           empty device
-     */
-    bool check() const;
-
-    /**
      * @brief Access accessor just like do it on json
      *
      * @param key
@@ -414,29 +331,6 @@ class DataAccessor
     {
         return isTypeDevice() == true && _acc.count(deviceNameKey) != 0;
     }
-
-    /**
-     * @brief  the @sa check() is supposed to fill _latestCheckedDevices
-     *
-     * @return the _latestAssertedDevices, a map with deviceId and deviceName
-     */
-    inline util::DeviceIdMap getAssertedDeviceNames() const
-    {
-        return _latestAssertedDevices;
-    }
-
-    /**
-     * @brief just a part of the @sa check() logic, it intends for testing
-     *        It should be when  otherAcc already has data (after @sa read())
-     *
-     * @param accData
-     * @param other
-     * @param eventType
-     * @return
-     */
-    bool subCheck(const DataAccessor& otherAcc,
-                  const PropertyVariant& redefCriteria,
-                  const std::string& range, const std::string& dev2Read) const;
 
     /**
      * @brief helper function to get the Dbus Object Path
@@ -653,6 +547,26 @@ class DataAccessor
      */
     std::string readUsingMainAccessor(const DataAccessor& otherAcc);
 
+    /**
+         * @brief  returns a DeviceIdMap from arguments in accessor type CMDLINE
+         *
+         *    For an Accessor such as:
+         * @code
+         *        "accessor": {
+         *          "type": "CMDaLINE",
+         *          "executable": "mctp-vdm-util-wrapper",
+         *          "arguments": "bla GPU[0-7]",
+         *          ...
+         *         }
+         * @endcode
+         *      returns a map => 0=GPU0 1=GPU1, ...
+         *
+         * @return populated map if type is CMDLINE and has range in arguments
+         *         otherwise an empty map
+         */
+    util::DeviceIdMap
+    getCmdLineRangeArguments(const std::string& deviceType) const;
+
  private:
     /**
      * @brief clearData() clear the _dataValue if it has a previous value
@@ -701,67 +615,6 @@ class DataAccessor
      */
     bool readDeviceCoreApi(const std::string& device);
 
-    /**
-     * @brief looks in other["object"] and this["object"] and in device
-     *          to find a device name
-     * @param other
-     * @param device
-     * @return a valid device name such as "GPU1" or empty string
-     */
-    std::string findDeviceName(const DataAccessor& other,
-                               const std::string& deviceType) const;
-
-    /**
-     * @brief creates fills the _latestAssertedDevices from accData
-     *               with a single deviceName
-     *
-     * @param accData     the DataAcessor to fill
-     * @param realDevice  the device name
-     * @param devType     the device type which can contain range specification
-     */
-    void buildSingleAssertedDeviceName(DataAccessor& accData,
-                                       const std::string& realDevice,
-                                       const std::string& devType) const;
-
-    /**
-     * @brief  returns a DeviceIdMap from arguments in accessor type CMDLINE
-     *
-     *    For an Accessor such as:
-     * @code
-     *        "accessor": {
-     *          "type": "CMDaLINE",
-     *          "executable": "mctp-vdm-util-wrapper",
-     *          "arguments": "bla GPU[0-7]",
-     *          ...
-     *         }
-     * @endcode
-     *      returns a map => 0=GPU0 1=GPU1, ...
-     *
-     * @return populated map if type is CMDLINE and there is range in arguments
-     *         otherwise an empty map
-     */
-    util::DeviceIdMap
-        getCmdLineRangeArguments(const std::string& deviceType) const;
-
-    /**
-     * @brief performs a check() for all devices from 'devices' parameter
-     *
-     *        The Accessor::read(single-device) is performed on *this
-     * @note
-     *        *this and otherAcc CANNOT BE THE SAME OBJECT
-     *
-     * @param devices map of devicesId with their deviceNames
-     * @param otherAcc the Accessor which will receive assertedDevices
-     * @param redefCriteria another value from the one gotten from read() can
-     *        be forced as the value to perform the check
-     * @param deviceType the json device_type for current event
-     * @return a single return, true if one or more checks return true
-     */
-    bool checkLoopingDevices(const util::DeviceIdMap& devices,
-                             const DataAccessor& otherAcc,
-                             const PropertyVariant& redefCriteria,
-                             const std::string& deviceType);
-
   private:
     /**
      * @brief hold json data for the accessor.
@@ -775,14 +628,6 @@ class DataAccessor
      * @sa read()
      */
     PropertyValue _dataValue;
-
-    /**
-     * @brief after calling check() it may contain the list of device names
-     */
-    util::DeviceIdMap _latestAssertedDevices;
-
-    /** it can have asserted device from a previous check */
-    std::string _triggerAssertedDevice;
 };
 
 } // namespace data_accessor
