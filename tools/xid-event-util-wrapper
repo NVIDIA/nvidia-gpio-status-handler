@@ -74,15 +74,15 @@ fi
 demFailCounter=0
 maxDemFailCounter=20
 
-# Sample Output: (isau) 0 "GPU Driver Event Message - xid Event : 06 ab 00 ba ba ba ba ab ab ab ab 48 65 6c 6c 6f 57 6f 72 6c 64 00 00 00" 2 3120605958 2881141434
-# Indexes:                                                        1   2  3  4           5           6  
-# Index Meaning:
+# Sample Output: (isau) 0 "GPU Driver Event Message - xid Event : 17 4a 00 00 52 00 00 00 3e 9d 00 00 4e 56 4c 69 6e 6b 3a 20 66 61 74 61 6c 20 65 72 72 6f 72 20 64 65 74 65 63 74 65 64 20 6f 6e 20 6c 69 6e 6b 20 31 31 28 30 78 30 2c 20 30 78 30 2c 20 30 78 30 2c 20 30 78 31 30 30" 2 3120605958 2881141434
+# Bytes:                                                          1   2  3  4           8          12
+# Bytes Meaning:
 #          1 record size    32-bit words
 #          2 xid id         8-bits
 #          3 flags          8-bits
 #          4 seqNumber      32-bits
-#          5 timeStamp      32-bits
-#          6 textMessage[0] Null terminated
+#          8 timeStamp      32-bits
+#          12 textMessage[0] Null terminated
 function fetchDem()
 {
   local output;output=$(eval $cmdline)
@@ -111,7 +111,7 @@ function fetchDem()
 function createLog()
 {
   xid="_XID"
-  createlogCmd="busctl call xyz.openbmc_project.Logging /xyz/openbmc_project/logging xyz.openbmc_project.Logging.Create Create ssa{ss} \""$event" Error\" \"xyz.openbmc_project.Logging.Entry.Level.Error\" 3 \"REDFISH_MESSAGE_ARGS\" \""$deviceName" Driver Event Message, "$event": "$1"\" \"REDFISH_MESSAGE_ID\" \"ResourceEvent.1.0.ResourceErrorsDetected\" \"namespace\" \""$deviceName$xid"\""
+  createlogCmd="busctl call xyz.openbmc_project.Logging /xyz/openbmc_project/logging xyz.openbmc_project.Logging.Create Create ssa{ss} \""$event" Error\" \"xyz.openbmc_project.Logging.Entry.Level.Error\" 3 \"REDFISH_MESSAGE_ARGS\" \""$deviceName" Driver Event Message, "$1"\" \"REDFISH_MESSAGE_ID\" \"ResourceEvent.1.0.ResourceErrorsDetected\" \"namespace\" \""$deviceName$xid"\""
   # createlogCmd="busctl call xyz.openbmc_project.Logging /xyz/openbmc_project/logging xyz.openbmc_project.Logging.Create Create ssa{ss} \"$event Error\" \"xyz.openbmc_project.Logging.Entry.Level.Error\" 3 \"REDFISH_MESSAGE_ARGS\" \"$deviceName Driver Event Message, $event: $1\" \"REDFISH_MESSAGE_ID\" \"ResourceEvent.1.0.ResourceErrorsDetected\" \"namespace\" \"$deviceName$xid\""
   bash -c "$createlogCmd"
   rc=$?
@@ -196,17 +196,33 @@ do
       [ "$rc" -eq 0 ] && demFailCounter=0
       [ "$rc" -eq 1 ] && exit $rc
       [ "$rc" -eq 2 ] && demFailCounter=$(($demFailCounter+1))
-      # Return XID ID or index 2 from the output
+      
+      # Read XID ID or byte 2 from the DEM
       XidId=`echo $dem | cut -d ' ' -f 2`
+      # Convert Hex to Decimal
       XidId=$(( 16#$XidId ))
 
-      # Return Text Message or index 6 from the output
+      # Read flags or byte 3 from DEM
+      XidFlags=`echo $dem | cut -d ' ' -f 3`
+
+      # Read Sequence Number or byte 4-7 from DEM
+      XidSeqNum=`echo $dem | cut -d ' ' -f 4-7 | sed 's/ //g'`
+      # Convert Hex to Decimal
+      XidSeqNum=$(( 16#$XidSeqNum ))
+
+      # Read XID Timestamp or byte 8-11 from DEM
+      XidTime=`echo $dem | cut -d ' ' -f 8-11 | sed 's/ //g'`
+      # Convert Hex to Decimal
+      XidTime=$(( 16#$XidTime ))
+      # Convert epoche TimeStamp to HumanReadable format
+      XidTime=`date -d @$XidTime`
+
+      # Read Text Message or byte 12-END from the DEM
       TextMessage=`echo $dem | cut -d ' ' -f12- | sed 's/00//g'`
-      # TextMessage=`echo -n $TextMessage | xxd -r -p`
       convertHexToAscii $TextMessage
 
-      # Concatinate XidID and Text Message
-      result="$XidId $ascii"
+      # Concatinate the information read above
+      result="[$XidTime][$XidSeqNum][$XidFlags] $event $XidId $ascii"
       ;;
 
     *)
