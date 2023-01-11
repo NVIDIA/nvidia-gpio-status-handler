@@ -221,11 +221,11 @@ bool CheckAccessor::subCheck(const DataAccessor& jsonAcc,
     bool ret = false;
     auto checkMap = jsonAcc[checkKey].get<CheckDefinitionMap>();
     /**
-     * special logic for bitmask
+     * special logic for bitmap
      * --------------------------
-     *   bitmask should match for deviceId present in either:
-     *    1. deviceToRead and there is no regex in device
-     *    2. device is regex, i.e, comes from 'event.device_type'
+     *    bitmap vaulue is checked for every device from 'event.device_type'
+     *    exemple in json file:
+     *         "check": { "bitmap": "1" }
      */
     if (jsonAcc.existsCheckBitmap() == true)
     {
@@ -235,16 +235,16 @@ bool CheckAccessor::subCheck(const DataAccessor& jsonAcc,
         if (bitmapValue.isValidInteger() == true)
         {
             util::DeviceIdMap devices = util::expandDeviceRange(deviceType);
-            // now walk thuru devices
+            // now walk thuru devices using a zero based index to shift bits
+            int zero_index_bit_shift = 0;
             for (auto& deviceItem : devices)
             {
-                auto devId = deviceItem.first;
-                PropertyVariant bitmask(bitmapValue.getInteger() << devId);
+                PropertyVariant bitmask(bitmapValue.getInteger() << zero_index_bit_shift++);
                 if (dataAcc.getDataValue().check(checkMap, bitmask) == true)
                 {
                     ret = true;
                     buildSingleAssertedDeviceName(dataAcc, deviceItem.second,
-                                                  deviceType, devId);
+                                                  deviceType, deviceItem.first);
                 }
             }
         }
