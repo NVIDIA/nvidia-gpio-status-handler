@@ -66,6 +66,32 @@ int loadDAT(cmd_line::ArgFuncParamType params)
     return 0;
 }
 
+int setLogLevel(cmd_line::ArgFuncParamType params)
+{
+    int newLvl = std::stoi(params[0]);
+
+    if (newLvl < 0 || newLvl > 5)
+    {
+        throw std::runtime_error("Level of our range[0-4]!");
+    }
+
+    log_set_level(newLvl);
+
+    return 0;
+}
+
+int setLogFile(cmd_line::ArgFuncParamType params)
+{
+    if (!params[0].size())
+    {
+        throw std::runtime_error("Need a file name!");
+    }
+
+    log_set_file(params[0].c_str());
+
+    return 0;
+}
+
 int loadTargetDevice(cmd_line::ArgFuncParamType params)
 {
     if (params[0].size() == 0)
@@ -102,6 +128,11 @@ cmd_line::CmdLineArgs cmdLineArgs = {
     {"-d", "", cmd_line::OptFlag::overwrite, "<file>",
      cmd_line::ActFlag::mandatory, "Device Association Tree filename.",
      loadDAT},
+    {"-l", "", cmd_line::OptFlag::overwrite, "<level>",
+     cmd_line::ActFlag::normal, "Debug Log Level [0-4].", setLogLevel},
+    {"-L", "", cmd_line::OptFlag::overwrite, "<file>",
+     cmd_line::ActFlag::normal, "Debug Log file. Use stdout if omitted.",
+     setLogFile},
     {"-D", "", cmd_line::OptFlag::overwrite, "<device>",
      cmd_line::ActFlag::normal,
      "Target Device for testing. Default: whole DAT tree", loadTargetDevice},
@@ -123,6 +154,28 @@ int show_help([[maybe_unused]] cmd_line::ArgFuncParamType params)
     return 0;
 }
 
+constexpr char* badHealth = "Critical";
+constexpr char* goodHealth = "OK";
+
+void updateDevicesHealthBasedOnReport(
+    selftest::Selftest& selftest, const selftest::ReportResult& reportResult)
+{
+    std::cout << "About to update devices health. To update: "
+              << reportResult.size() << " devices.\n";
+    for (auto& dev : reportResult)
+    {
+        std::string deviceHealth = goodHealth;
+        if (!selftest.evaluateDevice(dev.second))
+        {
+            deviceHealth = badHealth;
+        }
+
+        std::cout << "Setting health: " << dev.first << " = " << deviceHealth
+                  << "\n";
+        selftest.updateDeviceHealth(dev.first, deviceHealth);
+    }
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief Entry Point
@@ -138,7 +191,7 @@ int main(int argc, char* argv[])
     }
     catch (const std::exception& e)
     {
-        logs_err("%s\n",  e.what());
+        logs_err("%s\n", e.what());
         show_help({});
         return rc;
     }
@@ -184,6 +237,8 @@ int main(int argc, char* argv[])
     {
         return -1;
     }
+
+    updateDevicesHealthBasedOnReport(selftest, reportResult);
 
     selftest::Report reportGenerator;
     if (!reportGenerator.generateReport(reportResult))
