@@ -209,6 +209,10 @@ install_data('tools/wrapper_nvlink_wp_status/nvlink-wp-status-wrapper',
 install_data('tools/device_id_mapping/device-id-norm.sh',
              install_dir : bindir)
 
+## install AML memory watcher service
+install_data('aml-memory-watcher/aml-memory-watcher',
+             install_dir : bindir)
+
 if(get_option('tests').enabled())
     # generate the test executable
     ut_bin = executable(
