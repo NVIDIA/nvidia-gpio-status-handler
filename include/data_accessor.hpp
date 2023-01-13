@@ -347,6 +347,20 @@ class DataAccessor
     }
 
     /**
+     * @brief helper function to get the Property
+     * @return
+     */
+    inline std::string getProperty() const
+    {
+        std::string ret{""};
+        if (isValid(_acc) == true && _acc.count(propertyKey) != 0)
+        {
+            ret = _acc[propertyKey].get<std::string>();
+        }
+        return ret;
+    }
+
+    /**
      * @brief helper function to get the Dbus Interface
      * @return
      */

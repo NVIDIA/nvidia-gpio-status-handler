@@ -8,6 +8,8 @@
 #include "aml.hpp"
 #include "event_info.hpp"
 #include "object.hpp"
+#include "data_accessor.hpp"
+#include "util.hpp"
 
 #include <memory>
 #include <string>
@@ -52,7 +54,27 @@ class ClearEvent : public EventHandler
      */
     aml::RcCode process([[maybe_unused]] event_info::EventNode& event) override
     {
-        // TODO: clear event
+
+        if (event.accessor.isTypeDeviceCoreApi())
+        {
+            std::string property = event.accessor.getProperty();
+            if (!property.empty()){
+              int deviceId = util::getMappedDeviceId(event.event);
+              if (deviceId == util::InvalidDeviceId)
+              {
+                  // not all devices are mapped, ten use common getDeviceId()
+                  deviceId = util::getDeviceId(event.event);
+              }
+              log_dbg("Clear API Debug property(%s) of deviceId(%d)!\n", property.c_str(), deviceId);
+              int rc = dbus::deviceClearCoreAPI(deviceId, property);
+              if (rc != 0)
+              {
+                  log_err("Clear API Error on property(%s) of deviceId(%d), rc=%d!\n", property.c_str(), deviceId, rc);
+                  return aml::RcCode::error;
+              }
+            }
+        }
+
         return aml::RcCode::succ;
     }
 };
