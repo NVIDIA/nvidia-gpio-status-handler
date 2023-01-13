@@ -410,6 +410,14 @@ void EventNode::loadFrom(const json& j)
     ss << "Loaded accessor: "  << this->accessor << ", j: " << j;
     log_dbg("%s\n", ss.str().c_str());
 
+    if (j.contains("recovery"))
+    {
+        this->recovery_accessor = j["recovery"];
+        std::stringstream ss2;
+        ss2 << "Loaded accessor: "  << this->recovery_accessor << ", j: " << j;
+        log_dbg("%s\n", ss2.str().c_str());
+    }
+
     this->valueAsCount =
         j.contains("value_as_count") ? j["value_as_count"].get<bool>() : false;
 }

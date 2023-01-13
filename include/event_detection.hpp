@@ -6,22 +6,29 @@
 #pragma once
 
 #include "aml.hpp"
+#include "check_accessor.hpp"
+#include "dbus_accessor.hpp"
 #include "event_handler.hpp"
 #include "event_info.hpp"
-#include "check_accessor.hpp"
 #include "object.hpp"
 #include "threadpool_manager.hpp"
 
 #include <boost/container/flat_map.hpp>
+#include <dbus_log_utils.hpp>
+#include <dbus_utility.hpp>
 #include <sdbusplus/asio/object_server.hpp>
+#include <sdbusplus/bus.hpp>
 
 #include <iostream>
 #include <memory>
 #include <string>
 #include <thread>
+#include <variant>
 
 namespace event_detection
 {
+
+extern std::map<std::string, std::vector<std::string>> eventsDetected;
 
 extern std::unique_ptr<ThreadpoolManager> threadpoolManager;
 
@@ -34,9 +41,8 @@ using DbusEventHandlerList =
  *
  *  Each event carries an assertedDeviceList (list of devices and their data)
  */
-using AssertedEventList =
-       std::vector<std::pair<event_info::EventNode*,
-                                            data_accessor::AssertedDeviceList>>;
+using AssertedEventList = std::vector<
+    std::pair<event_info::EventNode*, data_accessor::AssertedDeviceList>>;
 
 /**
  *   A map to check if a pair object-path + interface has already been
@@ -45,8 +51,7 @@ using AssertedEventList =
  *   if a object-path + interface is registred more than once, more than once
  *    message will arrive.
  */
-using  RegisteredObjectInterfaceMap = std::map<const std::string, int>;
-
+using RegisteredObjectInterfaceMap = std::map<const std::string, int>;
 
 /**
  * @class EventDetection
@@ -80,8 +85,251 @@ class EventDetection : public object::Object
      * @param iface
      * @return a list of std::unique_ptr<sdbusplus::bus::match_t>
      */
-    DbusEventHandlerList startEventDetection(EventDetection* evtDet,
+    DbusEventHandlerList
+        startEventDetection(EventDetection* evtDet,
                             std::shared_ptr<sdbusplus::asio::connection> conn);
+
+    /**
+     * @brief Perform recovery actions for a fault HMC recovers from.
+     *
+     * @param eventName
+     * @param deviceType
+     */
+    void recoverFromFault(const std::string& eventName,
+                          const std::string& deviceType)
+    {
+        std::string eventKey = eventName + deviceType;
+        if (eventsDetected.count(eventKey) > 0)
+        {
+            for (const auto& dev : eventsDetected.at(eventKey))
+            {
+                log_dbg("Performing recovery on device %s for event %s\n",
+                        dev.c_str(), eventName.c_str());
+                updateDeviceHealthAndResolve(dev, eventName);
+            }
+            eventsDetected.at(eventKey).clear();
+        }
+    }
+
+    /**
+     * @brief  Reset device health on DBus back to OK
+     *
+     * @param devId
+     */
+    void resetDeviceHealth(const std::string& devId)
+    {
+        dbus::DirectObjectMapper om;
+        const std::string healthInterface(
+            "xyz.openbmc_project.State.Decorator.Health");
+        std::vector<std::string> objPathsToAlter =
+            om.getAllDevIdObjPaths(devId, healthInterface);
+        if (!objPathsToAlter.empty())
+        {
+            std::string healthState =
+                "xyz.openbmc_project.State.Decorator.Health.HealthType.OK";
+            for (const auto& objPath : objPathsToAlter)
+            {
+                log_dbg("Setting Health Property for: %s healthState: %s\n",
+                        objPath.c_str(), healthState.c_str());
+                bool ok = dbus::setDbusProperty(
+                    objPath, "xyz.openbmc_project.State.Decorator.Health",
+                    "Health", PropertyVariant(healthState));
+                if (ok == true)
+                {
+                    log_dbg("Changed health property as expected\n");
+                }
+            }
+        }
+    }
+
+    /**
+     * @brief  Sets Resolved property of log entry to true
+     *
+     * @param objPath
+     * @param bus
+     */
+    void setLogEntryResolved(const std::string objPath,
+                             sdbusplus::bus::bus& bus)
+    {
+        try
+        {
+            std::variant<bool> v = true;
+            dbus::DelayedMethod method(
+                bus, "xyz.openbmc_project.Logging", objPath,
+                "org.freedesktop.DBus.Properties", "Set");
+            method.append("xyz.openbmc_project.Logging.Entry");
+            method.append("Resolved");
+            method.append(v);
+            auto reply = method.call();
+        }
+        catch (const sdbusplus::exception::exception& e)
+        {
+            log_err(" Dbus Error: %s\n", e.what());
+            throw std::runtime_error(e.what());
+        }
+    }
+
+    /**
+     * @brief  Recover from events which can only be recovered after power cycle
+     *
+     * @param devId
+     * @param result
+     * @param bus
+     */
+    void recoverFromPowerCycleEvents(
+        const std::string& devId,
+        const dbus::utility::ManagedObjectType& result,
+        sdbusplus::bus::bus& bus)
+    {
+        for (auto& objectPath : result)
+        {
+            bool resolved = false;
+            const std::vector<std::string>* additionalDataRaw = nullptr;
+
+            for (auto& interfaceMap : objectPath.second)
+            {
+                if (interfaceMap.first == "xyz.openbmc_project.Logging.Entry")
+                {
+                    for (auto& propertyMap : interfaceMap.second)
+                    {
+                        if (propertyMap.first == "AdditionalData")
+                        {
+                            additionalDataRaw =
+                                std::get_if<std::vector<std::string>>(
+                                    &propertyMap.second);
+                        }
+                        else if (propertyMap.first == "Resolved")
+                        {
+                            const bool* resolveptr =
+                                std::get_if<bool>(&propertyMap.second);
+                            if (resolveptr == nullptr)
+                            {
+                                log_dbg("Resolved Property pointer is null\n");
+                                return;
+                            }
+                            resolved = *resolveptr;
+                        }
+                    }
+                }
+            }
+
+            bool powerCycle = true;
+            redfish::AdditionalData additional(*additionalDataRaw);
+            if (additional.count("RECOVERY_TYPE") > 0)
+            {
+                powerCycle = additional["RECOVERY_TYPE"] !=
+                                     std::string("property_change")
+                                 ? true
+                                 : false;
+            }
+
+            if (!resolved && powerCycle)
+            {
+                setLogEntryResolved(objectPath.first.str, bus);
+            }
+        }
+        resetDeviceHealth(devId);
+    }
+
+    /**
+     * @brief Update recovered device's health/healthrollup and log's Resolved
+     * DBus property
+     *
+     * @param devId
+     * @param eventName
+     */
+    void updateDeviceHealthAndResolve(const std::string& devId,
+                                      const std::string& eventName)
+    {
+        auto bus = sdbusplus::bus::new_default_system();
+        dbus::utility::ManagedObjectType result;
+        try
+        {
+
+            dbus::DelayedMethod method(bus, "xyz.openbmc_project.Logging",
+                                       "/xyz/openbmc_project/logging",
+                                       "xyz.openbmc_project.Logging.Namespace",
+                                       "GetAll");
+            method.append(devId);
+            method.append(
+                "xyz.openbmc_project.Logging.Namespace.ResolvedFilterType.Both");
+            auto reply = method.call();
+            reply.read(result);
+        }
+        catch (const sdbusplus::exception::exception& e)
+        {
+            log_err(" Dbus Error: %s\n", e.what());
+            throw std::runtime_error(e.what());
+        }
+
+        if (eventName.length() == 0)
+        {
+            recoverFromPowerCycleEvents(devId, result, bus);
+            return;
+        }
+
+        const std::vector<std::string>* additionalDataRaw = nullptr;
+        bool resolved = false;
+        for (auto& objectPath : result)
+        {
+            for (auto& interfaceMap : objectPath.second)
+            {
+                if (interfaceMap.first == "xyz.openbmc_project.Logging.Entry")
+                {
+                    for (auto& propertyMap : interfaceMap.second)
+                    {
+                        if (propertyMap.first == "AdditionalData")
+                        {
+                            additionalDataRaw =
+                                std::get_if<std::vector<std::string>>(
+                                    &propertyMap.second);
+                        }
+                        else if (propertyMap.first == "Resolved")
+                        {
+                            const bool* resolveptr =
+                                std::get_if<bool>(&propertyMap.second);
+                            if (resolveptr == nullptr)
+                            {
+                                log_dbg("Resolved Property pointer is null\n");
+                                return;
+                            }
+                            resolved = *resolveptr;
+                        }
+                    }
+                }
+            }
+
+            std::string messageArgs;
+            std::string addlEventName;
+            if (!resolved && additionalDataRaw != nullptr)
+            {
+                redfish::AdditionalData additional(*additionalDataRaw);
+                if (additional.count("REDFISH_MESSAGE_ARGS") > 0)
+                {
+                    messageArgs = additional["REDFISH_MESSAGE_ARGS"];
+                }
+                if (additional.count("EVENT_NAME") > 0)
+                {
+                    addlEventName = additional["EVENT_NAME"];
+                }
+                if (eventName == addlEventName &&
+                    messageArgs.find(devId) != std::string::npos)
+                {
+                    resetDeviceHealth(devId);
+                    setLogEntryResolved(objectPath.first.str, bus);
+                    return;
+                }
+            }
+        }
+    }
+
+    /**
+     * @brief Lookup EventNode per the accessor info, which list all the
+     *       asserted EventNode per device instance.
+     *
+     * @param acc
+     * @return event_info::EventNode*
+     */
 
     /**
      * @brief LookupEventFrom
@@ -97,9 +345,12 @@ class EventDetection : public object::Object
             {
                 auto& deviceType = event.deviceType;
                 std::stringstream ss;
-                ss << "\n\tevent.accessor: " << event.accessor
-                    << "\n\tevent.trigger: " << event.trigger
-                    << "\n\tacc: " << acc;
+                ss << "\n\tevent.event: " << event.event
+                   << "\n\tevent.deviceType: " << event.deviceType
+                   << "\n\tevent.device: " << event.device
+                   << "\n\tevent.accessor: " << event.accessor
+                   << "\n\tevent.trigger: " << event.trigger
+                   << "\n\tacc: " << acc;
                 log_dbg("%s\n", ss.str().c_str());
 
                 /**
@@ -108,7 +359,7 @@ class EventDetection : public object::Object
                  *   2. if check passes and event.accessor is not empty
                  *     2.1 event.accessor reads its data
                  */
-                const auto& trigger  = acc;
+                const auto& trigger = acc;
                 if (!event.trigger.isEmpty() && event.trigger == trigger)
                 {
                     data_accessor::CheckAccessor triggerCheck;
@@ -126,7 +377,7 @@ class EventDetection : public object::Object
                         if (accCheck.check(accessor, triggerCheck, deviceType))
                         {
                             eventList.push_back(std::make_pair(
-                                        &event, accCheck.getAssertedDevices()));
+                                &event, accCheck.getAssertedDevices()));
                             continue;
                         }
                     }
@@ -138,8 +389,31 @@ class EventDetection : public object::Object
                     if (accCheck.check(accessor, trigger, deviceType))
                     {
                         eventList.push_back(std::make_pair(
-                                        &event, accCheck.getAssertedDevices()));
+                            &event, accCheck.getAssertedDevices()));
                         continue;
+                    }
+                    else
+                    {
+                        if (!event.recovery_accessor.isEmpty())
+                        {
+                            log_dbg(
+                                "Checking content of events detected map\n");
+                            for (const auto& e : eventsDetected)
+                            {
+                                log_dbg("Event + devtype in event map: %s\n",
+                                        e.first.c_str());
+                                for (const auto& dev : e.second)
+                                {
+                                    log_dbg(
+                                        "Dev in map for event+devtype %s: %s\n",
+                                        e.first.c_str(), dev.c_str());
+                                }
+                            }
+                            log_dbg(
+                                "Recovering from property-changed signal fault %s\n",
+                                event.event.c_str());
+                            recoverFromFault(event.event, event.deviceType);
+                        }
                     }
                 }
                 log_dbg("skipping event : %s\n", event.event.c_str());
@@ -203,12 +477,13 @@ class EventDetection : public object::Object
             {
                 // the threadpool has reached the max queued tasks limit,
                 // don't run this event thread
-                log_err("Thread pool over maxTotal tasks limit, exiting event thread\n");
+                log_err(
+                    "Thread pool over maxTotal tasks limit, exiting event thread\n");
                 return;
             }
             std::stringstream ss;
             ss << "calling hdlrMgr: " << this->_hdlrMgr->getName()
-                      << " event: " << event.event;
+               << " event: " << event.event;
             log_dbg("%s\n", ss.str().c_str());
             auto hdlrMgr = *this->_hdlrMgr;
             hdlrMgr.RunAllHandlers(event);

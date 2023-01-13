@@ -361,7 +361,7 @@ class ObjectMapper
                             const std::vector<std::string>& interfaces = {})
     {
         return getDevIdPaths(interfaces, [&devId](const std::string& objPath) {
-            return !(isObjPathDirectDevId(objPath, devId) ||
+            return !(isObjPathPrimaryDevId(objPath, devId) ||
                      isObjPathDerivativeDevId(objPath, devId));
         });
     }
@@ -384,11 +384,11 @@ class ObjectMapper
      */
 
     std::vector<std::string>
-        getDirectDevIdPaths(const std::string& devId,
-                            const std::vector<std::string>& interfaces = {})
+        getPrimaryDevIdPaths(const std::string& devId,
+                             const std::vector<std::string>& interfaces = {})
     {
         return getDevIdPaths(interfaces, [&devId](const std::string& objPath) {
-            return !isObjPathDirectDevId(objPath, devId);
+            return !isObjPathPrimaryDevId(objPath, devId);
         });
     }
 
@@ -458,12 +458,51 @@ class ObjectMapper
         return objectPaths;
     }
 
-    static bool isObjPathDirectDevId(const std::string& objPath,
-                                     const std::string& devId)
+    /**
+     * Examples of primary object paths:
+     *
+     *   "/xyz/openbmc_project/inventory/system/chassis/HGX_Chassis_0",
+     *   "/xyz/openbmc_project/inventory/system/chassis/HGX_FPGA_0",
+     *   "/xyz/openbmc_project/inventory/system/chassis/HGX_GPU_SXM_1",
+     *   "/xyz/openbmc_project/inventory/system/chassis/HGX_GPU_SXM_2",
+     *   "/xyz/openbmc_project/inventory/system/chassis/HGX_GPU_SXM_3",
+     *   "/xyz/openbmc_project/inventory/system/chassis/HGX_GPU_SXM_4",
+     *   "/xyz/openbmc_project/inventory/system/chassis/HGX_GPU_SXM_5",
+     *   "/xyz/openbmc_project/inventory/system/chassis/HGX_GPU_SXM_6",
+     *   "/xyz/openbmc_project/inventory/system/chassis/HGX_GPU_SXM_7",
+     *   "/xyz/openbmc_project/inventory/system/chassis/HGX_GPU_SXM_8",
+     *   "/xyz/openbmc_project/inventory/system/chassis/HGX_NVSwitch_0",
+     *   "/xyz/openbmc_project/inventory/system/chassis/HGX_NVSwitch_1",
+     *   "/xyz/openbmc_project/inventory/system/chassis/HGX_NVSwitch_2",
+     *   "/xyz/openbmc_project/inventory/system/chassis/HGX_NVSwitch_3",
+     *   "/xyz/openbmc_project/inventory/system/chassis/HGX_PCIeRetimer_0",
+     *   "/xyz/openbmc_project/inventory/system/chassis/HGX_PCIeRetimer_1",
+     *   "/xyz/openbmc_project/inventory/system/chassis/HGX_PCIeRetimer_2",
+     *   "/xyz/openbmc_project/inventory/system/chassis/HGX_PCIeRetimer_3",
+     *   "/xyz/openbmc_project/inventory/system/chassis/HGX_PCIeRetimer_4",
+     *   "/xyz/openbmc_project/inventory/system/chassis/HGX_PCIeRetimer_5",
+     *   "/xyz/openbmc_project/inventory/system/chassis/HGX_PCIeRetimer_6",
+     *   "/xyz/openbmc_project/inventory/system/chassis/HGX_PCIeRetimer_7",
+     *   "/xyz/openbmc_project/inventory/system/chassis/HGX_PCIeSwitch_0"
+     */
+    static bool isObjPathPrimaryDevId(const std::string& objPath,
+                                      const std::string& devId)
     {
-        return boost::algorithm::ends_with(objPath, "/HGX_" + devId);
+        return (objPath ==
+                "/xyz/openbmc_project/inventory/system/chassis/" + devId) ||
+               (objPath ==
+                "/xyz/openbmc_project/inventory/system/chassis/HGX_" + devId);
     }
 
+    /**
+     * Example of derivative object paths corresponding to the GPU_SXM_5 @c
+     * devId:
+     *
+     * /xyz/openbmc_project/inventory/system/chassis/HGX_GPU_SXM_5/PCIeDevices/GPU_SXM_5
+     * /xyz/openbmc_project/inventory/system/fabrics/HGX_NVLinkFabric_0/Endpoints/GPU_SXM_5
+     * /xyz/openbmc_project/inventory/system/fabrics/HGX_PCIeRetimerTopology_4/Endpoints/GPU_SXM_5
+     * /xyz/openbmc_project/inventory/system/processors/GPU_SXM_5
+     */
     static bool isObjPathDerivativeDevId(const std::string& objPath,
                                          const std::string& devId)
     {

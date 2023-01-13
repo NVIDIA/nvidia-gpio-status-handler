@@ -223,9 +223,12 @@ class Selftest : public event_handler::EventHandler
      *
      * @param[out] reportRes  - container with written in TP's results @ref
      * <ReportResult>
+     * @param[in]  layersToIgnore - for these passed layer names testpoints are
+     * skipped and only empty layers are included in the reportRes; default none
      * @return aml::RcCode meaning testing operation status, not test results
      */
-    aml::RcCode performEntireTree(ReportResult& reportRes);
+    aml::RcCode performEntireTree(ReportResult& reportRes,
+                                  std::vector<std::string> layersToIgnore = {});
 
     /**
      * @brief Checks selftest result of particular device -> testpoints

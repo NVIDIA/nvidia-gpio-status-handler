@@ -1328,20 +1328,20 @@ TEST(ObjectMapper, getAllDevIdObjPaths)
             "/xyz/openbmc_project/inventory/system/processors/GPU_SXM_3"));
 }
 
-TEST(ObjectMapper, getDirectDevIdPaths)
+TEST(ObjectMapper, getPrimaryDevIdPaths)
 {
     DummyObjectMapper om;
     EXPECT_THAT(
-        om.getDirectDevIdPaths("GPU_SXM_3"),
+        om.getPrimaryDevIdPaths("GPU_SXM_3"),
         UnorderedElementsAre(
             "/xyz/openbmc_project/inventory/system/chassis/HGX_GPU_SXM_3"));
 }
 
-TEST(ObjectMapper, getDirectDevIdPaths1)
+TEST(ObjectMapper, getPrimaryDevIdPaths1)
 {
     DummyObjectMapper om;
     EXPECT_THAT(
-        om.getDirectDevIdPaths("PCIeSwitch_0"),
+        om.getPrimaryDevIdPaths("PCIeSwitch_0"),
         UnorderedElementsAre(
             "/xyz/openbmc_project/inventory/system/chassis/HGX_PCIeSwitch_0"));
 }

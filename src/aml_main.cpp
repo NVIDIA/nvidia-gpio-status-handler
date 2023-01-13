@@ -294,15 +294,67 @@ int main(int argc, char* argv[])
     }
 
     // Create threadpool manager
-    event_detection::threadpoolManager =
-        std::make_unique<ThreadpoolManager>(
-            aml::configuration.running_thread_limit,
-            aml::configuration.total_thread_limit);
+    event_detection::threadpoolManager = std::make_unique<ThreadpoolManager>(
+        aml::configuration.running_thread_limit,
+        aml::configuration.total_thread_limit);
 
     event_handler::ClearEvent clearEvent("ClearEvent");
     event_handler::EventHandlerManager eventHdlrMgr("EventHandlerManager");
     event_handler::RootCauseTracer rootCauseTracer("RootCauseTracer",
                                                    aml::profile::datMap);
+
+    selftest::Selftest selftest("bootupSelftest", aml::profile::datMap);
+    selftest::ReportResult rep_res;
+ 
+    event_detection::EventDetection eventDetection(
+        "EventDetection1", &aml::profile::eventMap, &eventHdlrMgr);
+
+    auto thread = std::make_unique<
+        std::thread>([rep_res, selftest, eventDetection]() mutable {
+        logs_wrn("started bootup selftest\n");
+        ThreadpoolGuard guard(event_detection::threadpoolManager.get());
+        if (!guard.was_successful())
+        {
+            // the threadpool has reached the max queued tasks limit,
+            // don't run this event thread
+            logs_err(
+                "Thread pool over maxTotal tasks limit, exiting event thread\n");
+            return;
+        }
+        if (selftest.performEntireTree(rep_res,
+                                       std::vector<std::string>{"data_dump"}) !=
+            aml::RcCode::succ)
+        {
+            logs_err("Bootup Selftest failed\n");
+            return;
+        }
+        for (const auto& entry : rep_res)
+        {
+            logs_dbg("SelfTest Device: %s\n", entry.first.c_str());
+            if (selftest.evaluateDevice(entry.second))
+            {
+                logs_dbg(
+                    "Device %s healthy based on SelfTest. Performing recovery actions.\n",
+                    entry.first.c_str());
+                eventDetection.updateDeviceHealthAndResolve(
+                    entry.first, std::string(""));
+            }
+            else
+            {
+                logs_err("SelfTest for Device %s failed\n", entry.first.c_str());
+            }
+        }
+        logs_wrn("finished bootup selftest\n");
+    });
+
+    if (thread != nullptr)
+    {
+        thread->detach();
+    }
+    else
+    {
+        logs_err("Create thread to process event failed!\n");
+    }
 
     /* Event handlers registration order is important - msgComposer uses data
     acquired by previous handlers; handlers are used in registration order. */
@@ -328,9 +380,6 @@ int main(int argc, char* argv[])
         auto server = sdbusplus::asio::object_server(sdbusp);
         auto iface = server.add_interface(oob_aml::TOP_OBJPATH,
                                           oob_aml::SERVICE_IFCNAME);
-
-        event_detection::EventDetection eventDetection(
-            "EventDetection1", &aml::profile::eventMap, &eventHdlrMgr);
         auto eventMatcher =
             eventDetection.startEventDetection(&eventDetection, sdbusp);
 

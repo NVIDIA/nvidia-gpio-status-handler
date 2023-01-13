@@ -27,6 +27,11 @@ namespace event_detection
  */
 static EventDetection* eventDetectionPtr = nullptr;
 
+/**
+ * @brief keeps track of events that have been detected
+ */
+std::map<std::string, std::vector<std::string>> eventsDetected;
+
 std::unique_ptr<ThreadpoolManager> threadpoolManager;
 
 void EventDetection::dbusEventHandlerCallback(sdbusplus::message::message& msg)
@@ -36,7 +41,8 @@ void EventDetection::dbusEventHandlerCallback(sdbusplus::message::message& msg)
     {
         // the threadpool has reached the max queued tasks limit,
         // this D-Bus signal will be ignored
-        logs_err("Thread pool over maxTotal tasks limit, exiting dbusEventHandlerCallback\n");
+        logs_err(
+            "Thread pool over maxTotal tasks limit, exiting dbusEventHandlerCallback\n");
         return;
     }
     std::string msgInterface;
@@ -77,8 +83,8 @@ void EventDetection::dbusEventHandlerCallback(sdbusplus::message::message& msg)
         {
             logs_err("[sdbusplus::message] empty or invalid Property, skipping "
                      "Path: %s, Intf: %s, Prop: '%s', VarIndex: %d\n",
-                            objectPath.c_str(),  msgInterface.c_str(),
-                            eventProperty.c_str(), index);
+                     objectPath.c_str(), msgInterface.c_str(),
+                     eventProperty.c_str(), index);
             continue;
         }
 
@@ -99,8 +105,8 @@ void EventDetection::dbusEventHandlerCallback(sdbusplus::message::message& msg)
         // printing DBUS trigger here as one trigger can generate several events
         logs_err("[sdbusplus::message] sender: %s, Path: %s, "
                  " Intf: %s, Prop: %s,VarIndex: %d, Value: '%s'\n",
-                 msg.get_sender(), objectPath.c_str(),
-                 msgInterface.c_str(),eventProperty.c_str(), index,
+                 msg.get_sender(), objectPath.c_str(), msgInterface.c_str(),
+                 eventProperty.c_str(), index,
                  propertyValue.getString().c_str());
 
         for (auto& assertedEvent : assertedEventsList)
@@ -118,6 +124,8 @@ void EventDetection::dbusEventHandlerCallback(sdbusplus::message::message& msg)
                        candidate.event.c_str());
                 continue;
             }
+
+            event_info::EventNode e;
             // now loop thru assertedDeviceList
             for (const auto& assertedDevice : assertedDeviceList)
             {
@@ -130,16 +138,32 @@ void EventDetection::dbusEventHandlerCallback(sdbusplus::message::message& msg)
                     logs_err(
                         "Throw out an eventHdlrMgr. device: %s event: %s\n",
                         event.device.c_str(), event.event.c_str());
+                    e = event;
                     eventDetectionPtr->RunEventHandlers(event);
                 }
+            }
+            logs_dbg(
+                "Adding event %s to internal map with afflicted device %s\n",
+                e.event.c_str(), e.device.c_str());
+
+            std::string eventKey = e.event + e.deviceType;
+            if (eventsDetected.count(eventKey) == 0)
+            {
+                eventsDetected.insert(
+                    std::pair<std::string, std::vector<std::string>>(
+                        eventKey, std::vector<std::string>{e.device}));
+            }
+            else
+            {
+                eventsDetected.at(eventKey).push_back(e.device);
             }
         }
     } // end for (auto& pc : propertiesChanged)
 }
 
 DbusEventHandlerList EventDetection::startEventDetection(
-        EventDetection* eventDetection,
-        std::shared_ptr<sdbusplus::asio::connection> conn)
+    EventDetection* eventDetection,
+    std::shared_ptr<sdbusplus::asio::connection> conn)
 {
     // it will be used in EventDetection::dbusEventHandlerCallback()
     eventDetectionPtr = eventDetection;
@@ -160,11 +184,10 @@ DbusEventHandlerList EventDetection::startEventDetection(
     return handlerList;
 }
 
-void
-EventDetection::subscribeAcc(const data_accessor::DataAccessor& acc,
-                             RegisteredObjectInterfaceMap& map,
-                             std::shared_ptr<sdbusplus::asio::connection>& conn,
-                             DbusEventHandlerList& handlerList)
+void EventDetection::subscribeAcc(
+    const data_accessor::DataAccessor& acc, RegisteredObjectInterfaceMap& map,
+    std::shared_ptr<sdbusplus::asio::connection>& conn,
+    DbusEventHandlerList& handlerList)
 {
     auto genericHandler = std::bind(&EventDetection::dbusEventHandlerCallback,
                                     std::placeholders::_1);
@@ -186,7 +209,7 @@ EventDetection::subscribeAcc(const data_accessor::DataAccessor& acc,
         }
         else
         {
-             log_dbg("object:interface already subscribed: %s\n", key.c_str());
+            log_dbg("object:interface already subscribed: %s\n", key.c_str());
         }
     }
 }

@@ -45,14 +45,14 @@ std::string
     MessageComposer::getOriginOfConditionObjectPath(const std::string& deviceId)
 {
     dbus::DirectObjectMapper om;
-    auto paths = om.getDirectDevIdPaths(deviceId);
+    auto paths = om.getPrimaryDevIdPaths(deviceId);
     if (paths.size() == 0)
     {
         logs_err("No object path found in ObjectMapper subtree "
                  "corresponding to the device '%s'. "
                  "Returning empty origin of condition. ",
                  deviceId.c_str());
-        return "";
+        return deviceId;
     }
     else
     {
@@ -92,21 +92,23 @@ bool MessageComposer::createLog(event_info::EventNode& event)
     }
 
     auto originOfCondition = getOriginOfConditionObjectPath(oocDevice);
-
-    // TODO: auto telemetries = Compression(telemetries);
-
     log_dbg("originOfCondition = '%s'\n", originOfCondition.c_str());
 
     auto pNamespace = getPhosphorLoggingNamespace(event);
 
-    method.append(std::array<std::pair<std::string, std::string>, 6>(
+    method.append(std::array<std::pair<std::string, std::string>, 9>(
         {{{"xyz.openbmc_project.Logging.Entry.Resolution",
            event.messageRegistry.message.resolution},
           {"REDFISH_MESSAGE_ID", event.messageRegistry.messageId},
           {"DEVICE_EVENT_DATA", telemetries},
           {"namespace", pNamespace},
           {"REDFISH_MESSAGE_ARGS", messageArgs},
-          {"REDFISH_ORIGIN_OF_CONDITION", originOfCondition}}}));
+          {"REDFISH_ORIGIN_OF_CONDITION", originOfCondition},
+          {"DEVICE_NAME", event.device},
+          {"EVENT_NAME", event.event},
+          {"RECOVERY_TYPE", !event.recovery_accessor.isEmpty()
+                                ? "property_change"
+                                : "other"}}}));
 
     try
     {

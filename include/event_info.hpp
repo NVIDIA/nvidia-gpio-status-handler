@@ -324,6 +324,9 @@ class EventNode : public object::Object
     /** @brief Accesssor info **/
     data_accessor::DataAccessor accessor;
 
+     /** @brief Accesssor info **/
+    data_accessor::DataAccessor recovery_accessor;
+
     /** @brief Trigger accessor info **/
     data_accessor::DataAccessor trigger;
 

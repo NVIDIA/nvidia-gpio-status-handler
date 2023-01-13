@@ -203,11 +203,13 @@ aml::RcCode Selftest::perform(const dat_traverse::Device& dev,
     return aml::RcCode::succ;
 }
 
-aml::RcCode Selftest::performEntireTree(ReportResult& reportRes)
+aml::RcCode
+    Selftest::performEntireTree(ReportResult& reportRes,
+                                std::vector<std::string> layersToIgnore)
 {
     for (auto& dev : _dat)
     {
-        if (perform(dev.second, reportRes) != aml::RcCode::succ)
+        if (perform(dev.second, reportRes, layersToIgnore) != aml::RcCode::succ)
         {
             return aml::RcCode::error;
         }
