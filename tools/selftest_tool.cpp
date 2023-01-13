@@ -154,8 +154,8 @@ int show_help([[maybe_unused]] cmd_line::ArgFuncParamType params)
     return 0;
 }
 
-constexpr char* badHealth = "Critical";
-constexpr char* goodHealth = "OK";
+constexpr const char* badHealth = "Critical";
+constexpr const char* goodHealth = "OK";
 
 void updateDevicesHealthBasedOnReport(
     selftest::Selftest& selftest, const selftest::ReportResult& reportResult)
