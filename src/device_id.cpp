@@ -519,7 +519,7 @@ PatternInputMapping DeviceIdPattern::calcInputMapping(
                 }
                 else // ! resultMap.contains(key)
                 {
-                    // marcinw:TODO: awful code, get rid of this shit
+                    // marcinw:TODO: awful code, get rid of this
                     auto notDefinedPos = std::find_if_not(
                         bracketPositions.cbegin(), bracketPositions.cend(),
                         [key, &bracketMappings](unsigned i) {
@@ -564,48 +564,6 @@ std::vector<PatternInputMapping> DeviceIdPattern::calcInputMappings(
 std::string DeviceIdPattern::pattern() const
 {
     return _rawPattern;
-}
-
-// JsonPattern ////////////////////////////////////////////////////////////////
-
-static void evalJson(const PatternIndex& index,
-                     const nlohmann::json& jsonPattern, nlohmann::json& result)
-{
-    if (jsonPattern.is_string())
-    {
-        result = DeviceIdPattern(jsonPattern.get<std::string>()).eval(index);
-    }
-    else if (jsonPattern.is_object())
-    {
-        for (const auto& [key, value] : jsonPattern.items())
-        {
-            evalJson(index, jsonPattern[key], result[key]);
-        }
-    }
-    else if (jsonPattern.is_array())
-    {
-        for (unsigned i = 0; i < jsonPattern.size(); ++i)
-        {
-            evalJson(index, jsonPattern[i], result[i]);
-        }
-    }
-    else
-    {
-        result = jsonPattern;
-    }
-}
-
-nlohmann::json JsonPattern::eval(const PatternIndex& index) const
-{
-    nlohmann::json result = this->js;
-    evalJson(index, this->js, result);
-    return result;
-}
-
-std::vector<nlohmann::json> JsonPattern::values() const
-{
-    // marcinw:TODO:
-    throw std::runtime_error("to implement");
 }
 
 } // namespace device_id

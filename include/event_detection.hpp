@@ -343,10 +343,10 @@ class EventDetection : public object::Object
         {
             for (auto& event : eventPerDevType.second)
             {
-                auto& deviceType = event.deviceType;
+                auto deviceType = event.getStrigifiedDeviceType();
                 std::stringstream ss;
                 ss << "\n\tevent.event: " << event.event
-                   << "\n\tevent.deviceType: " << event.deviceType
+                   << "\n\tevent.deviceType: " << event.getMainDeviceType()
                    << "\n\tevent.device: " << event.device
                    << "\n\tevent.accessor: " << event.accessor
                    << "\n\tevent.trigger: " << event.trigger
@@ -362,11 +362,11 @@ class EventDetection : public object::Object
                 const auto& trigger = acc;
                 if (!event.trigger.isEmpty() && event.trigger == trigger)
                 {
-                    data_accessor::CheckAccessor triggerCheck;
+                    data_accessor::CheckAccessor triggerCheck(deviceType);
                     const auto& accessor = event.trigger;
-                    if (triggerCheck.check(accessor, trigger, deviceType))
+                    if (triggerCheck.check(accessor, trigger))
                     {
-                        data_accessor::CheckAccessor accCheck;
+                        data_accessor::CheckAccessor accCheck(deviceType);
                         /* Note: accCheck uses info stored in triggerCheck
                          *   1. the original trigger
                          *   2. Maybe needs triggerCheck asserted devices data
@@ -374,7 +374,7 @@ class EventDetection : public object::Object
                          */
                         // redefines accessor
                         const auto& accessor = event.accessor;
-                        if (accCheck.check(accessor, triggerCheck, deviceType))
+                        if (accCheck.check(accessor, triggerCheck))
                         {
                             eventList.push_back(std::make_pair(
                                 &event, accCheck.getAssertedDevices()));
@@ -384,9 +384,9 @@ class EventDetection : public object::Object
                 }
                 else if (event.accessor == trigger)
                 {
-                    data_accessor::CheckAccessor accCheck;
+                    data_accessor::CheckAccessor accCheck(deviceType);
                     const auto& accessor = event.accessor;
-                    if (accCheck.check(accessor, trigger, deviceType))
+                    if (accCheck.check(accessor, trigger))
                     {
                         eventList.push_back(std::make_pair(
                             &event, accCheck.getAssertedDevices()));
@@ -412,7 +412,7 @@ class EventDetection : public object::Object
                             log_dbg(
                                 "Recovering from property-changed signal fault %s\n",
                                 event.event.c_str());
-                            recoverFromFault(event.event, event.deviceType);
+                            recoverFromFault(event.event, event.getMainDeviceType());
                         }
                     }
                 }

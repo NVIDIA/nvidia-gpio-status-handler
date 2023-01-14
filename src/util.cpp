@@ -100,16 +100,6 @@ bool existsRegx(const std::string& str, const std::string& rgx)
     return matched.empty() == false;
 }
 
-bool existsRange(const std::string& str)
-{
-    bool ret = false;
-    if (str.empty() == false)
-    {
-        ret = existsRegx(str, RANGE_REGX_STR);
-    }
-    return ret;
-}
-
 std::string removeRange(const std::string& str)
 {
     std::string ret{str};
@@ -181,95 +171,6 @@ int getDeviceId(const std::string& deviceName, const std::string& range)
         }
     }
     return ret;
-}
-
-int priv_expandRange(const std::string& deviceRegx, int initialValue,
-                     DeviceIdMap& deviceMap)
-{
-    int globalValue = 0;
-    std::string matchedStr =
-        (deviceRegx.find_first_of("[") == 0 &&
-         deviceRegx.find_last_of("]") == deviceRegx.size() - 1)
-            ? deviceRegx
-            : matchedRegx(deviceRegx, RANGE_REGX_STR);
-
-    if (matchedStr.empty() == true)
-    {
-        auto deviceId = getDeviceId(deviceRegx);
-        deviceMap[deviceId] = deviceRegx;
-    }
-    else
-    {
-        std::string regxStr = matchedStr;
-        size_t regex_position = deviceRegx.find(regxStr);
-        auto sizeRegxStr = regxStr.size();
-        // remote brackets
-        regxStr.erase(regxStr.size() - 1, 1);
-        regxStr.erase(0, 1);
-        std::vector<std::string> values;
-        boost::split(values, regxStr, boost::is_any_of("-"));
-        int value = std::stoi(values[0]);
-        if (initialValue == -1)
-        {
-            globalValue = value;
-        }
-        else
-        {
-            globalValue = initialValue;
-        }
-        int finalValue = std::stoi(values[1]);
-        while (value <= finalValue)
-        {
-            std::string rangeValue = std::to_string(value);
-            std::string original = deviceRegx;
-            auto expanded =
-                original.replace(regex_position, sizeRegxStr, rangeValue);
-
-            auto nextRepeatIndPos = expanded.find_first_of("[");
-            /** Curly brackets follow an occurrence from a previous range
-             *
-             *  "name[1-2]/double_()_more_[1-3]") should be expanded to:
-             *      'name1/double_1_more_1', 'name1/double_1_more_2',
-             *      'name1/double_1_more_3', 'name2/double_2_more_1',
-             *      'name2/double_2_more_2', 'name2/double_2_more_3'
-             */
-            auto repIndPos = expanded.find_first_of(RangeRepeaterIndicator);
-            while (repIndPos != std::string::npos)
-            {
-                if (nextRepeatIndPos != std::string::npos &&
-                    repIndPos > nextRepeatIndPos)
-                {
-                    break;
-                }
-                expanded.replace(repIndPos, 2, rangeValue);
-                repIndPos = expanded.find_first_of(RangeRepeaterIndicator);
-            }
-
-            if (nextRepeatIndPos != std::string::npos)
-            {
-                globalValue +=
-                    priv_expandRange(expanded, globalValue, deviceMap);
-            }
-            else
-            {
-                deviceMap[globalValue] = expanded; // nothing more to expand
-                globalValue++;
-            }
-            value++;
-        }
-    }
-    return globalValue - initialValue;
-}
-
-DeviceIdMap expandDeviceRange(const std::string& deviceRegx)
-{
-    DeviceIdMap deviceMap;
-    if (deviceRegx.empty() == false)
-    {
-        int start = -1;
-        priv_expandRange(deviceRegx, start, deviceMap);
-    }
-    return deviceMap;
 }
 
 std::string replaceRangeByMatchedValue(const std::string& regxValue,
@@ -369,38 +270,6 @@ void printThreadId(const char* funcName)
 {
     std::thread::id this_id = std::this_thread::get_id();
     std::cout << funcName << " thread id: " << this_id << std::endl;
-}
-
-/**
- * @brief Determine device name from DBus object path.
- *
- * @param objPath
- * @param devType
- * @return std::string
- */
-std::string determineDeviceName(const std::string& objPath,
-                                const std::string& devType)
-{
-    std::string name{objPath};
-    if (objPath.empty() == false && devType.empty() == false)
-    {
-        // device_type sometimes has range, apply "[0-9]+" on every range
-        auto deviceType = util::makeRangeForRegexSearch(devType);
-        const std::regex r{".*(" + deviceType + ").*"};
-        std::smatch m;
-
-        if (std::regex_search(objPath.begin(), objPath.end(), m, r))
-        {
-            name = m[1]; // the 2nd field is the matched substring.
-        }
-        else
-        {
-            // name =  expandDeviceRange(devType)[0];
-        }
-    }
-    logs_dbg("objPath %s devType:%s Devname: %s\n.", objPath.c_str(),
-             devType.c_str(), name.c_str());
-    return name;
 }
 
 RangeInformation getRangeInformation(const std::string& str)
@@ -561,51 +430,12 @@ void splitDeviceTypeForRegxSearch(const std::string& deviceType,
     }
 }
 
-std::string determineAssertedDeviceName(const std::string& realDevice,
-                                        const std::string& deviceType)
-{
-    std::string name{""};
-    if (realDevice.empty() == false && deviceType.empty() == false)
-    {
-        std::vector<std::string> devTypePieces;
-        splitDeviceTypeForRegxSearch(deviceType, devTypePieces);
-        auto counter = devTypePieces.size();
-        bool matchedFlag = false;
-        while (counter--)
-        {
-            auto part = devTypePieces.at(counter);
-            const std::regex r{".*(" + part + ").*"};
-            std::smatch m;
-            /* if a part from deviceType matches in device uses matched part,
-             *  otherwise uses the deviceType part as always based on deviceType
-             */
-            if (std::regex_search(realDevice.begin(), realDevice.end(), m, r))
-            {
-                devTypePieces[counter] = m[1];
-                matchedFlag = true;
-            }
-        }
-        /**
-         * If not match exists, return empty string */
-        if (matchedFlag == true)
-        {
-            if (devTypePieces.size() == 1)
-            {
-                name = devTypePieces.back();
-            }
-            else
-            {
-                name = boost::join(devTypePieces, "_");
-            }
-        }
-    }
-    logs_dbg("realDevice %s deviceType:%s Devname: %s\n.", realDevice.c_str(),
-             deviceType.c_str(), name.c_str());
-    return name;
-}
-
 bool matchRegexString(const std::string& regstr, const std::string& str)
 {
+#if 1 // using  device_id language, keept old code for reference
+    device_id::DeviceIdPattern pattern(regstr);
+    return pattern.matches(str);
+#else
     std::string myRegStr{regstr};
     std::string myStr{str};
     auto valRangRepeatPos = regstr.find_first_of(util::RangeRepeaterIndicator);
@@ -613,13 +443,10 @@ bool matchRegexString(const std::string& regstr, const std::string& str)
     {
         myRegStr = revertRangeRepeated(regstr, valRangRepeatPos);
     }
-    auto otherRangeRepeatPos = str.find_first_of(util::RangeRepeaterIndicator);
-    if (otherRangeRepeatPos != std::string::npos)
-    {
-        myStr = util::revertRangeRepeated(str, otherRangeRepeatPos);
-    }
+    myRegStr = makeRangeForRegexSearch(myRegStr);
     const std::regex r{myRegStr};
     return std::regex_match(myStr, r);
+#endif
 }
 
 std::regex createRegexDigitsRange(const std::string& pattern)
@@ -651,13 +478,22 @@ std::regex createRegexDigitsRange(const std::string& pattern)
 std::string introduceDeviceInObjectpath(const std::string& objPath,
                                         const std::string& device)
 {
+    // TODO improve using device_id language
     auto regEx = createRegexDigitsRange(device);
     auto objPathWithoutRangeRepeated = revertRangeRepeated(objPath);
     auto ret = std::regex_replace(objPathWithoutRangeRepeated, regEx, device);
+    if (ret == objPath || ret.empty() == true)
+    {
+        int deviceId = getDeviceId(device);
+        device_id::PatternIndex  deviceIndex(deviceId);
+        device_id::DeviceIdPattern  objPattern(objPath);
+        ret = objPattern.eval(deviceIndex);
+    }
     if (ret.empty() == true)
     {
         ret = objPath;
     }
+    logs_dbg("ret=%s device=%s\n", ret.c_str(), device.c_str());
     return ret;
 }
 

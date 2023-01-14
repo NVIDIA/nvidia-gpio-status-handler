@@ -10,6 +10,8 @@
 */
 
 #pragma once
+
+#include "device_util.hpp"
 #include "log.hpp"
 
 #include <iostream>
@@ -72,8 +74,6 @@ constexpr int InvalidDeviceId = -1;
 
 constexpr auto RangeRepeaterIndicator = "()";
 
-using DeviceIdMap = std::map<int, std::string>;
-
 using StringPosition = size_t;
 using SizeString = size_t;
 using RangeInformation = std::tuple<SizeString, StringPosition, std::string>;
@@ -105,8 +105,6 @@ std::string matchedRegx(const std::string& str, const std::string& rgx);
 
 bool existsRegx(const std::string& str, const std::string& rgx);
 
-bool existsRange(const std::string& str);
-
 std::tuple<std::vector<int>, std::string>
     getMinMaxRange(const std::string& rgx);
 
@@ -136,21 +134,6 @@ std::string getDeviceName(const std::string& name);
 int getDeviceId(const std::string& deviceName,
                 const std::string& range = std::string{""});
 
-/**
- * @brief   Expands range in a string and returns a list of expanded strings
- *
- * Calls example:
- * @example
- *   ("[0-5]");          '0'  '1'  '2'  '3'  '4'  '5'
- *   ("name[1-4]");      'name1'  'name2'  'name3'  'name4'
- *   (begin[0-2]end");   'begin0end'  'begin1end'  'begin2end'
- *   ("unique");         'unique'
- *   ("[2-3]end");       '2end'  '3end'
- *
- * @return DeviceIdMap which contains both deviceId and deviceName
- */
-DeviceIdMap expandDeviceRange(const std::string& deviceRegx);
-
 /** Allows multiple range replacement, uses deviceType to adjust the deviceId
  *
  *  @example:
@@ -166,16 +149,6 @@ std::string
     replaceRangeByMatchedValue(const std::string& regxValue,
                                const std::string& matchedValue,
                                const std::string& deviceType = std::string{""});
-
-/**
- * @brief determine device name from DBus object path.
- *
- * @param objPath
- * @param devType
- * @return std::string
- */
-std::string determineDeviceName(const std::string& objPath,
-                                const std::string& devType);
 
 /**
  * @brief Print the vector @c vec to the output stream @c os (e.g. std::cout,
@@ -265,31 +238,6 @@ std::string makeRangeForRegexSearch(const std::string& rangeStr);
  */
 void splitDeviceTypeForRegxSearch(const std::string& deviceType,
                                   std::vector<std::string>& devTypePieces);
-
-/**
- * @brief determine the AssertedDeviceName based on device_type
- *
- * Here are some examples as Unit Test:
- * @code
- *
- *      TEST(Device, AssertedDeviceName)
- *      {
- *         auto result = determineAssertedDeviceName("HGX_GPU_SXM_2",
- *                                                   "GPU_SXM_[1-8]_DRAM_0");
- *         EXPECT_EQ(result, "GPU_SXM_2_DRAM_0");
- *
- *         result = determineAssertedDeviceName("GPU_SXM_8",
- *                                             "GPU_SXM_[1-8]");
- *         EXPECT_EQ(result, "GPU_SXM_8");
- *
- *         result = determineAssertedDeviceName("PCIeSwitch0",
- *                                             "PCIeSwitch0");
- *         EXPECT_EQ(result, "PCIeSwitch0");
- *      }
- * @endcode
- */
-std::string determineAssertedDeviceName(const std::string& realDevice,
-                                        const std::string& deviceType);
 
 /**
  * @return good deviceId if the deviceName is mapped or

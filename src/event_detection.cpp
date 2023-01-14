@@ -120,8 +120,8 @@ void EventDetection::dbusEventHandlerCallback(sdbusplus::message::message& msg)
             const auto& assertedDeviceList = assertedEvent.second;
             if (assertedDeviceList.empty() == true)
             {
-               logs_err("event: '%s' no asserted devices, exiting...\n",
-                       candidate.event.c_str());
+                logs_err("event: '%s' no asserted devices, exiting...\n",
+                         candidate.event.c_str());
                 continue;
             }
 
@@ -132,13 +132,17 @@ void EventDetection::dbusEventHandlerCallback(sdbusplus::message::message& msg)
                 if (eventDetectionPtr->IsEvent(candidate, eventValue))
                 {
                     auto event = candidate;
-                    event.trigger  = assertedDevice.trigger;
+                    event.trigger = assertedDevice.trigger;
                     event.accessor = assertedDevice.accessor;
                     event.device = assertedDevice.device;
-                    logs_err(
-                        "Throw out an eventHdlrMgr. device: %s event: %s\n",
-                        event.device.c_str(), event.event.c_str());
+                    event.setDeviceIndexTuple(assertedDevice.deviceIndexTuple);
+                    std::stringstream ss;
+                    ss << "Throw out an eventHdlrMgr. device: " << event.device
+                       << " event: '" << event.event << "'"
+                       << " deviceIndex: " << assertedDevice.deviceIndexTuple;
+                    logs_err("%s\n", ss.str().c_str());
                     e = event;
+
                     eventDetectionPtr->RunEventHandlers(event);
                 }
             }
@@ -146,7 +150,7 @@ void EventDetection::dbusEventHandlerCallback(sdbusplus::message::message& msg)
                 "Adding event %s to internal map with afflicted device %s\n",
                 e.event.c_str(), e.device.c_str());
 
-            std::string eventKey = e.event + e.deviceType;
+            std::string eventKey = e.event + e.getMainDeviceType();
             if (eventsDetected.count(eventKey) == 0)
             {
                 eventsDetected.insert(

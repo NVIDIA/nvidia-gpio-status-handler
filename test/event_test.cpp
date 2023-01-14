@@ -31,10 +31,9 @@ TEST(EventTest, LoadJson)
     event_info::EventNode event("test event");
     event.loadFrom(j);
     EXPECT_EQ(event.event, "Event0");
-    EXPECT_EQ(event.messageRegistry.messageId,
-              "ResourceEvent.1.0.ResourceErrorsDetected");
+    EXPECT_EQ(event.getMessageId(), "ResourceEvent.1.0.ResourceErrorsDetected");
     EXPECT_EQ(event.counterReset["metadata"], "metadata");
-    EXPECT_EQ(event.messageRegistry.message.severity, "Critical");
+    EXPECT_EQ(event.getSeverity(), "Critical");
 }
 
 TEST(MsgCompTest, MakeCall)
@@ -66,9 +65,10 @@ TEST(MsgCompTest, MakeCall)
 
 TEST(DevNameTest, MakeCall)
 {
+    auto pattern = "/xyz/openbmc_project/inventory/system/chassis/GPU[1-49]";
     auto objPath = "/xyz/openbmc_project/inventory/system/chassis/GPU12";
-    auto devType = "GPU[1-19]";
-    auto name = util::determineDeviceName(objPath, devType);
+    auto devType = "GPU[1-49]";
+    auto name = util::determineDeviceName(pattern, objPath, devType);
     EXPECT_EQ(name, "GPU12");
 }
 
@@ -118,30 +118,138 @@ TEST(EventTelemtries, MakeCall)
 
 TEST(EventSeverityLevel, Critical)
 {
-    auto level =  message_composer::MessageComposer::makeSeverity("Critical");
+    auto level = message_composer::MessageComposer::makeSeverity("Critical");
     EXPECT_EQ(level, "xyz.openbmc_project.Logging.Entry.Level.Critical");
 }
 
 TEST(EventSeverityLevel, OK)
 {
-    auto level =  message_composer::MessageComposer::makeSeverity("OK");
+    auto level = message_composer::MessageComposer::makeSeverity("OK");
     EXPECT_EQ(level, "xyz.openbmc_project.Logging.Entry.Level.Informational");
 }
 
 TEST(EventSeverityLevel, OkLowerK)
 {
-    auto level =  message_composer::MessageComposer::makeSeverity("Ok");
+    auto level = message_composer::MessageComposer::makeSeverity("Ok");
     EXPECT_EQ(level, "xyz.openbmc_project.Logging.Entry.Level.Informational");
 }
 
 TEST(EventSeverityLevel, Warning)
 {
-    auto level =  message_composer::MessageComposer::makeSeverity("Warning");
+    auto level = message_composer::MessageComposer::makeSeverity("Warning");
     EXPECT_EQ(level, "xyz.openbmc_project.Logging.Entry.Level.Warning");
 }
 
 TEST(EventSeverityLevel, WarningLowerW)
 {
-    auto level =  message_composer::MessageComposer::makeSeverity("warning");
+    auto level = message_composer::MessageComposer::makeSeverity("warning");
     EXPECT_EQ(level, "xyz.openbmc_project.Logging.Entry.Level.Warning");
+}
+
+TEST(EventInfoTest, EventNode_setDeviceTypes)
+{
+    event_info::EventNode en;
+    EXPECT_NO_THROW(
+        en.setDeviceTypes(std::vector<std::string>({"GPU_SXM_[1-8]"})));
+    EXPECT_NO_THROW(en.setDeviceTypes(nlohmann::json("GPU_SXM_[1-8]")));
+    EXPECT_NO_THROW(en.setDeviceTypes(
+        nlohmann::json::array({"GPU_SXM_[1-8]", "NVLink_[0-39]"})));
+    EXPECT_ANY_THROW(en.setDeviceTypes(std::vector<std::string>()));
+    EXPECT_ANY_THROW(en.setDeviceTypes(nlohmann::json::object()));
+    EXPECT_ANY_THROW(en.setDeviceTypes(nlohmann::json::array()));
+}
+
+TEST(EventInfoTest, EventNode_getStrigifiedDeviceType)
+{
+    event_info::EventNode en;
+    en.setDeviceTypes(
+        nlohmann::json::array({"GPU_SXM_[1-8]", "NVLink_[0-39]"}));
+    EXPECT_EQ(en.getStrigifiedDeviceType(), "GPU_SXM_[1-8]/NVLink_[0-39]");
+
+    en.setDeviceTypes(nlohmann::json::array({"GPU_SXM_[1-8]"}));
+    EXPECT_EQ(en.getStrigifiedDeviceType(), "GPU_SXM_[1-8]");
+}
+
+// "Baseboard_0"
+// "FPGA_0"
+// "GPU_SXM_[0|1-8]/NVLink_[1|0-17]"
+// "GPU_SXM_[1-8]"
+// "HMC_0"
+// "HSC_[0-9]"
+// "NVSwitch_[0|0-3]/NVLink_[1|0-39]"
+// "NVSwitch_[0-3]"
+// "NVSwitch_[0-3]/NVLink_[0-39]"
+// "PCIeRetimer_[0-7]"
+// "PCIeSwitch_0"
+
+TEST(EventInfoTest, EventNode_deviceType)
+{
+    {
+        event_info::EventNode en;
+        en.setDeviceTypes(nlohmann::json("Baseboard_0"));
+        EXPECT_EQ(en.getStrigifiedDeviceType(), "Baseboard_0");
+        EXPECT_EQ(en.getMainDeviceType(), "Baseboard_0");
+    }
+    {
+        event_info::EventNode en;
+        en.setDeviceTypes(nlohmann::json("FPGA_0"));
+        EXPECT_EQ(en.getStrigifiedDeviceType(), "FPGA_0");
+        EXPECT_EQ(en.getMainDeviceType(), "FPGA_0");
+    }
+    {
+        event_info::EventNode en;
+        en.setDeviceTypes(nlohmann::json("GPU_SXM_[0|1-8]/NVLink_[1|0-17]"));
+        EXPECT_EQ(en.getStrigifiedDeviceType(),
+                  "GPU_SXM_[0|1-8]/NVLink_[1|0-17]");
+        EXPECT_EQ(en.getMainDeviceType(), "GPU_SXM_[0|1-8]");
+    }
+    {
+        event_info::EventNode en;
+        en.setDeviceTypes(nlohmann::json("GPU_SXM_[1-8]"));
+        EXPECT_EQ(en.getStrigifiedDeviceType(), "GPU_SXM_[1-8]");
+        EXPECT_EQ(en.getMainDeviceType(), "GPU_SXM_[1-8]");
+    }
+    {
+        event_info::EventNode en;
+        en.setDeviceTypes(nlohmann::json("HMC_0"));
+        EXPECT_EQ(en.getStrigifiedDeviceType(), "HMC_0");
+        EXPECT_EQ(en.getMainDeviceType(), "HMC_0");
+    }
+    {
+        event_info::EventNode en;
+        en.setDeviceTypes(nlohmann::json("HSC_[0-9]"));
+        EXPECT_EQ(en.getStrigifiedDeviceType(), "HSC_[0-9]");
+        EXPECT_EQ(en.getMainDeviceType(), "HSC_[0-9]");
+    }
+    {
+        event_info::EventNode en;
+        en.setDeviceTypes(nlohmann::json("NVSwitch_[0|0-3]/NVLink_[1|0-39]"));
+        EXPECT_EQ(en.getStrigifiedDeviceType(),
+                  "NVSwitch_[0|0-3]/NVLink_[1|0-39]");
+        EXPECT_EQ(en.getMainDeviceType(), "NVSwitch_[0|0-3]");
+    }
+    {
+        event_info::EventNode en;
+        en.setDeviceTypes(nlohmann::json("NVSwitch_[0-3]"));
+        EXPECT_EQ(en.getStrigifiedDeviceType(), "NVSwitch_[0-3]");
+        EXPECT_EQ(en.getMainDeviceType(), "NVSwitch_[0-3]");
+    }
+    {
+        event_info::EventNode en;
+        en.setDeviceTypes(nlohmann::json("NVSwitch_[0-3]/NVLink_[0-39]"));
+        EXPECT_EQ(en.getStrigifiedDeviceType(), "NVSwitch_[0-3]/NVLink_[0-39]");
+        EXPECT_EQ(en.getMainDeviceType(), "NVSwitch_[0-3]");
+    }
+    {
+        event_info::EventNode en;
+        en.setDeviceTypes(nlohmann::json("PCIeRetimer_[0-7]"));
+        EXPECT_EQ(en.getStrigifiedDeviceType(), "PCIeRetimer_[0-7]");
+        EXPECT_EQ(en.getMainDeviceType(), "PCIeRetimer_[0-7]");
+    }
+    {
+        event_info::EventNode en;
+        en.setDeviceTypes(nlohmann::json("PCIeSwitch_0"));
+        EXPECT_EQ(en.getStrigifiedDeviceType(), "PCIeSwitch_0");
+        EXPECT_EQ(en.getMainDeviceType(), "PCIeSwitch_0");
+    }
 }

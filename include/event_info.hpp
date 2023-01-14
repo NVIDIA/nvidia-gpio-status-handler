@@ -5,7 +5,10 @@
 #pragma once
 
 #include "data_accessor.hpp"
+#include "device_id.hpp"
+#include "json_proc.hpp"
 #include "object.hpp"
+#include "device_id.hpp"
 
 #include <nlohmann/json.hpp>
 
@@ -169,7 +172,9 @@ struct redfish
 {
     std::string messageId;
     Message message;
+    // marcinw:TODO: to remove
     std::vector<MessageArg> messageArgs;
+    nlohmann::json messageArgsJsonPattern;
 
   public:
     /**
@@ -297,23 +302,30 @@ class EventNode : public object::Object
      */
     void loadFrom(const json& j);
 
-    /** @brief Dumps class content to stdout
-     *
-     * @param[in]  n  - event node object to dump
-     *
-     */
-    void print(const EventNode& n) const;
-
     /** @brief Dumps current object class content to stdout
      */
     void print(void) const;
 
+  private:
+    /** @brief The copy of the original json event node **/
+    nlohmann::json configEventNode;
+
+    /** @brief A sequence of numbers identifying a device this event occured on
+     *
+     *  Example, Object path: /xyz/openbmc_project/NVSwitch_2/Ports/NVLink_23
+     *  Supposing the example above, it will contain (2,23)
+     **/
+    std::optional<device_id::PatternIndex> deviceIndexTuple;
+
+    /** @brief Redfish fields struct **/
+    redfish messageRegistry;
+
+    /** @brief Type of device **/
+    std::vector<std::string> deviceTypes;
+
   public:
     /** @brief Name of the event **/
     std::string event;
-
-    /** @brief Type of device **/
-    std::string deviceType;
 
     /** @brief Type of device subtype **/
     std::string subType;
@@ -339,9 +351,6 @@ class EventNode : public object::Object
     /** @brief Struct containing type and metadata **/
     data_accessor::DataAccessor counterReset;
 
-    /** @brief Redfish fields struct **/
-    redfish messageRegistry;
-
     /** @brief List of the event's telemetries **/
     std::vector<data_accessor::DataAccessor> telemetries;
 
@@ -357,6 +366,100 @@ class EventNode : public object::Object
 
     /** @brief Report of selftest **/
     nlohmann::ordered_json selftestReport;
+
+    /**
+     * @brief Setter for @c deviceIndexTuple field
+     */
+    void setDeviceIndexTuple(const device_id::PatternIndex& deviceIndexTuple);
+
+    // No getter provided for 'deviceIndexTuple'. This is an abstract identifier
+    // used for inner mechanics of determining the source of an event. If a user
+    // of 'EventNode' requires this information from this class then he's
+    // probably trying to implement something that should be placed here.
+
+    /**
+     * @brief True if @c setDeviceIndexTuple has been called on this object,
+     * false otherwise
+     */
+    bool isEventNodeEvaluated() const;
+
+    /**
+     * @brief Return the severity of the event
+     *
+     * E.g. "Critical", "Warning", "OK"
+     */
+    std::string getSeverity() const;
+
+    /**
+     * @brief Return the resolution of the problem specified by this event
+     *
+     * E.g "Reset the link. If problem persists, isolate the server for RMA
+     * evaluation."
+     */
+    std::string getResolution() const;
+
+    /**
+     * @brief Return a code specifying the message format string describing the
+     * event in redfish
+     *
+     * E.g. "ResourceEvent.1.0.ResourceErrorsDetected"
+     */
+    std::string getMessageId() const;
+
+    /**
+     * @brief Return the arguments provided to the format string specified by @c
+     * getMessageId concatenated with comma
+     *
+     * This is the format expected by bmcweb.
+     *
+     * E.g. "NVSwitch_1 PCIe, Abnormal Speed Change", "GPU_SXM_4 Memory,
+     * Row-Remapping Pending"
+     */
+    std::string getStringMessageArgs();
+
+    /**
+     * @brief Call @c setDeviceTypes(js) wrapping it in a sensible error message
+     */
+    void readDeviceTypes(const json& js, const std::string& eventName);
+
+    /**
+     * @brief Set the @c deviceTypes field directly from a corresponding
+     * attribute of the event node in the event info json config file
+     */
+    void setDeviceTypes(const json& js);
+
+    /**
+     * @brief Setter for @c deviceTypes field
+     */
+    void setDeviceTypes(std::vector<std::string>&& values);
+
+    /**
+     * @brief Return a string representation of the devices set this event is
+     * associated with
+     *
+     * If @c deviceTypes has one element return the content of this element. If
+     * it has more elements concatenate them with '/' and return as a single
+     * string. The situation of @c deviceTypes having no elements will not
+     * happen because @c setDeviceTypes will reject it.
+     *
+     * E.g. return "GPU_SXM_[1-8]" for @c deviceTypes being
+     *
+     * @code
+     * ["GPU_SXM_[1-8]"]
+     * @endcode
+     *
+     * Return "NVSwitch_[0|0-3]/NVLink_[1|0-39]" for @c deviceTypes being
+     *
+     * @code
+     * ["NVSwitch_[0|0-3]", "NVLink_[1|0-39]"]
+     * @endcode
+     */
+    std::string getStrigifiedDeviceType() const;
+
+    /**
+     * @brief Return the first element of @c deviceTypes
+     */
+    std::string getMainDeviceType() const;
 };
 
 using EventMap = std::map<std::string, std::vector<event_info::EventNode>>;

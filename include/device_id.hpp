@@ -2,12 +2,12 @@
 
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/split.hpp>
-#include <nlohmann/json.hpp>
 
 #include <array>
 #include <charconv>
 #include <iostream>
 #include <list>
+#include <map>
 #include <ranges>
 #include <string>
 #include <string_view>
@@ -193,7 +193,7 @@ class PatternInputMapping
   public:
     PatternInputMapping() : unspecified(true), valuesMapping(), indexToEntry()
     {}
-    // marcinw:TODO: use move?
+    // marcinw:TODO: use move
     PatternInputMapping(const std::map<unsigned, unsigned>& valuesMapping);
 
     // marcinw:TODO: remove this operator and change to a name like
@@ -230,7 +230,6 @@ class PatternInputMapping
 
 // CartesianProductRange //////////////////////////////////////////////////////
 
-// marcinw:TODO: rename (it's not general enough to justify this name)
 // marcinw:TODO: move into PatternIndex class, share 'ranges' with 'domains'
 class CartesianProductRange
 {
@@ -538,37 +537,6 @@ class DeviceIdPattern
     // _bracketPosToInputPos contains only indexes 0 <= i < dim()
 };
 
-// JsonPattern ////////////////////////////////////////////////////////////////
-
-class JsonPattern
-{
-  public:
-    explicit JsonPattern(const nlohmann::json& js) : js(js)
-    {}
-
-    /**
-     * @brief Analogous to DeviceIdPattern::eval, but for json objects instead
-     * of strings.
-     *
-     * TODO: examples
-     */
-    nlohmann::json eval(const PatternIndex& index) const;
-
-    /**
-     * @brief Generate a sequence of json object in a similar manner as @c
-     * DeviceIdPattern::values()
-     *
-     * The logic is equivalent to converting the json given in the
-     * constructor to a raw string, constructing @c DeviceIdPattern of it,
-     * calling its @c eval, and parsing every element from the obtained
-     * sequence back to a json object.
-     */
-    std::vector<nlohmann::json> values() const;
-
-  private:
-    nlohmann::json js;
-};
-
 ///////////////////////////////////////////////////////////////////////////////
 //                              Implementations                              //
 ///////////////////////////////////////////////////////////////////////////////
@@ -615,9 +583,6 @@ unsigned parseNonNegativeInt(const StringRange& range)
         throw std::runtime_error(
             "parseNonNegativeInt: ! "
             "std::from_chars(range.begin(), range.end(), value).ec == std::errc{}");
-        // throw std::runtime_error("Could not parse " +
-        //                          std::string(range.cbegin(), range.cend()) +
-        //                          " as na unsigned number");
     }
 }
 

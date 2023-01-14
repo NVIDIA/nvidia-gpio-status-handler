@@ -1,19 +1,21 @@
 amllib_sources = [
-    'device_id.cpp',
+    'check_accessor.cpp',
     'config_parser.cpp',
     'dat_traverse.cpp',
     'data_accessor.cpp',
-    'property_accessor.cpp',
     'dbus_accessor.cpp',
-    'util.cpp',
+    'device_id.cpp',
+    'device_util.cpp',
     'event_detection.cpp',
     'event_handler.cpp',
     'event_info.cpp',
+    'json_proc.cpp',
+    'log.cpp',
     'message_composer.cpp',
     'message_dispatcher.cpp',
     'oobaml_api.cpp',
-    'log.cpp',
-    'check_accessor.cpp']
+    'property_accessor.cpp',
+    'util.cpp']
 
 amllib = shared_library('oobaml',
                         amllib_sources,

@@ -6,6 +6,7 @@
 
 #include "util.hpp"
 
+#include <boost/algorithm/string/split.hpp>
 #include <nlohmann/json.hpp>
 
 #include <fstream>
@@ -373,10 +374,28 @@ std::vector<event_info::MessageArg> loadMessageArgs(const json& messageArgsJson)
     return result;
 }
 
+void EventNode::readDeviceTypes(const json& js, const std::string& eventName)
+{
+    try
+    {
+        this->setDeviceTypes(js);
+    }
+    catch (const std::exception& e)
+    {
+        std::stringstream ss;
+        ss << "Error reading \"device_type\" property in event entry '"
+           << eventName << "': " << e.what();
+        shortlog_err(<< ss.str());
+        throw std::runtime_error(ss.str());
+    }
+}
+
 void EventNode::loadFrom(const json& j)
 {
+    this->configEventNode = j;
+
     this->event = j["event"];
-    this->deviceType = j["device_type"];
+    readDeviceTypes(j["device_type"], this->event);
     this->triggerCount = j["trigger_count"].get<int>();
     // this->eventTrigger = j["event_trigger"];
 
@@ -387,34 +406,36 @@ void EventNode::loadFrom(const json& j)
     {
         this->telemetries.push_back((data_accessor::DataAccessor)entry);
     }
-    // this->telemetries = j["telemetries"].get<std::vector<std::string>>();
     this->action = j["action"];
     this->device = "";
 
     this->counterReset = j["event_counter_reset"];
 
-    std::vector<event_info::MessageArg> messageArgs;
-    if (j["redfish"].contains("message_args"))
-    {
-        messageArgs = loadMessageArgs(j["redfish"]["message_args"]);
-    }
-    // otherwise leave `messageArgs' empty
+    // std::vector<event_info::MessageArg> messageArgs;
+    // if (j["redfish"].contains("message_args"))
+    // {
+    //     messageArgs = loadMessageArgs(j["redfish"]["message_args"]);
+    // }
+    // // otherwise leave `messageArgs' empty
 
     this->messageRegistry = {j["redfish"]["message_id"].get<std::string>(),
                              {j["severity"], j["resolution"]},
-                             messageArgs};
+                             {},
+                             j["redfish"].contains("message_args")
+                                 ? j["redfish"]["message_args"]
+                                 : nlohmann::json()};
 
     this->accessor = j["accessor"];
 
     std::stringstream ss;
-    ss << "Loaded accessor: "  << this->accessor << ", j: " << j;
+    ss << "Loaded accessor: " << this->accessor << ", j: " << j;
     log_dbg("%s\n", ss.str().c_str());
 
     if (j.contains("recovery"))
     {
         this->recovery_accessor = j["recovery"];
         std::stringstream ss2;
-        ss2 << "Loaded accessor: "  << this->recovery_accessor << ", j: " << j;
+        ss2 << "Loaded accessor: " << this->recovery_accessor << ", j: " << j;
         log_dbg("%s\n", ss2.str().c_str());
     }
 
@@ -422,66 +443,176 @@ void EventNode::loadFrom(const json& j)
         j.contains("value_as_count") ? j["value_as_count"].get<bool>() : false;
 }
 
-// Not used anymore - may get rid of it later
-// static void
-//     print_accessor([[maybe_unused]] const data_accessor::DataAccessor& acc)
-// {
-//     /* todo */
-//     return;
-// }
-
-static void print_node(const EventNode& n)
+void EventNode::print() const
 {
     std::stringstream ss;
-    ss << n.accessor << "\n";
-    ss << "\tDumping event     " << n.event << "\n";
+    ss << accessor << "\n";
+    ss << "\tDumping event     " << event << "\n";
 
-    ss << "\t\tdeviceType      " << n.deviceType << "\n";
-    ss << "\t\teventTrigger    " << n.eventTrigger << "\n";
+    ss << "\t\tdeviceType      " << getStrigifiedDeviceType() << "\n";
+    ss << "\t\teventTrigger    " << eventTrigger << "\n";
     ss << "\t\taccessor        "
        << "todo"
        << "\n";
-    ss << n.accessor << "\n";
+    ss << accessor << "\n";
 
-    ss << "\t\tcount(map)      " << n.count.size() << "\n";
-    for (auto& p : n.count)
+    ss << "\t\tcount(map)      " << count.size() << "\n";
+    for (auto& p : count)
     {
         ss << "\t\t\t[" << p.first << "] = " << p.second << "\n";
     }
 
-    ss << "\t\ttriggerCount    " << n.triggerCount << "\n";
+    ss << "\t\ttriggerCount    " << triggerCount << "\n";
     ss << "\t\tcounterReset    "
        << "todo"
        << "\n";
-    ss << n.counterReset << "\n";
+    ss << counterReset << "\n";
 
     ss << "\t\tredfish:" << std::endl;
-    n.messageRegistry.print(ss, "\t\t\t");
+    messageRegistry.print(ss, "\t\t\t");
 
-    ss << "\t\t\t" << n.messageRegistry.message.severity << "\n";
-    ss << "\t\t\t" << n.messageRegistry.message.resolution << "\n";
+    ss << "\t\t\t" << messageRegistry.message.severity << "\n";
+    ss << "\t\t\t" << messageRegistry.message.resolution << "\n";
 
-    ss << "\t\ttelemetries     " << n.telemetries.size() << "\n";
-    for (auto& v : n.telemetries)
+    ss << "\t\ttelemetries     " << telemetries.size() << "\n";
+    for (auto& v : telemetries)
     {
         ss << "\t\t\t" << v << "\n";
     }
 
-    ss << "\t\taction          " << n.action << "\n";
-    ss << "\t\tdevice          " << n.device << "\n";
+    ss << "\t\taction          " << action << "\n";
+    ss << "\t\tdevice          " << device << "\n";
 
     // Should be compatible with 'printMap'
     std::cerr << ss.str();
 }
 
-void EventNode::print(const EventNode& n) const
+void EventNode::setDeviceIndexTuple(
+    const device_id::PatternIndex& deviceIndexTuple)
 {
-    print_node(n);
+    this->deviceIndexTuple = deviceIndexTuple;
 }
 
-void EventNode::print(void) const
+bool EventNode::isEventNodeEvaluated() const
 {
-    print_node(*this);
+    return deviceIndexTuple.has_value();
+}
+
+std::string EventNode::getSeverity() const
+{
+    return messageRegistry.message.severity;
+}
+
+std::string EventNode::getResolution() const
+{
+    return messageRegistry.message.resolution;
+}
+
+std::string EventNode::getMessageId() const
+{
+    return messageRegistry.messageId;
+}
+
+std::string EventNode::getStringMessageArgs()
+{
+    if (isEventNodeEvaluated())
+    {
+        try
+        {
+            log_dbg("messageRegistry.messageArgsJsonPattern: %s\n",
+                    messageRegistry.messageArgsJsonPattern.dump().c_str());
+            if (messageRegistry.messageArgsJsonPattern.is_null())
+            {
+                messageRegistry.messageArgs.clear();
+            }
+            else
+            {
+                nlohmann::json messageArgsJsonEvaluation =
+                    json_proc::JsonPattern(
+                        messageRegistry.messageArgsJsonPattern)
+                        .eval(*deviceIndexTuple);
+                log_dbg("messageArgsJsonEvaluation: %s",
+                        messageArgsJsonEvaluation.dump().c_str());
+                messageRegistry.messageArgs =
+                    loadMessageArgs(messageArgsJsonEvaluation);
+            }
+            return messageRegistry.getStringMessageArgs(*this);
+        }
+        catch (const std::exception& e)
+        {
+            shortlog_err(
+                << "An error occured during \"message_args\" processing: "
+                << e.what() << ". Returning empty message args string");
+            return "";
+        }
+    }
+    else
+    {
+        shortlog_err(
+            << "Called 'getStringMessageArgs' on an unevaluated event node. "
+            << "Returning empty message args string");
+        return "";
+    }
+}
+
+void EventNode::setDeviceTypes(const json& js)
+{
+    if (js.is_string())
+    {
+        std::vector<std::string> elements;
+        boost::split(elements, js.get<std::string>(), boost::is_any_of("/"));
+        setDeviceTypes(elements);
+    }
+    else if (js.is_array())
+    {
+        std::vector<std::string> result;
+        for (const auto& elem : js)
+        {
+            if (elem.is_string())
+            {
+                result.push_back(elem.get<std::string>());
+            }
+            else // ! elem.is_string()
+            {
+                std::stringstream ss;
+                ss << "Value '" << elem.dump() << "' expected to be a string";
+                throw std::runtime_error(ss.str());
+            }
+        }
+        setDeviceTypes(std::move(result));
+    }
+    else
+    {
+        std::stringstream ss;
+        ss << "value '" << js.dump()
+           << "' expected to be a string or an array of strings";
+        throw std::runtime_error(ss.str());
+    }
+}
+
+void EventNode::setDeviceTypes(std::vector<std::string>&& values)
+{
+    if (values.size() > 0)
+    {
+        this->deviceTypes = std::move(values);
+    }
+    else
+    {
+        std::stringstream ss;
+        ss << "Device types array is expected to have at least 1 element. "
+           << "Actual size: " << values.size();
+        throw std::runtime_error(ss.str());
+    }
+}
+
+std::string EventNode::getStrigifiedDeviceType() const
+{
+    return boost::algorithm::join(this->deviceTypes, "/");
+}
+
+std::string EventNode::getMainDeviceType() const
+{
+    return this->deviceTypes.at(0);
 }
 
 } // namespace event_info

@@ -48,6 +48,24 @@ TEST(UtilExpandDeviceRange, RangeAtEnd)
     EXPECT_EQ(devMap.at(1), "begin1");
 }
 
+TEST(UtilExpandDeviceRange, DeviceType)
+{
+   auto list =  expandDeviceRange("GPU_SXM_[1-8]");
+   EXPECT_EQ(list.size(), 8);
+   EXPECT_EQ(list.count(1), 1);
+   EXPECT_EQ(list.count(8), 1);
+   EXPECT_EQ(list.at(1), "GPU_SXM_1");
+   EXPECT_EQ(list.at(8), "GPU_SXM_8");
+
+   auto dobuleList = expandDeviceRange("NVSwitch_[0-3]/NVLink_[0-39]");
+   EXPECT_EQ(dobuleList.size(), 160);
+   EXPECT_EQ(dobuleList.at(0), "NVSwitch_0/NVLink_0");
+   EXPECT_EQ(dobuleList.at(40), "NVSwitch_1/NVLink_0");
+   EXPECT_EQ(dobuleList.at(80), "NVSwitch_2/NVLink_0");
+   EXPECT_EQ(dobuleList.at(120), "NVSwitch_3/NVLink_0");
+   EXPECT_EQ(dobuleList.at(159), "NVSwitch_3/NVLink_39");
+}
+
 TEST(UtilExpandDeviceRange, LS10)
 {
     auto devMap = expandDeviceRange("LS10[0-3]");
@@ -111,7 +129,7 @@ TEST(UtilRemoveRangeFollowed, OneOccurrence)
 
 TEST(UtilExpandDeviceRange, DoubleRangeSingleExpansion)
 {
-    auto devMap = expandDeviceRange("/xyz/HGX_NVSwitch_[0-3]/NVSwitch_()");
+    auto devMap = expandDeviceRange("/xyz/HGX_NVSwitch_[0-3]/NVSwitch_[0|0-3]");
 
     EXPECT_EQ(devMap.size(), 4);
     EXPECT_EQ(devMap.count(0), 1);
@@ -123,7 +141,7 @@ TEST(UtilExpandDeviceRange, DoubleRangeSingleExpansion)
     EXPECT_EQ(devMap.at(2), "/xyz/HGX_NVSwitch_2/NVSwitch_2");
     EXPECT_EQ(devMap.at(3), "/xyz/HGX_NVSwitch_3/NVSwitch_3");
 
-    devMap = expandDeviceRange("/xyz/first_[0-3]/second_()/third_()");
+    devMap = expandDeviceRange("/xyz/first_[0-3]/second_[0|0-3]/third_[0|0-3]");
     EXPECT_EQ(devMap.size(), 4);
     EXPECT_EQ(devMap.count(0), 1);
     EXPECT_EQ(devMap.count(1), 1);
@@ -134,7 +152,7 @@ TEST(UtilExpandDeviceRange, DoubleRangeSingleExpansion)
     EXPECT_EQ(devMap.at(2), "/xyz/first_2/second_2/third_2");
     EXPECT_EQ(devMap.at(3), "/xyz/first_3/second_3/third_3");
 
-    devMap = expandDeviceRange("/xyz/first_[0-3]/second_()/third_[0-3]");
+    devMap = expandDeviceRange("/xyz/first_[0-3]/second_[0|0-3]/third_[1|0-3]");
     EXPECT_EQ(devMap.size(), 16);
     EXPECT_EQ(devMap.count(0), 1);
     EXPECT_EQ(devMap.count(1), 1);
@@ -162,14 +180,6 @@ TEST(UtilExpandDeviceRange, NoRange)
     EXPECT_EQ(devMap.size(), 1);
     EXPECT_EQ(devMap.count(0), 1);
     EXPECT_EQ(devMap.at(0), "test");
-}
-
-TEST(UtilExpandDeviceRange, NoRangeButDeviceId)
-{
-    auto devMap = expandDeviceRange("GPU5");
-    EXPECT_EQ(devMap.size(), 1);
-    EXPECT_EQ(devMap.count(5), 1);
-    EXPECT_EQ(devMap.at(5), "GPU5");
 }
 
 TEST(UtilExpandDeviceRange, Empty)
@@ -290,51 +300,6 @@ TEST(Util, GetRangeInformation)
     EXPECT_EQ(std::get<2>(info), "01GPU[0-3]");
 }
 
-TEST(AssertedDeviceName, Spliting)
-{
-    std::vector<std::string> result;
-    splitDeviceTypeForRegxSearch("GPU_SXM_[1-8]_DRAM_0", result);
-
-    EXPECT_EQ(result.size(), 3);
-    EXPECT_EQ(result.at(0), "GPU");
-    EXPECT_EQ(result.at(1), "SXM_[0-9]+");
-    EXPECT_EQ(result.at(2), "DRAM_0");
-}
-
-TEST(AssertedDeviceName, Sufix)
-{
-    auto result = determineAssertedDeviceName("HGX_GPU_SXM_2",
-                                              "GPU_SXM_[1-8]_DRAM_0");
-    EXPECT_EQ(result, "GPU_SXM_2_DRAM_0");
-}
-
-TEST(AssertedDeviceName, Normal)
-{
-    auto result = determineAssertedDeviceName("GPU_SXM_8",
-                                              "GPU_SXM_[1-8]");
-    EXPECT_EQ(result, "GPU_SXM_8");
-}
-
-TEST(AssertedDeviceName, Equal)
-{
-    auto result = determineAssertedDeviceName("PCIeSwitch0",
-                                              "PCIeSwitch0");
-    EXPECT_EQ(result, "PCIeSwitch0");
-}
-
-TEST(AssertedDeviceName, Prefix)
-{
-    auto result =  determineAssertedDeviceName(
-        "/v1/Chassis/HGX_GPU_SXM_1/PCIeDevices/GPU_SXM_1", "HGX_GPU_SXM_[1-8]");
-    EXPECT_EQ(result, "HGX_GPU_SXM_1");
-}
-
-TEST(AssertedDeviceName, Empty)
-{
-    auto result =  determineAssertedDeviceName("", "GPU_SXM_[1-8]");
-    EXPECT_EQ(result.empty(), true);
-}
-
 TEST(IntroduceDeviceInObjectpath, SingleRange)
 {
     std::string obj= "/xyz/HGX_GPU_SXM_[1-8]/PCIeDevices";
@@ -347,4 +312,108 @@ TEST(IntroduceDeviceInObjectpath, DoubleRange)
     std::string obj= "/xyz/HGX_GPU_SXM_[1-8]/PCIeDevices/HGX_GPU_SXM_()";
     auto result = util::introduceDeviceInObjectpath(obj, "GPU_SXM_3");
     EXPECT_EQ(result, "/xyz/HGX_GPU_SXM_3/PCIeDevices/HGX_GPU_SXM_3");
+}
+
+TEST(ExistsRange,  EmptyString)
+{
+    EXPECT_NE(existsRange(""), true);
+}
+
+TEST(ExistsRange,  NoRange)
+{
+    EXPECT_NE(existsRange("no-range"), true);
+}
+
+TEST(ExistsRange,  Range)
+{
+    auto str = "/xyz/openbmc_project/inventory/system/chassis/HGX_GPU_SXM_[1-8]";
+    EXPECT_EQ(existsRange(str), true);
+}
+
+TEST(DetermineDeviceName, GpioStatusHandler)
+{
+    auto objPath = "/xyz/openbmc_project/GpioStatusHandler";
+    auto devType = "PCIeSwitch_0";
+    auto name = determineDeviceName(objPath, devType, devType);
+    EXPECT_EQ(name.empty(), true);
+}
+
+TEST(DetermineDeviceName, MiddleName)
+{
+    auto pattern = "/xyz/openbmc_project/HGX_GPU_SXM_[1-8]/PCIeDevices";
+    auto objPath = "/xyz/openbmc_project/HGX_GPU_SXM_5/PCIeDevices";
+    auto devType = "GPU_SXM_[1-8]";
+    auto name = determineDeviceName(pattern, objPath, devType);
+    EXPECT_EQ(name, "GPU_SXM_5");
+}
+
+TEST(DetermineDeviceName, NoPattern)
+{
+    auto objPattern = "/xyz/openbmc_project/GpioStatusHandler";
+    auto obj = "/xyz/openbmc_project/GpioStatusHandler";
+    auto devName = determineDeviceName(objPattern, obj, "GPU_SXM_[1-8]");
+    EXPECT_EQ(devName.empty(), true);
+}
+
+TEST(DetermineDeviceName, Pattern)
+{
+    auto objPattern = "/xyz/openbmc_project/inventory/system/chassis/HGX_GPU_SXM_[1-8]";
+    auto obj = "/xyz/openbmc_project/inventory/system/chassis/HGX_GPU_SXM_8";
+    auto devName = determineDeviceName(objPattern, obj, "GPU_SXM_[1-8]");
+    EXPECT_EQ(devName, "GPU_SXM_8");
+}
+
+
+TEST(DetermineDeviceName, DeviceIdPattern)
+{
+    auto objPattern = "/xyz/openbmc_project/inventory/system/chassis/HGX_GPU_SXM_[1-8]";
+    auto obj = "/xyz/openbmc_project/inventory/system/chassis/HGX_GPU_SXM_3";
+    device_id::DeviceIdPattern deviceObjPattern(objPattern);
+    device_id::DeviceIdPattern deviceTypePattern("GPU_SXM_[1-8]");
+    auto devName = determineDeviceName(deviceObjPattern, obj, deviceTypePattern);
+    EXPECT_EQ(devName, "GPU_SXM_3");
+}
+
+TEST(DetermineDeviceName, DeviceIdDoublePattern)
+{
+    auto objPattern = "/xyz/openbmc_project/inventory/system/fabrics/HGX_NVLinkFabric_0/Switches/NVSwitch_[0-3]/Ports/NVLink_[0-39]";
+    auto obj = "/xyz/openbmc_project/inventory/system/fabrics/HGX_NVLinkFabric_0/Switches/NVSwitch_1/Ports/NVLink_21";
+    device_id::DeviceIdPattern deviceObjPattern(objPattern);
+    device_id::DeviceIdPattern deviceTypePattern("NVSwitch_[0-3]/NVLink_[0-39]");
+    auto devName = determineDeviceName(deviceObjPattern, obj, deviceTypePattern);
+    EXPECT_EQ(devName, "NVSwitch_1");
+}
+
+TEST(UtilMatchRegexString, NoPatternMatches)
+{
+   bool match = matchRegexString("YES", "YES");
+   EXPECT_EQ(match, true);
+}
+
+TEST(UtilMatchRegexString, NoPatternDoesNotMatch)
+{
+   bool match = matchRegexString("YES", "No");
+   EXPECT_NE(match, true);
+}
+
+TEST(UtilMatchRegexString, DoublePatternMatches)
+{
+    auto objPattern = "/xyz/openbmc_project/inventory/system/fabrics/"
+              "HGX_NVLinkFabric_0/Switches/NVSwitch_[0-3]/Ports/NVLink_[0-39]";
+    auto obj = "/xyz/openbmc_project/inventory/system/fabrics/"
+               "HGX_NVLinkFabric_0/Switches/NVSwitch_1/Ports/NVLink_21";
+
+    bool match = matchRegexString(objPattern, obj);
+    EXPECT_EQ(match, true);
+}
+
+TEST(UtilMatchRegexString, DoublePatternDoesNotMatch)
+{
+    auto objPattern = "/xyz/openbmc_project/inventory/system/fabrics/"
+              "HGX_NVLinkFabric_0/Switches/NVSwitch_[0-3]/Ports/NVLink_[0-39]";
+    auto obj = "/xyz/openbmc_project/inventory/system/fabrics/"
+               "HGX_NVLinkFabric_0/Switches/NVSwitch_1/";
+
+    bool match = matchRegexString(objPattern, obj);
+    EXPECT_NE(match, true);
 }

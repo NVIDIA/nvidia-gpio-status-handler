@@ -143,35 +143,38 @@ if get_option('tests').enabled()
 endif
 
 srcfiles_unittest = [
-    'test/device_id_test.cpp',
-    'test/dat_test.cpp',
-    'test/event_test.cpp',
-    'test/dat_traverse_test.cpp',
     'test/accessor_test.cpp',
-    'test/propertyvalue_string_test.cpp',
-    'test/event_detection_test.cpp',
-    'test/selftest_test.cpp',
-    'test/propertyvalue_variant_test.cpp',
-    'test/util_test.cpp',
+    'test/dat_test.cpp',
     'test/dat_to_dbus_test.cpp',
-    'test/dbus_accessor_test.cpp']
+    'test/dat_traverse_test.cpp',
+    'test/dbus_accessor_test.cpp',
+    'test/device_id_test.cpp',
+    'test/event_detection_test.cpp',
+    'test/event_test.cpp',
+    'test/json_proc_test.cpp',
+    'test/propertyvalue_string_test.cpp',
+    'test/propertyvalue_variant_test.cpp',
+    'test/selftest_test.cpp',
+    'test/util_test.cpp']
 
 amllib_sources = [
-    'src/device_id.cpp',
+    'src/check_accessor.cpp',
     'src/config_parser.cpp',
     'src/dat_traverse.cpp',
     'src/data_accessor.cpp',
-    'src/property_accessor.cpp',
     'src/dbus_accessor.cpp',
-    'src/util.cpp',
+    'src/device_id.cpp',
+    'src/device_util.cpp',
     'src/event_detection.cpp',
     'src/event_handler.cpp',
     'src/event_info.cpp',
+    'src/json_proc.cpp',
+    'src/log.cpp',
     'src/message_composer.cpp',
     'src/message_dispatcher.cpp',
     'src/oobaml_api.cpp',
-    'src/log.cpp',
-    'src/check_accessor.cpp']
+    'src/property_accessor.cpp',
+    'src/util.cpp']
 
 selftestlib_sources = ['src/selftest.cpp']
 

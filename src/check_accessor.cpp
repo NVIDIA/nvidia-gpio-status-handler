@@ -3,75 +3,42 @@
 namespace data_accessor
 {
 
-std::string CheckAccessor::findDeviceName(const DataAccessor& jsonAcc,
-                                          const DataAccessor& dataAcc,
-                                          const std::string& deviceType) const
+bool CheckAccessor::buildSingleAssertedDeviceName(const DataAccessor& dataAcc,
+                                                  const std::string& realDevice,
+                                                  const int deviceId)
 {
-    auto objectName = dataAcc.getDbusObjectPath();
-    std::string deviceName{""};
-    if (objectName.empty() == false)
+    if (deviceId == util::InvalidDeviceId)
     {
-        deviceName = util::determineDeviceName(objectName, deviceType);
-        if (deviceName.empty() == true)
-        {
-            deviceName = util::getDeviceName(objectName);
-        }
+        return buildSingleAssertedDeviceName(dataAcc, realDevice,
+                                             _deviceIndexTuple);
     }
-    if (deviceName.empty() == true)
-    {
-        deviceName = util::getDeviceName(deviceType);
-    }
-    if (deviceName.empty() == true)
-    {
-        objectName = jsonAcc.getDbusObjectPath();
-        if (objectName.empty() == false)
-        {
-            deviceName = util::getDeviceName(objectName);
-        }
-    }
-    return deviceName;
+    return buildSingleAssertedDeviceName(dataAcc, realDevice,
+                                         device_id::PatternIndex(deviceId));
 }
 
-bool
-CheckAccessor::buildSingleAssertedDeviceName(const DataAccessor& dataAcc,
-                                             const std::string& realDevice,
-                                             const std::string& devType,
-                                             const int deviceId)
+bool CheckAccessor::buildSingleAssertedDeviceName(
+    const DataAccessor& dataAcc, const std::string& realDevice,
+    const device_id::PatternIndex& patternIndex)
 {
-    // if deviceId is valid means realDevice is already an asserted device
+    bool ret = false;
     auto deviceName = realDevice;
-    bool ret = (deviceId != util::InvalidDeviceId && !deviceName.empty());
-    if (ret == false)
+    if (deviceName.empty() && util::existsRange(_deviceTypePattern) == false)
     {
-        deviceName = util::determineAssertedDeviceName(realDevice, devType);
-        if (deviceName.empty() == true && util::existsRange(devType) == false)
-        {
-            // no reason to not consider 'device_type' as asserted device
-            deviceName = devType;
-        }
-        if (deviceName.empty() == false)
-        {
-            ret = true;
-        }
+        deviceName =
+            util::determineDeviceName(_deviceTypePattern, patternIndex);
     }
-    if (ret == true)
+    if (false == deviceName.empty())
     {
-        auto devId = deviceId;
-        if (devId == -1)
-        {
-            devId = util::getDeviceId(deviceName, devType);
-        }
         _assertedDevices.push_back(
-                  AssertedDevice(_trigger, dataAcc, deviceName, devId));
-
+            AssertedDevice(_trigger, dataAcc, deviceName, patternIndex));
+        ret = true;
     }
     return ret;
 }
 
 bool CheckAccessor::loopDevices(const util::DeviceIdMap& devices,
                                 const DataAccessor& jsonAcc,
-                                DataAccessor& dataAcc,
-                                const std::string& deviceType)
+                                DataAccessor& dataAcc)
 {
     bool ret = false;
     for (auto& arg : devices)
@@ -80,7 +47,7 @@ bool CheckAccessor::loopDevices(const util::DeviceIdMap& devices,
         const auto& deviceId = arg.first;
         const auto& deviceName = arg.second;
         dataAcc.read(deviceName);
-        if (subCheck(jsonAcc, dataAcc, deviceType, deviceName, deviceId))
+        if (subCheck(jsonAcc, dataAcc, deviceName, deviceId))
         {
             ret = true; // it at least one passes the entire check also passes
         }
@@ -88,21 +55,41 @@ bool CheckAccessor::loopDevices(const util::DeviceIdMap& devices,
     return ret;
 }
 
-bool CheckAccessor::check(const DataAccessor& jsonAcc,
-                          const DataAccessor& dataAcc,
-                          const std::string& deviceType)
+bool CheckAccessor::check(const DataAccessor& jsonAcc, // template Accessor
+                          const DataAccessor& dataAcc) // trigger  Accessor
 {
     auto tempAccData = dataAcc;
-    return privCheck(jsonAcc, tempAccData, deviceType);
+    // both are DBUS, as dataAcc is always DBUS,
+    // calls util::determineDeviceIndex only if device_type also has range
+    if (jsonAcc.isTypeDbus() && util::existsRange(_deviceTypePattern))
+    {
+        // get the real device index (event multiple devices)
+        auto templateAccessorObj = jsonAcc.getDbusObjectPath();
+        auto triggerAccessorObj = dataAcc.getDbusObjectPath();
+        if (!templateAccessorObj.empty() && !triggerAccessorObj.empty())
+        {
+            device_id::DeviceIdPattern jsonObjPattern(templateAccessorObj);
+            _deviceIndexTuple =
+                util::determineDeviceIndex(jsonObjPattern, triggerAccessorObj);
+        }
+    }
+    return privCheck(jsonAcc, tempAccData);
 }
 
 bool CheckAccessor::privCheck(const DataAccessor& jsonAcc,
-                              DataAccessor& dataAcc,
-                              const std::string& deviceType)
+                              DataAccessor& dataAcc)
 {
     bool ret = true; // defaults to true if accessor["check"] does not exist
-    std::string deviceToRead = findDeviceName(jsonAcc, dataAcc, deviceType);
-    _assertedDevices.clear();
+    std::string deviceToRead;
+    // empty block
+    {
+        auto dimDeviceType = _deviceTypePattern.dim();
+        if (dimDeviceType)
+        {
+            deviceToRead = util::determineDeviceName(
+                                     _deviceTypePattern, _deviceIndexTuple);
+        }
+    }
     if (_trigger.isEmpty())
     {
         _trigger = dataAcc;
@@ -131,18 +118,19 @@ bool CheckAccessor::privCheck(const DataAccessor& jsonAcc,
             if (jsonAcc.isTypeCmdline() == true)
             {
                 // case 1
+                auto deviceType = _deviceTypePattern.pattern();
                 devRange = jsonAcc.getCmdLineRangeArguments(deviceType);
             }
             else if (jsonAcc.isTypeDeviceCoreApi() && jsonAcc.isDeviceIdRange())
             {
                 // working so far with 'equal' and 'bitmask'
-                devRange = util::expandDeviceRange(deviceType); // case 2
+                devRange = util::expandDeviceRange(_deviceTypePattern);
             }
         }
         if (devRange.size() > 0)
         {
             DataAccessor tempDataAcc = jsonAcc; // tempDataAcc will have data in
-            ret = loopDevices(devRange, jsonAcc, tempDataAcc, deviceType);
+            ret = loopDevices(devRange, jsonAcc, tempDataAcc);
         }
         else // not necessary to loop all devices, using original deviceToRead
         {
@@ -150,13 +138,13 @@ bool CheckAccessor::privCheck(const DataAccessor& jsonAcc,
             {
                 dataAcc.read(deviceToRead);
             }
-            ret = subCheck(jsonAcc, dataAcc, deviceType, deviceToRead);
+            ret = subCheck(jsonAcc, dataAcc, deviceToRead);
         }
     }
     else
     {
         // there is not "check" in the dataAcc, then needs to get devices
-        buildSingleAssertedDeviceName(dataAcc, deviceToRead, deviceType);
+        buildSingleAssertedDeviceName(dataAcc, deviceToRead, _deviceIndexTuple);
     }
     if (ret == true)
     {
@@ -168,16 +156,14 @@ bool CheckAccessor::privCheck(const DataAccessor& jsonAcc,
     log_dbg("asserted vector size=%lu\n", size);
     for (auto& deviceData : _assertedDevices)
     {
-        log_dbg("Id=%d device=%s data=%s\n", deviceData.deviceId,
-               deviceData.device.c_str(),
-               deviceData.accessor.getDataValue().getString().c_str());
+        log_dbg("device=%s data=%s\n", deviceData.device.c_str(),
+                deviceData.accessor.getDataValue().getString().c_str());
     }
     return ret;
 }
 
 bool CheckAccessor::check(const DataAccessor& jsonAcc,
-                          const CheckAccessor& triggerCheck,
-                          const std::string &deviceType)
+                          const CheckAccessor& triggerCheck)
 {
     _trigger = triggerCheck._trigger;
     // this accessor will contains data if that passes
@@ -185,9 +171,11 @@ bool CheckAccessor::check(const DataAccessor& jsonAcc,
     // using trigger Check assertedDevice
     if (triggerCheck.hasAssertedDevices())
     {
-        _triggerAssertedDevice = triggerCheck._assertedDevices.at(0).device;
+        auto& firstAssertedDevice = triggerCheck._assertedDevices.at(0);
+        _triggerAssertedDevice = firstAssertedDevice.device;
+        _deviceIndexTuple = firstAssertedDevice.deviceIndexTuple;
     }
-    privCheck(accessorData, accessorData, deviceType);
+    privCheck(accessorData, accessorData);
 
     // prevent the cases when:
     //   1.  event.trigger exists and event.accessor does NOT exist
@@ -208,11 +196,8 @@ bool CheckAccessor::check(const DataAccessor& jsonAcc,
     return passed();
 }
 
-bool CheckAccessor::subCheck(const DataAccessor& jsonAcc,
-                             DataAccessor& dataAcc,
-                             const std::string& deviceType,
-                             const std::string& dev2Read,
-                             const int deviceId)
+bool CheckAccessor::subCheck(const DataAccessor& jsonAcc, DataAccessor& dataAcc,
+                             const std::string& dev2Read, const int deviceId)
 {
     if (dataAcc.hasData() == false)
     {
@@ -234,7 +219,7 @@ bool CheckAccessor::subCheck(const DataAccessor& jsonAcc,
         bitmapValue = PropertyValue(jsonBitmapValue);
         if (bitmapValue.isValidInteger() == true)
         {
-            util::DeviceIdMap devices = util::expandDeviceRange(deviceType);
+            util::DeviceIdMap devices = util::expandDeviceRange(_deviceTypePattern);
             // now walk thuru devices using a zero based index to shift bits
             int zero_index_bit_shift = 0;
             for (auto& deviceItem : devices)
@@ -243,8 +228,7 @@ bool CheckAccessor::subCheck(const DataAccessor& jsonAcc,
                 if (dataAcc.getDataValue().check(checkMap, bitmask) == true)
                 {
                     ret = true;
-                    buildSingleAssertedDeviceName(dataAcc, deviceItem.second,
-                                                  deviceType, deviceItem.first);
+                    buildSingleAssertedDeviceName(dataAcc, deviceItem.second, deviceItem.first);
                 }
             }
         }
@@ -252,9 +236,17 @@ bool CheckAccessor::subCheck(const DataAccessor& jsonAcc,
     else if (dataAcc.getDataValue().check(checkMap, PropertyVariant()))
     {
         ret = true;
-        buildSingleAssertedDeviceName(dataAcc, dev2Read, deviceType, deviceId);
+        buildSingleAssertedDeviceName(dataAcc, dev2Read, deviceId);
     }
     return ret;
+}
+
+void CheckAccessor::saveDeviceTypePattern(const std::string& deviceType)
+{
+    if (_deviceTypePattern.dim() == 0 && false == deviceType.empty())
+    {
+        _deviceTypePattern = device_id::DeviceIdPattern(deviceType);
+    }
 }
 
 } // namespace data_accessor

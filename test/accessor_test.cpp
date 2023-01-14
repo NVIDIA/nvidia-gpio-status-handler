@@ -1,5 +1,7 @@
+#include "check_accessor.hpp"
 #include "data_accessor.hpp"
 #include "check_accessor.hpp"
+#include "data_accessor.hpp"
 #include "nlohmann/json.hpp"
 #include "property_accessor.hpp"
 
@@ -46,7 +48,7 @@ TEST(DataAccessor, CheckPositiveNoCheckField)
 {
     DataAccessor accessorWITHOUTCheck{jsonDEVICE};
     DataAccessor accessorPROPERTY{jsonDEVICE};
-    CheckAccessor accCheck;
+    CheckAccessor accCheck{""};
     EXPECT_EQ(accCheck.check(accessorWITHOUTCheck, accessorPROPERTY), true);
 }
 
@@ -59,7 +61,7 @@ TEST(DataAccessor, CheckPositiveCMDLINE)
         {"arguments", "ff 00 00 00 00 00 02 40 66 28"},
         {"check", {{"lookup", "00 02 40"}}}};
     DataAccessor cmdAccessor{jsonCMDLINE};
-    CheckAccessor accCheck;
+    CheckAccessor accCheck{""};
     EXPECT_EQ(accCheck.check(cmdAccessor, cmdAccessor), true);
 }
 
@@ -72,7 +74,7 @@ TEST(DataAccessor, CheckNegativeCMDLINE)
         {"arguments", "ff 00 00 00 00 00 02 40 66 28"},
         {"check", {{"lookup", "_doesNotExist_"}}}};
     DataAccessor cmdAccessor{jsonCMDLINE};
-    CheckAccessor accCheck;
+    CheckAccessor accCheck{""};
     EXPECT_NE(accCheck.check(cmdAccessor, cmdAccessor), true);
 }
 
@@ -83,7 +85,7 @@ TEST(DataAccessor, CheckNegativeExecutableDoesNotExist)
         {"executable", "/bin/_binary_does_not_exist"},
         {"check", {{"lookup", "_doesNotExist_"}}}};
     DataAccessor cmdAccessor{jsonCMDLINE};
-    CheckAccessor accCheck;
+    CheckAccessor accCheck{""};
     EXPECT_NE(accCheck.check(cmdAccessor, cmdAccessor), true);
 }
 
@@ -111,7 +113,7 @@ TEST(DataAccessor, CheckPositiveScriptCMDLINE)
                                  std::filesystem::perm_options::add);
 
     DataAccessor cmdAccessor{jsonCMDLINE};
-    CheckAccessor accCheck;
+    CheckAccessor accCheck{""};
     bool result = accCheck.check(cmdAccessor, cmdAccessor);
     const std::filesystem::path filenamepath = filename;
     std::filesystem::remove(filenamepath);
@@ -125,7 +127,7 @@ TEST(DataAccessor, CheckPositiveBitmaskRedefinition)
     DataAccessor dAccessor(PropertyVariant(0x10f)); // bits 0,1,2,3 and 8
 
     // without redefinition
-    CheckAccessor accCheck;
+    CheckAccessor accCheck{""};
     EXPECT_EQ(accCheck.check(jAccessor, dAccessor), true); // bit 0
 
     // with redefinition, bits 1-3 pass
@@ -436,26 +438,33 @@ TEST(DataAccessor, EventTriggerForDestinationFlaTranslationError)
 
 TEST(DataAccessor, BitmaskWithValueTwo)
 {
-    const nlohmann::json eventTrigger = {
+    const nlohmann::json templateAccessor = {
         {"type", "DBUS"},
-        {"object", "/xyz/openbmc_project/inventory/system/chassis/GPU0"},
+        {"object", "/xyz/openbmc_project/inventory/system/chassis/GPU[0-7]"},
         {"interface", "xyz.openbmc_project.com.nvidia.Events.PendingRegister"},
         {"property", "EventsPendingRegister"},
         {"check", {{"bitmask", "2"}}}};
 
-    DataAccessor accessorValue2(eventTrigger);
-    DataAccessor accessorData(PropertyVariant(uint64_t(0x02)));
-    CheckAccessor accCheck;
+    const nlohmann::json eventTrigger = {
+        {"type", "DBUS"},
+        {"object", "/xyz/openbmc_project/inventory/system/chassis/GPU0"},
+        {"interface", "xyz.openbmc_project.com.nvidia.Events.PendingRegister"},
+        {"property", "EventsPendingRegister"}};
+
+
+    DataAccessor accessor(templateAccessor);
+    DataAccessor accessorData(eventTrigger, PropertyValue(uint64_t(0x02)));
+
     const std::string deviceType{"GPU[0-7]"};
-    bool ok =
-        accCheck.subCheck(accessorValue2, accessorData, deviceType, "GPU0");
+    CheckAccessor accCheck(deviceType);
+    bool ok = accCheck.check(accessor, accessorData);
     EXPECT_EQ(ok, true);
     auto devices = accCheck.getAssertedDevices();
     if (devices.empty() == false)
     {
         EXPECT_EQ(devices.size(), 1);
-        const int gpu0id = 0;
-        EXPECT_EQ(devices[0].deviceId, gpu0id);
+        device_id::PatternIndex gpuId(0);
+        EXPECT_EQ(devices[0].deviceIndexTuple, gpuId);
         EXPECT_EQ(devices[0].device, "GPU0");
     }
 }
@@ -481,15 +490,14 @@ TEST(DataAccessor, BitmapWithoutRangeInDeviceType)
 
     DataAccessor accessorFromJson(jsonAccessor);
     DataAccessor dataAccessorAccessor(PropertyVariant(uint64_t(0x01)));
-    CheckAccessor triggerCheck,  accCheck;
+    CheckAccessor triggerCheck(deviceType), accCheck(deviceType);
 
-    auto ok = triggerCheck.subCheck(triggerAccessor, dataTriggerAccessor,
-                                    deviceType, deviceType);
+    auto ok =
+        triggerCheck.subCheck(triggerAccessor, dataTriggerAccessor, deviceType);
     EXPECT_EQ(ok, true);
     auto devicesEvtTrigg = triggerCheck.getAssertedDevices();
 
-    ok = accCheck.subCheck(accessorFromJson, dataAccessorAccessor,
-                           deviceType, deviceType);
+    ok = accCheck.subCheck(accessorFromJson, dataAccessorAccessor, deviceType);
     EXPECT_EQ(ok, true);
     auto devices = accCheck.getAssertedDevices();
     if (devices.empty() == true)
@@ -510,13 +518,14 @@ TEST(DataAccessor, CmdLineRegexExpansion)
 
     DataAccessor cmdAccessor{jsonCMDLINE};
     const std::string deviceType{"GPU[0-7]"};
-    CheckAccessor accCheck;
+    CheckAccessor accCheck(deviceType);
     // if the "lookup" worked then the expansion is fine
-    EXPECT_EQ(accCheck.check(cmdAccessor, cmdAccessor, deviceType), true);
+    EXPECT_EQ(accCheck.check(cmdAccessor, cmdAccessor), true);
     auto assertedDevices = accCheck.getAssertedDevices();
     EXPECT_EQ(assertedDevices.size(), 1);
     EXPECT_EQ(assertedDevices[0].device, "GPU1");
 }
+
 
 TEST(DataAccessor, CmdLineEmptyRegexExpansionUseDevicetypeInstead)
 {
@@ -528,23 +537,24 @@ TEST(DataAccessor, CmdLineEmptyRegexExpansionUseDevicetypeInstead)
 
     DataAccessor cmdAccessor{jsonCMDLINE};
     const std::string deviceType{"GPU[0-7]"};
-    CheckAccessor accCheck;
+    CheckAccessor accCheck(deviceType);
 
     // if the "lookup" worked then the expansion is fine
-    EXPECT_EQ(accCheck.check(cmdAccessor, cmdAccessor, deviceType), true);
+    EXPECT_EQ(accCheck.check(cmdAccessor, cmdAccessor), true);
     auto assertedDevices = accCheck.getAssertedDevices();
     EXPECT_EQ(assertedDevices.size(), 1);
     EXPECT_EQ(assertedDevices[0].device, "GPU1");
 }
 
+
 TEST(DataAccessor, CopyOperator)
 {
     DataAccessor source(PropertyVariant(int(1)));
     DataAccessor destination;
-    EXPECT_EQ(destination.hasData(),  false);
+    EXPECT_EQ(destination.hasData(), false);
     EXPECT_EQ(destination.getDataValue().empty(), true);
     destination = source;
-    EXPECT_NE(destination.hasData(),  false);
+    EXPECT_NE(destination.hasData(), false);
     EXPECT_NE(destination.getDataValue().empty(), true);
     EXPECT_EQ(destination.getDataValue().isValidInteger(), true);
     EXPECT_EQ(destination.getDataValue().getInteger(), 1);

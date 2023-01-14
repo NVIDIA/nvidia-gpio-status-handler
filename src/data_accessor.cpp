@@ -85,6 +85,8 @@ bool DataAccessor::readDbus(const std::string& device)
         std::string objPath = _acc[objectKey].get<std::string>();
         if (util::existsRange(objPath) == true && false == device.empty())
         {
+            // TODO improve using device_id language
+
             // apply the device into the "object" to replace the range
             objPath = util::introduceDeviceInObjectpath(objPath, device);
         }

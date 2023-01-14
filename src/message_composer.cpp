@@ -74,9 +74,9 @@ bool MessageComposer::createLog(event_info::EventNode& event)
         "xyz.openbmc_project.Logging", "/xyz/openbmc_project/logging",
         "xyz.openbmc_project.Logging.Create", "Create");
     method.append(event.event);
-    method.append(makeSeverity(event.messageRegistry.message.severity));
+    method.append(makeSeverity(event.getSeverity()));
 
-    auto messageArgs = event.messageRegistry.getStringMessageArgs(event);
+    auto messageArgs = event.getStringMessageArgs();
     auto telemetries = collectDiagData(event);
 
     std::string oocDevice;
@@ -98,8 +98,8 @@ bool MessageComposer::createLog(event_info::EventNode& event)
 
     method.append(std::array<std::pair<std::string, std::string>, 9>(
         {{{"xyz.openbmc_project.Logging.Entry.Resolution",
-           event.messageRegistry.message.resolution},
-          {"REDFISH_MESSAGE_ID", event.messageRegistry.messageId},
+           event.getResolution()},
+          {"REDFISH_MESSAGE_ID", event.getMessageId()},
           {"DEVICE_EVENT_DATA", telemetries},
           {"namespace", pNamespace},
           {"REDFISH_MESSAGE_ARGS", messageArgs},
