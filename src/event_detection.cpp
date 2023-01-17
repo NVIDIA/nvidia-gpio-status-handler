@@ -124,8 +124,6 @@ void EventDetection::dbusEventHandlerCallback(sdbusplus::message::message& msg)
                          candidate.event.c_str());
                 continue;
             }
-
-            event_info::EventNode e;
             // now loop thru assertedDeviceList
             for (const auto& assertedDevice : assertedDeviceList)
             {
@@ -141,25 +139,25 @@ void EventDetection::dbusEventHandlerCallback(sdbusplus::message::message& msg)
                        << " event: '" << event.event << "'"
                        << " deviceIndex: " << assertedDevice.deviceIndexTuple;
                     logs_err("%s\n", ss.str().c_str());
-                    e = event;
-
                     eventDetectionPtr->RunEventHandlers(event);
-                }
-            }
-            logs_dbg(
-                "Adding event %s to internal map with afflicted device %s\n",
-                e.event.c_str(), e.device.c_str());
+                    logs_dbg(
+                        "Adding event %s to internal map with afflicted device %s\n",
+                        candidate.event.c_str(), candidate.device.c_str());
 
-            std::string eventKey = e.event + e.getMainDeviceType();
-            if (eventsDetected.count(eventKey) == 0)
-            {
-                eventsDetected.insert(
-                    std::pair<std::string, std::vector<std::string>>(
-                        eventKey, std::vector<std::string>{e.device}));
-            }
-            else
-            {
-                eventsDetected.at(eventKey).push_back(e.device);
+                    auto eventKey =
+                        candidate.event + candidate.getMainDeviceType();
+                    if (eventsDetected.count(eventKey) == 0)
+                    {
+                        eventsDetected.insert(
+                            std::pair<std::string, std::vector<std::string>>(
+                                eventKey,
+                                std::vector<std::string>{candidate.device}));
+                    }
+                    else
+                    {
+                        eventsDetected.at(eventKey).push_back(candidate.device);
+                    }
+                }
             }
         }
     } // end for (auto& pc : propertiesChanged)
