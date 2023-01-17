@@ -44,6 +44,8 @@ constexpr auto deviceNameKey = "device_name";
 constexpr auto testValueKey = "test_value";
 constexpr auto deviceidKey = "device_id";
 constexpr auto executeBgKey = "execute_bg";
+constexpr auto valueKey = "value";
+constexpr auto readFailedReturn = "Value_Not_Available";
 
 static std::map<std::string, std::vector<std::string>> accessorTypeKeys = {
     {"DBUS", {"object", "interface", "property"}},
@@ -270,7 +272,6 @@ class DataAccessor
                      const std::string& deviceType = std::string{""})
     {
         log_elapsed();
-        std::string ret{"123"};
         log_dbg("device='%s'\n", device.c_str());
 
         if (isTypeDbus() == true)
@@ -279,7 +280,7 @@ class DataAccessor
         }
         else if (isTypeDevice() == true)
         {
-            return _acc[deviceNameKey];
+            _dataValue = PropertyValue(_acc[deviceNameKey].get<std::string>());
         }
         else if (isTypeCmdline() == true)
         {
@@ -291,23 +292,26 @@ class DataAccessor
         }
         else if (isTypeTest() == true)
         {
-            return _acc[testValueKey];
+            _dataValue = PropertyValue(_acc[testValueKey].get<std::string>());
         }
         else if (isTypeDeviceName())
         {
-            return device;
+            _dataValue = PropertyValue(device);
         }
         else if (isTypeConst())
         {
-            return _acc["value"].get<std::string>();
+            _dataValue = PropertyValue(_acc[valueKey].get<std::string>());
         }
 
         if (_dataValue.empty() == false)
         {
-            ret = _dataValue.getString();
+            auto ret = _dataValue.getString();
+            log_dbg("ret='%s'\n", ret.c_str());
+            return ret;
         }
-        log_dbg("ret=%s\n", ret.c_str());
-        return ret;
+
+        log_dbg("read failed, returning data_accessor::readFailedReturn='%s'\n", data_accessor::readFailedReturn);
+        return std::string{data_accessor::readFailedReturn};
     }
 
     std::string read(const event_info::EventNode& event);

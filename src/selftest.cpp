@@ -125,11 +125,11 @@ aml::RcCode Selftest::perform(const dat_traverse::Device& dev,
 
     auto fillTpRes = [](selftest::TestPointResult& tp,
                         const std::string& expVal, const std::string& readVal,
-                        const std::string& name) {
+                        const std::string& name, bool accessorReadSuccess) {
         tp.targetName = name;
         tp.valExpected = expVal;
-        // TODO: clean dependency of "123" return on read fail
-        if (readVal == "123")
+        // accessorReadSuccess is true for valid data even an empty string
+        if (false == accessorReadSuccess)
         {
             tp.valRead = "Error - TP read failed.";
             tp.result = false;
@@ -188,13 +188,13 @@ aml::RcCode Selftest::perform(const dat_traverse::Device& dev,
                 fillTpRes(tmpTestPointResult, testPoint.expectedValue,
                           (devEvalRes) ? testPoint.expectedValue
                                        : reportResultFail,
-                          devName);
+                          devName, acc.hasData());
             }
             else
             {
                 auto accRead = acc.read();
                 fillTpRes(tmpTestPointResult, testPoint.expectedValue, accRead,
-                          tp.first);
+                          tp.first, acc.hasData());
             }
             tmpLayerReport.insert(tmpLayerReport.begin(), tmpTestPointResult);
         }

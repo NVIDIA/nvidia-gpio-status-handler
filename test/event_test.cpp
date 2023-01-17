@@ -3,7 +3,7 @@
 #include "event_detection.hpp"
 #include "event_info.hpp"
 #include "message_composer.hpp"
-#include "nlohmann/json.hpp"
+#include "data_accessor.hpp"
 #include "util.hpp"
 
 #include "gmock/gmock.h"
@@ -111,8 +111,8 @@ TEST(EventTelemtries, MakeCall)
         performed. */
     nlohmann::json jCollected = nlohmann::json::parse(telemetries);
     EXPECT_EQ(jCollected.size(), 5);
-    EXPECT_EQ(jCollected["power"], "123");
-    EXPECT_EQ(jCollected["temperature"], "123");
+    EXPECT_EQ(jCollected["power"], data_accessor::readFailedReturn);
+    EXPECT_EQ(jCollected["temperature"], data_accessor::readFailedReturn);
     EXPECT_EQ(jCollected["selftest"].size(), 0);
 }
 
