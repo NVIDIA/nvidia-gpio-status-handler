@@ -129,14 +129,17 @@ bool DataAccessor::runCommandLine(const std::string& device,
         {
             std::string line{""};
             log_elapsed("running cmd: %s", cmd.c_str());
+            if (_acc.count(executeBgKey) != 0 && _acc[executeBgKey].get<bool>() == true)
+            {
+                // Quotes are necessary to make boost::process do the right thing
+                std::string newcmd("/bin/sh -c \"" + cmd + " &\"");
+                boost::process::child process(newcmd);
+                process.wait();
+                return ret;
+            }
             boost::process::ipstream pipe_stream;
             boost::process::child process(cmd, boost::process::std_out >
                                                    pipe_stream);
-            if (_acc.count(executeBgKey) != 0 && _acc[executeBgKey].get<bool>() == true)
-            {
-                process.detach();
-                return ret;
-            }
             while (pipe_stream && std::getline(pipe_stream, line) &&
                    line.empty() == false)
             {
