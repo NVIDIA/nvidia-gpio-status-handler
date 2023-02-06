@@ -127,12 +127,13 @@ void EventDetection::dbusEventHandlerCallback(sdbusplus::message::message& msg)
             // now loop thru assertedDeviceList
             for (const auto& assertedDevice : assertedDeviceList)
             {
+                // IsEvent() needs device
+                candidate.device = assertedDevice.device;
                 if (eventDetectionPtr->IsEvent(candidate, eventValue))
                 {
                     auto event = candidate;
                     event.trigger = assertedDevice.trigger;
                     event.accessor = assertedDevice.accessor;
-                    event.device = assertedDevice.device;
                     event.setDeviceIndexTuple(assertedDevice.deviceIndexTuple);
                     std::stringstream ss;
                     ss << "Throw out an eventHdlrMgr. device: " << event.device
