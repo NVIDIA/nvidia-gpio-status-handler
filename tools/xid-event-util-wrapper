@@ -5,74 +5,28 @@ set -o pipefail
 APP_NAME="xid-event-util-wrapper"
 APP_VER="1.0"
 
+[ -z "$DEVICES_PROFILE" ] && DEVICES_PROFILE="xid_devices.csv"
+
 show_help()
 {
     echo "A wrapper for xid events for GPUs and NVSwitches, ver=${APP_VER}."
     echo "<usage>"
     echo "  ${APP_NAME} [-dry-run] <device_id> <oob_property> <xid_data>"
+    echo "  ${APP_NAME} [-dry-run] --check-from-file <file_name>"
     echo
     echo "<options>"
-    echo "  --dry-run         - Only print ${APP_NAME} cmdline."
+    echo "  --dry-run           - Only print ${APP_NAME} cmdline."
     echo
-    echo "  device_id         - Device ID: For NVSwitch->HGX_NVSwitch_[0-3], For GPU->HGX_GPU_SXM_[1-8]"
+    echo "  device_id           - Device ID: For NVSwitch->HGX_NVSwitch_[0-3], For GPU->HGX_GPU_SXM_[1-8]"
     echo
-    echo "  oob_property      - OOB properties Supported: gpu.xid.event, nvswitch.Sxid.event"
+    echo "  oob_property        - OOB properties Supported: gpu.xid.event, nvswitch.Sxid.event"
     echo
-    echo "  xid_data          - XID Data Types Supported: XidId, TextMessage, XidTextMessage"
+    echo "  xid_data            - XID Data Types Supported: XidId, TextMessage, XidTextMessage"
     echo
+    echo "  --monitor-from-file - monitor a list of <device_id> <oob_property> <xid_data> from \$DEVICES_PROFILE"
+echo
 }
 
-
-## MAIN
-DRY_RUN=0
-
-## -dry-run just prints the xid-event-util-wrapper command line
-if [ "$1"  = "--dry-run" ]; then
-   DRY_RUN=1
-   shift
-fi
-
-if [ $# -ne 3 ]; then
-    show_help
-    exit 1
-fi
-
-deviceName=$1
-device=$(echo "$1" | grep -Eo '[0-9]+$')
-
-if [ -z $device ]; then
-  echo "Invalid Device $1. Exiting!"
-  show_help
-  exit 1
-fi
-
-if [[ $1 == *"GPU"* ]]; then
-   device_id=$(($device-1))
-   event="XID"
-   eventsPendingProp="gpu.events.PendingRegister"
-else
-  device_id=$device
-  event="SXID"
-  eventsPendingProp="nvswitch.events.PendingRegister"
-fi
-
-if [ -z $device_id ] || [ $device_id -eq -1 ]; then
-  echo "Unsupported GPU Device $device_id. Exiting!"
-  show_help
-  exit 1
-fi
-
-cmdline="busctl call xyz.openbmc_project.GpuMgr /xyz/openbmc_project/GpuMgr xyz.openbmc_project.GpuMgr.Server DeviceGetData isi $device_id \"$2\" 1"
-
-if [ "$DRY_RUN" -eq 1 ]; then
-    echo $cmdline
-    exit 0
-fi
-
-# DEM fail counter is used to keep track of failed fetch DEM calls
-# If we are not able to read DEM for maxDemFailCounter times, we would exit
-demFailCounter=0
-maxDemFailCounter=20
 
 # Sample Output: (isau) 0 "GPU Driver Event Message - xid Event : 17 4a 00 00 52 00 00 00 3e 9d 00 00 4e 56 4c 69 6e 6b 3a 20 66 61 74 61 6c 20 65 72 72 6f 72 20 64 65 74 65 63 74 65 64 20 6f 6e 20 6c 69 6e 6b 20 31 31 28 30 78 30 2c 20 30 78 30 2c 20 30 78 30 2c 20 30 78 31 30 30" 2 3120605958 2881141434
 # Bytes:                                                          1   2  3  4           8          12
@@ -146,104 +100,209 @@ function readEventsPendingRegister()
   return 0
 }
 
-eventPendingRegister=$(readEventsPendingRegister)
-rc=$?
-[ "$rc" -eq 0 ] || exit $rc
-
-# 1. Read DEM
-# 2. Extract required information from DEM
-# 3. Create a log entry for Phosphor-logging
-# 4. Sleep 1s - to give SMBPBI some time to update EventsPendingRegister
-# 5. Read EventsPendingRegister
-# 6. If EventsPendingRegister DEM bit is set repeat Step #1 else exit
-while [ $eventPendingRegister -ne 0 ]
-do
-  # Check for the arguments
-  case $3 in
-
-    XidId)
-
-      dem=$(fetchDem)
-      rc=$?
-      # Reset DEM fail counter
-      [ "$rc" -eq 0 ] && demFailCounter=0
-      [ "$rc" -eq 1 ] && exit $rc
-      [ "$rc" -eq 2 ] && demFailCounter=$(($demFailCounter+1))
-      # Return XID ID or index 2 from the output
-      result=`echo $dem | cut -d ' ' -f 2`
-      result=$(( 16#$result ))
-      ;;
-
-    TextMessage)
-
-      dem=$(fetchDem)
-      rc=$?
-      # Reset DEM fail counter
-      [ "$rc" -eq 0 ] && demFailCounter=0
-      [ "$rc" -eq 1 ] && exit $rc
-      [ "$rc" -eq 2 ] && demFailCounter=$(($demFailCounter+1))
-      # Return Text Message or index 6 from the output
-      result=`echo $dem | cut -d ' ' -f12- | sed 's/00//g'`
-      convertHexToAscii $TextMessage
-      result="$ascii"
-      ;;
-
-    XidTextMessage)
-    
-      dem=$(fetchDem)
-      rc=$?
-      # Reset DEM fail counter
-      [ "$rc" -eq 0 ] && demFailCounter=0
-      [ "$rc" -eq 1 ] && exit $rc
-      [ "$rc" -eq 2 ] && demFailCounter=$(($demFailCounter+1))
-      
-      # Read XID ID or byte 2 from the DEM
-      XidId=`echo $dem | cut -d ' ' -f 2`
-      # Convert Hex to Decimal
-      XidId=$(( 16#$XidId ))
-
-      # Read flags or byte 3 from DEM
-      XidFlags=`echo $dem | cut -d ' ' -f 3`
-
-      # Read Sequence Number or byte 4-7 from DEM
-      XidSeqNum=`echo $dem | cut -d ' ' -f 4-7 | sed 's/ //g'`
-      # Convert Hex to Decimal
-      XidSeqNum=$(( 16#$XidSeqNum ))
-
-      # Read XID Timestamp or byte 8-11 from DEM
-      XidTime=`echo $dem | cut -d ' ' -f 8-11 | sed 's/ //g'`
-      # Convert Hex to Decimal
-      XidTime=$(( 16#$XidTime ))
-      # Convert epoche TimeStamp to HumanReadable format
-      XidTime=`date -d @$XidTime`
-
-      # Read Text Message or byte 12-END from the DEM
-      TextMessage=`echo $dem | cut -d ' ' -f12- | sed 's/00//g'`
-      convertHexToAscii $TextMessage
-
-      # Concatinate the information read above
-      result="[$XidTime][$XidSeqNum][$XidFlags] $event $XidId $ascii"
-      ;;
-
-    *)
-      show_help
-      exit -1
-      ;;
-  esac
-  createLog "$result"
-  rc=$?
-  [ "$rc" -eq 0 ] || exit $rc
-
-  if [ $demFailCounter -gt $maxDemFailCounter ]; then
-    exit 1
+# function
+function main()
+{
+  if [ $# -ne 3 ]; then
+    show_help
+    return 1
   fi
-  
-  sleep 1s
+
+  # DEM fail counter is used to keep track of failed fetch DEM calls
+  # If we are not able to read DEM for maxDemFailCounter times, we would exit
+  local demFailCounter=0
+  local maxDemFailCounter=20
+
+  # these are not locals, they are used by other functions
+  deviceName=$1
+  device=$(echo "$1" | grep -Eo '[0-9]+$')
+
+  if [ -z $device ]; then
+    echo "Invalid Device $1. Exiting!"
+    show_help
+    return 1
+  fi
+
+  if [[ $1 == *"GPU"* ]]; then
+    device_id=$(($device-1))
+    event="XID"
+    eventsPendingProp="gpu.events.PendingRegister"
+  else
+    device_id=$device
+    event="SXID"
+    eventsPendingProp="nvswitch.events.PendingRegister"
+  fi
+
+  if [ -z $device_id ] || [ $device_id -eq -1 ]; then
+    echo "Unsupported GPU Device $device_id. Exiting!"
+    show_help
+    return 1
+  fi
+
+  cmdline="busctl call xyz.openbmc_project.GpuMgr /xyz/openbmc_project/GpuMgr xyz.openbmc_project.GpuMgr.Server DeviceGetData isi $device_id \"$2\" 1"
+
+  if [ "$DRY_RUN" -eq 1 ]; then
+      echo $cmdline
+      return 0
+  fi
+
 
   eventPendingRegister=$(readEventsPendingRegister)
   rc=$?
-  [ "$rc" -eq 0 ] || exit $rc
+  [ "$rc" -eq 0 ] || return $rc
 
-done
+  # 1. Read DEM
+  # 2. Extract required information from DEM
+  # 3. Create a log entry for Phosphor-logging
+  # 4. Sleep 1s - to give SMBPBI some time to update EventsPendingRegister
+  # 5. Read EventsPendingRegister
+  # 6. If EventsPendingRegister DEM bit is set repeat Step #1 else exit
+  while [ $eventPendingRegister -ne 0 ]
+  do
+    # Check for the arguments
+    case $3 in
 
-exit 0
+      XidId)
+
+        dem=$(fetchDem)
+        rc=$?
+        # Reset DEM fail counter
+        [ "$rc" -eq 0 ] && demFailCounter=0
+        [ "$rc" -eq 1 ] && return $rc
+        [ "$rc" -eq 2 ] && demFailCounter=$(($demFailCounter+1))
+        # Return XID ID or index 2 from the output
+        result=`echo $dem | cut -d ' ' -f 2`
+        result=$(( 16#$result ))
+        ;;
+
+      TextMessage)
+
+        dem=$(fetchDem)
+        rc=$?
+        # Reset DEM fail counter
+        [ "$rc" -eq 0 ] && demFailCounter=0
+        [ "$rc" -eq 1 ] && return $rc
+        [ "$rc" -eq 2 ] && demFailCounter=$(($demFailCounter+1))
+        # Return Text Message or index 6 from the output
+        result=`echo $dem | cut -d ' ' -f12- | sed 's/00//g'`
+        convertHexToAscii $TextMessage
+        result="$ascii"
+        ;;
+
+      XidTextMessage)
+
+        dem=$(fetchDem)
+        rc=$?
+        # Reset DEM fail counter
+        [ "$rc" -eq 0 ] && demFailCounter=0
+        [ "$rc" -eq 1 ] && return $rc
+        [ "$rc" -eq 2 ] && demFailCounter=$(($demFailCounter+1))
+
+        # Read XID ID or byte 2 from the DEM
+        XidId=`echo $dem | cut -d ' ' -f 2`
+        # Convert Hex to Decimal
+        XidId=$(( 16#$XidId ))
+
+        # Read flags or byte 3 from DEM
+        XidFlags=`echo $dem | cut -d ' ' -f 3`
+
+        # Read Sequence Number or byte 4-7 from DEM
+        XidSeqNum=`echo $dem | cut -d ' ' -f 4-7 | sed 's/ //g'`
+        # Convert Hex to Decimal
+        XidSeqNum=$(( 16#$XidSeqNum ))
+
+        # Read XID Timestamp or byte 8-11 from DEM
+        XidTime=`echo $dem | cut -d ' ' -f 8-11 | sed 's/ //g'`
+        # Convert Hex to Decimal
+        XidTime=$(( 16#$XidTime ))
+        # Convert epoche TimeStamp to HumanReadable format
+        XidTime=`date -d @$XidTime`
+
+        # Read Text Message or byte 12-END from the DEM
+        TextMessage=`echo $dem | cut -d ' ' -f12- | sed 's/00//g'`
+        convertHexToAscii $TextMessage
+
+        # Concatinate the information read above
+        result="[$XidTime][$XidSeqNum][$XidFlags] $event $XidId $ascii"
+        ;;
+
+      *)
+        show_help
+        return 1
+        ;;
+    esac
+    createLog "$result"
+    rc=$?
+    [ "$rc" -eq 0 ] || return $rc
+
+    if [ $demFailCounter -gt $maxDemFailCounter ]; then
+      return 1
+    fi
+
+    sleep 1s
+
+    eventPendingRegister=$(readEventsPendingRegister)
+    rc=$?
+    [ "$rc" -eq 0 ] || return $rc
+
+  done
+}
+
+
+function monitor_main()
+{
+  echo "monitor from file mode"
+  if [ ! -f "$DEVICES_PROFILE" ]; then
+    >&2 echo "Error: [$DEVICES_PROFILE] not found!"
+    exit 1
+  fi
+  local devices_to_check=$(cat "$DEVICES_PROFILE")
+  if [ -z "$devices_to_check" ]; then
+    # file is empty, nothing to do
+    exit 0
+  fi
+  local failed_device_rc=0
+  for device_string in $devices_to_check; do
+    echo "$device_string"
+    local devname=$(echo "$device_string" | cut -f1 -d,)
+    local propname=$(echo "$device_string" | cut -f2 -d,)
+    local opcode=$(echo "$device_string" | cut -f3 -d,)
+    main "$devname" "$propname" "$opcode"
+    local device_rc=$?
+    if [ "$device_rc" -ne 0 ]; then
+      >&2 echo "Error: check for [$devname $propname $opcode] failed, rc=$device_rc"
+      failed_device_rc=$device_rc
+    fi
+  done
+  #return $failed_device_rc
+  # README: returing 1 is needed for the script to exit with rc=1 in monitor mode,
+  # which is used by the systemd unit file to ensure the service does not eventually
+  # get marked as failed and stop restarting.
+  if [ "$failed_device_rc" -ne 0 ]; then
+    return 1
+  else
+    return 0
+  fi
+}
+
+## MAIN
+DRY_RUN=0
+
+## -dry-run just prints the xid-event-util-wrapper command line
+if [ "$1"  = "--dry-run" ]; then
+   DRY_RUN=1
+   shift
+fi
+
+if [ "$1"  = "--monitor-from-file" ]; then
+  # README: returing 1 (which monitor_main does) is needed for the script to exit
+  # with rc=1 in monitor mode, which is used by the systemd unit file to ensure
+  # the service does not eventually get marked as failed and stop restarting.
+  monitor_main
+  monitor_rc=$?
+  exit $monitor_rc
+fi
+
+main "$@"
+rc=$?
+exit $rc
