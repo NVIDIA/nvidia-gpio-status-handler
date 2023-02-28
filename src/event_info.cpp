@@ -615,4 +615,11 @@ std::string EventNode::getMainDeviceType() const
     return this->deviceTypes.at(0);
 }
 
+bool EventNode::getIsAccessorInteresting(EventNode& event,
+    data_accessor::DataAccessor& otherAccessor)
+{
+    return event.accessor == otherAccessor ||
+        (!event.trigger.isEmpty() && event.trigger == otherAccessor);
+}
+
 } // namespace event_info

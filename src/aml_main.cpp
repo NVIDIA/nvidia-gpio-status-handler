@@ -16,6 +16,7 @@
 #include "event_detection.hpp"
 #include "event_info.hpp"
 #include "message_composer.hpp"
+#include "pc_event.hpp"
 #include "selftest.hpp"
 #include "threadpool_manager.hpp"
 
@@ -49,8 +50,12 @@ constexpr int RETRY_SLEEP = 5;
 #define DEFAULT_RUNNING_THREAD_LIMIT 3
 #endif
 
+// DEFAULT_TOTAL_THREAD_LIMIT must be greater than
+// DEFAULT_RUNNING_THREAD_LIMIT if you want to allow blocking until
+// a slot is free. If they are equal, thread creation at the limit
+// will immediately fail.
 #ifndef DEFAULT_TOTAL_THREAD_LIMIT
-#define DEFAULT_TOTAL_THREAD_LIMIT 50
+#define DEFAULT_TOTAL_THREAD_LIMIT 4
 #endif
 
 namespace aml
@@ -217,9 +222,24 @@ int show_help([[maybe_unused]] cmd_line::ArgFuncParamType params)
     return 0;
 }
 
-sd_bus* bus = nullptr;
+//sd_bus* bus = nullptr;
 
 } // namespace aml
+
+void startWorkerThread(std::shared_ptr<boost::asio::io_context> io)
+{
+    auto thread = std::make_unique<std::thread>([io]() {
+        logs_err("Creating worker thread\n");
+        event_detection::EventDetection::workerThreadMainLoop();
+        // the main loop exited for whatever reason, so
+        // queue a task to the main thread to restart the worker thread
+        logs_err("worker thread event loop exited unexpectedly, restarting it\n");
+        io->post([io]() {
+            startWorkerThread(io);
+        });
+    });
+    thread->detach();
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -298,6 +318,8 @@ int main(int argc, char* argv[])
         aml::configuration.running_thread_limit,
         aml::configuration.total_thread_limit);
 
+    event_detection::queue = std::make_unique<PcQueueType>(PROPERTIESCHANGED_QUEUE_SIZE);
+
     event_handler::ClearEvent clearEvent("ClearEvent");
     event_handler::EventHandlerManager eventHdlrMgr("EventHandlerManager");
     event_handler::RootCauseTracer rootCauseTracer("RootCauseTracer",
@@ -364,17 +386,22 @@ int main(int argc, char* argv[])
     eventHdlrMgr.RegisterHandler(&clearEvent);
 
     logs_dbg("Creating %s\n", (const char*)oob_aml::SERVICE_BUSNAME);
-
-    rc = sd_bus_default_system(&aml::bus);
+    sd_bus* mainThreadBus = nullptr;
+    rc = sd_bus_default_system(&mainThreadBus);
+    logs_dbg("main thread dbus connection is %p\n", mainThreadBus);
     if (rc < 0)
     {
         logs_dbg("Failed to connect to system bus\n");
     }
+
     try
     {
         auto io = std::make_shared<boost::asio::io_context>();
+
+        startWorkerThread(io);
+
         auto sdbusp =
-            std::make_shared<sdbusplus::asio::connection>(*io, aml::bus);
+            std::make_shared<sdbusplus::asio::connection>(*io, mainThreadBus);
 
         sdbusp->request_name(oob_aml::SERVICE_BUSNAME);
         auto server = sdbusplus::asio::object_server(sdbusp);

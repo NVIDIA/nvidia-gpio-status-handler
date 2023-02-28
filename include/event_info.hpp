@@ -460,6 +460,13 @@ class EventNode : public object::Object
      * @brief Return the first element of @c deviceTypes
      */
     std::string getMainDeviceType() const;
+
+    /**
+     * @brief Return whether the DataAccessor is interesting
+     * (matches our D-Bus object/interface/property)
+    */
+    static bool getIsAccessorInteresting(EventNode& event,
+        data_accessor::DataAccessor& otherAccessor);
 };
 
 using EventMap = std::map<std::string, std::vector<event_info::EventNode>>;

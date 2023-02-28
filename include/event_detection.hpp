@@ -11,6 +11,7 @@
 #include "event_handler.hpp"
 #include "event_info.hpp"
 #include "object.hpp"
+#include "pc_event.hpp"
 #include "threadpool_manager.hpp"
 
 #include <boost/container/flat_map.hpp>
@@ -25,10 +26,15 @@
 #include <thread>
 #include <variant>
 
+#ifndef PROPERTIESCHANGED_QUEUE_SIZE
+#define PROPERTIESCHANGED_QUEUE_SIZE 100
+#endif
+
 namespace event_detection
 {
 
 extern std::map<std::string, std::vector<std::string>> eventsDetected;
+extern std::unique_ptr<PcQueueType> queue;
 
 extern std::unique_ptr<ThreadpoolManager> threadpoolManager;
 
@@ -72,6 +78,16 @@ class EventDetection : public object::Object
     void identifyEventCandidate(const std::string& objPath,
                                 const std::string& signature,
                                 const std::string& property);
+    /**
+     * @brief This is the main function of the worker thread
+     */
+    static void workerThreadMainLoop();
+
+    /**
+     * @brief This is the loop which actually processes PropertiesChanged messages
+     */
+    static void workerThreadProcessEvents();
+
     /**
      * @brief This is the callback which handles DBUS properties changes
      */
@@ -470,24 +486,30 @@ class EventDetection : public object::Object
      */
     void RunEventHandlers(event_info::EventNode& event)
     {
-        auto thread = std::make_unique<std::thread>([this, event]() mutable {
-            log_wrn("started event thread\n");
-            ThreadpoolGuard guard(threadpoolManager.get());
-            if (!guard.was_successful())
-            {
-                // the threadpool has reached the max queued tasks limit,
-                // don't run this event thread
-                log_err(
-                    "Thread pool over maxTotal tasks limit, exiting event thread\n");
-                return;
-            }
+        log_err("entered RunEventHandlers\n");
+        auto guard = std::make_shared<ThreadpoolGuard>(threadpoolManager.get());
+        if (!guard->was_successful())
+        {
+            // the threadpool has reached the max queued tasks limit,
+            // don't run this event thread
+            log_err(
+                "Thread pool over maxTotal tasks limit, not creating thread\n");
+            log_err("finished RunEventHandlers\n");
+            return;
+        }
+        // capturing guard in the lambda is needed to extend the lifetime
+        // of the ThreadpoolGuard so that it only gets destructed
+        // (and the thread slot released) when both this trigger function
+        // and the thread have finished executing.
+        auto thread = std::make_unique<std::thread>([this, event, guard]() mutable {
+            log_err("started event thread\n");
             std::stringstream ss;
             ss << "calling hdlrMgr: " << this->_hdlrMgr->getName()
                << " event: " << event.event;
             log_dbg("%s\n", ss.str().c_str());
             auto hdlrMgr = *this->_hdlrMgr;
             hdlrMgr.RunAllHandlers(event);
-            log_wrn("finished event thread\n");
+            log_err("finished event thread\n");
         });
 
         if (thread != nullptr)
@@ -498,6 +520,7 @@ class EventDetection : public object::Object
         {
             log_err("Create thread to process event failed!\n");
         }
+        log_err("finished RunEventHandlers\n");
     }
 
   private:

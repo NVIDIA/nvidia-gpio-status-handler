@@ -410,11 +410,11 @@ class Log
     {
         if (logStream.is_open())
         {
-            logStream << msg;
+            logStream << msg << std::flush;
         }
         else
         {
-            std::cout << msg;
+            std::cout << msg << std::flush;
         }
     }
 

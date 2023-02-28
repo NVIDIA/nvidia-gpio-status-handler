@@ -50,7 +50,7 @@ std::string
     {
         logs_err("No object path found in ObjectMapper subtree "
                  "corresponding to the device '%s'. "
-                 "Returning empty origin of condition. ",
+                 "Returning empty origin of condition.\n",
                  deviceId.c_str());
         return deviceId;
     }
@@ -60,7 +60,7 @@ std::string
         {
             logs_wrn("Multiple object paths in ObjectMapper subtree "
                      "corresponding to the device '%s'. "
-                     "Choosing the first one as origin of condition. ",
+                     "Choosing the first one as origin of condition.\n",
                      deviceId.c_str());
         }
         return *paths.begin();

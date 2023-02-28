@@ -30,7 +30,7 @@ enum class AcquireState : int
 {
     succ,
     error,
-    timeout,
+    timeout,  // currently unused, as timeout will now cancel thread creation
 };
 
 class ThreadpoolManager
@@ -74,8 +74,11 @@ class ThreadpoolManager
         // try_acquire_for returns true if acquired, false if timeout
         if (!_sem.try_acquire_for(std::chrono::seconds(THREADPOOL_QUEUED_THREAD_TIMEOUT)))
         {
-            log_err("try_acquire_for reached timeout, continuing anyway\n");
-            rc = AcquireState::timeout;
+            log_err("try_acquire_for reached timeout, not creating thread! %i waiting, %i limit\n",
+                _waiting.load(),
+                _maxTotal);
+            _waiting--;
+            return AcquireState::error;
         }
         _waiting--;
         log_wrn("created thread, %i still waiting\n", _waiting.load());
