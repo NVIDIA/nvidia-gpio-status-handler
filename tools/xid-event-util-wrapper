@@ -5,14 +5,12 @@ set -o pipefail
 APP_NAME="xid-event-util-wrapper"
 APP_VER="1.0"
 
-[ -z "$DEVICES_PROFILE" ] && DEVICES_PROFILE="xid_devices.csv"
-
 show_help()
 {
     echo "A wrapper for xid events for GPUs and NVSwitches, ver=${APP_VER}."
     echo "<usage>"
     echo "  ${APP_NAME} [-dry-run] <device_id> <oob_property> <xid_data>"
-    echo "  ${APP_NAME} [-dry-run] --check-from-file <file_name>"
+    echo "  ${APP_NAME} [-dry-run] --monitor-from-file <file_name>"
     echo
     echo "<options>"
     echo "  --dry-run           - Only print ${APP_NAME} cmdline."
@@ -23,7 +21,7 @@ show_help()
     echo
     echo "  xid_data            - XID Data Types Supported: XidId, TextMessage, XidTextMessage"
     echo
-    echo "  --monitor-from-file - monitor a list of <device_id> <oob_property> <xid_data> from \$DEVICES_PROFILE"
+    echo "  --monitor-from-file - monitor a list of <device_id> <oob_property> <xid_data> from <file_name>"
 echo
 }
 
@@ -251,19 +249,20 @@ function main()
 
 function monitor_main()
 {
-  echo "monitor from file mode"
-  if [ ! -f "$DEVICES_PROFILE" ]; then
-    >&2 echo "Error: [$DEVICES_PROFILE] not found!"
-    exit 1
+  local devices_file="$1"
+  #echo "monitor from file mode"
+  if [ ! -f "$devices_file" ]; then
+    >&2 echo "Error: [$devices_file] not found!"
+    return 2
   fi
-  local devices_to_check=$(cat "$DEVICES_PROFILE")
+  local devices_to_check=$(cat "$devices_file")
   if [ -z "$devices_to_check" ]; then
     # file is empty, nothing to do
-    exit 0
+    return 0
   fi
   local failed_device_rc=0
   for device_string in $devices_to_check; do
-    echo "$device_string"
+    #echo "$device_string"
     local devname=$(echo "$device_string" | cut -f1 -d,)
     local propname=$(echo "$device_string" | cut -f2 -d,)
     local opcode=$(echo "$device_string" | cut -f3 -d,)
@@ -298,7 +297,15 @@ if [ "$1"  = "--monitor-from-file" ]; then
   # README: returing 1 (which monitor_main does) is needed for the script to exit
   # with rc=1 in monitor mode, which is used by the systemd unit file to ensure
   # the service does not eventually get marked as failed and stop restarting.
-  monitor_main
+  if [ "$#" -ne 2 ]; then
+    >&2 echo "Wrong number of arguments in monitor mode!"
+    exit 2
+  fi
+  if [ ! -f "$2" ]; then
+    >&2 echo "Path to devices file is not a file! (specified: $2)"
+    exit 2
+  fi
+  monitor_main "$2"
   monitor_rc=$?
   exit $monitor_rc
 fi
