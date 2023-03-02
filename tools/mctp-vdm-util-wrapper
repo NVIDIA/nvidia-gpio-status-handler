@@ -28,7 +28,7 @@ APP_VER="0.2"
 DEVICENAME_EID_LIST=`cat "$DEV_EID_PROFILE"`
 
 [ -z "$CACHE_STALE_AGE" ] && CACHE_STALE_AGE=180
-[ -z "$MCTP_CACHE_COMMAND_TIMEOUT" ] && MCTP_CACHE_COMMAND_TIMEOUT=30
+[ -z "$MCTP_CACHE_COMMAND_TIMEOUT" ] && MCTP_CACHE_COMMAND_TIMEOUT=5
 
 DOWNLOAD_LOG_CMD="download_log"
 GLACIER_LOG_FILE="/var/mctp-vdm-output.bin"
@@ -292,7 +292,12 @@ mctp_access() #(dev_eid, pretty_cmd) => <value>
 
 
     else
-        local output;output=`$cmdline`;rc=$?
+        if [ "$mctp_cmd" == "$SELFTEST_CMD" ]
+        then
+            local output;output=`timeout $MCTP_CACHE_COMMAND_TIMEOUT $cmdline`;rc=$?
+        else
+            local output;output=`$cmdline`;rc=$?
+        fi
         if [ "$rc" -ne 0 ]
         then
             return $rc
