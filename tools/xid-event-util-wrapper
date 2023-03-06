@@ -5,6 +5,8 @@ set -o pipefail
 APP_NAME="xid-event-util-wrapper"
 APP_VER="1.0"
 
+[ -z "$DEVICE_NAME_PREFIX" ] && DEVICE_NAME_PREFIX="HGX_"
+
 show_help()
 {
     echo "A wrapper for xid events for GPUs and NVSwitches, ver=${APP_VER}."
@@ -84,11 +86,23 @@ function convertHexToAscii()
   done
 }
 
-function readEventsPendingRegister()
+function readEventsPendingRegisterProperty()
+{
+  local pendingRegisterOut=$(busctl get-property xyz.openbmc_project.GpuMgr "/xyz/openbmc_project/inventory/system/chassis/$DEVICE_NAME_PREFIX$deviceName" xyz.openbmc_project.com.nvidia.Events.PendingRegister EventsPendingRegister)
+  local pendingRegister=$(echo "$pendingRegisterOut" | awk '{print $2}')
+  if [ -z "$pendingRegister" ];then
+    echo $pendingRegisterOut
+    return 1
+  fi
+  echo $(( $pendingRegister & 0x4 ))
+  return 0
+}
+
+function readEventsPendingRegisterCoreAPI()
 {
   local eventsPendingcmd="busctl call xyz.openbmc_project.GpuMgr /xyz/openbmc_project/GpuMgr xyz.openbmc_project.GpuMgr.Server DeviceGetData isi $device_id \"$eventsPendingProp\" 1"
-  pendingRegisterOut=$(eval $eventsPendingcmd)
-  pendingRegister=`echo $pendingRegisterOut | cut -d'"' -f 2 | sed 's/.*\: //'`
+  local pendingRegisterOut=$(eval $eventsPendingcmd)
+  local pendingRegister=`echo $pendingRegisterOut | cut -d'"' -f 2 | sed 's/.*\: //'`
   if [ -z "$pendingRegister" ];then
     echo $pendingRegisterOut
     return 1
@@ -145,9 +159,18 @@ function main()
   fi
 
 
-  eventPendingRegister=$(readEventsPendingRegister)
+  eventPendingRegister=$(readEventsPendingRegisterProperty)
   rc=$?
   [ "$rc" -eq 0 ] || return $rc
+
+  # If the D-Bus property says the EventsPendingRegister is asserted,
+  # confirm with deviceCoreAPI read (prevent logging "No data found!" XIDs
+  # due to the D-Bus property not being refreshed by the next check).
+  if [ $eventPendingRegister -ne 0 ]; then
+    eventPendingRegister=$(readEventsPendingRegisterCoreAPI)
+    rc=$?
+    [ "$rc" -eq 0 ] || return $rc
+  fi
 
   # 1. Read DEM
   # 2. Extract required information from DEM
@@ -239,7 +262,7 @@ function main()
 
     sleep 1s
 
-    eventPendingRegister=$(readEventsPendingRegister)
+    eventPendingRegister=$(readEventsPendingRegisterCoreAPI)
     rc=$?
     [ "$rc" -eq 0 ] || return $rc
 
