@@ -55,13 +55,17 @@ QEMU_PASS=""
 QEMU_PORT=None
 
 JSON_FILE="event_info.json"
-JSON_REMOTE_PATHNAME=f"/usr/share/oobaml/{JSON_FILE}"
-JSON_REMOTE_FILE=f"<QEMU_USER>@<QEMU_IP>:<QEMU_PORT>{JSON_REMOTE_PATHNAME}"
+DAT_FILE="dat.json"
+JSON_REMOTE="/usr/share/oobaml"
+JSON_REMOTE_PATHNAME=f"{JSON_REMOTE}/{JSON_FILE}"
+JSON_REMOTE_FILE=f"<QEMU_USER>@<QEMU_IP>:<QEMU_PORT>{JSON_REMOTE_PATHNAME}/{JSON_FILE}"
+DAT_REMOTE_FILE=f"{JSON_REMOTE}/{DAT_FILE}"
 GENERATE_SCRIPT_ONLY = False
 
 # Global variables to access event injector script
 EVENT_INJ_SCRIPT_NAME="event_injector.bash"
 EVENT_INJ_SCRIPT_PATH=f"/home/root/{EVENT_INJ_SCRIPT_NAME}"
+EVENT_INJ_TMP_SCRIPT_PATH=f"/tmp/oobaml/bin/{EVENT_INJ_SCRIPT_NAME}"
 EVENT_INJ_SCRIPT_ARGS=""
 JSON_EVENTS_FILE = None
 
@@ -160,11 +164,18 @@ available_options = [
          }
     },
     {
+        'args': [ '--list-single-injection-commands-only' ],
+        'kwargs': {
+            'action': 'store_true',
+            'help': '''[optional] Just prints the commands for having a single-injection for all events.'''
+         }
+    },
+    {
         'args': [ '-d', '--device' ],
         'kwargs': {
             'type': str,
             'default': '',
-            'help': '''[optional] Perform injections only for specific a device, see also ----list-events-only and --event.'''
+            'help': '''[optional] Perform injections only for a specific device, see also ----list-events-only and --event.'''
         }
     },
     {
@@ -172,7 +183,7 @@ available_options = [
         'kwargs': {
             'type': str,
             'default': '',
-            'help': '''[optional] Perform injections only for specific a event, see also ----list-events-only and --device.'''
+            'help': '''[optional] Perform injections only for a specific event, see also ----list-events-only and --device.'''
         }
     },
     {
@@ -180,7 +191,7 @@ available_options = [
         'kwargs': {
             'type': str,
             'default': '',
-            'help': '''[optional] Perform injections only for specific a device INDEX since the EVENT has range, see also ----list-events-only and --event.'''
+            'help': '''[optional] Perform injections only for a specific device INDEX since the EVENT has range (use zero if it has not range), see also ----list-events-only and --event.'''
         }
     },
     {
@@ -194,11 +205,17 @@ available_options = [
         'args': [ '--second-range-limit'],
         'kwargs': {
             'type': int,
-            'default': 5,
-            'help': '''[optional] Specify a limit to expand the second range (specify 0 (zero) to expand all, example /NVSwitch_[0-3]/Ports/NVLink_[0-39], 0 (zero) generates 160 items'''
+            'default': 1000,
+            'help': '''[optional] Specify a limit to expand the second range, the default value is large enougth to expand all, example /NVSwitch_[0-3]/Ports/NVLink_[0-39] generates 160 items'''
         }
     },
-
+    {
+        'args': [ '--unique-event' ],
+        'kwargs': {
+            'action': 'store_true',
+            'help': '''[optional] Performs injections only for the first occurrence from each event (does not walk through ranges)'''
+        }
+    },
     {
         'args': [ '--dry-run' ],
         'kwargs': {
@@ -266,8 +283,9 @@ def parse_arguments():
     if GENERATE_SCRIPT_ONLY is True:
        RUN_SCRIPT = False
 
+    com.LIST_SINGLE_INJECTION_COMMANDS = args.list_single_injection_commands_only
     com.LIST_EVENTS = args.list_events_only
-    if com.LIST_EVENTS is True:
+    if com.LIST_EVENTS is True or com.LIST_SINGLE_INJECTION_COMMANDS is True:
         RUN_SCRIPT = False
 
     com.SINGLE_DEVICE = args.device
@@ -280,18 +298,20 @@ def parse_arguments():
 
     # Check for dry run
     if args.dry_run:
-        EVENT_INJ_SCRIPT_ARGS = f"{EVENT_INJ_SCRIPT_ARGS} -dry-run"
+        EVENT_INJ_SCRIPT_ARGS = f"{EVENT_INJ_SCRIPT_ARGS} --dry-run"
 
     CLEAR_LOGS = not args.keep_existent_logs
     if args.keep_existent_logs != True:
-         EVENT_INJ_SCRIPT_ARGS += " -keep-existent-logs"
-
+         EVENT_INJ_SCRIPT_ARGS += " --keep-existent-logs"
 
     if args.passwd is None and (RUN_SCRIPT is True or JSON_EVENTS_FILE == JSON_REMOTE_FILE):
          getpass(prompt='Password: ')
 
-    com.DOUBLE_EXPANSION_LIMIT = args.second_range_limit
+    if args.second_range_limit > 0:
+        com.DOUBLE_EXPANSION_LIMIT = args.second_range_limit ## otherwise leave default value in com.py
 
+    if args.unique_event is True:
+        EVENT_INJ_SCRIPT_ARGS += " --unique-event"
 
     return True
 
@@ -467,10 +487,17 @@ class InjectTest:
         Just copies the script to emulator
         """
         try:
+            sftp =  self._ssh_cmd.open_sftp()
             msg = f"Copying {source_script} to {QEMU_USER}@{BMCWEB_IP}:{EVENT_INJ_SCRIPT_PATH}"
             print(f"...\n\n{msg} using sftp....")
-            sftp =  self._ssh_cmd.open_sftp()
             sftp.put(source_script, EVENT_INJ_SCRIPT_PATH)
+            try:
+                stat_return = sftp.lstat(EVENT_INJ_TMP_SCRIPT_PATH);
+                msg = f"Copying {source_script} to {QEMU_USER}@{BMCWEB_IP}:{EVENT_INJ_TMP_SCRIPT_PATH}"
+                print(f"...\n\n{msg} using sftp....")
+                sftp.put(source_script, EVENT_INJ_TMP_SCRIPT_PATH)
+            except Exception:
+                pass
             sftp.close()
         except Exception as error:
             msg = f"Exception occurred while copying {source_script} using sftp"
@@ -589,29 +616,53 @@ class InjectTest:
         self.unverified_events =  self.total_events - len(self.events_injected)
 
 
+    def copy_file_to_tmp_dir(self, src_filename, destination_name):
+        """
+        A file that already exists will be copied into /tmp as /tmp/{destination_name}
+        """
+        tmp_filename = tempfile.gettempdir() + "/" + destination_name
+        if os.path.exists(tmp_filename):
+            os.unlink(tmp_filename)
+        print(f"...\n\nSaving used {destination_name} file as {tmp_filename}\n...")
+        shutil.copyfile(src_filename, tmp_filename)
+        os.chmod(tmp_filename, 0o666);
+
     def generate_script_from_json(self):
         """
         Generates the script, uses the Json file passed in command line or gets
          from QEMU using sftp
         """
-        global JSON_EVENTS_FILE, JSON_REMOTE_FILE
+        global JSON_EVENTS_FILE, JSON_REMOTE_FILE, DAT_REMOTE_FILE
         json_filename = JSON_EVENTS_FILE
-        fd_temp = 0
+        json_fd_temp = 0
         is_remote = 0
+        remote_file = JSON_REMOTE_PATHNAME
         if JSON_EVENTS_FILE == JSON_REMOTE_FILE:
             try:
                 self.create_ssh_session()
                 is_remote = 1
                 JSON_EVENTS_FILE=f"{QEMU_USER}@{QEMU_IP}:{QEMU_PORT}{JSON_REMOTE_PATHNAME}"
                 sftp =  self._ssh_cmd.open_sftp()
-                fd_temp, file_temp = tempfile.mkstemp()
-                os.close(fd_temp)
-                fd_temp = open(file_temp, 'w', encoding="utf-8")
-                sftp.get(JSON_REMOTE_PATHNAME, file_temp);
+                # scpo event_info.json into current machine
+                json_fd_temp, json_file_temp = tempfile.mkstemp()
+                os.close(json_fd_temp)
+                json_fd_temp = open(json_file_temp, 'w', encoding="utf-8")
+                sftp.get(JSON_REMOTE_PATHNAME, json_file_temp);
+
+                ## scp dat.json into current machine
+                remote_file = DAT_REMOTE_FILE
+                dat_fd_temp, dat_file_temp = tempfile.mkstemp()
+                os.close(dat_fd_temp)
+                dat_fd_temp = open(dat_file_temp, 'w', encoding="utf-8")
+                sftp.get(DAT_REMOTE_FILE, dat_file_temp);
+
                 sftp.close()
-                json_filename = file_temp
+                json_filename = json_file_temp
+                ## copy temp dat.json to /tmp/dat.json
+                self.copy_file_to_tmp_dir(dat_file_temp, DAT_FILE)
+
             except Exception as error:
-                msg = f"Unable to get jon file from ${JSON_REMOTE_PATHNAME} "
+                msg = f"Unable to get jon file from {remote_file} "
                 raise Exception(f"{msg}:  {str(error)}") from error
 
         msg  = f"Parsing Json file {JSON_EVENTS_FILE} and generating event injector "
@@ -624,14 +675,10 @@ class InjectTest:
         event_logs_script.generate_script_from_json()
 
         ## always create a copy of event_info.json in /tmp, useful to export the file when using a remote HMC
-        tmp_json_filename = tempfile.gettempdir() + "/" + JSON_FILE
-        if os.path.exists(tmp_json_filename):
-            os.unlink(tmp_json_filename)
-        print(f"...\n\nSaved event list json file as {tmp_json_filename}\n...")
-        shutil.copyfile(json_filename, tmp_json_filename)
-        os.chmod(tmp_json_filename, 0o666);
+        self.copy_file_to_tmp_dir(json_filename, JSON_FILE)
 
-        if fd_temp != 0 and is_remote != 0:
+
+        if json_fd_temp != 0 and is_remote != 0:
             os.unlink(json_filename)
 
         if GENERATE_SCRIPT_ONLY is True:
@@ -660,7 +707,7 @@ class InjectTest:
             try:
                 index=-1
                 while index > -4:  # try a couple on lines at bottom
-                    if ':' in result_stdout[index]:
+                    if 'Successful Injections:' in result_stdout[index]:
                         str_injected = result_stdout[index].strip().split(':')[-1].strip()
                         self.events_injected_count = int(str_injected)
                         break
@@ -786,24 +833,31 @@ def main():
         if main_rc == os.EX_OK:
             inject_test = InjectTest()
             event_logs_script= None
-            if RUN_SCRIPT is True or GENERATE_SCRIPT_ONLY is True or com.LIST_EVENTS is True:
-               event_logs_script = inject_test.generate_script_from_json()
+            if RUN_SCRIPT is True or GENERATE_SCRIPT_ONLY is True or com.LIST_EVENTS is True or \
+              com.LIST_SINGLE_INJECTION_COMMANDS is True:
+                event_logs_script = inject_test.generate_script_from_json()
             if RUN_SCRIPT is True:
                if CLEAR_LOGS is True:
                   inject_test.clear_logs()
-               inject_test.collect_logs_before_injections()
+             #  inject_test.collect_logs_before_injections()
                inject_test.inject_events(event_logs_script)
-               sleep(2)
-               inject_test.collect_logs_after_injection_and_verify()
+
+                ### Comparing fields such as MessageArgs and Severity no longer makes sense,
+               # if TEST_MODE == TEST_MODE_EVENTS_LOGGING:
+               #  sleep(2)
+               #  inject_test.collect_logs_after_injection_and_verify()
     except Exception as error:
         print(colored(error, 'red'))
         main_rc = -1
         raise error
+
     finally:
-        if main_rc == os.EX_OK and inject_test.print_summary() == 0:
-            main_rc = os.EX_OK
-        else:
-            main_rc = -1
+        # for mode=2 Bash script now prints a summary
+        if TEST_MODE == TEST_MODE_EVENTS_LOGGING:
+            if main_rc == os.EX_OK and inject_test.print_summary() == 0:
+                main_rc = os.EX_OK
+            else:
+                main_rc = -1
 
     return main_rc
 

@@ -121,7 +121,7 @@ SEVERITYDBUSTOREDFISH = {
 
 ## avoid huge range expansion such as:
 ## /xyz/openbmc_project/inventory/system/fabrics/HGX_NVLinkFabric_0/Switches/NVSwitch_[0-3]/Ports/NVLink_[0-39] , in this case the second range will be limited by 2
-DOUBLE_EXPANSION_LIMIT = 1
+DOUBLE_EXPANSION_LIMIT = 5
 
 # Used to say that a previous range must be repeated and not double expanded agains the first one
 RANGE_REPEATER_INDICATOR = '()'
@@ -130,17 +130,16 @@ RANGE_REPEATER_INDICATOR = '()'
 #------------------------
 
 LIST_EVENTS = False  # True list Devices and exit
+LIST_SINGLE_INJECTION_COMMANDS = False ## True when generating the single-injection commands
 
 # when not empty means the device we want to perform only: GPU,
 SINGLE_DEVICE = ""
 SINGLE_EVENT = ""         # performs just that event name
 SINGLE_DEVICE_INDEX = ""  # performs just that device index
 CUSTOM_EVENT  = False     # True when one of SINGLE customization above is not empty
-INITIAL_DEVICE_RANGE = -1 # integer first value of a range [1-3] => 1
-FINAL_DEVICE_RANGE   = -1
-DEVICE_RANGE = ""         # string such as  "[1-3]" or empty when the device does not have range
 
-range_expansion_list = [] ## global variable used in expand_range
+range_expansion_list = [] ## global variable used in expand_range with names
+range_start_end_list = [] ## global list of integer list with start-end for each range
 
 def get_logging_entry_level(level):
     """
@@ -199,7 +198,7 @@ def replace_last_range_if_repeated(current_string, value):
    """
    takes the last range from range_expansion_list and checks if the same range
    is present in 'current_string' but having an index to inform to not double
-   exapand it, then and if so replaces that range with index by value.
+   expand it, then and if so replaces that range with index by value.
    Example:
 
      current_string = "test[1|[1-8]/more"
@@ -218,7 +217,7 @@ def replace_last_range_if_repeated(current_string, value):
 
 
 
-def expand_range(name, limit=0):
+def expand_range(name, limit=0, occurrence=0):
     """
     expand_range(range_string) returns a list from strings with/without range specification at end
 
@@ -235,6 +234,7 @@ def expand_range(name, limit=0):
     """
     if limit == 0:
        range_expansion_list.clear()
+       range_start_end_list.clear()
 
     list_names = []
     open_bracket = name.find('[')
@@ -250,6 +250,16 @@ def expand_range(name, limit=0):
        else:
           value = int(values_range[0][1:])
        final_value = int(values_range[1][:-1])
+
+       ranges_size = len(range_start_end_list)
+       if occurrence == 0 or \
+          (ranges_size > 0 and occurrence == range_start_end_list[ranges_size -1][0]):
+            final_value_used = final_value
+            if limit > 0 and final_value_used > limit:
+                    final_value_used = limit
+            list_range = [value, final_value_used]
+            range_start_end_list.append(list_range)
+
        while value <= final_value:
           ## index_range DOES NOT exist,  search for other referencing that one
           if index_range == -1:
@@ -261,10 +271,11 @@ def expand_range(name, limit=0):
           replaced = replace_occurrence(replaced, str(value))
           open_bracket = replaced.find('[', open_bracket)
           if open_bracket != -1:
-             sub_list = expand_range(replaced, DOUBLE_EXPANSION_LIMIT)
-             if len(sub_list) > 0:
-                first_sub_list = sub_list.pop(0)
-                list_names.insert(value, first_sub_list)
+             sub_list = expand_range(replaced, DOUBLE_EXPANSION_LIMIT, value)
+             # No longer changing the order as we may have range specication
+             # if len(sub_list) > 0:
+             #    first_sub_list = sub_list.pop(0)
+             #    list_names.insert(value, first_sub_list)
              list_names.extend(sub_list)
           else:
              list_names.append(replaced)

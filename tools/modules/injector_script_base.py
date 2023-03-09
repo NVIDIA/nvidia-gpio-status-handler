@@ -220,4 +220,5 @@ class InjectorScriptBase(abc.ABC):
             for index, device_data in enumerate(data):
                 com.DEVICE_HW  = device
                 device_name = device+str(index)
-                self.generate_busctl_command_from_json_dict(device_name, device_data)
+                if device_data['trigger_count'] != -1:
+                    self.generate_busctl_command_from_json_dict(device_name, device_data)

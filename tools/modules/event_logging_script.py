@@ -28,8 +28,8 @@ class EventLogsInjectorScript(InjectorScriptBase):
             " be aware that changes will be lost!\n\n"
             "gl_total_comands=0  # will be set as the total intended commands\n\n"
             "gl_counter_commands=0 # counter for commands being executed\n"
-            "DRY_RUN=1 # default do not run commands\n"
-            "[ \"$1\" = \"-r\" -o \"$1\" = \"--run\" ] && DRY_RUN=0\n\n"
+            "DRY_RUN=0 # default do not run commands\n"
+            "[ \"$1\" = \"--dry-run\" ] && DRY_RUN=1\n\n"
             "TEMPFILE=/tmp/$$.tmp\n"
             "echo 0 > $TEMPFILE\n\n"
             "run_cmd()\n"
@@ -77,7 +77,7 @@ class EventLogsInjectorScript(InjectorScriptBase):
         First removes Accessor fiels from the self._additional_data as they
            will not be used
         """
-        super().remove_accessor_fields()
+        super().remove_accessor_fields(self._additional_data)
         cmd  = f"busctl call {com.LOGGING_SERVICE} {com.LOGGING_OBJECT} "
         cmd += "xyz.openbmc_project.Logging.Create Create ssa{ss} "
         cmd += '\\"' + self._busctl_info[com.INDEX_DEVICE_NAME] + '\\" '

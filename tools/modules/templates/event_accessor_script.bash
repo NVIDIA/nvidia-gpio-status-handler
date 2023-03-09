@@ -36,6 +36,7 @@ gl_error_file=/tmp/.event_error_$$
 gl_cmd_line_device=""
 gl_cmd_line_event=""
 gl_cmd_line_device_index=""
+gl_original_cmd_line_device_index=""
 gl_cmd_line_keep_existing_logs=0
 gl_cmd_line_list_events=0
 gl_cmd_line_property=""
@@ -49,13 +50,26 @@ MAPFILE=/tmp/.mapfile_$$
 TIMESTAMP_INJECTION_STARTED=0            ## control time between insert failure and restore
 WAIT_TIME_FOR_RELASE_INJECTION_DATA=90
 FAILURES_FILE=/tmp/.not_injected_$$
+NO_MESSAGE_ARGS_FILE=/tmp/.no_message_args
+INVALID_VALUE_MESSAGE_ARGS_FILE=/tmp/.invalid_message_args
+INVALID_VALUE_TELEMETRIES_FILE=/tmp/.invalid_telemetries
 MCTP_WRAPPER_FILE_PARAM=/tmp/.mctp_param
+CUR_OUTPUT_FILE=/tmp/.curl_outpupt
+CUR_STATUS_FILE=/tmp/.curl_status
+CUR_PRINTING_ENABLE=1
 gl_busctl_cmd_counter=0
 gl_bustl_cmd_set_failure_title="Failure preparation commands"
 gl_bustl_cmd_unset_failure_title="Failure clearing commands"
 gl_current_bustcl_title=$gl_bustl_cmd_set_failure_title
 gl_current_curl_output_title=""
 gl_delete_logs_once=0
+gl_device_core_API_index=0;  ## a variable always used for BUSCTL commands regarding device-index
+gl_cmd_line_unique_event=0
+gl_cmd_do_not_clear_property=0
+gl_cmd_print_additional_data=0
+gl_use_clean_environment=0
+gl_no_set_failure_state=0
+gl_unique_events=0
 
 DIR_SAVE_ENTRIES="/tmp/injected"
 DIR_SAVE_ENTRIES_ALREADY_FOUND="$DIR_SAVE_ENTRIES/already_found"
@@ -66,6 +80,11 @@ CURL_CMD="/tmp/oobaml/bin/curl -i"
 gl_log_id=0  ## entry to be generated for the firt busctl command
 DRY_RUN=0
 
+ALREADY_INSERTED_ATTEMPTS=40     ## times looking back for an event at phosphor logging entries
+ALREADY_INSERTED_SLEEP=3
+FIRST_INSERTED_ATTEMPTS=50
+ERROR_VALUE_CONTENT="Value_Not_Available"
+INJECTIONS_REPORT=/tmp/injections_summary_report.txt
 
 help()
 {
@@ -78,13 +97,18 @@ help()
    echo " -i|--device-index <index>  plus --device and --event it sets the 'single injection' use index zero when there is no range in the 'device'"
    echo " -p|--property <prop-name>  performs injections on all events that has that DBUS property, e.g., I2C3_ALERT"
    echo " -m|--markdown              only for 'single injection' generates markdown output suitable to create documents, inside '/tmp/md' directory"
+   echo " -u|--unique-event          run only one occurrence from an event (the first one) other range expansions are ignored"
+   echo " -n|--do-not-clear-property does not clear 'properties state' before setting the suitable property value, works for 'boolean' and 'numeric' properties used in bitmasks"
+   echo " -E|--use-clean-environment do not control GpuMgr call returns"
+   echo " -S|--no-set-failure-state  do not set failure state before performing bustcl commands"
+   echo " -A|--additional-data       print phosphor logging AdditionalData field"
    echo " -h|--help                  shows the help"
    echo
 }
 
 while [ "$1" != "" ]; do
     case "$1"  in
-        -r|--run)    DRY_RUN=0;;  # run, default DRY_RUN
+        --dry-run)   DRY_RUN=1;;
         -n|--inject-only)         # do not log for logs in phosphor logging
                      DRY_RUN=0
                      gl_injection_only=1;;
@@ -92,10 +116,16 @@ while [ "$1" != "" ]; do
         -e|--event) shift; gl_cmd_line_event="$1";;
         -k|--keep-existent-logs) gl_cmd_line_keep_existing_logs=1;;
         -l|--list-events) gl_cmd_line_list_events=1;;
-        -i|--device-index) shift; gl_cmd_line_device_index="$1";;
+        -i|--device-index) shift; gl_cmd_line_device_index="$1"
+                                  gl_original_cmd_line_device_index="$1";;
         -p|--property) shift; gl_cmd_line_property="$1";;
         -D|--debug) gl_cmd_line_debug=1;;
         -m|--markdown) gl_cmd_line_markdown=1;;
+        -u|--unique-event) gl_cmd_line_unique_event=1;;
+        -n|--do-not-clear-property) gl_cmd_do_not_clear_property=1;;
+        -E|--use-clean-environment) gl_use_clean_environment=1;;
+        -S|--no-set-failure-state) gl_no_set_failure_state=1;;
+        -A|--additional-data) gl_cmd_print_additional_data=1;;
         -h|--help) help; exit 0;;
     esac
     shift
@@ -127,6 +157,16 @@ print()
    echo "$@"
 }
 
+set_global_device_core_API_index() #1 = current index
+{
+  gl_device_core_API_index=$1
+  if [[  $DEVICE =~ "GPU" ]]
+  then
+     gl_device_core_API_index=$[ $1 -1] # convert 1-8 => 0-7
+  else
+     gl_device_core_API_index=$1
+  fi
+}
 
 endBusctlMarkDown()
 {
@@ -201,11 +241,7 @@ createMarkDownForFileContent() # $1=file
 
 createMapKey()
 {
-   key=""
-   for k in $*
-   do
-       key="${key}::${k}"
-   done
+   key=`echo $* | md5sum | cut -f1 -d ' '`
    echo $key
 }
 
@@ -234,7 +270,7 @@ getService() # $1 = object path $2 = interface
 {
    local obj=$1
    local intf=$2
-   service=`busctl call $DBUS_OBJECT_MAPPER_GET_OBJECT ${obj} 1 ${intf} | awk '{print $3}' | tr -d '"'`
+   service=`busctl call $DBUS_OBJECT_MAPPER_GET_OBJECT ${obj} 1 ${intf} 2>/dev/null | awk '{print $3}' | tr -d '"'`
    if [ "$service" = "" ]; then
       if [ "$1" = "/xyz/openbmc_project/GpioStatusHandler" ]; then
          service=$SERVICE_GPIO_HANDLER
@@ -283,7 +319,7 @@ change_string()
 
 calculate_number()
 {
-  result=$1
+  result=`echo ${1%\.*}`
   rest=$[ $result % 2]
   if [ $rest -eq 0 ]; then
      result=$[ $result * 2 ]
@@ -351,6 +387,21 @@ change_value_method() #1=value to change
 }
 
 
+clear_property_state() # $1=value $@=others
+{
+   if [ $gl_cmd_do_not_clear_property -eq 0 ]
+   then
+      local clear_value="$1"
+      shift
+      local save_method="$METHOD"
+      export METHOD="force"
+      local save_method_value=${METHOD_VALUE}
+      METHOD_VALUE="$clear_value" property_set "$@"
+      export METHOD_VALUE="$save_method_value"
+      export METHOD="$save_method"
+   fi
+}
+
 property_set_method() #1=object_path $2=interface, $3=property_name
 {
     gl_new_property_value=""
@@ -360,7 +411,7 @@ property_set_method() #1=object_path $2=interface, $3=property_name
          export METHOD="force"
          if [ "$gl_property_value" != "0" ]; then
             local save_method_value=${METHOD_VALUE}
-            METHOD_VALUE="0" property_set "$@"
+            clear_property_state 0 $@
             METHOD_VALUE=$save_method_value
          fi
          ## leave method as force to put the right value
@@ -374,8 +425,20 @@ property_set_method() #1=object_path $2=interface, $3=property_name
         METHOD_VALUE="$save_method_value"
     fi
 
-    # Main call to property_set
-    property_set "$@"
+    if [ "$gl_property_type" = "b" ] ## handle boolean as special case
+    then
+          if [[ $gl_old_property_value =~ true ]]; then
+              gl_new_property_value="false"
+          else
+              gl_new_property_value="true"
+          fi
+          clear_property_state $gl_new_property_value $@
+    else
+          local method_equal_or_not_equal=0
+          [ "$METHOD" = "equal" -o "$METHOD" = "not_equal" ] && method_equal_or_not_equal=1
+          # Main call to property_set
+          [ $gl_cmd_do_not_clear_property -eq 0 -o $method_equal_or_not_equal -eq 0 ] && property_set "$@"
+    fi
 
     # extra call to property_set if necessary
     if [ $gl_rc -eq 0 ]; then
@@ -403,13 +466,7 @@ property_set() #1=object_path $2=interface, $3=property_name
     else
        if [ "$gl_old_property_value" != "" ]; then # allow bypassing this logic
           case $gl_property_type in
-               b)   echo $gl_old_property_value | grep -i true > /dev/null
-                   if [ $? -eq 0 ]; then
-                       gl_new_property_value="false"
-                   else
-                       gl_new_property_value="true"
-                  fi
-                  ;;
+               b) ;; # do nothing itw i will be used only when "$METHOD" = "force"
                s|as)   gl_new_property_value=`change_string`
                     [ "$METHOD" = "equal" ] && gl_new_property_value=${METHOD_VALUE}
                   sleep 1
@@ -464,7 +521,23 @@ getAssertedTelemetries() #1=entry
 {
    entry_file_name=`printf %03d $1`
    if [ -s "$DIR_SAVE_ENTRIES/$entry_file_name" ]; then
-      cat $DIR_SAVE_ENTRIES/$entry_file_name | tail -1
+      cat $DIR_SAVE_ENTRIES/$entry_file_name | head -n 4 | tail -1
+   fi
+}
+
+getOriginOfCondition() #1=entry
+{
+   entry_file_name=`printf %03d $1`
+   if [ -s "$DIR_SAVE_ENTRIES/$entry_file_name" ]; then
+      cat $DIR_SAVE_ENTRIES/$entry_file_name | head -n 5 | tail -1
+   fi
+}
+
+getSelfTestResults()
+{
+   entry_file_name=`printf %03d $1`
+   if [ -s "$DIR_SAVE_ENTRIES/$entry_file_name" ]; then
+      cat $DIR_SAVE_ENTRIES/$entry_file_name | head -n 6 | tail -1
    fi
 }
 
@@ -473,8 +546,11 @@ matchDeviceAndEvent() # $1=entryid to check, #2 optional the object path
     local device=""
     local event=""
     local messageArgs=""
-    local telemetries
-    entry_file_name=`printf %03d $1`
+    local telemetries=""
+    local origin_of_condition=""
+    local selftest_results=""
+    local entry_file_name=`printf %03d $1`
+    local entry_additional_data_file="${entry_file_name}_additional_data"
     if [ -s "$DIR_SAVE_ENTRIES/$entry_file_name" ]; then
         event=`cat $DIR_SAVE_ENTRIES/$entry_file_name | head -n 1`
     else
@@ -482,7 +558,10 @@ matchDeviceAndEvent() # $1=entryid to check, #2 optional the object path
         if [ "$additionalData" != "" ]; then
             device=$(echo $additionalData | awk -F 'namespace='  '{print $2}' | tr -d \")
             messageArgs=$(echo $additionalData | awk -F REDFISH_MESSAGE_ARGS= {'print $2}' | awk -F \" '{print $1}')
-            telemetries=$(echo $additionalData | awk -F '}}]},' {'print $2}' | awk -F \"REDFISH_MESSAGE_ARGS '{print $1}'  | tr -d '}\\')
+            telemetries=$(echo $additionalData | awk -F '}}]},' {'print $2}' | awk -F \"DEVICE_NAME '{print $1}'  | tr -d '}\\')
+            origin_of_condition=$(echo $additionalData | awk -F 'REDFISH_ORIGIN_OF_CONDITION=' '{print $2}' | awk -F \" '{print $1}' )
+            local sf_results=$(echo $additionalData | awk -F test-case-total '{print $2}' | awk -F \}\} '{print $1}' | tr -d \" | tr -d \\)
+            selftest_results="test-case-total${sf_results}"
         fi
         if [ "$device" != "" ]; then
             event=$(busctl get-property xyz.openbmc_project.Logging /xyz/openbmc_project/logging/entry/$1 xyz.openbmc_project.Logging.Entry Message 2>/dev/null | cut -f2-90 -d' ' | tr -d \")
@@ -490,6 +569,9 @@ matchDeviceAndEvent() # $1=entryid to check, #2 optional the object path
             echo "$device" >> $DIR_SAVE_ENTRIES/$entry_file_name
             echo "$messageArgs"  >> $DIR_SAVE_ENTRIES/$entry_file_name
             echo "$telemetries"  >> $DIR_SAVE_ENTRIES/$entry_file_name
+            echo "$origin_of_condition" >> $DIR_SAVE_ENTRIES/$entry_file_name
+            echo "$selftest_results"    >> $DIR_SAVE_ENTRIES/$entry_file_name
+            echo "$additionalData" > $DIR_SAVE_ENTRIES/$entry_additional_data_file
         else
             touch $DIR_SAVE_ENTRIES/$entry_file_name
             return
@@ -520,13 +602,13 @@ matchDeviceAndEvent() # $1=entryid to check, #2 optional the object path
 
 verifyInjection()
 {
-    local interactions=20
+    local interactions=$FIRST_INSERTED_ATTEMPTS
     local logid="" # more then one event can be created
     print "Waiting for the Injection, it may take some time ..."
     while [ "$logid" = "" -a $interactions -gt 0 ]; do
-       debug -ne "waiting for the event, trying at most $interactions times to get a new EventLogId ...\r"
+       debug -ne "waiting for the event, trying at most $interactions times to get a new EventLogId (sleep=$ALREADY_INSERTED_SLEEP) ...\r"
 
-       sleep 4
+       sleep $ALREADY_INSERTED_SLEEP
        local new_logging_entries=$(latest_looging_entry)
        local expected_logging_entry=$[ $gl_current_logging_entries + 1 ]
        if [ $new_logging_entries -gt $gl_current_logging_entries ]; then
@@ -553,16 +635,16 @@ showStatus()
     status='injected'
     if [ $gl_rc -ne 0 ]; then
         status='failed'
-        debug "FAILED at `date`"
         gl_failures=$[ gl_failures + 1 ]
         print "FAILED injection for DEVICE='$DEVICE' EVENT='$EVENT'"
-        debug "	[$gl_counter_commands/$gl_total_comands] DEVICE='$DEVICE' EVENT='$EVENT'" >> $FAILURES_FILE
+        debug "    [$gl_counter_commands/$gl_total_comands] DEVICE='$DEVICE' EVENT='$EVENT'" >> $FAILURES_FILE
     else
         gl_injections=$[ $gl_injections + 1 ]
     fi
     error_msg=$(cat $gl_error_file 2> /dev/null)
     message="[debug: $gl_counter_commands/$gl_total_comands] $status DEVICE='$DEVICE' EVENT='$EVENT' : '$1' '$error_msg'"
     debug $message
+    [ "$status" = "injected" -a $gl_is_single_injection -eq 0 ] &&  print_and_check_asserted_device_content $gl_log_id
 }
 
 getDeviceFromAdditionalData() #$1 = entry id
@@ -586,10 +668,47 @@ wait_single_injection_to_restore_environment()
    fi
 }
 
+
+clear_deviceCore_API_defaults() ## means do not set Failure state
+{
+   if [ $gl_use_clean_environment -eq 0 ]
+   then
+      ## force return 0 to all calls to " busctl call xyz.openbmc_project.GpuMgr /xyz/openbmc_project/GpuMgr xyz.openbmc_project.GpuMgr.Server DeviceGetData"
+      CMD="busctl call $DBUS_CALL_ARGS setDeviceDataForAll u 0" >/dev/null
+      printBusctl $CMD
+      eval $CMD
+      # clear return for mctp-error-detection that calls PassthroughFpga iyyyau 0 0xb1 0x81 0 0
+      CMD="busctl call $DBUS_CALL_CLEAR_PASS_THROUGH_FPGA"
+      printBusctl $CMD
+      eval $CMD >/dev/null
+   fi
+}
+
+clear_Core_API_property()
+{
+   if [ $gl_no_set_failure_state -eq 0 ]
+   then
+      CMD="busctl call $DBUS_CALL_CLEAR_ARGS $gl_device_core_API_index $INJECTION_PARAM"
+      printBusctl $CMD
+      eval $CMD > /dev/null
+   fi
+}
+
+restore_deviceCore_API_defaults() ## means set Failure State
+{
+   if [ $gl_use_clean_environment -eq 0 ]
+   then
+      # also restore  mctp-error-detection
+      CMD="busctl call $DBUS_CALL_ARGS clearDeviceDataForAll" >/dev/null
+      printBusctl $CMD
+      eval $CMD
+   fi
+}
+
+
 set_failure_state()
 {
    [ $DRY_RUN -eq 1 -o $gl_is_single_injection -eq 0 ] && return
-
 
    if [ $gl_delete_logs_once -eq 0 -a $gl_cmd_line_keep_existing_logs -eq 0 ]
    then
@@ -600,14 +719,8 @@ set_failure_state()
    fi
 
    TIMESTAMP_INJECTION_STARTED=`date +%s`
-   ## force return 0 to all calls to " busctl call xyz.openbmc_project.GpuMgr /xyz/openbmc_project/GpuMgr xyz.openbmc_project.GpuMgr.Server DeviceGetData"
-   CMD="busctl call $DBUS_CALL_ARGS setDeviceDataForAll u 0"
-   printBusctl $CMD
-   eval $CMD >/dev/null
-   # clear return for mctp-error-detection that calls PassthroughFpga iyyyau 0 0xb1 0x81 0 0
-   CMD="busctl call $DBUS_CALL_CLEAR_PASS_THROUGH_FPGA"
-   printBusctl $CMD
-   eval $CMD >/dev/null
+
+   clear_deviceCore_API_defaults
 
    CMD="echo -n \"$AML_INJECTOR_CURRENT_DEVICE_INDEX $DEVICE $AML_INJECTOR_CURRENT_INJECTION_PARAM\"  > $MCTP_WRAPPER_FILE_PARAM"
    printBusctl $CMD
@@ -618,7 +731,7 @@ set_failure_state()
       read -r command args < <(echo $INJECTION_PARAM)
       if [ "$command" = "mctp-error-detection" ]
       then
-         CMD="busctl call $DBUS_CALL_SET_PASS_THROUGH_FPGA $AML_INJECTOR_CURRENT_DEVICE_INDEX $DEVICE"
+         CMD="busctl call $DBUS_CALL_SET_PASS_THROUGH_FPGA $gl_device_core_API_index $DEVICE"
          printBusctl  $CMD
          eval $CMD
       fi
@@ -628,16 +741,22 @@ set_failure_state()
       [ "$INJECTION_CHECK" = "not_equal" ] && INJECTION_CHECK_VALUE=$[ $INJECTION_CHECK_VALUE + 1]
       if [ "$INJECTION_CHECK" != "" -a $INJECTION_PARAM = "gpu.xid.event" ]
       then
-            CMD="busctl call $DBUS_CALL_SET_GPU_XID_EVENT_STRING \"$INJECTION_CHECK_VALUE\""
-            printBusctl $CMD
-            eval $CMD > /dev/null
+            if [ $gl_no_set_failure_state -eq 0 ]
+            then
+               CMD="busctl call $DBUS_CALL_SET_GPU_XID_EVENT_STRING \"$INJECTION_CHECK_VALUE\""
+               printBusctl $CMD
+               eval $CMD > /dev/null
+            fi
       fi
-      CMD="busctl call $DBUS_CALL_SET_ARGS $AML_INJECTOR_CURRENT_DEVICE_INDEX $INJECTION_PARAM $INJECTION_CHECK_VALUE"
-      printBusctl $CMD
-      eval $CMD > /dev/null
+      if [ $gl_no_set_failure_state -eq 0 ]
+      then
+         CMD="busctl call $DBUS_CALL_SET_ARGS $gl_device_core_API_index $INJECTION_PARAM $INJECTION_CHECK_VALUE"
+         printBusctl $CMD
+         eval $CMD > /dev/null
+      fi
       if [ $gl_cmd_line_debug -eq 1 ]
       then
-         CMD="busctl call  $DBUS_CALL_GET_ARGS $AML_INJECTOR_CURRENT_DEVICE_INDEX $INJECTION_PARAM 1"
+         CMD="busctl call  $DBUS_CALL_GET_ARGS $gl_device_core_API_index $INJECTION_PARAM 1"
          printBusctl $CMD
          eval $CMD
       fi
@@ -645,27 +764,102 @@ set_failure_state()
 
 }
 
+
+remove_curl_temp_files()
+{
+    /bin/rm -f $CUR_OUTPUT_FILE $CUR_STATUS_FILE
+}
+
+
 execute_curl_commmand()
 {
   CMD="$CURL_CMD $@"
   debug $CMD
-  CUR_OUTPUT=/tmp/.curl_outpupt
-  CUR_STATUS=/tmp/.curl_status
-  eval $CMD 1>$CUR_STATUS 2>/dev/null
-  ok=`grep '200 OK' $CUR_STATUS | grep HTTP`
+
+  eval $CMD 1>$CUR_STATUS_FILE 2>/dev/null
+  ok=`grep '200 OK' $CUR_STATUS_FILE | grep HTTP`
   ret=1
   if [ "$ok" != "" ]
   then
      ret=0
-     grep -v "^[A-Z]"  $CUR_STATUS > $CUR_OUTPUT
-     cat $CUR_OUTPUT
+     grep -v "^[A-Z]"  $CUR_STATUS_FILE > $CUR_OUTPUT_FILE
+     if [ $CUR_PRINTING_ENABLE -ne 0 ]
+     then
+        cat $CUR_OUTPUT_FILE
+     fi
      if [ $gl_cmd_line_markdown -eq 1 ]
      then
-         createMarkDownForFileContent $CUR_OUTPUT
+         createMarkDownForFileContent $CUR_OUTPUT_FILE
      fi
   fi
-  /bin/rm -f $CUR_OUTPUT $CUR_STATUS
+  if [ $CUR_PRINTING_ENABLE -ne 0 ]
+  then
+     remove_curl_temp_files
+  fi
+  CUR_PRINTING_ENABLE=1  ## always set default
   return $ret
+}
+
+check_Value_Not_Available()
+{
+   if [[ "$1" =~ "$ERROR_VALUE_CONTENT" ]]
+   then
+      return 1 ## match
+   fi
+   return 0
+}
+
+save_content_message_into_file() # $1 =log_id, $2=device, $3=event $4=file
+{
+   echo "   Entry id=$1 DEVICE=$2 EVENT=\"$3\"" >> $4
+}
+
+print_and_check_asserted_device_content()
+{
+    local redfish_output_origin_of_condition=""
+    # look for originOfCondition in Redfish output
+    if [ -s "$CUR_OUTPUT_FILE" ]
+    then
+        redfish_output_origin_of_condition=$(grep '"OriginOfCondition":' $CUR_OUTPUT_FILE  -A1 | grep odata.id | awk '{print $NF}' | tr -d \")
+    fi
+    local log_id=$1
+    event=`getAssertedEvent $log_id`
+    device=`getAssertedDevice $log_id`
+    messageArgs=`getAssertedMessageArgs $log_id`
+    telemetries=`getAssertedTelemetries $log_id`
+    originOfCondition=`getOriginOfCondition $log_id`
+    selftest_results=`getSelfTestResults $log_id`
+    asserted_message="EntryId=$log_id; assertedDevice='$device'; event='$event'; REDFISH_MESSAGE_ARGS='$messageArgs'; REDFISH_ORIGIN_OF_CONDITION='$originOfCondition'; OriginOfCondition='$redfish_output_origin_of_condition'; selftest_results='$selftest_results'; telemetries='$telemetries'"
+    if [ $gl_is_single_injection -eq 1 ]; then
+       print $asserted_message
+    else
+       debug $asserted_message
+    fi
+    if [ -s "$CUR_OUTPUT_FILE" ]
+    then
+        cat "$CUR_OUTPUT_FILE"
+        remove_curl_temp_files
+    fi
+    ## check event content
+    check_Value_Not_Available "$messageArgs"
+    [ $? -eq 1 ] && save_content_message_into_file $log_id $device "$event" $INVALID_VALUE_MESSAGE_ARGS_FILE
+    check_Value_Not_Available "$telemetries"
+    [ $? -eq 1 ] && save_content_message_into_file $log_id $device "$event" $INVALID_VALUE_TELEMETRIES_FILE
+    local message_content=1
+    if [ "$messageArgs" = "" ]
+    then
+        message_content=0
+    elif [[ "$messageArgs" =~ "''" ]]
+    then
+        message_content=0
+    elif [[ "$messageArgs" =~ "\"\"" ]]
+    then
+        message_content=0
+    fi
+    if [ $message_content -eq 0 ]
+    then
+        save_content_message_into_file $log_id $device "$event" $NO_MESSAGE_ARGS_FILE
+    fi
 }
 
 reset_failure_state()
@@ -683,29 +877,23 @@ reset_failure_state()
    eval $CMD
    if [ "$AML_INJECTOR_CURRENT_INJECTION" = "DeviceCoreAPI" ]
    then
-      CMD="busctl call $DBUS_CALL_CLEAR_ARGS $AML_INJECTOR_CURRENT_DEVICE_INDEX $INJECTION_PARAM"
-      printBusctl $CMD
-      eval $CMD > /dev/null
+      clear_Core_API_property
    fi
 
-   ## also restore  mctp-error-detection
-   CMD="busctl call $DBUS_CALL_ARGS clearDeviceDataForAll" >/dev/null
-   printBusctl $CMD
-   eval $CMD
+   restore_deviceCore_API_defaults
    endBusctlMarkDown
 
    local saved_log_id=$gl_log_id
    gl_log_id=0
    if [ $saved_log_id -ne 0 ]; then
-      event=`getAssertedEvent $saved_log_id`
-      device=`getAssertedDevice $saved_log_id`
-      messageArgs=`getAssertedMessageArgs $saved_log_id`
-      telemetries=`getAssertedTelemetries $saved_log_id`
-      print
-      print "Entry id = $saved_log_id, asserted device = '$device', event = '$event', REDFISH_MESSAGE_ARGS = '$messageArgs', telemetries = '$telemetries'"
       gl_current_curl_output_title="Redfish output"
+      print
+      ## do not print curl output there
+      CUR_PRINTING_ENABLE=0
       execute_curl_commmand -H 'Content-Type: application/json' -X GET -k --user root:0penBmc ${REDFISH_ENTRIES_URI}/$saved_log_id
-      if [ $? -eq 0 ]
+      curl_ok=$?
+      print_and_check_asserted_device_content $saved_log_id
+      if [ $curl_ok -eq 0 ]
       then
             gl_current_curl_output_title="HealthRollup output"
             execute_curl_commmand  $REDFISH_CHASSIS_URI/$device
@@ -714,55 +902,126 @@ reset_failure_state()
                execute_curl_commmand  $REDFISH_CHASSIS_URI/HGX_${device}
             fi
       fi
+      local entry_additional_data_file="`printf %03d $saved_log_id`_additional_data"
+      if [ $gl_cmd_print_additional_data -eq 1 -a -s "$DIR_SAVE_ENTRIES/$entry_additional_data_file" ]
+      then
+          debug
+          print
+          cat $DIR_SAVE_ENTRIES/$entry_additional_data_file
+      fi
       debug
       print
    fi
 }
 
+check_already_inserted() # return 0 -> no log id found, return > 0 got log entry id
+{
+   local logid=""
+   local loop=1
+   local back_until_entry=$gl_previous_logging_entries
+   local prev_current_logging_entries=0
+   while [ "$logid" = "" -a $loop -lt $ALREADY_INSERTED_ATTEMPTS ]
+   do
+         gl_current_logging_entries=$(latest_looging_entry)
+         prev_current_logging_entries=$gl_current_logging_entries
+         while [ "$logid" = "" -a $gl_current_logging_entries -gt $back_until_entry ]
+         do
+               debug -ne "[debug: $gl_counter_commands/$gl_total_comands] already inserted: $*, attempt[$loop/$ALREADY_INSERTED_ATTEMPTS sleep=$ALREADY_INSERTED_SLEEP], looking back at entry $gl_current_logging_entries ...\r"
+               logid=$(matchDeviceAndEvent $gl_current_logging_entries $1)
+               if [ "$logid" != "" ]
+               then
+                  ## Allows same event name happened more than once on event_info.json
+                  ## shows different entry id, but does not know the right sequence
+                  entry_file_name=`printf %03d $logid`
+                  if [ ! -f "$DIR_SAVE_ENTRIES_ALREADY_FOUND/$entry_file_name" ]
+                  then
+                     touch "$DIR_SAVE_ENTRIES_ALREADY_FOUND/$entry_file_name"
+                  else
+                     logid=""  # keep serching
+                  fi
+               fi
+               gl_current_logging_entries=$[ $gl_current_logging_entries - 1]
+         done
+         if [ $gl_current_logging_entries -eq $back_until_entry ] ## it is necessary to update the attempt counter
+         then
+            debug -ne "[debug: $gl_counter_commands/$gl_total_comands] already inserted: $*, attempt[$loop/$ALREADY_INSERTED_ATTEMPTS sleep=$ALREADY_INSERTED_SLEEP], looking back at entry $gl_current_logging_entries ...\r"
+         fi
+         loop=$[ $loop +1]
+         if [ "$logid" = "" -a $loop -lt $ALREADY_INSERTED_ATTEMPTS ]
+         then
+            sleep $ALREADY_INSERTED_SLEEP
+            back_until_entry=$prev_current_logging_entries
+         fi
+   done
+   [ "$logid" = "" ] && return 0
+   return $logid
+}
+
+set_right_cmd_line_device_index()
+{
+   ## restore orignal value
+   gl_cmd_line_device_index=$gl_original_cmd_line_device_index
+   if [ "$gl_original_cmd_line_device_index" != "" -a "$DEVICE_RANGE" != "" ]; then
+         local required_double_range=0
+         ## for double range "[1-3]/[2-5]" the gl_cmd_line_device_index must be in the form "firstIndex,secondIndex" like -i 1,5
+         [[ "$DEVICE_RANGE" =~ "/" ]] && required_double_range=1
+         local existent_double_range=0
+         [[ "$gl_cmd_line_device_index"  =~ "," ]] && existent_double_range=1
+         if [ $required_double_range -eq 1 -a $existent_double_range -eq 0 ]; then
+            # example getting begin from second ranage = 2
+            # echo "[1-3]/[2-5]" | awk -F / '{print $2}' | awk -F  '-' '{print $1}' | tr -d '\['
+            local begin_second_range=$(echo $DEVICE_RANGE | awk -F / '{print $2}' | awk -F  '-' '{print $1}' | tr -d '\[')
+            gl_cmd_line_device_index="${gl_cmd_line_device_index},${begin_second_range}"
+         fi
+   fi
+}
+
+should_skip_event() # return 1 = skip, return 0 = continue
+{
+   if [ $gl_cmd_line_list_events -eq 1 ]; then
+        echo "${DEVICE}${DEVICE_RANGE} \"$EVENT\""
+        return 1
+   fi
+
+   [ "$gl_cmd_line_device" != "" -a "$gl_cmd_line_device" != "$DEVICE" ]  && return 1
+   [ "$gl_cmd_line_event" != ""  -a "$gl_cmd_line_event" != "$EVENT" ]    && return 1
+
+   set_right_cmd_line_device_index
+   if [ "$gl_cmd_line_device_index" != "" -a "$DEVICE_RANGE" != "" ]; then
+         [ "$gl_cmd_line_device_index" != "$DEVICE_INDEX" ]  && return 1
+   fi
+
+   [ "$gl_cmd_line_property" != "" -a "$3" != "$gl_cmd_line_property" ] && return 1
+
+   if [ $gl_cmd_line_unique_event -eq 1 ]
+   then
+      event_key="$DEVICE $EVENT"
+      existsMapKey $event_key
+      [ $? -eq 1 ] && return 1 ## device/event already performed, ignore other range expansions
+      insertMapKey $event_key
+   fi
+
+   return 0
+}
+
 property_change() #1=object_path $2=interface, $3=property_name
 {
+    should_skip_event $*
+    [ $? -eq 1 ] && return 0
+
     gl_rc=0
     gl_single_injection_state=0
-    if [ $gl_cmd_line_list_events -eq 1 ]; then
-        echo "${DEVICE}${DEVICE_RANGE} \"$EVENT\""
-        return 0
-    fi
-    go_out=0
-    [ "$gl_cmd_line_device" != "" -a "$gl_cmd_line_device" != "$DEVICE" ]  && go_out=1
-    [ "$gl_cmd_line_event" != ""  -a "$gl_cmd_line_event" != "$EVENT" ]    && go_out=1
-    if [ "$gl_cmd_line_device_index" != "" -a "$DEVICE_RANGE" != "" ]; then
-      [ "$gl_cmd_line_device_index" != "$DEVICE_INDEX" ]  && go_out=1
-    fi
-
-    [ "$gl_cmd_line_property" != "" -a "$3" != "$gl_cmd_line_property" ] &&  go_out=1
-
-    [ $go_out -eq 1 ] && return 0
-
     local already_inserted=0
     existsMapKey $* $METHOD $METHOD_VALUE  ## verify if path/interface/property was already inserted
     if [ $? -ne 0 ]
     then
          already_inserted=1
-    else
-         AML_INJECTOR_CURRENT_DEVICE_INDEX=""
-         AML_INJECTOR_CURRENT_INJECTION="$INJECTION"        # external commands will use it
-         AML_INJECTOR_CURRENT_INJECTION_PARAM="$INJECTION_PARAM"  # external commands will use it
-         if [ $gl_is_single_injection -eq 1 ]
-         then
-            AML_INJECTOR_CURRENT_DEVICE_INDEX="$gl_cmd_line_device_index"
-            echo -n "$AML_INJECTOR_CURRENT_DEVICE_INDEX $DEVICE $AML_INJECTOR_CURRENT_INJECTION_PARAM"  > $MCTP_WRAPPER_FILE_PARAM
-         else
-            AML_INJECTOR_CURRENT_DEVICE_INDEX="$DEVICE_INDEX"  # external commands will use it
-         fi
     fi
 
     gl_counter_commands=$[ $gl_counter_commands + 1 ]
-
     if [ $already_inserted -eq 0  -o $gl_is_single_injection -eq 0 ]
     then
          createMarkDownForEvent $DEVICE "$EVENT"
-         ### Set Failure state to make Event generation
-         set_failure_state
          debug
          if [ $gl_total_comands -ne 0 ]; then
             debug -n "Injecting [$gl_counter_commands/$gl_total_comands]"
@@ -772,98 +1031,132 @@ property_change() #1=object_path $2=interface, $3=property_name
          fi
     fi
 
-    if [ $already_inserted -eq 1 ]; then # already inserted
-       gl_current_logging_entries=$(latest_looging_entry)
-       local logid=""
-       while [ "$logid" = "" -a $gl_current_logging_entries -gt $gl_previous_logging_entries ]
-       do
-          debug -ne "[debug: $gl_counter_commands/$gl_total_comands] already inserted: $*, looking back at entry $gl_current_logging_entries ...\r"
-          logid=$(matchDeviceAndEvent $gl_current_logging_entries $1)
-          if [ "$logid" != "" ]
-          then
-              ## Allows same event name happened more than once on event_info.json
-              ## shows different entry id, but does not know the right sequence
-              entry_file_name=`printf %03d $logid`
-              if [ ! -f "$DIR_SAVE_ENTRIES_ALREADY_FOUND/$entry_file_name" ]
-              then
-                 touch "$DIR_SAVE_ENTRIES_ALREADY_FOUND/$entry_file_name"
-              else
-                 logid=""  # keep serching
-              fi
-          fi
-          gl_current_logging_entries=$[ $gl_current_logging_entries - 1]
-       done
+    if [ $already_inserted -eq 1 ]; then
+       check_already_inserted $*
+       local logid=$?
        debug -ne "${big_space} ${big_space} ${big_space}\r"
-       if [ "$logid" != "" ]; then
-          gl_rc=0
-       debug -ne "${big_space} ${big_space} ${big_space}\r"
-       gl_log_id=$logid
-       gl_single_injection_state=1
-       print "Created entry id $gl_log_id on phosphor logging"
-       showStatus "created EventLogId [ $logid ]"
+       if [ "$logid" -ne 0 ]; then
+         gl_rc=0
+         debug -ne "${big_space} ${big_space} ${big_space}\r"
+         gl_log_id=$logid
+         gl_single_injection_state=1
+         print "Created entry id $gl_log_id on phosphor logging"
+         showStatus "created EventLogId [ $logid ]"
        else
-           gl_rc=1
-           showStatus 'Event NOT created'
+         gl_rc=1
+         showStatus 'Event NOT created'
        fi
-### Reset Failure state
+       ### Reset Failure state
        reset_failure_state
        return
+    fi # already inserted
+
+    AML_INJECTOR_CURRENT_DEVICE_INDEX=""
+    AML_INJECTOR_CURRENT_INJECTION="$INJECTION"        # external commands will use it
+    AML_INJECTOR_CURRENT_INJECTION_PARAM="$INJECTION_PARAM"  # external commands will use it
+    if [ $gl_is_single_injection -eq 1 ]
+    then
+      AML_INJECTOR_CURRENT_DEVICE_INDEX="$gl_cmd_line_device_index"
+      echo -n "$AML_INJECTOR_CURRENT_DEVICE_INDEX $DEVICE $AML_INJECTOR_CURRENT_INJECTION_PARAM"  > $MCTP_WRAPPER_FILE_PARAM
+    else
+      AML_INJECTOR_CURRENT_DEVICE_INDEX="$DEVICE_INDEX"  # external commands will use it
     fi
+    set_global_device_core_API_index $AML_INJECTOR_CURRENT_DEVICE_INDEX
 
     insertMapKey $* $METHOD $METHOD_VALUE  ## save that injection
     gl_current_logging_entries=0
     if [ "$METHOD" = "skip" ]; then
        debug "[skipping '$METHOD_VALUE'] $@"
        debug
-### Reset Failure state
-       reset_failure_state
        return
     fi
+
+
+    ## necessary to restore because AML now clears calling DeviceClearData
+    restore_deviceCore_API_defaults
+
+    ### Set Failure state to make Event generation
+    set_failure_state
+
     property_get "$@"  \
         &&  gl_current_logging_entries=$(latest_looging_entry) \
         &&  property_set_method "$@"  \
         &&  property_get "$@"
 
-   [ $DRY_RUN -eq 1 ] && return
-   if [ $gl_rc -eq 0 ]; then
+    [ $DRY_RUN -eq 1 ] && return
+    if [ $gl_rc -eq 0 ]; then
        [ $gl_injection_only -eq 0 ] && verifyInjection $1
-   else
+    else
        showStatus 'busctl command failed'
-   fi
-### Reset Failure state
-   reset_failure_state
+    fi
+
+    ### Reset Failure state
+    reset_failure_state
 }
 
 start_test()
 {
-   /bin/rm -f $MCTP_WRAPPER_FILE_PARAM
-   /bin/rm -rf $DIR_SAVE_ENTRIES; /bin/mkdir $DIR_SAVE_ENTRIES; /bin/mkdir $DIR_SAVE_ENTRIES_ALREADY_FOUND
+   /bin/rm -f $MCTP_WRAPPER_FILE_PARAM $FAILURES_FILE
+   /bin/rm -f $NO_MESSAGE_ARGS_FILE $INVALID_VALUE_MESSAGE_ARGS_FILE $INVALID_VALUE_TELEMETRIES_FILE
+   /bin/rm -rf $DIR_SAVE_ENTRIES; /bin/mkdir $DIR_SAVE_ENTRIES
+   /bin/mkdir $DIR_SAVE_ENTRIES_ALREADY_FOUND
+   /bin/rm -f $INJECTIONS_REPORT
 }
 
 finish_test()
 {
    /bin/rm -f $MAPFILE $gl_error_file $MCTP_WRAPPER_FILE_PARAM $CURRENT_INJECTED_SERVICE_FILE
    /bin/rm -rf $DIR_SAVE_ENTRIES
-
+   gl_rc=0
+   debug
    if [ $gl_cmd_line_debug -eq 1 ]; then
-       debug; debug "Failed Injections: $gl_failures"
-       cat $FAILURES_FILE
-       debug; debug "Successful Injections: $gl_injections"
-       debug "finished at `date +"%Y-%m-%dT%T"`"
-       gl_rc=$[$gl_total_comands - $gl_injections]
+       debug "Finished at `date +'%Y-%m-%dT%T'`" | tee -a $INJECTIONS_REPORT
+       debug | tee -a $INJECTIONS_REPORT
+       debug "Failed Injections: $gl_failures"  | tee -a $INJECTIONS_REPORT
+       if [ -s "$FAILURES_FILE" ]
+       then
+         cat $FAILURES_FILE   | tee -a $INJECTIONS_REPORT
+         gl_rc=$[$gl_rc + 1]
+       fi
+       if [ -s "$NO_MESSAGE_ARGS_FILE" ]
+       then
+         debug | tee -a $INJECTIONS_REPORT
+         debug "Events without MessageArgs:" | tee -a $INJECTIONS_REPORT
+         cat $NO_MESSAGE_ARGS_FILE | tee -a $INJECTIONS_REPORT
+         gl_rc=$[$gl_rc + 1]
+       fi
+       if [ -s "$INVALID_VALUE_MESSAGE_ARGS_FILE" ]
+       then
+         debug | tee -a $INJECTIONS_REPORT
+         debug "Events with invalid values in MessageArgs '$ERROR_VALUE_CONTENT':" \
+              | tee -a $INJECTIONS_REPORT
+         cat $INVALID_VALUE_MESSAGE_ARGS_FILE | tee -a $INJECTIONS_REPORT
+         gl_rc=$[$gl_rc + 1]
+       fi
+       if [ -s "$INVALID_VALUE_TELEMETRIES_FILE" ]
+       then
+         debug | tee -a $INJECTIONS_REPORT
+         debug "Events with invalid values in Telemetries '$ERROR_VALUE_CONTENT':" \
+                | tee -a $INJECTIONS_REPORT
+         cat $INVALID_VALUE_TELEMETRIES_FILE | tee -a $INJECTIONS_REPORT
+         gl_rc=$[$gl_rc + 1]
+       fi
+       debug | tee -a $INJECTIONS_REPORT
+       debug "Successful Injections: $gl_injections" | tee -a $INJECTIONS_REPORT
+       debug | tee -a $INJECTIONS_REPORT
+       debug "Return code: $gl_rc"  | tee -a $INJECTIONS_REPORT
    fi
    /bin/rm -f $FAILURES_FILE
+   /bin/rm -f $NO_MESSAGE_ARGS_FIL $INVALID_VALUE_MESSAGE_ARGS_FILE $INVALID_VALUE_TELEMETRIES_FILE
 }
 
 exit_test()
 {
    if [ "$gl_cmd_line_device" != "" ]
    then
-      CMD="busctl call $DBUS_CALL_ARGS clearDeviceDataForAll" >/dev/null
-      eval $CMD
+      restore_deviceCore_API_defaults
    fi
    finish_test
-   /bin/rm -f $FAILURES_FILE
    exit $gl_rc
 }
 
@@ -871,19 +1164,19 @@ trap exit_test 1 2 3 4 5 6 7 15
 
 if [ $gl_cmd_line_keep_existing_logs -eq 0 ]; then
    [ $gl_is_single_injection -eq 0 ] &&  \
-       print  "busctl call xyz.openbmc_project.Logging /xyz/openbmc_project/logging xyz.openbmc_project.Collection.DeleteAll DeleteAll"
+       echo  "busctl call xyz.openbmc_project.Logging /xyz/openbmc_project/logging xyz.openbmc_project.Collection.DeleteAll DeleteAll"
    busctl call xyz.openbmc_project.Logging /xyz/openbmc_project/logging xyz.openbmc_project.Collection.DeleteAll DeleteAll
 fi
 
 start_test  ## starts configuration here
 
-echo > $FAILURES_FILE
+
 gl_previous_logging_entries=$(latest_looging_entry)
 if [ "$gl_previous_logging_entries" = "" ]; then # empty first time
        gl_previous_logging_entries=0
 fi
-debug;
-debug  "started at `date +"%Y-%m-%dT%T"`"
+debug | tee -a $INJECTIONS_REPORT
+debug "Started at `date +'%Y-%m-%dT%T'`" | tee -a $INJECTIONS_REPORT
 debug existent log entries = $gl_previous_logging_entries
 
 

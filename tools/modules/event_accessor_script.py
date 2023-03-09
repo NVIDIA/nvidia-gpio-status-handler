@@ -2,6 +2,7 @@
 Module for handling devices from Json input file which as 'accessor' information not empty
 So far accessor.type = DBUS are handled
 """
+import random
 
 import com ## common constants and and functions
 
@@ -19,7 +20,10 @@ class EventAccessorInjectorScript(InjectorScriptBase):
         super().__init__(json_file)
         self._busctl_cmd_counter = 0
         self._accessor_dbus_expected_events_list = []
+        self._event_unique_list = {} ## a unique device+event list
         self._max_commands = 0 # if greater than zero tells the maximum commands
+        self._unique_event = False ## during processing, indentifies if the event is the first occurrence
+        self._seed = 2
         """
         Keeps commands in a list just to have the total counter
         Then comands are generated later
@@ -81,6 +85,27 @@ class EventAccessorInjectorScript(InjectorScriptBase):
                 del self._additional_data[key]
 
 
+    def create_device_index_string_list(self):
+        """
+        Creates a list of device_index strings such as ["0", "1" ..] or [ "0,0", "0,1"] for double ranges
+        It is based on com.range_start_end_list
+        """
+        # case 1 com.range_start_end_list is empty
+        size = len(com.range_start_end_list)
+        device_index_list = []
+        if size == 0:
+            device_index_list.append("0")
+        elif size == 1:
+            for number in range(com.range_start_end_list[0][0], com.range_start_end_list[0][1] + 1):
+                device_index_list.append(f"{number}")
+        elif size == 2:
+            middle_start = com.range_start_end_list[1][0]
+            middle_end = com.range_start_end_list[1][1] + 1
+            for first_index in range(com.range_start_end_list[0][0], com.range_start_end_list[0][1] + 1):
+                for second_index in range(middle_start, middle_end):
+                     device_index_list.append(f"{first_index},{second_index}")
+        return device_index_list
+
     def __get_accessor_type(self):
         """
         Returns None or com.ACCESSOR_TYPE_DBUS or ACCESSOR_TYPE_DBUS_CALL
@@ -114,17 +139,18 @@ class EventAccessorInjectorScript(InjectorScriptBase):
         Stores command information in the list self._commands_information_list
         This information is used to generate 'busctl 'commands later
         """
-        if device_index != -1 and len(com.SINGLE_DEVICE_INDEX) > 0:
-           if str(device_index) != com.SINGLE_DEVICE_INDEX:
+        if len(com.SINGLE_DEVICE_INDEX) > 0:
+           if device_index != com.SINGLE_DEVICE_INDEX:
               return False
 
-        information["range"]  = com.DEVICE_RANGE
         information["device"] = com.DEVICE_HW
-        information["event"]         = self._busctl_info[com.INDEX_EVENT]
-        if device_index != -1:
+        information["event"]  = self._busctl_info[com.INDEX_EVENT]
+
+        if information["range"] != "":
             information["device_index"] = device_index
         else:
             information["device_index"] = 0
+
         if com.KEY_ACCESSOR_INTERFACE in self._additional_data:
             information[com.KEY_ACCESSOR_INTERFACE] = \
                 self._additional_data[com.KEY_ACCESSOR_INTERFACE]
@@ -217,7 +243,7 @@ class EventAccessorInjectorScript(InjectorScriptBase):
             return
 
 
-    def store_busctl_commands_as_dbus_accessor(self, device, accessor_type):
+    def store_busctl_commands_as_dbus_accessor(self, device, accessor_type, information, objects_range):
         """
         Generates commands in the script regardless the accessor data
         """
@@ -245,40 +271,22 @@ class EventAccessorInjectorScript(InjectorScriptBase):
             method="lookup"
             value=self._additional_data[com.KEY_ACCESSOR_CHECK_LOOKUP]
 
-        information = {}
         self.set_injection_information(information)
-
         information["device_item"] = device
         information["method"] = method
         information["method_value"] = value
         information["accessor_type"] = accessor_type
-        com.DEVICE_RANGE = ""
-        device_index = 0
-         ## starts indicating there is no range
-        com.INITIAL_DEVICE_RANGE = -1
-        if com.KEY_ACCESSOR_OBJECT in self._additional_data:
-            range_str = com.get_range(self._additional_data[com.KEY_ACCESSOR_OBJECT])
-            if len(range_str) > 0:
-               com.DEVICE_RANGE = range_str
-               values_range = range_str.split('-')
-               index_range = range_str.find("|")
-               if index_range == -1:
-                   com.INITIAL_DEVICE_RANGE = int(values_range[0][1:])
-               else:
-                   com.INITIAL_DEVICE_RANGE = int(values_range[0][3:])
-               device_index = com.INITIAL_DEVICE_RANGE
-               com.FINAL_DEVICE_RANGE   = int(values_range[1][:-1])
-            device_range = com.expand_range(self._additional_data[com.KEY_ACCESSOR_OBJECT])
-            for device_item in device_range:
+        device_index = 0 # this index regards to object path expansion
+        device_index_str = self.create_device_index_string_list()
+        if len(objects_range) > 0:
+            for device_item in objects_range:
                 information["device_item"] = device_item
-                if self.__store_command_information(information, device_index) is True:
+                if self.__store_command_information(information, device_index_str[device_index]) is True:
                    self.__store_in_expected_events_list(device_item)
                 device_index = device_index + 1
         else:
-            if self.__store_command_information(information, device_index) is True:
+            if self.__store_command_information(information, device_index_str[device_index]) is True:
                self.__store_in_expected_events_list(device)
-
-
 
     def generate_busctl_command_from_json_dict(self, device, data):
         """
@@ -288,11 +296,36 @@ class EventAccessorInjectorScript(InjectorScriptBase):
         super().parse_json_dict_data(device, data)
         should_generate_commands = True
         event = data["event"]
+        event_key = com.DEVICE_HW + event
+        self._unique_event = False
+        if event_key not in self._event_unique_list:
+            self._event_unique_list[event_key] = 1
+            self._unique_event = True
 
-        if com.LIST_EVENTS is True:
-            range_str = com.get_range(data['device_type'])
-            print (f"{com.DEVICE_HW}{range_str} \"{event}\"")
+        information = {}
+        information["range"] = ""
+        objects_range = []
+        if com.KEY_ACCESSOR_OBJECT in self._additional_data:
+            objects_range = com.expand_range(self._additional_data[com.KEY_ACCESSOR_OBJECT])
+        elif com.KEY_EVENT_TRIGGER_OBJECT in self._additional_data:
+             objects_range = com.expand_range(self._additional_data[com.KEY_EVENT_TRIGGER_OBJECT])
+
+        ## Objects may have range and device_type not, but also device_type may have range and Objects not
+        ignore_data = ""
+        if len(objects_range) == 1:
+            ignore_data = com.expand_range(data['device_type'])
+        for single_range in com.range_start_end_list:
+            if information["range"] != "":
+                information["range"] += "/"
+            information["range"] += f"[{single_range[0]}-{single_range[1]}]"
+
+        if com.LIST_EVENTS is True or com.LIST_SINGLE_INJECTION_COMMANDS is True:
             should_generate_commands = False
+            if self._unique_event is True:
+                if com.LIST_EVENTS is True:
+                    print(f"{com.DEVICE_HW}{information['range']} \"{event}\"")
+                else:
+                    self.print_test_AML_single_injection(event, com.range_start_end_list)
         else:
             if len(com.SINGLE_DEVICE) > 0  and com.DEVICE_HW != com.SINGLE_DEVICE:
                should_generate_commands = False
@@ -300,11 +333,15 @@ class EventAccessorInjectorScript(InjectorScriptBase):
                should_generate_commands = False
 
         if should_generate_commands is True:
-           accessor_type = self.__get_accessor_type()
-           self.store_busctl_commands_as_dbus_accessor(device, accessor_type)
+            accessor_type = self.__get_accessor_type()
+            ## previous information["range"] may be used only in case it was for print commands
+            ## lets check it again and clear if Objects path do not have range
+            if  len(ignore_data) > 0:
+                information["range"] = ""
+            self.store_busctl_commands_as_dbus_accessor(device, accessor_type, information, objects_range)
         else:
-           event_data = self._additional_data.copy()
-           super().remove_accessor_fields(event_data)
+            event_data = self._additional_data.copy()
+            super().remove_accessor_fields(event_data)
 
         ## Block commented, removed skipping, everything is performed
         #--------------------------------------------------------------
@@ -326,6 +363,30 @@ class EventAccessorInjectorScript(InjectorScriptBase):
         super().remove_accessor_fields()
 
 
+    def print_test_AML_single_injection(self, event, range_list):
+        """
+        Prints a command such as './test_AML.sh inject  -m -d PCIeRetimer -e "I2C EEPROM Error" -i 0'
+        """
+        index = "0"
+        counter = 0
+        for single_range in range_list:
+            random.seed(self._seed)
+            self._seed += 17
+            number = random.randint(single_range[0], single_range[1])
+            if counter > 0:
+                index += "," + str(number)
+            else:
+                index = str(number)
+            counter += 1;
+        type_accessor = ""
+        if com.KEY_EVENT_TRIGGER_TYPE in self._additional_data:
+            type_accessor += f" event_trigger.type={self._additional_data[com.KEY_EVENT_TRIGGER_TYPE]}"
+        if com.KEY_ACCESSOR_TYPE in self._additional_data:
+            type_accessor += f" accessor.type={self._additional_data[com.KEY_ACCESSOR_TYPE]}"
+
+        print(f"./test_AML.sh inject -m -d {com.DEVICE_HW} -e \"{event}\" -i {index}\t\t\t# {type_accessor}")
+        print(f"./inject-event.sh  {com.DEVICE_HW} {index} \"{event}\" --markdown  \t\t\t# {type_accessor}")
+
     def generate_script_from_json(self):
         """
         Redefines from super
@@ -337,10 +398,13 @@ class EventAccessorInjectorScript(InjectorScriptBase):
         """
         super().generate_script_from_json()
         total_commands = len(self._commands_information_list)
+        unique_events = len(self._event_unique_list)
         if total_commands > 0:
             if self._max_commands > 0 and  total_commands > self._max_commands:
-                total_commands = self._max_commands;
-            super().write(f"\ngl_total_comands={total_commands}\n\n")
+                total_commands = self._max_commands
+            commands_number = f"\ngl_total_comands={total_commands}\ngl_unique_events={unique_events}\n"
+            commands_number += "[ $gl_cmd_line_unique_event -eq 1 ] && gl_total_comands=$gl_unique_events\n"
+            super().write(commands_number)
             for cmd_info in self._commands_information_list:
                 self.__write_busctl_commands_into_script(cmd_info)
                 total_commands -= 1
@@ -349,3 +413,8 @@ class EventAccessorInjectorScript(InjectorScriptBase):
 
             bottom ="\n\nfinish_test ## release/clear everything\n\nexit $gl_rc"
             super().priv_close_script_file(bottom)
+            self._event_unique_list.clear()
+            self._commands_information_list.clear()
+
+
+
