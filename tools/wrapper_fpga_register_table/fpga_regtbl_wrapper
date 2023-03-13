@@ -32,11 +32,14 @@ APP_VER="0.1"
 [ -z "$DEVICE_NAME_MAPPER" ] && DEVICE_NAME_MAPPER="device-id-norm.sh" 
 
 profile_path="${PROFILE_FILE}"
-# hardcoded i2c-2 because fpga defs spreadsheet pointed all commands to the same
+# default is i2c-2 because fpga defs spreadsheet pointed all commands to the same
 # slave address
+# The FPGA register interface for GH is on bus 1, you can pass an argument to this
+# script to switch the bus it uses
 i2cbus="2"
 slaveaddr="unknown"
 regaddr="unknown"
+regsize="unknown"
 bitidx="unknown"
 
 show_help()
@@ -55,7 +58,8 @@ show_help()
     echo "  -dry-run          - does find reg addr and bit but simulates external"
     echo "                      dependency tool value read as 0xAA"
     echo "  -test-run         - used to test adress and bit matching,"
-    echo "                      outputs: \"slaveaddr regaddr bit\""
+    echo "                      outputs: \"slaveaddr regsize regaddr bit\""
+    echo "  -bus              - used to set the i2c bus that the FPGA's register interface is on (default 2)"
     echo
     echo "  cmd               - cmd to find in platform profile file"
     echo "  dev_name          - device name to look for in platform profile file"
@@ -162,6 +166,7 @@ parseLines()
                 bitidx=$((7-$i/2))
                 slaveaddr=$addr;   # echo "$slaveaddr"
                 regaddr=$reg;      # echo $regaddr
+                regsize=$(echo "${reg}" | wc -w)
                 return 0
             fi
         done
@@ -193,6 +198,13 @@ if [ "$1"  = "-test-run" ]; then
    shift
 fi
 
+if [ "$1" = "-bus" ]; then
+   shift
+   i2cbus=${1}
+   dbg "set i2cbus to ${i2cbus}"
+   shift
+fi
+
 if [ $# -ne 2 ]; then
     show_help
     exit 1
@@ -215,7 +227,7 @@ DEVNAME="$1"
 if [ $TEST_RUN -eq 1 ]; then
     lines=`initialLineMatch ${COMMAND} ${DEVNAME}`;rc=$?
     parseLines "${lines}";rc=$? 
-    echo "$slaveaddr $regaddr $bitidx"
+    echo "$slaveaddr $regsize $regaddr $bitidx"
     exit 0
 fi
 
@@ -237,9 +249,9 @@ if [ $rc -ne 0 ]; then
     exit $rc
 fi
 
-dbg "slave $slaveaddr reg $regaddr bit $bitidx"
+dbg "slave $slaveaddr regsize $regsize reg $regaddr bit $bitidx"
 
-cmd="i2ctransfer -y $i2cbus w1@$slaveaddr $regaddr r1"
+cmd="i2ctransfer -y $i2cbus w${regsize}@$slaveaddr $regaddr r1"
 if [ $VERBOSE -eq 1 ]; then
     echo "$cmd"
 fi
