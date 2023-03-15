@@ -4,6 +4,7 @@
 
 #include "event_info.hpp"
 
+#include "json_proc.hpp"
 #include "util.hpp"
 
 #include <boost/algorithm/string/split.hpp>
@@ -97,8 +98,7 @@ std::string MessageArgPattern::substPlaceholders(
 
     for (const auto& elem : values)
     {
-        auto matches = std::regex_search(str, matchObj, matchReg);
-        assert(matches);
+        std::regex_search(str, matchObj, matchReg);
         std::string matchedStr = matchObj.str(0);
         str = matchObj.suffix();
         result += std::regex_replace(matchedStr, substReg, elem);
@@ -107,17 +107,11 @@ std::string MessageArgPattern::substPlaceholders(
     return result;
 }
 
-void loadFromFile(EventMap& eventMap, const std::string& file)
+void loadFromJson(EventMap& eventMap, const nlohmann::json& j)
 {
-    std::stringstream ss;
-    ss << "loadFromFile func (" << file << ").";
-    logs_dbg("%s\n", ss.str().c_str());
-    std::ifstream i(file);
-    json j;
-    i >> j;
-
     for (const auto& el : j.items())
     {
+        std::stringstream ss;
         auto deviceType = el.key();
         std::vector<event_info::EventNode> v = {};
         ss.str(std::string()); // Clearing the stream first
@@ -148,6 +142,18 @@ void loadFromFile(EventMap& eventMap, const std::string& file)
             std::pair<std::string, std::vector<event_info::EventNode>>(
                 deviceType, v));
     }
+}
+
+void loadFromFile(EventMap& eventMap, const std::string& file)
+{
+    std::stringstream ss;
+    ss << "loadFromFile func (" << file << ").";
+    logs_dbg("%s\n", ss.str().c_str());
+    std::ifstream i(file);
+    json j;
+    i >> j;
+
+    loadFromJson(eventMap, j);
 }
 
 void printMap(const EventMap& eventMap)
@@ -200,11 +206,9 @@ void printMap(const EventMap& eventMap)
 std::vector<MessageArgPattern>
     loadMessageArgsPatterns(const json& messageArgsJson)
 {
-    assert(messageArgsJson.contains("patterns"));
     std::vector<MessageArgPattern> result;
     for (const json& elem : messageArgsJson["patterns"])
     {
-        assert(elem.is_string());
         result.push_back(MessageArgPattern{elem.get<std::string>()});
     }
     return result;
@@ -341,7 +345,6 @@ std::vector<event_info::MessageArg> loadMessageArgs(const json& messageArgsJson)
         // assume the empty "parameters" array was passed
         accessorsJson = json::array();
     }
-    assert(accessorsJson.is_array());
 
     unsigned totalPlaceholders =
         std::accumulate(patterns.begin(), patterns.end(), 0u,
@@ -394,22 +397,26 @@ void EventNode::loadFrom(const json& j)
 {
     this->configEventNode = j;
 
-    this->event = j["event"];
-    readDeviceTypes(j["device_type"], this->event);
-    this->triggerCount = j["trigger_count"].get<int>();
-    // this->eventTrigger = j["event_trigger"];
+    this->event = j.at("event");
+    readDeviceTypes(j.at("device_type"), this->event);
+    this->triggerCount = j.at("trigger_count").get<int>();
+    // this->eventTrigger = j.at("event_trigger");
 
-    this->trigger = j["event_trigger"];
+    this->eventCategories =
+        json_proc::getOptionalAttribute<std::vector<EventCategory>>(j,
+                                                                    "category");
+
+    this->trigger = j.at("event_trigger");
     this->subType = j.value("sub_type", "");
 
-    for (auto& entry : j["telemetries"])
+    for (auto& entry : j.at("telemetries"))
     {
         this->telemetries.push_back((data_accessor::DataAccessor)entry);
     }
-    this->action = j["action"];
+    this->action = j.at("action");
     this->device = "";
 
-    this->counterReset = j["event_counter_reset"];
+    this->counterReset = j.at("event_counter_reset");
 
     // std::vector<event_info::MessageArg> messageArgs;
     // if (j["redfish"].contains("message_args"))
@@ -418,14 +425,15 @@ void EventNode::loadFrom(const json& j)
     // }
     // // otherwise leave `messageArgs' empty
 
-    this->messageRegistry = {j["redfish"]["message_id"].get<std::string>(),
-                             {j["severity"], j["resolution"]},
-                             {},
-                             j["redfish"].contains("message_args")
-                                 ? j["redfish"]["message_args"]
-                                 : nlohmann::json()};
+    this->messageRegistry = {
+        j.at("redfish").at("message_id").get<std::string>(),
+        {j.at("severity"), j.at("resolution")},
+        {},
+        j.at("redfish").contains("message_args")
+            ? j.at("redfish").at("message_args")
+            : nlohmann::json()};
 
-    this->accessor = j["accessor"];
+    this->accessor = j.at("accessor");
 
     std::stringstream ss;
     ss << "Loaded accessor: " << this->accessor << ", j: " << j;
@@ -433,14 +441,25 @@ void EventNode::loadFrom(const json& j)
 
     if (j.contains("recovery"))
     {
-        this->recovery_accessor = j["recovery"];
+        this->recovery_accessor = j.at("recovery");
         std::stringstream ss2;
         ss2 << "Loaded accessor: " << this->recovery_accessor << ", j: " << j;
         log_dbg("%s\n", ss2.str().c_str());
     }
 
-    this->valueAsCount =
-        j.contains("value_as_count") ? j["value_as_count"].get<bool>() : false;
+    this->valueAsCount = j.contains("value_as_count")
+                             ? j.at("value_as_count").get<bool>()
+                             : false;
+
+    this->originOfCondition = json_proc::getOptionalAttribute<std::string>(
+        j.at("redfish"), "origin_of_condition");
+
+    // this->originOfCondition = j.contains("origin_of_condition")
+    //                               ?
+    //                               j["origin_of_condition"].get<std::string>()
+    //                               : std::nullptr;
+    // log_dbg("origin_of_condition is [%s].\n",
+    //         this->originOfCondition.asString());
 }
 
 void EventNode::print() const
@@ -449,7 +468,7 @@ void EventNode::print() const
     ss << accessor << "\n";
     ss << "\tDumping event     " << event << "\n";
 
-    ss << "\t\tdeviceType      " << getStrigifiedDeviceType() << "\n";
+    ss << "\t\tdeviceType      " << getStringifiedDeviceType() << "\n";
     ss << "\t\teventTrigger    " << eventTrigger << "\n";
     ss << "\t\taccessor        "
        << "todo"
@@ -605,14 +624,79 @@ void EventNode::setDeviceTypes(std::vector<std::string>&& values)
     }
 }
 
-std::string EventNode::getStrigifiedDeviceType() const
+std::string EventNode::getStringifiedDeviceType() const
 {
     return boost::algorithm::join(this->deviceTypes, "/");
 }
 
 std::string EventNode::getMainDeviceType() const
 {
+    if (deviceTypes.size() < 1)
+    {
+        throw std::runtime_error(
+            "No main device type associated with this event");
+    }
     return this->deviceTypes.at(0);
+}
+
+// marcinw:TODO: solve the issue of 'getCategories', 'getStringCategories'
+// better
+std::vector<EventCategory> EventNode::getCategories() const
+{
+    if (eventCategories.has_value())
+    {
+        return *eventCategories;
+    }
+    else // ! eventCategories.has_value()
+    {
+        return std::vector<EventCategory>();
+    }
+}
+
+std::vector<std::string> EventNode::getStringCategories() const
+{
+    std::vector<EventCategory> input = getCategories();
+    std::vector<std::string> output;
+    std::transform(input.begin(), input.end(), std::back_inserter(output),
+                   [](const EventCategory& elem) -> std::string {
+                       return (std::string)elem;
+                   });
+    return output;
+}
+
+// EventCategory //////////////////////////////////////////////////////////////
+
+const std::vector<std::string> EventCategory::valuesAllowed{
+    "association",      "power_rail",      "erot_control",   "pin_status",
+    "interface_status", "protocol_status", "firmware_status"};
+
+EventCategory::EventCategory(const std::string& category)
+{
+    set(category);
+}
+
+std::string EventCategory::get()
+{
+    return category;
+}
+
+void EventCategory::set(const std::string& category)
+{
+    if (std::find(valuesAllowed.cbegin(), valuesAllowed.cend(), category) ==
+        valuesAllowed.cend())
+    {
+        // Object 'category' not found in 'valuesAllowed'
+        throw std::runtime_error("Invalid event category: '" + category + "'");
+    }
+    else
+    {
+        this->category = category;
+    }
+}
+
+EventCategory::operator std::string() const
+{
+    return category;
 }
 
 bool EventNode::getIsAccessorInteresting(EventNode& event,

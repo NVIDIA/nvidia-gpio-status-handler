@@ -68,8 +68,8 @@ class MessageComposer : public event_handler::EventHandler
      *
      * If no associated object path could be found return an empty string.
      */
-    static std::string
-        getOriginOfConditionObjectPath(const std::string& deviceId);
+    std::string
+        getOriginOfConditionObjectPath(const std::string& deviceId) const;
 
     /**
      * @brief Return phosphor logging Namespace to be used for log

@@ -8,6 +8,7 @@
 #include "aml.hpp"
 #include "dat_traverse.hpp"
 #include "event_handler.hpp"
+#include <dbus_utility.hpp>
 
 #include <nlohmann/json.hpp>
 
@@ -142,6 +143,16 @@ class Selftest : public event_handler::EventHandler
     ~Selftest() = default;
 
   public:
+
+    /**
+     * @brief Resolves DBUS log entry associated with device
+     *
+     * @param[in] device - name of device
+     * @param[in] result - log results 
+     */
+    void resolveLogEntry(const std::string& device,
+                         const dbus::utility::ManagedObjectType& result) const;
+
     /**
      * @brief Updates device health on the DBUS in GpuMgr tree
      *
@@ -149,7 +160,7 @@ class Selftest : public event_handler::EventHandler
      * @param[in] health - health status of device
      */
     void updateDeviceHealth(const std::string& device,
-                            const std::string& health);
+                            const std::string& health) const;
 
     /**
      * @brief Aggregates selftest results of report->devices->testpoints
@@ -315,8 +326,14 @@ class RootCauseTracer : public EventHandler
      * @return true when found root cause, otherwise false (whole report
      * correct)
      */
+    bool findRootCauseGeneral(const std::string& triggeringDevice,
+                              const selftest::ReportResult& report,
+                              const event_info::EventNode& eventNode,
+                              std::string& rootCauseDevice);
+
     bool findRootCause(const std::string& triggeringDevice,
                        const selftest::ReportResult& report,
+                       const event_info::EventNode& eventNode,
                        std::string& rootCauseDevice);
 
     /** @brief Internal DAT reference. **/

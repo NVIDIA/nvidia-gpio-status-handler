@@ -1,4 +1,5 @@
 #include "json_proc.hpp"
+#include "tests_common_defs.hpp"
 
 #include <fstream>
 
@@ -15,6 +16,30 @@ namespace json_proc
 //     nlohmann::ordered_json orderedRight = right;
 //     EXPECT_EQ(orderedLeft.dump(), orderedRight.dump());
 // }
+
+TEST(JsonProcTest, JsonPath_contains)
+{
+    auto js = event_GPU_VRFailure();
+    EXPECT_TRUE(contains(js, JsonPath({})));
+    EXPECT_TRUE(contains(js, JsonPath({"event"})));
+    EXPECT_TRUE(contains(js, JsonPath({"telemetries", 0u})));
+    EXPECT_FALSE(contains(js, JsonPath({"telemetries", 1u})));
+    EXPECT_FALSE(contains(js, JsonPath({"event_trigger", "device_id"})));
+}
+
+TEST(JsonProcTest, JsonPath_nodeAt)
+{
+    auto js = event_GPU_VRFailure();
+    EXPECT_EQ(nodeAt(js, JsonPath({})), js);
+    EXPECT_EQ(nodeAt(js, JsonPath({"event"})), nlohmann::json("VR Failure"));
+    EXPECT_EQ(nodeAt(js, JsonPath({"telemetries", 0u})),
+              nlohmann::json(
+                  {{"name", "GPU Power Good Abnormal change"},
+                   {"type", "DeviceCoreAPI"},
+                   {"property", "gpu.interrupt.powerGoodAbnormalChange"}}));
+    EXPECT_ANY_THROW(nodeAt(js, JsonPath({"telemetries", 1u})));
+    EXPECT_ANY_THROW(nodeAt(js, JsonPath({"event_trigger", "device_id"})));
+}
 
 TEST(JsonProcTest, JsonPattern_eval)
 {

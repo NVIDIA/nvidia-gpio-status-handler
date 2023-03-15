@@ -22,15 +22,55 @@ using json = nlohmann::json;
 namespace dat_traverse
 {
 
+// DeviceType //////////////////////////////////////////////////////////////
+std::map<std::string, DeviceType::types> DeviceType::valuesAllowed = {
+    {"unknown", DeviceType::UNKNOWN_TYPE},
+    {"regular", DeviceType::REGULAR},
+    {"sensor", DeviceType::SENSOR},
+    {"port", DeviceType::PORT},
+    {"software", DeviceType::SOFTWARE}};
+
+DeviceType::DeviceType(const std::string& type)
+{
+    set(type);
+}
+
+DeviceType::types DeviceType::get()
+{
+    return type;
+}
+
+void DeviceType::set(const std::string& type)
+{
+    for (auto& i : valuesAllowed)
+    {
+        if (i.first == type)
+        {
+            this->type = valuesAllowed[type];
+            return;
+        }
+    }
+    throw std::runtime_error("Invalid device type: '" + type + "'");
+}
+
+DeviceType::operator std::string() const
+{
+    for (auto& i : valuesAllowed)
+    {
+        if (type == i.second)
+        {
+            return i.first;
+        }
+    }
+    throw std::runtime_error("Cannot convert - invalid device type");
+}
+
 Device::~Device()
 {}
 
 void Device::populateMap(std::map<std::string, dat_traverse::Device>& dat,
-                         const std::string& file)
+                         const nlohmann::json& j)
 {
-    std::ifstream i(file);
-    json j;
-    i >> j;
 
     for (const auto& el : j.items())
     {
@@ -56,6 +96,15 @@ void Device::populateMap(std::map<std::string, dat_traverse::Device>& dat,
             }
         }
     }
+}
+
+void Device::populateMap(std::map<std::string, dat_traverse::Device>& dat,
+                         const std::string& file)
+{
+    std::ifstream i(file);
+    json j;
+    i >> j;
+    populateMap(dat, j);
 }
 
 std::ostream& operator<<(std::ostream& os, const Device& device)
@@ -131,12 +180,39 @@ void Device::printTree(const std::map<std::string, dat_traverse::Device>& m)
 Device::Device(const std::string& name)
 {
     this->name = name;
+    this->type = std::string("unknown");
 }
 
 Device::Device(const std::string& name, const json& j)
 {
-
     this->name = name;
+
+#if 1
+    if (j.contains("type")) // temporary UT regress workaround
+    {
+        this->type = j["type"].get<std::string>();
+    }
+    else
+    {
+        this->type = std::string{"unknown"};
+    }
+#endif
+
+    if (j.contains("dbus_objects"))
+    {
+        this->dbusPathPrimary = json_proc::getOptionalAttribute<std::string>(
+            j.at("dbus_objects"), "primary");
+        this->dbusPathOoc = json_proc::getOptionalAttribute<std::string>(
+            j.at("dbus_objects"), "ooc_context");
+    }
+    else
+    {
+        this->dbusPathPrimary = std::nullopt;
+        this->dbusPathOoc = std::nullopt;
+    }
+
+    this->dbus_set_health =
+        json_proc::getOptionalAttribute<bool>(j, "dbus_set_health");
     this->association = j["association"].get<std::vector<std::string>>();
     this->healthStatus.health = "OK";
     this->healthStatus.healthRollup = "OK";
@@ -175,6 +251,69 @@ Device::Device(const std::string& name, const json& j)
             std::pair<std::string, dat_traverse::TestLayer>(layer, testLayer));
     }
     this->test = test;
+}
+
+std::vector<std::string> TestLayer::getDeviceTypeTestpoints()
+{
+    std::vector<std::string> result;
+    for (auto& [name, testpoint] : testPoints)
+    {
+        if (testpoint.accessor.isValidDeviceAccessor())
+        {
+            std::string device = testpoint.accessor.read();
+            result.push_back(device);
+        }
+    }
+    return result;
+}
+
+std::vector<std::string> Device::getTestLayerAssociations(
+    const std::function<bool(const std::string&)>& layerPred)
+{
+    std::vector<std::string> result;
+    for (auto& [layerName, layer] : test)
+    {
+        if (layerPred(layerName))
+        {
+            auto deviceTestpoints = layer.getDeviceTypeTestpoints();
+            std::copy_if(deviceTestpoints.begin(), deviceTestpoints.end(),
+                         std::back_inserter(result),
+                         [&result](const std::string& elem) {
+                             return std::find(result.cbegin(), result.cend(),
+                                              elem) == result.cend();
+                         });
+        }
+    }
+    return result;
+}
+
+DeviceType::types Device::getType()
+{
+    return type.get();
+}
+
+std::optional<std::string> Device::getDbusObjectOocSpecificExplicit() const
+{
+    return this->dbusPathOoc;
+}
+
+bool Device::hasDbusObjectOocSpecificExplicit() const
+{
+    return this->dbusPathOoc.has_value();
+}
+
+std::optional<std::string> Device::getDbusObjectPrimaryExplicit()
+{
+    return this->dbusPathPrimary;
+}
+
+bool Device::canSetHealthOnDbus() const
+{
+    if (this->dbus_set_health != std::nullopt)
+    {
+        return this->dbus_set_health.value();
+    }
+    return true;
 }
 
 } // namespace dat_traverse
@@ -233,6 +372,50 @@ void DATTraverse::setOriginOfCondition(dat_traverse::Device& targetDevice,
                                        const dat_traverse::Status& status)
 {
     targetDevice.healthStatus.originOfCondition = status.originOfCondition;
+}
+
+std::vector<std::string> DATTraverse::getTestLayerSubAssociations(
+    std::map<std::string, dat_traverse::Device>& dat,
+    const std::string& rootDevice, const event_info::EventNode& eventNode)
+{
+    if (!dat.contains(rootDevice))
+    {
+        throw std::runtime_error(std::string("DAT doesn't contain device") +
+                                 rootDevice);
+    }
+    std::deque<dat_traverse::Device*> fringe{&dat.at(rootDevice)};
+    std::vector<std::string> result{rootDevice};
+    std::vector<std::string> eventNodeCategories =
+        eventNode.getStringCategories();
+    std::function<bool(const std::string&)> allLayersChooser =
+        [](const std::string&) -> bool { return true; };
+    std::function<bool(const std::string&)> eventCategoriesChooser =
+        [&eventNodeCategories](const std::string& layer) -> bool {
+        return std::find(eventNodeCategories.cbegin(),
+                         eventNodeCategories.cend(),
+                         layer) != eventNodeCategories.cend();
+    };
+    auto* layersChooser = eventNodeCategories.empty() ? &allLayersChooser
+                                                      : &eventCategoriesChooser;
+    while (!fringe.empty())
+    {
+        dat_traverse::Device* devPtr = fringe.front();
+        fringe.pop_front();
+        std::vector<std::string> layerAssociations =
+            devPtr->getTestLayerAssociations(*layersChooser);
+        for (const auto& elem : layerAssociations)
+        {
+            if (std::find(result.cbegin(), result.cend(), elem) ==
+                result.cend())
+            {
+                // Object 'elem' not found in 'result'
+                fringe.push_back(&dat.at(elem));
+                result.push_back(elem);
+            }
+        }
+        layersChooser = &allLayersChooser;
+    }
+    return result;
 }
 
 std::vector<std::string> DATTraverse::getSubAssociations(

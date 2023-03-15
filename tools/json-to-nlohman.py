@@ -4,8 +4,12 @@ import argparse
 import pprint
 import json
 import sys
+import re
 
 global args
+
+def escape(jsonVal):
+    return re.sub(r'"', r'\"', jsonVal)
 
 # | object        | dict  |
 # | array         | list  |
@@ -27,7 +31,7 @@ def transform(js):
         return ("{" + (", " if len(js) <= 3 else ",\n").join([
             transform(el) for el in js]) + "}")
     elif isinstance(js, str):
-        return f'"{js}"'
+        return f'"{escape(js)}"'
     elif isinstance(js, int):
         return f"{js}"
     elif isinstance(js, float):
@@ -40,13 +44,13 @@ def transform(js):
 def printElem(variable, keysPath, js):
     if isinstance(js, dict):
         for k, v in js.items():
-            printElem(variable, keysPath + [k], v)
+            printElem(variable, keysPath + [escape(k)], v)
     elif isinstance(js, list):
         return printAssign(
             variable, keysPath,
             transform(js) if js != [] else "json::array()")
     elif isinstance(js, str):
-        return printAssign(variable, keysPath, f'"{js}"')
+        return printAssign(variable, keysPath, f'"{escape(js)}"')
     elif isinstance(js, int):
         return printAssign(variable, keysPath, js)
     elif isinstance(js, float):

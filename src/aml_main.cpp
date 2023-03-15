@@ -13,12 +13,14 @@
 #include "aml.hpp"
 #include "cmd_line.hpp"
 #include "dat_traverse.hpp"
+#include "diagnostics.hpp"
 #include "event_detection.hpp"
 #include "event_info.hpp"
 #include "message_composer.hpp"
 #include "pc_event.hpp"
 #include "selftest.hpp"
 #include "threadpool_manager.hpp"
+#include "util.hpp"
 
 #include <unistd.h>
 
@@ -60,6 +62,7 @@ constexpr int RETRY_SLEEP = 5;
 
 namespace aml
 {
+
 namespace profile
 {
 
@@ -70,6 +73,8 @@ std::map<std::string, dat_traverse::Device> datMap;
 
 struct Configuration
 {
+    bool helpOptSet = false;
+    bool diagnosticsModeOptSet = false;
     std::string dat;
     std::string event;
     int running_thread_limit = DEFAULT_RUNNING_THREAD_LIMIT;
@@ -177,38 +182,49 @@ int setTotalThreadLimit(cmd_line::ArgFuncParamType params)
     return 0;
 }
 
-int show_help([[maybe_unused]] cmd_line::ArgFuncParamType params);
-
-cmd_line::CmdLineArgs cmdLineArgs = {
+static cmd_line::CmdLineArgs cmdLineArgs = {
     {"-h", "--help", cmd_line::OptFlag::none, "", cmd_line::ActFlag::exclusive,
-     "This help.", show_help},
-    {"-d", "", cmd_line::OptFlag::overwrite, "<file>",
+     "This help.",
+     []([[maybe_unused]] cmd_line::ArgFuncParamType params) -> int {
+         configuration.helpOptSet = true;
+         return 0;
+     }},
+    {"-d", "--dat", cmd_line::OptFlag::overwrite, "<file>",
      cmd_line::ActFlag::mandatory, "Device Association Tree filename.",
      loadDAT},
-    {"-e", "", cmd_line::OptFlag::overwrite, "<file>",
-     cmd_line::ActFlag::normal, "Event Info List filename.", loadEvents},
-    {"-l", "", cmd_line::OptFlag::overwrite, "<level>",
+    {"-e", "--event-info", cmd_line::OptFlag::overwrite, "<file>",
+     cmd_line::ActFlag::mandatory, "Event Info List filename.", loadEvents},
+    {"-l", "--log-level", cmd_line::OptFlag::overwrite, "<level>",
      cmd_line::ActFlag::normal, "Debug Log Level [0-4].", setLogLevel},
-    {"-L", "", cmd_line::OptFlag::overwrite, "<file>",
+    {"-L", "--debug-file", cmd_line::OptFlag::overwrite, "<file>",
      cmd_line::ActFlag::normal, "Debug Log file. Use stdout if omitted.",
      setLogFile},
-    {"-s", "--dbus-space", cmd_line::OptFlag::overwrite, "<file>",
+    {"-s", "--dbus-space", cmd_line::OptFlag::overwrite, "<num>",
      cmd_line::ActFlag::normal,
      "Minimal amount of time (in ms) between dbus calls"
      " (from the finish of the last one to the start of the current)",
      setDbusDelay},
     {"-t", "--running-threads", cmd_line::OptFlag::overwrite, "<num>",
      cmd_line::ActFlag::normal,
-     "Maximum number of simultaneous running event handling threads"
-     " (from the finish of the last one to the start of the current)",
+     "Maximum number of simultaneous running event handling threads",
      setRunningThreadLimit},
     {"-T", "--total-threads", cmd_line::OptFlag::overwrite, "<num>",
      cmd_line::ActFlag::normal,
-     "Maximum number of simultaneous running + queued event handling threads"
-     " (from the finish of the last one to the start of the current)",
-     setTotalThreadLimit}};
+     "Maximum number of simultaneous running + queued event handling threads",
+     setTotalThreadLimit},
+    {"-D", "--diagnostics-mode", cmd_line::OptFlag::none, "",
+     cmd_line::ActFlag::normal,
+     "Run AML in diagnostics mode. This performs a series of tests logging "
+     "the carried work to stderr and printing the results in json form to stdout, "
+     "then the program quits. "
+     "Must be accompanied by all the other typical AML options "
+     "(in particular the specification of DAT and event info files)",
+     []([[maybe_unused]] cmd_line::ArgFuncParamType params) -> int {
+         configuration.diagnosticsModeOptSet = true;
+         return 0;
+     }}};
 
-int show_help([[maybe_unused]] cmd_line::ArgFuncParamType params)
+int showHelp()
 {
     cout << "NVIDIA Active Monitoring & Logging Service, ver = " << APPVER
          << "\n";
@@ -218,7 +234,6 @@ int show_help([[maybe_unused]] cmd_line::ArgFuncParamType params)
     cout << "options:\n";
     cout << cmd_line::CmdLine::showHelp(cmdLineArgs);
     cout << "\n";
-
     return 0;
 }
 
@@ -248,17 +263,6 @@ void startWorkerThread(std::shared_ptr<boost::asio::io_context> io)
 int main(int argc, char* argv[])
 {
     int rc = 0;
-#if 0
-    message_composer::MessageComposer mc(aml::profile::datMap, "MsgComp1");
-    event_info::EventNode ev("OverT");
-    ev.device = "GPU0";
-    ev.messageRegistry.messageId = "ResourceEvent.1.0.ResourceErrorsDetected";
-    ev.messageRegistry.message.severity = "Critical";
-    ev.messageRegistry.message.resolution = "ask me";
-    mc.process(ev);
-
-    return 0;
-#endif
     logger.setLevel(DEF_DBG_LEVEL);
     logs_info("Default log level: %d. Current log level: %d\n", DEF_DBG_LEVEL,
               getLogLevel(logger.getLevel()));
@@ -271,9 +275,29 @@ int main(int argc, char* argv[])
     catch (const std::exception& e)
     {
         logs_err("%s\n", e.what());
-        aml::show_help({});
-        return rc;
+        aml::showHelp();
+        return rc ? rc : 1; // ensure exit is always non-zero
     }
+    if (aml::configuration.helpOptSet)
+    {
+        aml::showHelp();
+        return 0;
+    }
+    else if (aml::configuration.diagnosticsModeOptSet)
+    {
+        try
+        {
+            return diagnostics::run(aml::configuration.dat,
+                                    aml::configuration.event);
+        }
+        catch (const std::exception& e)
+        {
+            shortlogs_err(<< "Exception caught while running AML in "
+                          << "diagnostics mode: '" << e.what() << "'");
+            return 1;
+        }
+    }
+
     logs_err("Trying to load Events from file\n");
 
     // Initialization
@@ -327,12 +351,12 @@ int main(int argc, char* argv[])
 
     selftest::Selftest selftest("bootupSelftest", aml::profile::datMap);
     selftest::ReportResult rep_res;
- 
+
     event_detection::EventDetection eventDetection(
         "EventDetection1", &aml::profile::eventMap, &eventHdlrMgr);
 
-    auto thread = std::make_unique<
-        std::thread>([rep_res, selftest, eventDetection]() mutable {
+    auto thread = std::make_unique<std::thread>([rep_res, selftest,
+                                                 eventDetection]() mutable {
         logs_wrn("started bootup selftest\n");
         ThreadpoolGuard guard(event_detection::threadpoolManager.get());
         if (!guard.was_successful())
@@ -358,12 +382,13 @@ int main(int argc, char* argv[])
                 logs_dbg(
                     "Device %s healthy based on SelfTest. Performing recovery actions.\n",
                     entry.first.c_str());
-                eventDetection.updateDeviceHealthAndResolve(
-                    entry.first, std::string(""));
+                eventDetection.updateDeviceHealthAndResolve(entry.first,
+                                                            std::string(""));
             }
             else
             {
-                logs_err("SelfTest for Device %s failed\n", entry.first.c_str());
+                logs_err("SelfTest for Device %s failed\n",
+                         entry.first.c_str());
             }
         }
         logs_wrn("finished bootup selftest\n");
@@ -380,7 +405,6 @@ int main(int argc, char* argv[])
 
     /* Event handlers registration order is important - msgComposer uses data
     acquired by previous handlers; handlers are used in registration order. */
-    eventHdlrMgr.RegisterHandler(&datTraverser);
     eventHdlrMgr.RegisterHandler(&rootCauseTracer);
     eventHdlrMgr.RegisterHandler(&msgComposer);
     eventHdlrMgr.RegisterHandler(&clearEvent);

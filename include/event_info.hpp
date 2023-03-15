@@ -8,7 +8,6 @@
 #include "device_id.hpp"
 #include "json_proc.hpp"
 #include "object.hpp"
-#include "device_id.hpp"
 
 #include <nlohmann/json.hpp>
 
@@ -280,6 +279,38 @@ struct redfish
     std::string getStringMessageArgs(const EventNode& event);
 };
 
+/**
+ * @brief Represent a test layer the given event corresponds to
+ *
+ * Basically an enum over string values {"power_rail", "erot_control",
+ * "pin_status", "interface_status", "protocol_status", "firmware_status"}
+ * defined by the static field @c valuesAllowed. All the code around is for
+ * guarding the @c category field not to ever assume anything outside this set.
+ */
+class EventCategory
+{
+  public:
+    EventCategory() = delete;
+    EventCategory(const std::string& category);
+
+    EventCategory(const EventCategory& other) = default;
+    EventCategory& operator=(const EventCategory& other) = default;
+    EventCategory(EventCategory&& other) noexcept = default;
+    EventCategory& operator=(EventCategory&& other) noexcept = default;
+
+    std::string get();
+    void set(const std::string& category);
+
+    /** @brief A set of values the @c category field is allowed to assume **/
+    static const std::vector<std::string> valuesAllowed;
+
+    bool operator==(const EventCategory& other) const = default;
+    operator std::string() const;
+
+  private:
+    std::string category;
+};
+
 /** @class EventNode
  *  @brief Object to represent HMC events and store contents
  *         from event_info json profile
@@ -320,8 +351,14 @@ class EventNode : public object::Object
     /** @brief Redfish fields struct **/
     redfish messageRegistry;
 
+    /** @brief Redfish OriginOfCondition field **/
+    std::optional<std::string> originOfCondition;
+
     /** @brief Type of device **/
     std::vector<std::string> deviceTypes;
+
+    /** @brief Classification of the event which steers the selftest process */
+    std::optional<std::vector<EventCategory>> eventCategories;
 
   public:
     /** @brief Name of the event **/
@@ -336,7 +373,7 @@ class EventNode : public object::Object
     /** @brief Accesssor info **/
     data_accessor::DataAccessor accessor;
 
-     /** @brief Accesssor info **/
+    /** @brief Accesssor info **/
     data_accessor::DataAccessor recovery_accessor;
 
     /** @brief Trigger accessor info **/
@@ -417,6 +454,46 @@ class EventNode : public object::Object
      */
     std::string getStringMessageArgs();
 
+    bool hasFixedOriginOfCondition() const
+    {
+        return originOfCondition.has_value();
+    }
+
+    /**
+     * @brief Set the origin_of_condition.
+     *
+     */
+    void setOriginOfCondition(const std::string& ooc)
+    {
+        originOfCondition.emplace(ooc);
+    }
+
+    /**
+     * @brief Return the origin_of_condition instance.
+     *
+     */
+    std::optional<std::string> getOriginOfCondition() const
+    {
+        if (isEventNodeEvaluated())
+        {
+            if (originOfCondition.has_value())
+            {
+                return device_id::DeviceIdPattern(*originOfCondition)
+                    .eval(*deviceIndexTuple);
+            }
+            else
+            {
+                return std::nullopt;
+            }
+        }
+        else
+        {
+            // This shouldn't happen. Force quit to bring attention.
+            throw std::runtime_error(
+                "Trying to get OOC on an unevaluated event node. Quit...");
+        }
+    }
+
     /**
      * @brief Call @c setDeviceTypes(js) wrapping it in a sensible error message
      */
@@ -454,19 +531,22 @@ class EventNode : public object::Object
      * ["NVSwitch_[0|0-3]", "NVLink_[1|0-39]"]
      * @endcode
      */
-    std::string getStrigifiedDeviceType() const;
+    std::string getStringifiedDeviceType() const;
 
     /**
      * @brief Return the first element of @c deviceTypes
      */
     std::string getMainDeviceType() const;
 
+    std::vector<EventCategory> getCategories() const;
+    std::vector<std::string> getStringCategories() const;
     /**
      * @brief Return whether the DataAccessor is interesting
      * (matches our D-Bus object/interface/property)
-    */
-    static bool getIsAccessorInteresting(EventNode& event,
-        data_accessor::DataAccessor& otherAccessor);
+     */
+    static bool
+        getIsAccessorInteresting(EventNode& event,
+                                 data_accessor::DataAccessor& otherAccessor);
 };
 
 using EventMap = std::map<std::string, std::vector<event_info::EventNode>>;
@@ -481,6 +561,14 @@ using EventMap = std::map<std::string, std::vector<event_info::EventNode>>;
  */
 void loadFromFile(EventMap& eventMap, const std::string& file);
 
+/**
+ * @brief Read data from the json object @c j into @c eventMap
+ *
+ * @param[out] eventMap
+ * @param[in] j
+ */
+void loadFromJson(EventMap& eventMap, const nlohmann::json& j);
+
 /** @brief Prints out memory map to verify field population
  *
  * @param[in]  eventMap
@@ -489,3 +577,25 @@ void loadFromFile(EventMap& eventMap, const std::string& file);
 void printMap(const EventMap& eventMap);
 
 } // namespace event_info
+
+namespace nlohmann
+{
+
+/**
+ * @brief Allow for 'js.get<EventCategory>()' syntax
+ */
+template <>
+struct adl_serializer<event_info::EventCategory>
+{
+    static event_info::EventCategory from_json(const json& js)
+    {
+        return {js.get<std::string>()};
+    }
+
+    static void to_json(json& js, event_info::EventCategory ec)
+    {
+        js = ec.get();
+    }
+};
+
+} // namespace nlohmann

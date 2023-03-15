@@ -1,5 +1,7 @@
 #include "nlohmann/json.hpp"
+#include "printing_util.hpp"
 #include "selftest.hpp"
+#include "tests_common_defs.hpp"
 
 #include <iostream>
 
@@ -1003,10 +1005,10 @@ TEST(rootCauseTraceTest, test1)
     EXPECT_EQ(rootCauseTracer.process(event), aml::RcCode::succ);
     EXPECT_EQ(event.selftestReport["header"]["summary"]["test-case-failed"], 0);
     EXPECT_EQ(event.selftestReport["tests"].size(), 5);
-    EXPECT_EQ(dat.at("GPU0").healthStatus.healthRollup, "OK");
+    EXPECT_EQ(dat.at("GPU0").healthStatus.healthRollup, "Critical");
     EXPECT_EQ(dat.at("GPU0").healthStatus.health, "OK");
-    EXPECT_EQ(dat.at("GPU0").healthStatus.triState, "Active");
-    EXPECT_EQ(dat.at("GPU0").healthStatus.originOfCondition, "");
+    EXPECT_EQ(dat.at("GPU0").healthStatus.triState, "Error");
+    EXPECT_EQ(dat.at("GPU0").healthStatus.originOfCondition, "GPU0");
 
     /* fail least nested GPU0 */
     dat.at("GPU0").test["pin_status"].testPoints.begin()->second.expectedValue =

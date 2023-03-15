@@ -41,6 +41,45 @@ struct TestPoint
 struct TestLayer
 {
     std::map<std::string, TestPoint> testPoints;
+
+    /**
+     * @brief Return a list of DEVICE-type testpoints
+     *
+     * The elements are names of the devices. The elements may be non-unique if
+     * the testpoint of the same device was provided more than once in the
+     * configuration.
+     */
+    std::vector<std::string> getDeviceTypeTestpoints();
+};
+
+/**
+ * @brief Enum type representing the type of the device (regular,
+ * sensor, port, firmware).
+ */
+class DeviceType
+{
+  public:
+    enum types
+    {
+        UNKNOWN_TYPE = 0,
+        REGULAR,
+        SENSOR,
+        PORT,
+        SOFTWARE
+    };
+    static std::map<std::string, enum types> valuesAllowed;
+
+    DeviceType() : type(DeviceType::types::UNKNOWN_TYPE)
+    {}
+    DeviceType(const std::string& type);
+
+    DeviceType::types get();
+    void set(const std::string& type);
+
+    operator std::string() const;
+
+  private:
+    enum types type;
 };
 
 /** @class Device
@@ -52,6 +91,18 @@ class Device
   public:
     /** @brief Name of the device **/
     std::string name;
+
+    /** @brief Type of the device **/
+    DeviceType type;
+
+    /** @brief dbusPathPrimary of the device **/
+    std::optional<std::string> dbusPathPrimary;
+
+    /** @brief dbusPathOoc of the device **/
+    std::optional<std::string> dbusPathOoc;
+
+    /** @brief Type of the device; default true **/
+    std::optional<bool> dbus_set_health;
 
     /** @brief Downstream devices (children) **/
     std::vector<std::string> association;
@@ -89,6 +140,54 @@ class Device
      */
     static void populateMap(std::map<std::string, dat_traverse::Device>& dat,
                             const std::string& file);
+    static void populateMap(std::map<std::string, dat_traverse::Device>& dat,
+                            const nlohmann::json& js);
+
+    /**
+     * @brief Return a list of devices associated (directly) by test layers
+     *
+     * Filter out from consideration the layers on which @c layerPred returns @c
+     * false. The list of devices is unique. No particular order is guaranteed.
+     */
+    std::vector<std::string> getTestLayerAssociations(
+        const std::function<bool(const std::string&)>& layerPred);
+
+    /**
+     * @brief Return information about the type of this generalized device
+     */
+    DeviceType::types getType();
+
+    /**
+     * @brief Return a dbus path to be used in event logs when
+     * this device is identified as an Origin of Condition.
+     *
+     * Do not attempt to calculate it, simply reflect the configuration.
+     */
+    std::optional<std::string> getDbusObjectOocSpecificExplicit() const;
+    bool hasDbusObjectOocSpecificExplicit() const;
+
+    /**
+     * @brief Return the primary dbus object path associated with
+     * this device.
+     *
+     * Example: for device "GPU_SXM_2" the primary dbus object path is
+     * "/xyz/openbmc_project/inventory/system/chassis/HGX_GPU_SXM_2".
+     *
+     * Do not attempt to calculate it, simply reflect the configuration.
+     */
+    std::optional<std::string> getDbusObjectPrimaryExplicit();
+
+    /**
+     * @brief Tell whether the primary dbus object path associated with this
+     * device can have its "Health" properties set
+     *
+     * Some devices, like sensors (eg. "Chassis_0_PCB_0_Temp_0"), provide the
+     * HealthStatus interface but should nevertheless be left alone for
+     * performance reasons, even if they are identifies as Origin of Condition,
+     * which would normally imply their "Health" property being set to
+     * "Critical".
+     */
+    bool canSetHealthOnDbus() const;
 
     explicit Device(const std::string& s);
     Device(const std::string& s, const json& j);
@@ -246,6 +345,52 @@ class DATTraverse : public event_handler::EventHandler
         getSubAssociations(std::map<std::string, dat_traverse::Device>& dat,
                            const std::string& device,
                            const bool doTraverseTestpoints = false);
+
+    /**
+     * @brief Return a list of devices reachable from @c rootDevice in an
+     * "origin of condition"-oriented fashion
+     *
+     * "Origin of condition"-oriented fashion means reachability in a graph of
+     * associations with the "association" defined as follows:
+     *
+     * 1. For x != rootDevice: device y is associated with x if y can be found
+     * among the recursive testpoints of x
+     *
+     * 2. For x = rootDevice: device y is associated with rootDevice if the
+     * "category" attribute of @c eventNode contains a layer in which the device
+     * y is listed as a recursive testpoint.
+     *
+     * The "recursive testpoint" is something like this
+     * @code
+     * {
+     *   "name": "ERoT_GPU_SXM_1",
+     *   "accessor": {
+     *     "type": "DEVICE",
+     *     "device_name": "ERoT_GPU_SXM_1"
+     *   },
+     *   "expected_value": "PASS"
+     * }
+     * @endcode
+     *
+     * The algorithm thus descends from @c rootDevice down the recursive
+     * testpoints, but in the first level of descension only the testpoints
+     * within selected layers are considered.
+     *
+     * As a special case, if the "categories" value is an empty array, or if
+     * it's missing entirely (in both cases the @c eventNode.getCategories() is
+     * expected to return empty vector) then the condition (2) is reduced to
+     * (1).
+     *
+     * The devices are listed in a breadth-first order, starting from @c
+     * rootDevice. The @c rootDevice itself is always included.
+     *
+     * @param[in] dat
+     * @param[in] rootDevice The device on which the @c eventNode occurs
+     * @param[in] eventNode
+     */
+    static std::vector<std::string> getTestLayerSubAssociations(
+        std::map<std::string, dat_traverse::Device>& dat,
+        const std::string& rootDevice, const event_info::EventNode& eventNode);
 
     /**
      * @brief Fully traverses a device and stops if predicate

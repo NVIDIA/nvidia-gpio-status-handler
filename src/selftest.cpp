@@ -9,6 +9,8 @@
 
 #include <boost/algorithm/string.hpp>
 #include <boost/asio.hpp>
+#include <dbus_log_utils.hpp>
+#include <dbus_utility.hpp>
 #include <phosphor-logging/log.hpp>
 #include <sdbusplus/asio/connection.hpp>
 #include <sdbusplus/asio/property.hpp>
@@ -25,54 +27,149 @@ namespace selftest
 
 static constexpr auto reportResultPass = "Pass";
 static constexpr auto reportResultFail = "Fail";
+static data_accessor::PropertyString
+    propertyValueResultFail(std::string{reportResultFail});
 
 using phosphor::logging::entry;
 using phosphor::logging::level;
 using phosphor::logging::log;
 
-void Selftest::updateDeviceHealth(const std::string& device,
-                                  const std::string& health)
+void Selftest::resolveLogEntry(
+    const std::string& device,
+    const dbus::utility::ManagedObjectType& result) const
 {
-    try
+    log_dbg("IN SELFTEST RESOLVE LOG ENTRY looking for log with device %s\n", device.c_str());
+    const std::vector<std::string>* additionalDataRaw = nullptr;
+    bool resolved = false;
+    for (auto& objectPath : result)
     {
-        const std::string healthInterface(
-            "xyz.openbmc_project.State.Decorator.Health");
-        dbus::DirectObjectMapper om;
-        std::vector<std::string> objPathsToAlter =
-            om.getAllDevIdObjPaths(device, healthInterface);
-        if (!objPathsToAlter.empty())
+        for (auto& interfaceMap : objectPath.second)
         {
-            for (const auto& objPath : objPathsToAlter)
+            if (interfaceMap.first == "xyz.openbmc_project.Logging.Entry")
             {
-                std::string healthState =
-                    "xyz.openbmc_project.State.Decorator.Health.HealthType." +
-                    health;
-
-                log_dbg("Setting Health Property for: %s healthState: %s\n",
-                        objPath.c_str(), healthState.c_str());
-                bool ok = dbus::setDbusProperty(
-                    objPath, "xyz.openbmc_project.State.Decorator.Health",
-                    "Health", PropertyVariant(healthState));
-                if (ok == true)
+                for (auto& propertyMap : interfaceMap.second)
                 {
-                    log_dbg("Changed health property as expected\n");
+                    if (propertyMap.first == "AdditionalData")
+                    {
+                        additionalDataRaw =
+                            std::get_if<std::vector<std::string>>(
+                                &propertyMap.second);
+                    }
+                    else if (propertyMap.first == "Resolved")
+                    {
+                        const bool* resolveptr =
+                            std::get_if<bool>(&propertyMap.second);
+                        if (resolveptr == nullptr)
+                        {
+                            log_dbg("Resolved Property pointer is null\n");
+                            return;
+                        }
+                        resolved = *resolveptr;
+                    }
                 }
             }
         }
-        else // ! objPathsToAlter.empty()
+
+        std::string messageArgs;
+        std::string recoveryType;
+        std::string eventName;
+        std::string deviceName;
+        if (!resolved && additionalDataRaw != nullptr)
         {
-            log_err("No object paths found in the subtree of "
-                    "'xyz.openbmc_project.ObjectMapper' "
-                    "corresponding to the '%s' device id "
-                    "and implementing the '%s' interface\n",
-                    device.c_str(), healthInterface.c_str());
+            redfish::AdditionalData additional(*additionalDataRaw);
+            if (additional.count("REDFISH_MESSAGE_ARGS") > 0)
+            {
+                messageArgs = additional["REDFISH_MESSAGE_ARGS"];
+            }
+            if (additional.count("RECOVERY_TYPE") > 0)
+            {
+                recoveryType = additional["RECOVERY_TYPE"];
+            }
+            if (additional.count("EVENT_NAME") > 0)
+            {
+                eventName = additional["EVENT_NAME"];
+            }
+            if (additional.count("DEVICE_NAME") > 0)
+            {
+                deviceName = additional["DEVICE_NAME"];
+            }
+            if (messageArgs.find(device) != std::string::npos &&
+                recoveryType != std::string("property_change"))
+            {
+                log_dbg("FOUND LOG ENTRY TO RESOLVE\n");
+                log_dbg("EVENT: %s\n", eventName.c_str());
+                log_dbg("DEV: %s\n", deviceName.c_str());
+                log_dbg("LOG: %s\n", objectPath.first.str.c_str());
+
+                auto bus = sdbusplus::bus::new_default_system();
+                try
+                {
+                    std::variant<bool> v = true;
+                    dbus::DelayedMethod method(
+                        bus, "xyz.openbmc_project.Logging",
+                        objectPath.first.str, "org.freedesktop.DBus.Properties",
+                        "Set");
+                    method.append("xyz.openbmc_project.Logging.Entry");
+                    method.append("Resolved");
+                    method.append(v);
+                    auto reply = method.call();
+                }
+                catch (const sdbusplus::exception::exception& e)
+                {
+                    log_err(" Dbus Error: %s\n", e.what());
+                }
+            }
         }
     }
-    catch (const sdbusplus::exception::SdBusError& e)
+}
+
+void Selftest::updateDeviceHealth(const std::string& device,
+                                  const std::string& health) const
+{
+    if (_dat.at(device).canSetHealthOnDbus())
     {
-        std::cerr << "ERROR WITH SDBUSPLUS BUS " << e.what() << "\n";
-        log<level::ERR>("Failed to establish sdbusplus connection",
-                        entry("SDBUSERR=%s", e.what()));
+
+        try
+        {
+            const std::string healthInterface(
+                "xyz.openbmc_project.State.Decorator.Health");
+            dbus::DirectObjectMapper om;
+            std::vector<std::string> objPathsToAlter =
+                om.getAllDevIdObjPaths(device, healthInterface);
+            if (!objPathsToAlter.empty())
+            {
+                for (const auto& objPath : objPathsToAlter)
+                {
+                    std::string healthState =
+                        "xyz.openbmc_project.State.Decorator.Health.HealthType." +
+                        health;
+
+                    log_dbg("Setting Health Property for: %s healthState: %s\n",
+                            objPath.c_str(), healthState.c_str());
+                    bool ok = dbus::setDbusProperty(
+                        objPath, "xyz.openbmc_project.State.Decorator.Health",
+                        "Health", PropertyVariant(healthState));
+                    if (ok == true)
+                    {
+                        log_dbg("Changed health property as expected\n");
+                    }
+                }
+            }
+            else // ! objPathsToAlter.empty()
+            {
+                log_err("No object paths found in the subtree of "
+                        "'xyz.openbmc_project.ObjectMapper' "
+                        "corresponding to the '%s' device id "
+                        "and implementing the '%s' interface\n",
+                        device.c_str(), healthInterface.c_str());
+            }
+        }
+        catch (const sdbusplus::exception::SdBusError& e)
+        {
+            std::cerr << "ERROR WITH SDBUSPLUS BUS " << e.what() << "\n";
+            log<level::ERR>("Failed to establish sdbusplus connection",
+                            entry("SDBUSERR=%s", e.what()));
+        }
     }
 }
 
@@ -124,21 +221,23 @@ aml::RcCode Selftest::perform(const dat_traverse::Device& dev,
     }
 
     auto fillTpRes = [](selftest::TestPointResult& tp,
-                        const std::string& expVal, const std::string& readVal,
-                        const std::string& name, bool accessorReadSuccess) {
+                        const std::string& expVal,
+                        const data_accessor::PropertyValue& readVal,
+                        const std::string& name) {
         tp.targetName = name;
         tp.valExpected = expVal;
-        // accessorReadSuccess is true for valid data even an empty string
-        if (false == accessorReadSuccess)
+        // it will empty when if DataAccessor::read() has failed
+        if (readVal.empty())
         {
             tp.valRead = "Error - TP read failed.";
             tp.result = false;
         }
         else
         {
-            tp.valRead = readVal;
+            tp.valRead = readVal.getString();
             // in case of empty expected value default to positive result
-            tp.result = (expVal.size() == 0) ? true : readVal == expVal;
+            tp.result = (expVal.size() == 0) ? true
+                              : readVal == data_accessor::PropertyValue(expVal);
         }
     };
 
@@ -186,15 +285,16 @@ aml::RcCode Selftest::perform(const dat_traverse::Device& dev,
                                   evaluateDevice(reportRes[devName]);
 
                 fillTpRes(tmpTestPointResult, testPoint.expectedValue,
-                          (devEvalRes) ? testPoint.expectedValue
-                                       : reportResultFail,
-                          devName, acc.hasData());
+                        (devEvalRes) ?
+                           data_accessor::PropertyValue(testPoint.expectedValue)
+                           : propertyValueResultFail,
+                        devName);
             }
             else
             {
-                auto accRead = acc.read();
-                fillTpRes(tmpTestPointResult, testPoint.expectedValue, accRead,
-                          tp.first, acc.hasData());
+                acc.read();
+                fillTpRes(tmpTestPointResult, testPoint.expectedValue,
+                          acc.getDataValue(),  tp.first);
             }
             tmpLayerReport.insert(tmpLayerReport.begin(), tmpTestPointResult);
         }
@@ -203,9 +303,8 @@ aml::RcCode Selftest::perform(const dat_traverse::Device& dev,
     return aml::RcCode::succ;
 }
 
-aml::RcCode
-    Selftest::performEntireTree(ReportResult& reportRes,
-                                std::vector<std::string> layersToIgnore)
+aml::RcCode Selftest::performEntireTree(ReportResult& reportRes,
+                                        std::vector<std::string> layersToIgnore)
 {
     for (auto& dev : _dat)
     {
@@ -378,21 +477,30 @@ namespace event_handler
 
 bool RootCauseTracer::findRootCause(const std::string& triggeringDevice,
                                     const selftest::ReportResult& report,
+                                    const event_info::EventNode& eventNode,
                                     std::string& rootCauseDevice)
 {
-    rootCauseDevice.clear();
+    if (eventNode.hasFixedOriginOfCondition())
+    {
+        rootCauseDevice = *eventNode.getOriginOfCondition();
+        return true;
+    }
+    else
+    {
+        return findRootCauseGeneral(triggeringDevice, report, eventNode,
+                                    rootCauseDevice);
+    }
+}
 
-#if ROOT_CAUSE_TRACER_USE_ONLY_ASSOCIATION_KEY_TRAVERSAL
-    auto childVec = DATTraverse::getSubAssociations(_dat, triggeringDevice);
-#else  // use DAT testpoints traversal
-    auto childVec =
-        DATTraverse::getSubAssociations(_dat, triggeringDevice, true);
-#endif // #if ROOT_CAUSE_TRACER_USE_ONLY_ASSOCIATION_KEY_TRAVERSAL
+bool RootCauseTracer::findRootCauseGeneral(
+    const std::string& triggeringDevice, const selftest::ReportResult& report,
+    const event_info::EventNode& eventNode, std::string& rootCauseDevice)
+{
+    auto childVec = DATTraverse::getTestLayerSubAssociations(
+        _dat, triggeringDevice, eventNode);
 
-    /* test every device in order from most nested to least;
-    ignore devices not yet implemented in DBUS (other logic dependence);
-    first failed device is the root cause of condition for device triggering the
-    tracing */
+    /* test every device in order from most nested to least; first failed device
+     * is the root cause of condition for device triggering the tracing */
     for (auto it = childVec.rbegin(); it != childVec.rend(); it++)
     {
         if (!selftest::Selftest::evaluateDevice(report.at(*it)))
@@ -402,7 +510,8 @@ bool RootCauseTracer::findRootCause(const std::string& triggeringDevice,
         }
     }
 
-    return false;
+    rootCauseDevice = triggeringDevice;
+    return true;
 }
 
 void RootCauseTracer::updateRootCause(dat_traverse::Device& dev,
@@ -446,7 +555,8 @@ aml::RcCode RootCauseTracer::process([
         return aml::RcCode::error;
     }
 
-    if (findRootCause(problemDevice, completeReportRes, rootCauseCandidateName))
+    if (findRootCause(problemDevice, completeReportRes, event,
+                      rootCauseCandidateName))
     {
         updateRootCause(_dat.at(problemDevice), _dat.at(rootCauseCandidateName),
                         selftester);

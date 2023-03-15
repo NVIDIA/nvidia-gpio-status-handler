@@ -16,6 +16,11 @@ bool CheckAccessor::buildSingleAssertedDeviceName(const DataAccessor& dataAcc,
                                          device_id::PatternIndex(deviceId));
 }
 
+std::string CheckAccessor::getMainDeviceType() const
+{
+    return util::getFirstDeviceTypePattern(_deviceTypePattern.pattern());
+}
+
 bool CheckAccessor::buildSingleAssertedDeviceName(
     const DataAccessor& dataAcc, const std::string& realDevice,
     const device_id::PatternIndex& patternIndex)
@@ -46,7 +51,7 @@ bool CheckAccessor::loopDevices(const util::DeviceIdMap& devices,
         // arg.first=deviceId, arg.second=deviceName
         const auto& deviceId = arg.first;
         const auto& deviceName = arg.second;
-        dataAcc.read(deviceName);
+        dataAcc.read(deviceName, getMainDeviceType());
         if (subCheck(jsonAcc, dataAcc, deviceName, deviceId))
         {
             ret = true; // it at least one passes the entire check also passes
@@ -136,7 +141,7 @@ bool CheckAccessor::privCheck(const DataAccessor& jsonAcc,
         {
             if (dataAcc.isTypeDbus() == false || dataAcc.hasData() == false)
             {
-                dataAcc.read(deviceToRead);
+                dataAcc.read(deviceToRead, getMainDeviceType());
             }
             ret = subCheck(jsonAcc, dataAcc, deviceToRead);
         }

@@ -113,7 +113,7 @@ void EventDetection::workerThreadProcessEvents()
                         eventDetectionPtr->RunEventHandlers(event);
                         logs_dbg(
                             "Adding event %s to internal map with afflicted device %s\n",
-                            candidate.event.c_str(), candidate.device.c_str());
+                            candidate.event.c_str(), event.device.c_str());
 
                         auto eventKey =
                             candidate.event + candidate.getMainDeviceType();
@@ -122,11 +122,11 @@ void EventDetection::workerThreadProcessEvents()
                             eventsDetected.insert(
                                 std::pair<std::string, std::vector<std::string>>(
                                     eventKey,
-                                    std::vector<std::string>{candidate.device}));
+                                    std::vector<std::string>{event.device}));
                         }
                         else
                         {
-                            eventsDetected.at(eventKey).push_back(candidate.device);
+                            eventsDetected.at(eventKey).push_back(event.device);
                         }
                     }
                 }

@@ -566,4 +566,26 @@ std::string DeviceIdPattern::pattern() const
     return _rawPattern;
 }
 
+std::vector<unsigned> DeviceIdPattern::dimDomain(unsigned axis) const
+{
+    if (axis < dim())
+    {
+        std::vector<unsigned> result;
+        // marcinw:TODO: terrible, terrible implementation. No time though
+        for (const auto& arg : domain())
+        {
+            if (std::ranges::find(result, (unsigned)arg[axis]) == result.end())
+            {
+                result.push_back(arg[axis]);
+            }
+        }
+        std::ranges::sort(result);
+        return result;
+    }
+    else // ! axis >= dim()
+    {
+        return {};
+    }
+}
+
 } // namespace device_id

@@ -11,9 +11,14 @@
 #include "aml.hpp"
 #include "cmd_line.hpp"
 #include "dat_traverse.hpp"
+#include "dbus_accessor.hpp"
 #include "selftest.hpp"
 
+#include <dbus_log_utils.hpp>
+#include <dbus_utility.hpp>
 #include <phosphor-logging/log.hpp>
+#include <sdbusplus/asio/object_server.hpp>
+#include <sdbusplus/bus.hpp>
 
 #include <fstream>
 #include <iostream>
@@ -162,14 +167,33 @@ void updateDevicesHealthBasedOnReport(
 {
     std::cout << "About to update devices health. To update: "
               << reportResult.size() << " devices.\n";
+
+    auto bus = sdbusplus::bus::new_default_system();
+    dbus::utility::ManagedObjectType result;
+    try
+    {
+        dbus::DelayedMethod method(
+            bus, "xyz.openbmc_project.Logging", "/xyz/openbmc_project/logging",
+            "org.freedesktop.DBus.ObjectManager", "GetManagedObjects");
+        auto reply = method.call();
+        reply.read(result);
+    }
+    catch (const sdbusplus::exception::exception& e)
+    {
+        logs_err(" Dbus Error: %s\n", e.what());
+        throw std::runtime_error(e.what());
+    }
     for (auto& dev : reportResult)
     {
         std::string deviceHealth = goodHealth;
         if (!selftest.evaluateDevice(dev.second))
         {
+            logs_err("%s unhealthy - failed selftest.\n", dev.first.c_str());
             deviceHealth = badHealth;
+        } else {
+            logs_err("%s healthy. Resolving associated log(s) if found\n", dev.first.c_str());
+            selftest.resolveLogEntry(dev.first, result);
         }
-
         std::cout << "Setting health: " << dev.first << " = " << deviceHealth
                   << "\n";
         selftest.updateDeviceHealth(dev.first, deviceHealth);

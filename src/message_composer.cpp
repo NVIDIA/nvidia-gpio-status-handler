@@ -41,29 +41,39 @@ std::map<std::string, std::string> severityMapper{
 MessageComposer::~MessageComposer()
 {}
 
-std::string
-    MessageComposer::getOriginOfConditionObjectPath(const std::string& deviceId)
+std::string MessageComposer::getOriginOfConditionObjectPath(
+    const std::string& deviceId) const
 {
-    dbus::DirectObjectMapper om;
-    auto paths = om.getPrimaryDevIdPaths(deviceId);
-    if (paths.size() == 0)
+    if (this->dat.at(deviceId).hasDbusObjectOocSpecificExplicit())
     {
-        logs_err("No object path found in ObjectMapper subtree "
-                 "corresponding to the device '%s'. "
-                 "Returning empty origin of condition.\n",
-                 deviceId.c_str());
-        return deviceId;
+        return *(this->dat.at(deviceId).getDbusObjectOocSpecificExplicit());
     }
     else
     {
-        if (paths.size() > 1)
+        // If no ooc object path was provided in dat.json explicitly then try to
+        // obtain it by looking what is available on dbus and seems to
+        // correspond to the 'deviceId' given in argument
+        dbus::DirectObjectMapper om;
+        auto paths = om.getPrimaryDevIdPaths(deviceId);
+        if (paths.size() == 0)
         {
-            logs_wrn("Multiple object paths in ObjectMapper subtree "
+            logs_err("No object path found in ObjectMapper subtree "
                      "corresponding to the device '%s'. "
-                     "Choosing the first one as origin of condition.\n",
+                     "Returning empty origin of condition. ",
                      deviceId.c_str());
+            return deviceId;
         }
-        return *paths.begin();
+        else
+        {
+            if (paths.size() > 1)
+            {
+                logs_wrn("Multiple object paths in ObjectMapper subtree "
+                         "corresponding to the device '%s'. "
+                         "Choosing the first one as origin of condition. ",
+                         deviceId.c_str());
+            }
+            return *paths.begin();
+        }
     }
 }
 
@@ -79,10 +89,15 @@ bool MessageComposer::createLog(event_info::EventNode& event)
     auto messageArgs = event.getStringMessageArgs();
     auto telemetries = collectDiagData(event);
 
-    std::string oocDevice;
+    std::string oocDevice{""};
+    std::string originOfCondition{""};
     if (dat.count(event.device) > 0)
     {
         oocDevice = dat.at(event.device).healthStatus.originOfCondition;
+        if (false == oocDevice.empty())
+        {
+            originOfCondition = getOriginOfConditionObjectPath(oocDevice);
+        }
     }
     else
     {
@@ -91,7 +106,6 @@ bool MessageComposer::createLog(event_info::EventNode& event)
         return false;
     }
 
-    auto originOfCondition = getOriginOfConditionObjectPath(oocDevice);
     log_dbg("originOfCondition = '%s'\n", originOfCondition.c_str());
 
     auto pNamespace = getPhosphorLoggingNamespace(event);

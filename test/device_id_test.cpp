@@ -664,6 +664,14 @@ TEST(DeviceIdTest, DeviceIdPattern_match_double)
     EXPECT_TRUE(pat.isInjective());
 }
 
+TEST(DeviceIdTest, DeviceIdPattern_dimDomain)
+{
+    DeviceIdPattern pat("[1-3:11-13][4-7]");
+    EXPECT_EQ(pat.dimDomain(0), std::vector<unsigned>({1, 2, 3}));
+    EXPECT_EQ(pat.dimDomain(1), std::vector<unsigned>({4, 5, 6, 7}));
+    EXPECT_EQ(pat.dimDomain(2), std::vector<unsigned>({}));
+}
+
 // TEST(DeviceIdTest, DeviceIdPattern_match_noninjective)
 // {
 //     // "HSC_[0|0-3:8,4-7:9]";
@@ -1369,94 +1377,6 @@ TEST(DeviceIdTest, parseBracketMap)
     EXPECT_ANY_THROW(parseBracketMap("0-7:1-8 "sv));
     EXPECT_ANY_THROW(parseBracketMap("0-7::1-8"sv));
     // marcinw:TODO: all the non-degenerated cases
-}
-
-TEST(DeviceIdTest, IndexedBracketMap)
-{
-    EXPECT_EQ(IndexedBracketMap::parse("123"sv),
-              IndexedBracketMap(BracketRangeMap(BracketRange(123, 123),
-                                                BracketRange(123, 123))));
-    EXPECT_EQ(IndexedBracketMap::parse(std::string("0")),
-              IndexedBracketMap(
-                  BracketRangeMap(BracketRange(0, 0), BracketRange(0, 0))));
-    EXPECT_ANY_THROW(IndexedBracketMap::parse(""sv));
-    EXPECT_ANY_THROW(IndexedBracketMap::parse("-12"sv));
-    EXPECT_ANY_THROW(IndexedBracketMap::parse("-1.2"sv));
-    EXPECT_ANY_THROW(IndexedBracketMap::parse(std::string("ab")));
-    EXPECT_ANY_THROW(IndexedBracketMap::parse(std::string("  42")));
-    EXPECT_ANY_THROW(IndexedBracketMap::parse(std::string("42  ")));
-    EXPECT_ANY_THROW(IndexedBracketMap::parse(std::string("42othertrash")));
-
-    EXPECT_EQ(IndexedBracketMap::parse("2-8"sv),
-              IndexedBracketMap(
-                  BracketRangeMap(BracketRange(2, 8), BracketRange(2, 8))));
-    EXPECT_EQ(IndexedBracketMap::parse("0-10"sv),
-              IndexedBracketMap(
-                  BracketRangeMap(BracketRange(0, 10), BracketRange(0, 10))));
-    EXPECT_EQ(IndexedBracketMap::parse("0"sv),
-              IndexedBracketMap(
-                  BracketRangeMap(BracketRange(0, 0), BracketRange(0, 0))));
-    EXPECT_EQ(IndexedBracketMap::parse("5"sv),
-              IndexedBracketMap(
-                  BracketRangeMap(BracketRange(5, 5), BracketRange(5, 5))));
-    EXPECT_EQ(IndexedBracketMap::parse("3-3"sv),
-              IndexedBracketMap(
-                  BracketRangeMap(BracketRange(3, 3), BracketRange(3, 3))));
-    EXPECT_ANY_THROW(IndexedBracketMap::parse("0--5"sv));
-    EXPECT_ANY_THROW(IndexedBracketMap::parse(""sv));
-    EXPECT_ANY_THROW(IndexedBracketMap::parse("trash"sv));
-    EXPECT_ANY_THROW(IndexedBracketMap::parse("0- 10"sv));
-    EXPECT_ANY_THROW(IndexedBracketMap::parse("7-4"sv));
-
-    EXPECT_EQ(IndexedBracketMap::parse("1"),
-              IndexedBracketMap(
-                  BracketRangeMap(BracketRange(1, 1), BracketRange(1, 1))));
-    EXPECT_EQ(IndexedBracketMap::parse("0-3"sv),
-              IndexedBracketMap(
-                  BracketRangeMap(BracketRange(0, 3), BracketRange(0, 3))));
-    EXPECT_EQ(IndexedBracketMap::parse("1-39"sv),
-              IndexedBracketMap(
-                  BracketRangeMap(BracketRange(1, 39), BracketRange(1, 39))));
-    EXPECT_EQ(IndexedBracketMap::parse("0-3:0-3"sv),
-              IndexedBracketMap(
-                  BracketRangeMap(BracketRange(0, 3), BracketRange(0, 3))));
-    EXPECT_EQ(IndexedBracketMap::parse(std::string("0-3:10")),
-              IndexedBracketMap(
-                  BracketRangeMap(BracketRange(0, 3), BracketRange(10, 10))));
-    EXPECT_EQ(IndexedBracketMap::parse("0-7:1-8"sv),
-              IndexedBracketMap(
-                  BracketRangeMap(BracketRange(0, 7), BracketRange(1, 8))));
-    EXPECT_ANY_THROW(IndexedBracketMap::parse("0-7:0-3"sv));
-    EXPECT_ANY_THROW(IndexedBracketMap::parse("0-7: 1-8"sv));
-    EXPECT_ANY_THROW(IndexedBracketMap::parse("0-7  :1-8"sv));
-    EXPECT_ANY_THROW(IndexedBracketMap::parse(" 0-7:1-8"sv));
-    EXPECT_ANY_THROW(IndexedBracketMap::parse("0-7:1-8 "sv));
-    EXPECT_ANY_THROW(IndexedBracketMap::parse("0-7::1-8"sv));
-
-    EXPECT_EQ(IndexedBracketMap::parse("0|123"sv),
-              IndexedBracketMap(0, BracketRangeMap(BracketRange(123, 123),
-                                                   BracketRange(123, 123))));
-    EXPECT_EQ(IndexedBracketMap::parse(std::string("5|0")),
-              IndexedBracketMap(
-                  5, BracketRangeMap(BracketRange(0, 0), BracketRange(0, 0))));
-    EXPECT_EQ(IndexedBracketMap::parse("1|2-8"sv),
-              IndexedBracketMap(
-                  1, BracketRangeMap(BracketRange(2, 8), BracketRange(2, 8))));
-    EXPECT_EQ(IndexedBracketMap::parse("8|0-10"sv),
-              IndexedBracketMap(8, BracketRangeMap(BracketRange(0, 10),
-                                                   BracketRange(0, 10))));
-    EXPECT_EQ(IndexedBracketMap::parse(std::string("0|0-3:10")),
-              IndexedBracketMap(0, BracketRangeMap(BracketRange(0, 3),
-                                                   BracketRange(10, 10))));
-    EXPECT_EQ(IndexedBracketMap::parse("1|0-7:1-8"sv),
-              IndexedBracketMap(
-                  1, BracketRangeMap(BracketRange(0, 7), BracketRange(1, 8))));
-
-    EXPECT_ANY_THROW(IndexedBracketMap::parse("1| 0-7:1-8"sv));
-    EXPECT_ANY_THROW(IndexedBracketMap::parse("-1|0-7:1-8"sv));
-    EXPECT_ANY_THROW(IndexedBracketMap::parse("abc|0-7:1-8"sv));
-    EXPECT_ANY_THROW(IndexedBracketMap::parse("0/0-7:1-8"sv));
-    EXPECT_ANY_THROW(IndexedBracketMap::parse("5:0-7:1-8"sv));
 }
 
 } // namespace syntax

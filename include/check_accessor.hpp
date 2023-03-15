@@ -157,6 +157,13 @@ class CheckAccessor
                                        const std::string& realDevice,
                                        const int deviceId);
 
+    /** @return the main (the first range) of a Event.device_type
+
+        It uses @a _deviceTypePattern which represents the Event.device_type
+           passed as parameter in the constructor
+    */
+    std::string getMainDeviceType() const;
+
   private:
     /**  @brief keep the status of the last performed check */
     CheckStatus _lastStatus;

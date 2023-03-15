@@ -60,7 +60,7 @@ $(eventInfoFlatJson):           \
 	    $(eventInfoFlatJson)
 
 $(vfOpCodeTsv): $(vfOpCodeRawTsv) remove-cr.sh $(this)
-	./remove-cr.sh $< | head -n 48 > $@
+	./remove-cr.sh $< | head -n 69 > $@
 
 $(vfOpCodeRawTsv):
 	@ echo "$$vfOpCodeHelp"
@@ -78,6 +78,12 @@ clean:
 .PHONY: CLEAN
 CLEAN: clean
 	rm -rf $(vfOpCodeRawTsv) $(vfSummaryTsv)
+
+.PHONY: help
+help:
+	@ echo "$$vfSummaryTsvHelp"
+	@ echo
+	@ echo "$$vfOpCodeHelp"
 
 .PHONY: list
 list:

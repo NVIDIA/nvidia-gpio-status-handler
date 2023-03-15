@@ -473,7 +473,8 @@ class DeviceIdPattern
      * @brief Return the list of values allowed at the corresponding input axis
      *
      * For example, the domain of pattern "NVSwitch_[0-3]/Ports/NVLink_[0-39]"
-     * along the dimension 1 is '{0, 1, 2, ..., 39}'.
+     * along the dimension 1 is '{0, 1, 2, ..., 39}'. The resulting set is
+     * sorted ascendingly.
      */
     std::vector<unsigned> dimDomain(unsigned axis) const;
 

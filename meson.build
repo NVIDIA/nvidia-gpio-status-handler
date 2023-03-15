@@ -90,6 +90,7 @@ aml_dependencies += sdbusplus_dep
 aml_dependencies += phosphor_logging_dep
 #aml_dependencies += dependency('glib-2.0')
 aml_dependencies += dependency('threads')
+aml_dependencies += meson.get_compiler('cpp').find_library('pthread')
 aml_dependencies += meson.get_compiler('cpp').find_library('rt')
 
 if cxx.has_header('nlohmann/json.hpp')
@@ -151,6 +152,7 @@ srcfiles_unittest = [
     'test/device_id_test.cpp',
     'test/event_detection_test.cpp',
     'test/event_test.cpp',
+    'test/tests_common_defs.cpp',
     'test/json_proc_test.cpp',
     'test/propertyvalue_string_test.cpp',
     'test/propertyvalue_variant_test.cpp',
@@ -158,6 +160,7 @@ srcfiles_unittest = [
     'test/util_test.cpp']
 
 amllib_sources = [
+    'src/aml_config_schemas.cpp',
     'src/check_accessor.cpp',
     'src/config_parser.cpp',
     'src/dat_traverse.cpp',
@@ -165,10 +168,12 @@ amllib_sources = [
     'src/dbus_accessor.cpp',
     'src/device_id.cpp',
     'src/device_util.cpp',
+    'src/diagnostics.cpp',
     'src/event_detection.cpp',
     'src/event_handler.cpp',
     'src/event_info.cpp',
     'src/json_proc.cpp',
+    'src/json_schema.cpp',
     'src/log.cpp',
     'src/message_composer.cpp',
     'src/message_dispatcher.cpp',

@@ -359,7 +359,7 @@ class EventDetection : public object::Object
         {
             for (auto& event : eventPerDevType.second)
             {
-                auto deviceType = event.getStrigifiedDeviceType();
+                auto deviceType = event.getStringifiedDeviceType();
                 std::stringstream ss;
                 ss << "\n\tevent.event: " << event.event
                    << "\n\tevent.deviceType: " << event.getMainDeviceType()
@@ -376,10 +376,12 @@ class EventDetection : public object::Object
                  *     2.1 event.accessor reads its data
                  */
                 const auto& trigger = acc;
+                bool checkPerformed = false;
                 if (!event.trigger.isEmpty() && event.trigger == trigger)
                 {
                     data_accessor::CheckAccessor triggerCheck(deviceType);
                     const auto& accessor = event.trigger;
+                    checkPerformed = true;
                     if (triggerCheck.check(accessor, trigger))
                     {
                         data_accessor::CheckAccessor accCheck(deviceType);
@@ -402,35 +404,31 @@ class EventDetection : public object::Object
                 {
                     data_accessor::CheckAccessor accCheck(deviceType);
                     const auto& accessor = event.accessor;
+                    checkPerformed = true;
                     if (accCheck.check(accessor, trigger))
                     {
                         eventList.push_back(std::make_pair(
                             &event, accCheck.getAssertedDevices()));
                         continue;
                     }
-                    else
+                }
+                if (!event.recovery_accessor.isEmpty() && checkPerformed)
+                {
+                    log_dbg("Checking content of events detected map\n");
+                    for (const auto& e : eventsDetected)
                     {
-                        if (!event.recovery_accessor.isEmpty())
+                        log_dbg("Event + devtype in event map: %s\n",
+                                e.first.c_str());
+                        for (const auto& dev : e.second)
                         {
-                            log_dbg(
-                                "Checking content of events detected map\n");
-                            for (const auto& e : eventsDetected)
-                            {
-                                log_dbg("Event + devtype in event map: %s\n",
-                                        e.first.c_str());
-                                for (const auto& dev : e.second)
-                                {
-                                    log_dbg(
-                                        "Dev in map for event+devtype %s: %s\n",
-                                        e.first.c_str(), dev.c_str());
-                                }
-                            }
-                            log_dbg(
-                                "Recovering from property-changed signal fault %s\n",
-                                event.event.c_str());
-                            recoverFromFault(event.event, event.getMainDeviceType());
+                            log_dbg("Dev in map for event+devtype %s: %s\n",
+                                    e.first.c_str(), dev.c_str());
                         }
                     }
+                    log_dbg(
+                        "Recovering from property-changed signal fault %s\n",
+                        event.event.c_str());
+                    recoverFromFault(event.event, event.getMainDeviceType());
                 }
                 log_dbg("skipping event : %s\n", event.event.c_str());
             }

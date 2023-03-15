@@ -1,4 +1,5 @@
 amllib_sources = [
+    'aml_config_schemas.cpp',
     'check_accessor.cpp',
     'config_parser.cpp',
     'dat_traverse.cpp',
@@ -6,10 +7,12 @@ amllib_sources = [
     'dbus_accessor.cpp',
     'device_id.cpp',
     'device_util.cpp',
+    'diagnostics.cpp',
     'event_detection.cpp',
     'event_handler.cpp',
     'event_info.cpp',
     'json_proc.cpp',
+    'json_schema.cpp',
     'log.cpp',
     'message_composer.cpp',
     'message_dispatcher.cpp',
@@ -51,6 +54,7 @@ oobamld = executable(
         sdbusplus_dep,
         sdeventplus_dep,
         phosphor_logging_dep,
+        meson.get_compiler('cpp').find_library('pthread'),
         meson.get_compiler('cpp').find_library('rt')
     ],
     install: true,
