@@ -275,7 +275,7 @@ function monitor_main()
   local devices_file="$1"
   #echo "monitor from file mode"
   if [ ! -f "$devices_file" ]; then
-    >&2 echo "Error: [$devices_file] not found!"
+    >&2 echo "<3>Error: [$devices_file] not found!"
     return 2
   fi
   local devices_to_check=$(cat "$devices_file")
@@ -292,7 +292,7 @@ function monitor_main()
     main "$devname" "$propname" "$opcode"
     local device_rc=$?
     if [ "$device_rc" -ne 0 ]; then
-      >&2 echo "Error: check for [$devname $propname $opcode] failed, rc=$device_rc"
+      >&2 echo "<3>Error: check for [$devname $propname $opcode] failed, rc=$device_rc"
       failed_device_rc=$device_rc
     fi
   done
@@ -321,11 +321,11 @@ if [ "$1"  = "--monitor-from-file" ]; then
   # with rc=1 in monitor mode, which is used by the systemd unit file to ensure
   # the service does not eventually get marked as failed and stop restarting.
   if [ "$#" -ne 2 ]; then
-    >&2 echo "Wrong number of arguments in monitor mode!"
+    >&2 echo "<3>Wrong number of arguments in monitor mode!"
     exit 2
   fi
   if [ ! -f "$2" ]; then
-    >&2 echo "Path to devices file is not a file! (specified: $2)"
+    >&2 echo "<3>Path to devices file is not a file! (specified: $2)"
     exit 2
   fi
   monitor_main "$2"
