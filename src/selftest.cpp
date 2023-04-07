@@ -6,6 +6,7 @@
 #include "selftest.hpp"
 
 #include "dbus_accessor.hpp"
+#include "util.hpp"
 
 #include <boost/algorithm/string.hpp>
 #include <boost/asio.hpp>
@@ -215,6 +216,7 @@ aml::RcCode Selftest::perform(const dat_traverse::Device& dev,
                               ReportResult& reportRes,
                               std::vector<std::string> layersToIgnore)
 {
+    shortlog_dbg(<< "selftest: device visited: '" << dev.name << "'");
     if (isDeviceCached(dev.name, reportRes))
     {
         return aml::RcCode::succ; /* early exit, non unique device test */
@@ -292,7 +294,7 @@ aml::RcCode Selftest::perform(const dat_traverse::Device& dev,
             }
             else
             {
-                acc.read();
+                acc.read(dev.name);
                 fillTpRes(tmpTestPointResult, testPoint.expectedValue,
                           acc.getDataValue(),  tp.first);
             }
