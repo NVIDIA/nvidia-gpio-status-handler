@@ -35,7 +35,7 @@ DeviceType::DeviceType(const std::string& type)
     set(type);
 }
 
-DeviceType::types DeviceType::get()
+DeviceType::types DeviceType::get() const
 {
     return type;
 }
@@ -180,13 +180,14 @@ void Device::printTree(const std::map<std::string, dat_traverse::Device>& m)
 Device::Device(const std::string& name)
 {
     this->name = name;
+    this->testpointCount = 0;
     this->type = std::string("unknown");
 }
 
 Device::Device(const std::string& name, const json& j)
 {
     this->name = name;
-
+    this->testpointCount = 0;
 #if 1
     if (j.contains("type")) // temporary UT regress workaround
     {
@@ -243,6 +244,7 @@ Device::Device(const std::string& name, const json& j)
             std::string name = point["name"].get<std::string>();
             testPoints.insert(
                 std::pair<std::string, dat_traverse::TestPoint>(name, tp));
+            this->testpointCount++;
         }
 
         dat_traverse::TestLayer testLayer;
@@ -287,7 +289,7 @@ std::vector<std::string> Device::getTestLayerAssociations(
     return result;
 }
 
-DeviceType::types Device::getType()
+DeviceType::types Device::getType() const
 {
     return type.get();
 }

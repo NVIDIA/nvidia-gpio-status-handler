@@ -15,6 +15,7 @@
 #include <ostream>
 #include <string>
 #include <vector>
+#include <chrono>
 
 namespace selftest
 {
@@ -154,7 +155,7 @@ class Selftest : public event_handler::EventHandler
                          const dbus::utility::ManagedObjectType& result) const;
 
     /**
-     * @brief Updates device health on the DBUS in GpuMgr tree
+     * @brief Updates device health on the DBUS
      *
      * @param[in] device - name of device
      * @param[in] health - health status of device
@@ -250,9 +251,72 @@ class Selftest : public event_handler::EventHandler
     static bool evaluateDevice(const DeviceResult& deviceResult);
 
   private:
+    inline bool isDeviceRegular(const dat_traverse::Device& dev)
+    {
+        return dev.getType() == dat_traverse::DeviceType::types::REGULAR;
+    }
+
     /** @brief Internal DAT reference. **/
     const std::map<std::string, dat_traverse::Device>& _dat;
 };
+
+#ifdef PROFILING_SELFTEST_AND_RECOVERY_FLOW
+    #define PROFILING_SWITCH(x)   x
+    /**
+     * @brief intended use is to create object (which latches start time) and 
+     * let it end its scope to print profiling data. More timepoints can be 
+     * added in the same scope with labels
+     */
+    class TsLatcher
+    {
+      public:
+        TsLatcher(std::string name, std::string startingLabel = "start",
+          std::string exitingLabel = "exit") : instanceName(name), 
+          startLabel(startingLabel), exitLabel(exitingLabel)
+        {
+            addTimepoint(startLabel);
+        }
+
+        ~TsLatcher() 
+        {
+            addTimepoint(exitLabel);
+            printSummary();
+        }
+
+      public:
+        void addTimepoint(std::string label)
+        {
+            timepoints.push_back(std::make_pair(label, 
+                                std::chrono::high_resolution_clock::now()));
+        }
+
+        void printSummary()
+        {
+            for (unsigned int i = 0; i < (timepoints.size() - 1); i++)
+            {
+                auto t1 = timepoints[i].second;
+                auto t2 = timepoints[i+1].second;
+                auto ms_int = std::chrono::duration_cast<
+                                            std::chrono::milliseconds>(t2 - t1);
+                std::stringstream ss;
+                ss << instanceName << ": " << timepoints[i].first << " <-> " 
+                      << timepoints[i+1].first << " took " << ms_int.count() 
+                      << "ms";
+                log_err("%s\n", ss.str().c_str());
+            }
+        }
+
+      private:
+        std::vector<std::pair<std::string, 
+              decltype(std::chrono::high_resolution_clock::now())>> timepoints;
+        std::string instanceName;
+        std::string startLabel;
+        std::string exitLabel;
+    };
+#else
+    #define PROFILING_SWITCH(x)
+#endif   // #if PROFILE_SELFTEST_AND_RECOVERY_FLOW
+
 
 } // namespace selftest
 

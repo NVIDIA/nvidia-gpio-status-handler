@@ -217,9 +217,13 @@ aml::RcCode Selftest::perform(const dat_traverse::Device& dev,
                               std::vector<std::string> layersToIgnore)
 {
     shortlog_dbg(<< "selftest: device visited: '" << dev.name << "'");
-    if (isDeviceCached(dev.name, reportRes))
+ 
+    bool shouldSkip = !isDeviceRegular(dev) && !dev.hasTestpoints();
+    if (isDeviceCached(dev.name, reportRes) || shouldSkip)
     {
-        return aml::RcCode::succ; /* early exit, non unique device test */
+        shortlog_dbg(<< "selftest: skipping device: '" << dev.name << 
+                "' reason: " << (shouldSkip ? "optimized" : "already tested"));
+        return aml::RcCode::succ;
     }
 
     auto fillTpRes = [](selftest::TestPointResult& tp,
@@ -243,6 +247,7 @@ aml::RcCode Selftest::perform(const dat_traverse::Device& dev,
         }
     };
 
+    PROFILING_SWITCH(selftest::TsLatcher TS("selftest-perform-" + dev.name)); 
     auto& availableLayers = dev.test;
     DeviceResult tmpDeviceReport;
     /* Important, preinsert new device test to detect recursed device. */
@@ -308,6 +313,7 @@ aml::RcCode Selftest::perform(const dat_traverse::Device& dev,
 aml::RcCode Selftest::performEntireTree(ReportResult& reportRes,
                                         std::vector<std::string> layersToIgnore)
 {
+    PROFILING_SWITCH(selftest::TsLatcher TS("selftest-perform-entire-tree")); 
     for (auto& dev : _dat)
     {
         if (perform(dev.second, reportRes, layersToIgnore) != aml::RcCode::succ)
@@ -541,6 +547,7 @@ aml::RcCode RootCauseTracer::process([
         return aml::RcCode::error;
     }
 
+    PROFILING_SWITCH(selftest::TsLatcher TS("RootCauseTracer-proces-" + problemDevice)); 
     selftest::ReportResult completeReportRes;
     selftest::Selftest selftester("rootCauseSelftester", _dat);
     std::string rootCauseCandidateName{};
@@ -557,12 +564,16 @@ aml::RcCode RootCauseTracer::process([
         return aml::RcCode::error;
     }
 
+    PROFILING_SWITCH(TS.addTimepoint("find root cause"));
+    
     if (findRootCause(problemDevice, completeReportRes, event,
                       rootCauseCandidateName))
     {
         updateRootCause(_dat.at(problemDevice), _dat.at(rootCauseCandidateName),
                         selftester);
     }
+
+    PROFILING_SWITCH(TS.addTimepoint("generate report"));
 
     selftest::Report reportGenerator;
     if (!reportGenerator.generateReport(completeReportRes))

@@ -375,6 +375,8 @@ TEST(selftestTest, doPerformEntireTree)
     jbaseboard["association"] += "GPU3";
     jbaseboard["association"] += "NVSwitch0";
     jbaseboard["association"] += "NVSwitch0";
+    /* if no type and no testpoint it would be skipped breaking report size */
+    jbaseboard["power_rail"] = {json_testpoint_template()};
 
     std::list<std::string> devs = {
         "GPU0",      "GPU1",     "GPU2",     "GPU3", "NVSwitch0",

@@ -73,7 +73,7 @@ class DeviceType
     {}
     DeviceType(const std::string& type);
 
-    DeviceType::types get();
+    DeviceType::types get() const;
     void set(const std::string& type);
 
     operator std::string() const;
@@ -155,7 +155,7 @@ class Device
     /**
      * @brief Return information about the type of this generalized device
      */
-    DeviceType::types getType();
+    DeviceType::types getType() const;
 
     /**
      * @brief Return a dbus path to be used in event logs when
@@ -189,11 +189,23 @@ class Device
      */
     bool canSetHealthOnDbus() const;
 
+    /**
+     * @brief getter for testpoints presence
+     * @return true - has tesptoints defined, false - no testpoints found
+     */
+    bool hasTestpoints() const
+    {
+        return (this->testpointCount > 0);
+    }
+
     explicit Device(const std::string& s);
     Device(const std::string& s, const json& j);
     ~Device();
 
   private:
+    /** @brief Helper counter of test points not to calculate them over again 
+     *         as they're static after loading from config file **/
+    unsigned int testpointCount;
 };
 
 } // namespace dat_traverse

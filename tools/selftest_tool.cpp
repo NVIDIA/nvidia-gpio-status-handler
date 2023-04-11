@@ -169,20 +169,7 @@ void updateDevicesHealthBasedOnReport(
               << reportResult.size() << " devices.\n";
 
     auto bus = sdbusplus::bus::new_default_system();
-    dbus::utility::ManagedObjectType result;
-    try
-    {
-        dbus::DelayedMethod method(
-            bus, "xyz.openbmc_project.Logging", "/xyz/openbmc_project/logging",
-            "org.freedesktop.DBus.ObjectManager", "GetManagedObjects");
-        auto reply = method.call();
-        reply.read(result);
-    }
-    catch (const sdbusplus::exception::exception& e)
-    {
-        logs_err(" Dbus Error: %s\n", e.what());
-        throw std::runtime_error(e.what());
-    }
+
     for (auto& dev : reportResult)
     {
         std::string deviceHealth = goodHealth;
@@ -190,9 +177,29 @@ void updateDevicesHealthBasedOnReport(
         {
             logs_err("%s unhealthy - failed selftest.\n", dev.first.c_str());
             deviceHealth = badHealth;
-        } else {
+        }
+        else
+        {
             logs_err("%s healthy. Resolving associated log(s) if found\n", dev.first.c_str());
-            selftest.resolveLogEntry(dev.first, result);
+
+            try
+            {
+                dbus::utility::ManagedObjectType result;
+                dbus::DelayedMethod method(
+                bus, "xyz.openbmc_project.Logging", "/xyz/openbmc_project/logging",
+                "xyz.openbmc_project.Logging.Namespace", "GetAll");
+                method.append(dev.first);
+                method.append("xyz.openbmc_project.Logging.Namespace.ResolvedFilterType.Unresolved");
+                auto reply = method.call();
+                reply.read(result);
+
+                selftest.resolveLogEntry(dev.first, result);
+            }
+            catch (const sdbusplus::exception::exception& e)
+            {
+                logs_err(" Dbus Error: %s\n", e.what());
+                throw std::runtime_error(e.what());
+            }
         }
         std::cout << "Setting health: " << dev.first << " = " << deviceHealth
                   << "\n";
@@ -200,12 +207,15 @@ void updateDevicesHealthBasedOnReport(
     }
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief Entry Point
  */
 int main(int argc, char* argv[])
 {
+    PROFILING_SWITCH(selftest::TsLatcher TS("selftest-tool-timing"));
+
     int rc = 0;
     try
     {
@@ -240,6 +250,8 @@ int main(int argc, char* argv[])
     selftest::ReportResult reportResult;
     aml::RcCode result = aml::RcCode::succ;
 
+    PROFILING_SWITCH(TS.addTimepoint("initialized"));
+
     try
     {
         if (configuration.targetDevice.size())
@@ -257,12 +269,16 @@ int main(int argc, char* argv[])
         std::cerr << e.what() << '\n';
     }
 
+    PROFILING_SWITCH(TS.addTimepoint("selftest_finished"));
+
     if (result != aml::RcCode::succ)
     {
         return -1;
     }
 
     updateDevicesHealthBasedOnReport(selftest, reportResult);
+
+    PROFILING_SWITCH(TS.addTimepoint("health_updated_&_log_resolved"));
 
     selftest::Report reportGenerator;
     if (!reportGenerator.generateReport(reportResult))
@@ -273,6 +289,8 @@ int main(int argc, char* argv[])
 
     std::ofstream ofile(configuration.report);
     ofile << reportGenerator;
+
+    PROFILING_SWITCH(TS.addTimepoint("report_file_written"));
 
     return 0;
 }

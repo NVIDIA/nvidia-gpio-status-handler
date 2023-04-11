@@ -357,6 +357,7 @@ int main(int argc, char* argv[])
 
     auto thread = std::make_unique<std::thread>([rep_res, selftest,
                                                  eventDetection]() mutable {
+        PROFILING_SWITCH(selftest::TsLatcher TS("bootup-selftest")); 
         logs_wrn("started bootup selftest\n");
         ThreadpoolGuard guard(event_detection::threadpoolManager.get());
         if (!guard.was_successful())

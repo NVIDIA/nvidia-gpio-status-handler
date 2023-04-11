@@ -6,3 +6,5 @@ option ('tests', type : 'feature', value : 'enabled',
         description : 'Enable Unit tests for oobaml')
 option ('log_elapsed_time', type : 'feature', value : 'disabled',
         description : 'Enable generation of the Elpased time logs')
+option('profile_selftest_and_recovery', type : 'feature', value : 'disabled',
+        description : 'Enable to see time profiling logs of selftest/recovery')

@@ -221,3 +221,69 @@ TEST(DatTraverseTest, gettingAssociations)
     EXPECT_EQ(childVecTps[3], retimer0.name);
     EXPECT_EQ(childVecTps[4], hsc8.name);
 }
+
+TEST(DatTraverseTest, testTypeAndCount)
+{
+    /*  GPU0 no TP type regular
+        GPU1 5 TP type regular
+        GPU2 no type
+        GPU3_NVLINK_2 type port
+    */
+    nlohmann::json j;
+    j["power_rail"] = nlohmann::json::array();
+    j["erot_control"] = nlohmann::json::array();
+    j["pin_status"] = nlohmann::json::array();
+    j["interface_status"] = nlohmann::json::array();
+    j["firmware_status"] = nlohmann::json::array();
+    j["protocol_status"] = nlohmann::json::array();
+
+    nlohmann::json jDevTp;
+    jDevTp["name"] = "DUMMY";
+    jDevTp["expected_value"] = "pass";
+    jDevTp["accessor"]["type"] = "DEVICE";
+    jDevTp["accessor"]["device_name"] = "DUMMY";
+
+    /* gpu0 no tp configured type regular */
+    nlohmann::json jgpu0 = j;
+    jgpu0["name"] = "GPU0";
+    jgpu0["type"] = "regular";
+    jgpu0["association"] = nlohmann::json::array();
+    dat_traverse::Device gpu0("GPU0", jgpu0);
+
+    /* gpu1 3 tp configured type regular */
+    nlohmann::json jgpu1 = j;
+    jgpu1["name"] = "GPU1";
+    jgpu1["type"] = "regular";
+    jgpu1["association"] = nlohmann::json::array();
+
+    jDevTp["name"] = "DUMMY_NAME1";
+    jgpu1["power_rail"] += jDevTp;
+    jDevTp["name"] = "DUMMY_NAME2";
+    jgpu1["interface_status"] += jDevTp;
+    jDevTp["name"] = "DUMMY_NAME3";
+    jgpu1["protocol_status"] += jDevTp;
+    dat_traverse::Device gpu1("GPU1", jgpu1);
+
+    /* gpu2 no type */
+    nlohmann::json jgpu2 = j;
+    jgpu2["name"] = "GPU2";
+    // jgpu2["type"] = "regular";
+    jgpu2["association"] = nlohmann::json::array();
+    dat_traverse::Device gpu2("GPU2", jgpu2);
+
+    /* gpu3 type port */
+    nlohmann::json jgpu3 = j;
+    jgpu3["name"] = "GPU_SXM_1/NVLink_0";
+    jgpu3["type"] = "port";
+    jgpu3["association"] = nlohmann::json::array();
+    dat_traverse::Device gpu3("GPU3", jgpu3);
+
+    EXPECT_EQ(gpu0.hasTestpoints(), false);
+    EXPECT_EQ(gpu1.hasTestpoints(), true);
+    EXPECT_EQ(gpu2.hasTestpoints(), false);
+    EXPECT_EQ(gpu3.hasTestpoints(), false);
+    EXPECT_EQ(gpu0.getType(), dat_traverse::DeviceType::types::REGULAR);
+    EXPECT_EQ(gpu1.getType(), dat_traverse::DeviceType::types::REGULAR);
+    EXPECT_EQ(gpu2.getType(), dat_traverse::DeviceType::types::UNKNOWN_TYPE);
+    EXPECT_EQ(gpu3.getType(), dat_traverse::DeviceType::types::PORT);
+}

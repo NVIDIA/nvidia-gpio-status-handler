@@ -13,6 +13,7 @@
 #include "object.hpp"
 #include "pc_event.hpp"
 #include "threadpool_manager.hpp"
+#include "selftest.hpp"
 
 #include <boost/container/flat_map.hpp>
 #include <dbus_log_utils.hpp>
@@ -25,6 +26,7 @@
 #include <string>
 #include <thread>
 #include <variant>
+#include <string> 
 
 #ifndef PROPERTIESCHANGED_QUEUE_SIZE
 #define PROPERTIESCHANGED_QUEUE_SIZE 100
@@ -278,6 +280,10 @@ class EventDetection : public object::Object
             throw std::runtime_error(e.what());
         }
 
+        PROFILING_SWITCH(selftest::TsLatcher TS("updateDeviceHealthAndResolve-" 
+                        + devId + "-" + eventName + "-logsNumber-" + 
+                        std::to_string(result.size())));
+
         if (eventName.length() == 0)
         {
             recoverFromPowerCycleEvents(devId, result, bus);
@@ -434,6 +440,8 @@ class EventDetection : public object::Object
                         log_dbg(
                             "Recovering from property-changed signal fault %s\n",
                             event.event.c_str());
+                        
+                        PROFILING_SWITCH(selftest::TsLatcher TS("event-detection-recovery-flow-" + event.event + "-" + event.getMainDeviceType())); 
                         recoverFromFault(event.event, event.getMainDeviceType());
                     }
                 }
