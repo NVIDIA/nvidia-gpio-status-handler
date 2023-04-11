@@ -132,7 +132,7 @@ profile_i2c_bus=""
 profile_i2c_addr=""
 profile_i2c_method=""
 
-while IFS=',' read -r dev bus addr method ignore
+while IFS=',' read -r dev bus addr method count ignore
 do
     dbg "$dev $bus $addr $method $ignore"
 
@@ -145,6 +145,11 @@ do
         profile_i2c_bus=$bus
         profile_i2c_addr=$addr
         profile_i2c_method=$method
+        profile_i2c_count=1
+
+        if [[ -n "$count" ]]; then
+            profile_i2c_count=$count
+        fi
 
         # this is last field in csv and there is unprintable character breaking
         # the logic, removing linebreak fixes the problem
@@ -160,7 +165,7 @@ if [ -z "$profile_i2c_bus" ] || [ -z "$profile_i2c_addr" ]; then
 fi
 
 if [ "$profile_i2c_method" = "get" ]; then
-    i2cCmd="i2cget -y $profile_i2c_bus $profile_i2c_addr 0x00"
+    i2cCmd="i2ctransfer -y $profile_i2c_bus w1@$profile_i2c_addr 0x00 r$profile_i2c_count"
 elif [ "$profile_i2c_method" = "detect" ]; then
     i2cCmd="i2cdetect -y $profile_i2c_bus"
 else
@@ -178,14 +183,49 @@ elif [ $TEST_RUN -eq 1 ]; then
     output=$ARTIFICIAL_OUTPUT
     rc=$ARTIFICIAL_RC_CODE
 else
-    output=$($i2cCmd); rc=$?
+    output=$($i2cCmd 2>&1); rc=$?
 fi
 
 if [ $rc -ne 0 ]; then
-    >&2 echo "Error: cmd failed ($i2cCmd) rc=$rc!"
-    echo "link-down; rc $rc"
+    output=$(echo $output | tr '[:upper:]' '[:lower:]')
+    ERROR=$(echo $output | cut -d ":" -f 1)
+    ERROR_MSG=$(echo $output | cut -d ":" -f 2 | sed -e 's/^[[:space:]]*//')
+    ERRNO_STR=$(echo $output | cut -d ":" -f 3 | sed -e 's/^[[:space:]]*//')
+    ADDITIONAL_OUTPUT="$ERRNO_STR"
+
+    case $ERRNO_STR in
+        *"no such file or directory"*)
+            rc=2
+            ;;
+        *"protocol error"*)
+            rc=101
+            ;;
+        *"no such device or address"*)
+            rc=2
+            ;;
+        *"input/output error"*)
+            rc=102
+            ;;
+        *"connection timed out"*)
+            rc=103
+            ;;
+        *"resource temporarily unavailable"*)
+            rc=104
+            ;;
+        *)
+            rc=100
+            ADDITIONAL_OUTPUT="$output"
+            ;;
+    esac
+
+    if (( $rc < 100 )); then
+        >&2 echo "Error: cmd failed ($i2cCmd) rc=$rc output ($output)"
+        exit $rc
+    else
+        echo "link-down; $ADDITIONAL_OUTPUT"
+        exit 0
+    fi  
 else
     echo "link-up"
+    exit 0
 fi
-
-exit $rc
