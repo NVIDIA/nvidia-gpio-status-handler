@@ -629,6 +629,12 @@ std::string EventNode::getStringifiedDeviceType() const
     return boost::algorithm::join(this->deviceTypes, "/");
 }
 
+util::DeviceIdData EventNode::getDataDeviceType() const
+{
+    device_id::PatternIndex indexTuple = *deviceIndexTuple;
+    return util::DeviceIdData(getStringifiedDeviceType(), indexTuple);
+}
+
 std::string EventNode::getMainDeviceType() const
 {
     if (deviceTypes.size() < 1)

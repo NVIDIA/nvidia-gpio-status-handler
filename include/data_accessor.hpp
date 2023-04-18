@@ -132,14 +132,15 @@ class DataAccessor
      * @return true
      * @return false
      */
-    bool operator==(const DataAccessor& other)
+    bool operator==(const DataAccessor& other) const
     {
-        bool ret = isValid(other._acc) && _acc[typeKey] == other._acc[typeKey];
+        bool ret = isValid(_acc) && isValid(other._acc) &&
+                   _acc[typeKey] == other._acc[typeKey];
         if (ret == true)
         {
             for (auto& [key, val] : _acc.items())
             {
-                if (key == typeKey || key == checkKey) // skip check key
+                if (key == typeKey || key == checkKey || key == nameKey) // skip check key
                 {
                     continue;
                 }
@@ -269,14 +270,14 @@ class DataAccessor
      * @return std::string
      */
     std::string read(const std::string& device = std::string{""},
-                     const std::string& deviceType = std::string{""})
+                     const util::DeviceIdData* devIdData = nullptr)
     {
         log_elapsed();
         log_dbg("device='%s'\n", device.c_str());
 
         if (isTypeDbus() == true)
         {
-            readDbus(device);
+            readDbus(device, devIdData);
         }
         else if (isTypeDevice() == true)
         {
@@ -284,7 +285,7 @@ class DataAccessor
         }
         else if (isTypeCmdline() == true)
         {
-            runCommandLine(device, deviceType);
+            runCommandLine(device, devIdData);
         }
         else if (isTypeDeviceCoreApi() == true)
         {
@@ -585,6 +586,15 @@ class DataAccessor
     util::DeviceIdMap
     getCmdLineRangeArguments(const std::string& deviceType) const;
 
+    /**
+     * @brief setDataValue() just sets a value
+     * @param value
+     */
+    inline void setDataValue(const PropertyValue& value)
+    {
+        _dataValue = value;
+    }
+
  private:
     /**
      * @brief clearData() clear the _dataValue if it has a previous value
@@ -601,7 +611,8 @@ class DataAccessor
      *
      * @return true if the read operation was successful, false otherwise
      */
-    bool readDbus(const std::string& device);
+    bool readDbus(const std::string& device,
+                  const util::DeviceIdData* devIdData = nullptr);
 
     /**
      * Runs commands from Accessor type CMDLINE
@@ -615,7 +626,7 @@ class DataAccessor
      *       }
      */
     bool runCommandLine(const std::string& device = std::string{""},
-                        const std::string& devType = std::string{""});
+                        const util::DeviceIdData* devIdData = nullptr);
 
     /**
      * @brief   just initializes the _dataValue creating a PropertyVariant

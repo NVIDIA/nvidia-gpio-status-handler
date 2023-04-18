@@ -70,6 +70,39 @@
 namespace util
 {
 
+/**
+ * @brief The DeviceIdData keeps full information about event.device_type
+ */
+struct DeviceIdData
+{
+    /** full information about EventNode::device_type */
+    device_id::DeviceIdPattern pattern;
+    /** full index (multiple devices) from a device in @a devPattern */
+    device_id::PatternIndex index;
+
+    DeviceIdData() = default;
+
+    explicit DeviceIdData(const std::string& deviceType)
+        : pattern{device_id::DeviceIdPattern(deviceType)}
+    {
+        // Empty
+    }
+
+    explicit DeviceIdData(const std::string& deviceType,
+                          const device_id::PatternIndex& idx)
+        : pattern{device_id::DeviceIdPattern(deviceType)}, index(idx)
+    {
+      // Empty
+    }
+
+    explicit DeviceIdData(const device_id::DeviceIdPattern& ptrn,
+                          const device_id::PatternIndex& idx)
+        : pattern(ptrn), index(idx)
+    {
+        // Empty
+    }
+};
+
 constexpr int InvalidDeviceId = -1;
 
 constexpr auto RangeRepeaterIndicator = "()";
@@ -148,7 +181,7 @@ int getDeviceId(const std::string& deviceName,
 std::string
     replaceRangeByMatchedValue(const std::string& regxValue,
                                const std::string& matchedValue,
-                               const std::string& deviceType = std::string{""});
+                               const DeviceIdData* devIdData = nullptr);
 
 /**
  * @brief Print the vector @c vec to the output stream @c os (e.g. std::cout,
@@ -289,7 +322,9 @@ std::regex createRegexDigitsRange(const std::string& pattern);
  * @return an Object path without range if 'device' matches with 'objPath'
  *         otherwise returns 'objPath'
  */
-std::string introduceDeviceInObjectpath(const std::string& objPath,
-                                        const std::string& device);
+std::string
+    introduceDeviceInObjectpath(const std::string& objPath,
+                                const std::string& device,
+                                const DeviceIdData* devIdData = nullptr);
 
 } // namespace util

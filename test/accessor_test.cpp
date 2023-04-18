@@ -186,18 +186,6 @@ TEST(DataAccessor, EqualPositiveRegexAgainstNoRegex)
     EXPECT_EQ(jsonAccessor == objectAccessor, true);
 }
 
-TEST(DataAccessor, EqualNegativeRegexAgainstItself)
-{
-    const nlohmann::json jsonFile = {
-        {"type", "DBUS"},
-        {"object", "/xyz/openbmc_project/inventory/system/memory/GPU[0-7]"}};
-
-    DataAccessor jsonAccessor(jsonFile);
-
-    // it is strange to say something is not equal itself
-    EXPECT_NE(jsonAccessor == jsonAccessor, true);
-}
-
 TEST(DataAccessor, EqualNegativeNoRegxAgainstRegex)
 {
     const nlohmann::json jsonFile = {

@@ -534,6 +534,12 @@ class EventNode : public object::Object
     std::string getStringifiedDeviceType() const;
 
     /**
+     * @brief getDataDeviceType() returns util::DeviceIdData about device_type
+     * @return full event.device_type information
+     */
+    util::DeviceIdData getDataDeviceType() const;
+
+    /**
      * @brief Return the first element of @c deviceTypes
      */
     std::string getMainDeviceType() const;

@@ -69,7 +69,8 @@ InterfaceObjectsMap DataAccessor::getDbusInterfaceObjectsMap() const
     return ret;
 }
 
-bool DataAccessor::readDbus(const std::string& device)
+bool DataAccessor::readDbus(const std::string& device,
+                            const util::DeviceIdData* devIdData)
 {
     log_elapsed();
     clearData();
@@ -85,10 +86,9 @@ bool DataAccessor::readDbus(const std::string& device)
         std::string objPath = _acc[objectKey].get<std::string>();
         if (util::existsRange(objPath) == true && false == device.empty())
         {
-            // TODO improve using device_id language
-
             // apply the device into the "object" to replace the range
-            objPath = util::introduceDeviceInObjectpath(objPath, device);
+            objPath =
+                util::introduceDeviceInObjectpath(objPath, device, devIdData);
         }
         auto propVariant = dbus::readDbusProperty(
             objPath, _acc[interfaceKey], _acc[propertyKey]);
@@ -99,7 +99,7 @@ bool DataAccessor::readDbus(const std::string& device)
 }
 
 bool DataAccessor::runCommandLine(const std::string& device,
-                                  const std::string& devType)
+                                  const util::DeviceIdData* devIdData)
 {
     log_elapsed();
     clearData();
@@ -113,7 +113,7 @@ bool DataAccessor::runCommandLine(const std::string& device,
             if (device.empty() == false)
             {
                 // if args does not have range, it does nothing
-                args = util::replaceRangeByMatchedValue(args, device, devType);
+                args = util::replaceRangeByMatchedValue(args, device, devIdData);
             }
             else // expand the range inside args
             {
@@ -315,8 +315,9 @@ std::string DataAccessor::read(const event_info::EventNode& event)
         {
             return result;
         }
+        util::DeviceIdData devIdData = event.getDataDeviceType();
         // common DataAccessor::read() if attempts above failed
-        return read(event.device);
+        return read(event.device, &devIdData);
     }
     else
     if (isTypeDevice() || isTypeTest() || isTypeConst() || isTypeDeviceName())

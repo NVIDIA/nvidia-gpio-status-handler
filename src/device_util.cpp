@@ -50,17 +50,12 @@ device_id::PatternIndex
 determineDeviceIndex(const device_id::DeviceIdPattern& objPathPattern,
                      const std::string& objPath)
 {
-    device_id::PatternIndex  indexes{};
-    if (objPathPattern.dim() > 0)
+    auto indexes = objPathPattern.match(objPath);
+    if (indexes.size() > 0)
     {
-        auto indexList = objPathPattern.match(objPath);
-        if (indexList.size() > 1)
-        {
-            logs_err("more than one PatternIndex found on event\n");
-        }
-        indexes = indexList[0];
+        return indexes[0];
     }
-    return indexes;
+    return device_id::PatternIndex();
 }
 
 std::string

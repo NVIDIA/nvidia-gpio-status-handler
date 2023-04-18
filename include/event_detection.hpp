@@ -376,12 +376,10 @@ class EventDetection : public object::Object
                  *     2.1 event.accessor reads its data
                  */
                 const auto& trigger = acc;
-                bool checkPerformed = false;
                 if (!event.trigger.isEmpty() && event.trigger == trigger)
                 {
                     data_accessor::CheckAccessor triggerCheck(deviceType);
                     const auto& accessor = event.trigger;
-                    checkPerformed = true;
                     if (triggerCheck.check(accessor, trigger))
                     {
                         data_accessor::CheckAccessor accCheck(deviceType);
@@ -391,7 +389,12 @@ class EventDetection : public object::Object
                          *      for example the event "DRAM Contained ECC Error"
                          */
                         // redefines accessor
-                        const auto& accessor = event.accessor;
+                        auto accessor = event.accessor;
+                        if (accessor == trigger)
+                        {
+                            // avoids going again to dbus to get data
+                            accessor.setDataValue(trigger.getDataValue());
+                        }
                         if (accCheck.check(accessor, triggerCheck))
                         {
                             eventList.push_back(std::make_pair(
@@ -404,7 +407,6 @@ class EventDetection : public object::Object
                 {
                     data_accessor::CheckAccessor accCheck(deviceType);
                     const auto& accessor = event.accessor;
-                    checkPerformed = true;
                     if (accCheck.check(accessor, trigger))
                     {
                         eventList.push_back(std::make_pair(
@@ -412,23 +414,28 @@ class EventDetection : public object::Object
                         continue;
                     }
                 }
-                if (!event.recovery_accessor.isEmpty() && checkPerformed)
+                if (!event.recovery_accessor.isEmpty() &&
+                    event.recovery_accessor == trigger)
                 {
-                    log_dbg("Checking content of events detected map\n");
-                    for (const auto& e : eventsDetected)
+                    data_accessor::CheckAccessor recoveryCheck(deviceType);
+                    if (recoveryCheck.check(event.recovery_accessor, trigger))
                     {
-                        log_dbg("Event + devtype in event map: %s\n",
-                                e.first.c_str());
-                        for (const auto& dev : e.second)
+                        log_dbg("Checking content of events detected map\n");
+                        for (const auto& e : eventsDetected)
                         {
-                            log_dbg("Dev in map for event+devtype %s: %s\n",
-                                    e.first.c_str(), dev.c_str());
+                            log_dbg("Event + devtype in event map: %s\n",
+                                    e.first.c_str());
+                            for (const auto& dev : e.second)
+                            {
+                                log_dbg("Dev in map for event+devtype %s: %s\n",
+                                        e.first.c_str(), dev.c_str());
+                            }
                         }
+                        log_dbg(
+                            "Recovering from property-changed signal fault %s\n",
+                            event.event.c_str());
+                        recoverFromFault(event.event, event.getMainDeviceType());
                     }
-                    log_dbg(
-                        "Recovering from property-changed signal fault %s\n",
-                        event.event.c_str());
-                    recoverFromFault(event.event, event.getMainDeviceType());
                 }
                 log_dbg("skipping event : %s\n", event.event.c_str());
             }

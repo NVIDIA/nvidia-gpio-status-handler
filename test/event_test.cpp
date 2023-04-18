@@ -118,6 +118,12 @@ TEST(EventTelemtries, MakeCall)
     event_info::EventNode event("test event");
     event.loadFrom(j);
 
+    std::vector<std::string> deviceTypeList{{"GPU"}};
+    event.setDeviceTypes(deviceTypeList);
+
+    device_id::PatternIndex emptyIndex;
+    event.setDeviceIndexTuple(emptyIndex);
+
     auto telemetries =
         message_composer::MessageComposer::collectDiagData(event);
 

@@ -175,7 +175,7 @@ int getDeviceId(const std::string& deviceName, const std::string& range)
 
 std::string replaceRangeByMatchedValue(const std::string& regxValue,
                                        const std::string& matchedValue,
-                                       const std::string& deviceType)
+                                       const DeviceIdData* devIdData)
 {
     auto ret{regxValue};
     // only deviceType can be empty
@@ -189,9 +189,14 @@ std::string replaceRangeByMatchedValue(const std::string& regxValue,
     auto patternRange = std::get<1>(patternRangeInfo);
     if (false == patternRange.empty())
     {
-        auto deviceTypeRangeInfo = util::getMinMaxRange(deviceType);
+        std::string devType{""};
+        if (devIdData != nullptr)
+        {
+            devType = getFirstDeviceTypePattern(devIdData->pattern.pattern());
+        }
+        auto deviceTypeRangeInfo = util::getMinMaxRange(devType);
         auto deviceTypeRangeVec = std::get<0>(deviceTypeRangeInfo);
-        auto deviceId = util::getDeviceId(matchedValue, deviceType);
+        auto deviceId = util::getDeviceId(matchedValue, devType);
         while (false == patternRange.empty())
         {
             auto position = ret.find(patternRange);
@@ -433,6 +438,10 @@ void splitDeviceTypeForRegxSearch(const std::string& deviceType,
 bool matchRegexString(const std::string& regstr, const std::string& str)
 {
 #if 1 // using  device_id language, keept old code for reference
+    if (regstr == str)
+    {
+        return true;
+    }
     device_id::DeviceIdPattern pattern(regstr);
     return pattern.matches(str);
 #else
@@ -476,24 +485,27 @@ std::regex createRegexDigitsRange(const std::string& pattern)
 }
 
 std::string introduceDeviceInObjectpath(const std::string& objPath,
-                                        const std::string& device)
+                                        const std::string& device,
+                                        const DeviceIdData* devIdData)
 {
-    // TODO improve using device_id language
-    auto regEx = createRegexDigitsRange(device);
-    auto objPathWithoutRangeRepeated = revertRangeRepeated(objPath);
-    auto ret = std::regex_replace(objPathWithoutRangeRepeated, regEx, device);
-    if (ret == objPath || ret.empty() == true)
+    device_id::PatternIndex  deviceIndex;
+    if (devIdData == nullptr)
     {
-        int deviceId = getDeviceId(device);
-        device_id::PatternIndex  deviceIndex(deviceId);
-        device_id::DeviceIdPattern  objPattern(objPath);
-        ret = objPattern.eval(deviceIndex);
+        std::vector<std::string> deviceTypes;
+        boost::split(deviceTypes, device, boost::is_any_of("/"));
+        for (unsigned counter = 0; counter < deviceTypes.size(); ++counter)
+        {
+            deviceIndex.set(counter, getDeviceId(deviceTypes.at(counter)));
+        }
     }
-    if (ret.empty() == true)
+    else
     {
-        ret = objPath;
+        deviceIndex = devIdData->index;
     }
-    logs_dbg("ret=%s device=%s\n", ret.c_str(), device.c_str());
+    device_id::DeviceIdPattern  objPattern(objPath);
+    auto ret = objPattern.eval(deviceIndex);
+    logs_dbg("ret=%s device=%s objPath=%s\n", ret.c_str(), device.c_str(),
+             objPath.c_str());
     return ret;
 }
 

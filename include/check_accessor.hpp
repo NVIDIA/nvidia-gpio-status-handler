@@ -156,14 +156,6 @@ class CheckAccessor
     bool buildSingleAssertedDeviceName(const DataAccessor& dataAcc,
                                        const std::string& realDevice,
                                        const int deviceId);
-
-    /** @return the main (the first range) of a Event.device_type
-
-        It uses @a _deviceTypePattern which represents the Event.device_type
-           passed as parameter in the constructor
-    */
-    std::string getMainDeviceType() const;
-
   private:
     /**  @brief keep the status of the last performed check */
     CheckStatus _lastStatus;
@@ -181,12 +173,8 @@ class CheckAccessor
     /** that information comes from a previous check */
     std::string _triggerAssertedDevice;
 
-    /** real device index from Trigger (event multiple devices) */
-    device_id::PatternIndex _deviceIndexTuple;
-
-    /** Used to avoid creating this pattern multiple times for example
-     *  when calling @sa util::existsRange(), @sa util::expandDeviceRange() */
-    device_id::DeviceIdPattern _deviceTypePattern;
+    /** full information (pattern and indexes) about Event device_type */
+    util::DeviceIdData _devIdData;
 };
 
 } // namespace data_accessor
