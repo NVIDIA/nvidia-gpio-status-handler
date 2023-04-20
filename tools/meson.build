@@ -24,3 +24,5 @@ dbus_tester_bin = executable(
     ],
     install: false,
 )
+
+subdir('jtag')
