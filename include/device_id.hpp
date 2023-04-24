@@ -1,5 +1,7 @@
 #pragma once
 
+#include "printing_util.hpp"
+
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/split.hpp>
 
@@ -113,6 +115,10 @@ struct IndexedBracketMap
     template <typename StringRange>
     static IndexedBracketMap parse(const StringRange& range);
 
+    template <class CharT>
+    friend std::basic_ostream<CharT>& operator<<(std::basic_ostream<CharT>& os,
+                                                 const IndexedBracketMap& ibm);
+
     // marcinw:TODO:
     // ranges::input_range
     template <typename BracketMappingsRange>
@@ -186,46 +192,31 @@ class PatternIndex
     void normalize();
 };
 
-// PatternInputMapping ////////////////////////////////////////////////////////
+// PatternInputDomain ////////////////////////////////////////////////////////
 
-class PatternInputMapping
+class PatternInputDomain
 {
   public:
-    PatternInputMapping() : unspecified(true), valuesMapping(), indexToEntry()
-    {}
-    // marcinw:TODO: use move
-    PatternInputMapping(const std::map<unsigned, unsigned>& valuesMapping);
+    PatternInputDomain();
 
-    // marcinw:TODO: remove this operator and change to a name like
-    // 'keyAtPosition'
-    int operator[](int i) const;
+    template <typename Range>
+    PatternInputDomain(Range arguments);
+
     std::size_t size() const;
-    bool operator==(const PatternInputMapping& other) const;
+    int operator[](int i) const;
+    bool operator==(const PatternInputDomain& other) const;
 
-    bool isUnspecified() const
-    {
-        return unspecified;
-    }
-
-    bool contains(int elem) const
-    {
-        return unspecified || (elem >= 0 && valuesMapping.contains(elem));
-    }
-
-    unsigned eval(unsigned x) const;
+    bool isUnspecified() const;
+    bool contains(int elem) const;
 
     template <class CharT>
-    friend std::basic_ostream<CharT>&
-        operator<<(std::basic_ostream<CharT>& os,
-                   const PatternInputMapping& pim);
+    friend std::basic_ostream<CharT>& operator<<(std::basic_ostream<CharT>& os,
+                                                 const PatternInputDomain& pim);
 
   public:
-    bool unspecified;
-    // marcinw:TODO: stress that valuesMapping keys must be sorted for
-    // DeviceIdPattern::domain() to satisfy the ordering criterion (std::map
-    // sorts keys, but the implementation may (and should, honestly) change)
-    std::map<unsigned, unsigned> valuesMapping;
-    std::vector<unsigned> indexToEntry;
+    bool _unspecified;
+    // Values are sorted ascendingly
+    std::vector<unsigned> _domain;
 };
 
 // CartesianProductRange //////////////////////////////////////////////////////
@@ -235,7 +226,7 @@ class CartesianProductRange
 {
   public:
     explicit CartesianProductRange(
-        const std::vector<PatternInputMapping>& ranges) :
+        const std::vector<PatternInputDomain>& ranges) :
         ranges(ranges)
     {}
 
@@ -249,7 +240,7 @@ class CartesianProductRange
         using iterator_category = std::input_iterator_tag;
 
         iterator_t(unsigned masterIndex,
-                   const std::vector<PatternInputMapping>& ranges) :
+                   const std::vector<PatternInputDomain>& ranges) :
             masterIndex(masterIndex),
             ranges(ranges)
         {}
@@ -261,7 +252,7 @@ class CartesianProductRange
 
       private:
         unsigned masterIndex;
-        const std::vector<PatternInputMapping>& ranges;
+        const std::vector<PatternInputDomain>& ranges;
     };
 
     iterator_t begin() const;
@@ -278,9 +269,9 @@ class CartesianProductRange
     using range_rvalue_reference_t = PatternIndex&&;
 
   private:
-    std::vector<PatternInputMapping> ranges;
+    std::vector<PatternInputDomain> ranges;
 
-    static unsigned product(const std::vector<PatternInputMapping>& values);
+    static unsigned product(const std::vector<PatternInputDomain>& values);
 };
 
 // DeviceIdPattern ////////////////////////////////////////////////////////////
@@ -464,10 +455,7 @@ class DeviceIdPattern
      *
      * The dimension of "HMC" is 0.
      */
-    unsigned dim() const
-    {
-        return _inputMappings.size();
-    }
+    unsigned dim() const;
 
     /**
      * @brief Return the list of values allowed at the corresponding input axis
@@ -476,7 +464,7 @@ class DeviceIdPattern
      * along the dimension 1 is '{0, 1, 2, ..., 39}'. The resulting set is
      * sorted ascendingly.
      */
-    std::vector<unsigned> dimDomain(unsigned axis) const;
+    PatternInputDomain dimDomain(unsigned axis) const;
 
     template <class CharT>
     friend std::basic_ostream<CharT>& operator<<(std::basic_ostream<CharT>& os,
@@ -485,29 +473,6 @@ class DeviceIdPattern
     std::string pattern() const;
 
   public:
-    // marcinw:TODO: make private
-
-    /**
-     * @brief Given the mappings for brackets along with the mappings of input
-     * positions to bracket positions calculate the mappings for input, which
-     * are for the most part the same, but mapping consistency is done,
-     * unspecified inputs are handled, and indexing is fixed.
-     */
-    static std::vector<PatternInputMapping> calcInputMappings(
-        const std::vector<std::vector<unsigned>>& inputPossToBracketPoss,
-        const std::vector<std::map<unsigned, unsigned>>& bracketMappings);
-
-    static PatternInputMapping calcInputMapping(
-        unsigned inputPos, const std::vector<unsigned>& bracketPositions,
-        const std::vector<std::map<unsigned, unsigned>>& bracketMappings);
-
-    /**
-     * @brief
-     * Elements in the result are sorted ascendingly
-     */
-    static std::vector<std::vector<unsigned>> calcInputIndexToBracketPoss(
-        const std::vector<unsigned>& bracketPosToInputPos);
-
     /**
      * A primitve parser separating bracket contents and the texts
      * between them.
@@ -526,17 +491,74 @@ class DeviceIdPattern
 
   private:
     std::string _rawPattern;
-    // String views backed by _rawPattern, don't move above it in class
-    // definition
     std::vector<std::string> _patternNonBracketFragments;
-    std::vector<unsigned> _bracketPosToInputPos;
-    // marcinw:TODO: make sure it's normalized similar to PatternIndex
-    std::vector<PatternInputMapping> _inputMappings;
 
-    // Constraints:
-    // bracketPosToInputPos.size() + 1 == _patternNonBracketFragments.size()
-    // _bracketPosToInputPos contains only indexes 0 <= i < dim()
+    /** @brief Mapping of the bracket positions to input positions
+     *
+     * Eg. for "[0|9][0|9][|9][4|9]" that would be
+     *
+     * 0 -> 0
+     * 1 -> 0
+     * 2 -> 2
+     * 3 -> 4
+     *
+     * because:
+     *
+     *   v    v    v   v      input positions: 0, 0, 2 (implied), 4
+     * "[0|9][0|9][|9][4|9]"
+     *  ^---^^---^^--^^---^
+     *    0    1   2    3     bracket positions: 0, 1, 2, 3
+     *
+     * Constraints:
+     * bracketPosToInputPos.size() + 1 == _patternNonBracketFragments.size()
+     * _bracketPosToInputPos contains only indexes 0 <= i < dim()
+     */
+    std::vector<unsigned> _bracketPosToInputPos;
+
+    /**
+     * @brief Sets of values allowed at each input position
+     */
+    std::vector<PatternInputDomain> _patternInputDomains;
+
+    /**
+     * @brief Integer mapping for each of the bracket
+     *
+     * The domain is given by the bracket's input position. The values are
+     * specified per each bracket.
+     *
+     * For example, given the pattern
+     * "FPGA_SXM[0|1-8:0-7]_EROT_RECOV_L GPU_SXM_[0|1-8]" the
+     * _bracketInputMappings data structure would be
+     *
+     * _bracketInputMappings = vector{
+     *     [0]: map{ [1]: 0, [2]: 1, [3]: 2, [4]: 3,
+     *               [5]: 4, [6]: 5, [7]: 6, [8]: 7 },
+     *     [1]: map{ [1]: 1, [2]: 2, [3]: 3, [4]: 4,
+     *               [5]: 5, [6]: 6, [7]: 7, [8]: 8 }
+     * }
+     *
+     * Notice that the arguments for both mappings are the same (because both
+     * refer to the same input position 0), but the values are different. This
+     * allows for expressing shifted indexing.
+     */
+    std::vector<syntax::BracketMap> _bracketInputMappings;
 };
+
+// Helper functions ///////////////////////////////////////////////////////////
+
+PatternInputDomain
+    calcInputDomain(const std::vector<unsigned>& bracketPositions,
+                    const std::vector<syntax::BracketMap>& allBracketMappings);
+
+std::vector<PatternInputDomain> calcInputDomains(
+    const std::vector<std::vector<unsigned>>& inputPosToBracketPos,
+    const std::vector<syntax::BracketMap>& bracketMappings);
+
+/**
+ * @return Elements are sorted ascendingly
+ */
+std::vector<std::vector<unsigned>> calcInputIndexToBracketPoss(
+    const std::vector<unsigned>& bracketPosToInputPos);
 
 ///////////////////////////////////////////////////////////////////////////////
 //                              Implementations                              //
@@ -740,7 +762,41 @@ void IndexedBracketMap::fillImplicitInputPositions(
     }
 }
 
+template <class CharT>
+std::basic_ostream<CharT>& operator<<(std::basic_ostream<CharT>& os,
+                                      const IndexedBracketMap& ibm)
+{
+    using ::operator<<;
+    os << "(" << ibm.inputPosition << ": " << ibm.indexMap << ")";
+    return os;
+}
+
 } // namespace syntax
+
+// PatternInputDomain /////////////////////////////////////////////////////////
+
+template <typename Range>
+PatternInputDomain::PatternInputDomain(Range arguments) :
+    _unspecified(false), _domain(arguments.begin(), arguments.end())
+{
+    std::ranges::sort(_domain);
+}
+
+template <class CharT>
+std::basic_ostream<CharT>& operator<<(std::basic_ostream<CharT>& os,
+                                      const PatternInputDomain& pid)
+{
+    using ::operator<<;
+    if (pid._unspecified)
+    {
+        os << "PatternInputDomain([unspecified])";
+    }
+    else // ! pid._unspecified
+    {
+        os << "PatternInputDomain(_domain = '" << pid._domain << "')";
+    }
+    return os;
+}
 
 // PatternIndex ///////////////////////////////////////////////////////////////
 
@@ -757,6 +813,7 @@ void IndexedBracketMap::fillImplicitInputPositions(
  *   log_dbg("%s", ss.str().c_str());
  * @endcode
  **/
+
 template <class CharT>
 std::basic_ostream<CharT>& operator<<(std::basic_ostream<CharT>& os,
                                       const PatternIndex& pi)
@@ -789,12 +846,35 @@ void PatternIndex::printValueTo(int value, std::basic_ostream<CharT>& os)
 
 // DeviceIdPattern ////////////////////////////////////////////////////////////
 
+/**
+ * @brief Divide the given string into "passive" and "active" elements
+ *
+ * Logic best explained by example:
+ *
+ * "FPGA_SXM[0|1-8:0-7]_EROT_RECOV_L GPU_SXM_[0|1-8]"
+ *  ------------------------------------------------  str
+ *  --------           ----------------------       . texts
+ *           ---------                        -----   bracketContents
+ *
+ * The length of @c texts vector is always the length of bracketContents plus 1.
+ * If a bracket is found at the ends of the @c str then the @c texts will
+ * contain empty string as the last element. Similarly for the bracket at the
+ * very beginning of @c str.
+ *
+ * The symbols '[' and ']' are stripped and don't make their way to neither @c
+ * texts nor @c bracketContents.
+ *
+ * @param[in] str
+ * @param[out] texts
+ * @param[out] bracketContents
+ */
 template <typename StringType>
 void DeviceIdPattern::separateTextAndBracketContents(
     const std::string& str, std::vector<StringType>& texts,
     std::vector<StringType>& bracketContents)
 {
     std::vector<StringType> result;
+    // TODO
     boost::algorithm::split(result, str, boost::algorithm::is_any_of("[]"));
     // in a properly structured pattern the number of elements should be odd
     if (result.size() % 2 == 1)

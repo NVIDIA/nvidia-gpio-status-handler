@@ -19,6 +19,20 @@
  * All operators print object in a single line, without newline at the end
  * (assuming the 'operator<<' for element type doesn't print any newline
  * either).
+ *
+ * Operators defined in global scope, because they mostly operate
+ * on objects from 'std' namespace which should not be
+ * extended. If the compiler complains about not being able to
+ * find the operator use
+ *
+ * @code
+ * {
+ *     using ::operator<<;
+ *     std::cout << someVector;
+ *     // ...
+ * }
+ * @endcode
+ *
  */
 
 template <typename A, typename B>

@@ -25,13 +25,21 @@ using namespace std::literals;
 namespace device_id
 {
 
-TEST(DeviceIdTest, PatternIndex_Construction)
+// PatternIndex ///////////////////////////////////////////////////////////////
+
+TEST(DeviceIdTest, PatternIndex_Construction_outoperator)
 {
-    std::cout << PatternIndex() << std::endl;
-    std::cout << PatternIndex(7) << std::endl;
-    std::cout << PatternIndex(4, 6, 5) << std::endl;
-    std::cout << PatternIndex(-3, 7) << std::endl;
-    std::cout << PatternIndex(-3, 7, -2, -1) << std::endl;
+    std::cout << PatternIndex() << std::endl;  // expected output: '()'
+    std::cout << PatternIndex(7) << std::endl; // expected output: '(7)'
+    std::cout << PatternIndex(4, 6, 5)
+              << std::endl; // expected output: '(4, 6, 5)'
+    std::cout << PatternIndex(-3, 7) << std::endl; // expected output: '(_, 7)'
+    std::cout << PatternIndex(-3, 7, -2, -1)
+              << std::endl; // expected output: '(_, 7)'
+    std::cout << PatternIndex(PatternIndex::unspecified, 7)
+              << std::endl; // expected output: '(_, 7)'
+    std::cout << PatternIndex(PatternIndex::unspecified)
+              << std::endl; // expected output: '()'
 }
 
 TEST(DeviceIdTest, PatternIndex_dim)
@@ -53,166 +61,54 @@ TEST(DeviceIdTest, PatternIndex_index)
     EXPECT_EQ(PatternIndex(4, 6, 5)[4], PatternIndex::unspecified);
 }
 
-TEST(DeviceIdTest, PatternInputMapping_contains_empty)
-{
-    PatternInputMapping emptyMapping;
-    EXPECT_TRUE(emptyMapping.contains(PatternIndex::unspecified));
-    EXPECT_TRUE(emptyMapping.contains(1));
-    EXPECT_TRUE(emptyMapping.contains(10));
-    EXPECT_TRUE(emptyMapping.contains(0));
-}
+// CartesianProductRange //////////////////////////////////////////////////////
 
-TEST(DeviceIdTest, PatternInputMapping_contains_regular)
+TEST(DeviceIdTest, CartesianProductRange_PatternInputDomain)
 {
-    PatternInputMapping map(std::map<unsigned, unsigned>(
-        {{1, 0}, {2, 1}, {4, 2}, {8, 3}, {16, 4}}));
-    EXPECT_TRUE(map.contains(1));
-    EXPECT_TRUE(map.contains(8));
-    EXPECT_FALSE(map.contains(9));
-    EXPECT_FALSE(map.contains(PatternIndex::unspecified));
-}
-
-TEST(DeviceIdTest, PatternInputMapping_eval_specified)
-{
-    PatternInputMapping map(std::map<unsigned, unsigned>(
-        {{1, 0}, {2, 1}, {4, 2}, {8, 3}, {16, 4}}));
-    EXPECT_EQ(map.eval(16), 4);
-    EXPECT_EQ(map.eval(4), 2);
-    EXPECT_ANY_THROW(map.eval(5));
-    EXPECT_ANY_THROW(map.eval(PatternIndex::unspecified));
-}
-
-TEST(DeviceIdTest, PatternInputMapping_eval_unspecified)
-{
-    PatternInputMapping map;
-    EXPECT_ANY_THROW(map.eval(16));
-    EXPECT_ANY_THROW(map.eval(4));
-    EXPECT_ANY_THROW(map.eval(5));
-    EXPECT_ANY_THROW(map.eval(PatternIndex::unspecified));
-}
-
-template <class CharT>
-std::basic_ostream<CharT>& operator<<(std::basic_ostream<CharT>& os,
-                                      const PatternInputMapping& pim)
-{
-    if (pim.unspecified)
-    {
-        os << "PatternInputMapping([unspecified])";
-    }
-    else // ! pim.unspecified
-    {
-        os << "PatternInputMapping(";
-        testing::internal::PrintTo(pim.valuesMapping, &os);
-        os << ")";
-    }
-    return os;
-}
-
-TEST(DeviceIdTest, CartesianProductRange_PatternInputMapping)
-{
+    unsigned i = 0;
+    auto expectedResults = std::vector<PatternIndex>{
+        PatternIndex(4, 5, 100),  PatternIndex(4, 5, 200),
+        PatternIndex(4, 7, 100),  PatternIndex(4, 7, 200),
+        PatternIndex(4, 9, 100),  PatternIndex(4, 9, 200),
+        PatternIndex(4, 10, 100), PatternIndex(4, 10, 200),
+        PatternIndex(5, 5, 100),  PatternIndex(5, 5, 200),
+        PatternIndex(5, 7, 100),  PatternIndex(5, 7, 200),
+        PatternIndex(5, 9, 100),  PatternIndex(5, 9, 200),
+        PatternIndex(5, 10, 100), PatternIndex(5, 10, 200),
+        PatternIndex(8, 5, 100),  PatternIndex(8, 5, 200),
+        PatternIndex(8, 7, 100),  PatternIndex(8, 7, 200),
+        PatternIndex(8, 9, 100),  PatternIndex(8, 9, 200),
+        PatternIndex(8, 10, 100), PatternIndex(8, 10, 200)};
     for (const auto& elem : CartesianProductRange(
-             {PatternInputMapping({{4, 40}, {5, 50}, {8, 80}}),
-              PatternInputMapping({{7, 70}, {5, 50}, {9, 90}, {10, 100}}),
-              PatternInputMapping({{100, 1000}, {200, 2000}})}))
+             {PatternInputDomain(std::vector<syntax::DeviceIndex>{4, 5, 8}),
+              PatternInputDomain(std::vector<syntax::DeviceIndex>{7, 5, 9, 10}),
+              PatternInputDomain(std::vector<syntax::DeviceIndex>{100, 200})}))
+    {
+        EXPECT_TRUE(i < expectedResults.size());
+        EXPECT_EQ(elem, expectedResults.at(i));
+        i++;
+    }
+    EXPECT_EQ(i, expectedResults.size());
+}
+
+TEST(DeviceIdTest, CartesianProductRange_PatternInputDomain1)
+{
+    unsigned i = 0;
+    auto expectedResults = std::vector<PatternIndex>{};
+    for (const auto& elem : CartesianProductRange(
+             {PatternInputDomain(std::vector<syntax::DeviceIndex>{4, 5, 8}),
+              PatternInputDomain(std::vector<syntax::DeviceIndex>()),
+              PatternInputDomain(std::vector<syntax::DeviceIndex>{100, 200})}))
     {
         std::cout << "elem = '" << elem << "'" << std::endl;
+        EXPECT_TRUE(i < expectedResults.size());
+        EXPECT_EQ(elem, expectedResults.at(i));
+        i++;
     }
+    EXPECT_EQ(i, expectedResults.size());
 }
 
-TEST(DeviceIdTest, CartesianProductRange_PatternInputMapping1)
-{
-    for (const auto& elem : CartesianProductRange(
-             {PatternInputMapping({{4, 40}, {5, 50}, {8, 80}}),
-              PatternInputMapping(),
-              PatternInputMapping({{100, 1000}, {200, 2000}})}))
-    {
-        std::cout << "elem = '" << elem << "'" << std::endl;
-    }
-}
-
-TEST(DeviceIdTest, DeviceIdPattern_calcInputIndexToBracketPoss)
-{
-    EXPECT_THAT(DeviceIdPattern::calcInputIndexToBracketPoss(
-                    std::vector<unsigned>({0, 4, 0, 1, 1})),
-                UnorderedElementsAre(
-                    std::vector<unsigned>{0, 2}, std::vector<unsigned>{3, 4},
-                    std::vector<unsigned>{}, std::vector<unsigned>{},
-                    std::vector<unsigned>{1}));
-}
-
-TEST(DeviceIdTest, DeviceIdPattern_calcInputIndexToBracketPoss_empty)
-{
-    EXPECT_THAT(
-        DeviceIdPattern::calcInputIndexToBracketPoss(std::vector<unsigned>()),
-        UnorderedElementsAre());
-}
-
-TEST(DeviceIdTest, DeviceIdPattern_calcInputMapping)
-{
-    std::map<unsigned, unsigned> brackMap({{1, 100}, {2, 200}, {3, 300}});
-    EXPECT_EQ(
-        DeviceIdPattern::calcInputMapping(0, {0, 1}, {brackMap, brackMap}),
-        PatternInputMapping(brackMap));
-}
-
-TEST(DeviceIdTest, DeviceIdPattern_calcInputMapping1)
-{
-    EXPECT_EQ(
-        DeviceIdPattern::calcInputMapping(
-            0, {0, 1}, {{{1, 100}, {2, 200}, {3, 300}}, {{1, 100}, {2, 200}}}),
-        PatternInputMapping({{1, 100}, {2, 200}}));
-}
-
-TEST(DeviceIdTest, DeviceIdPattern_calcInputMapping2)
-{
-    EXPECT_EQ(DeviceIdPattern::calcInputMapping(0, {0, 1},
-                                                {{}, {{1, 100}, {2, 200}}}),
-              PatternInputMapping(std::map<unsigned, unsigned>{}));
-}
-
-TEST(DeviceIdTest, DeviceIdPattern_calcInputMapping3)
-{
-    EXPECT_ANY_THROW(DeviceIdPattern::calcInputMapping(
-        0, {0, 1}, {{{1, 100}, {2, 300}}, {{1, 100}, {2, 200}}}));
-}
-
-TEST(DeviceIdTest, DeviceIdPattern_calcInputMappings)
-{
-    EXPECT_EQ(DeviceIdPattern::calcInputMappings(
-                  {{0, 2}, {1}}, {{{1, 100}, {2, 200}, {3, 300}},
-                                  {{5, 7}, {3, 11}, {1, 13}},
-                                  {{1, 100}, {2, 200}, {3, 300}}}),
-              std::vector<PatternInputMapping>(
-                  {PatternInputMapping({{1, 100}, {2, 200}, {3, 300}}),
-                   PatternInputMapping({{5, 7}, {3, 11}, {1, 13}})}));
-}
-
-TEST(DeviceIdTest, DeviceIdPattern_calcInputMappings1)
-{
-    EXPECT_EQ(DeviceIdPattern::calcInputMappings(
-                  {{0, 2}, {}, {1}}, {{{1, 100}, {2, 200}, {3, 300}},
-                                      {{5, 7}, {3, 11}, {1, 13}},
-                                      {{1, 100}, {2, 200}, {3, 300}}}),
-              std::vector<PatternInputMapping>(
-                  {PatternInputMapping({{1, 100}, {2, 200}, {3, 300}}),
-                   PatternInputMapping(),
-                   PatternInputMapping({{5, 7}, {3, 11}, {1, 13}})}));
-}
-
-TEST(DeviceIdTest, DeviceIdPattern_calcInputMappings2)
-{
-    EXPECT_EQ(DeviceIdPattern::calcInputMappings({{}, {}, {0}},
-                                                 {{{5, 7}, {3, 11}, {1, 13}}}),
-              std::vector<PatternInputMapping>(
-                  {PatternInputMapping(), PatternInputMapping(),
-                   PatternInputMapping({{5, 7}, {3, 11}, {1, 13}})}));
-}
-
-TEST(DeviceIdTest, DeviceIdPattern_calcInputMappings3)
-{
-    EXPECT_EQ(DeviceIdPattern::calcInputMappings({}, {}),
-              std::vector<PatternInputMapping>());
-}
+// DeviceIdPattern ////////////////////////////////////////////////////////////
 
 std::map<unsigned, unsigned>
     mappingsSum(const std::vector<std::map<unsigned, unsigned>>& maps);
@@ -256,49 +152,32 @@ TEST(DeviceIdTest, mappingsSum_overlapping)
 TEST(DeviceIdTest, DeviceIdPattern_domain_iteration_single)
 {
     DeviceIdPattern pat("[0|1-4:2-5]");
-    // DeviceIdPattern pat(std::vector<unsigned>({0}),
-    //                     std::vector<std::map<unsigned, unsigned>>(
-    //                         {{{1, 2}, {2, 3}, {3, 4}, {4, 5}}}));
+    auto expectedResults = std::vector<PatternIndex>{
+        PatternIndex(1),
+        PatternIndex(2),
+        PatternIndex(3),
+        PatternIndex(4),
+    };
     unsigned i = 0;
     PatternIndex prevPi;
     for (const auto& pi : pat.domain())
     {
-        std::cout << "pattern index = '" << pi << "'" << std::endl;
-        switch (i)
-        {
-            case 0:
-                EXPECT_EQ(pi, PatternIndex(1));
-                break;
-            case 1:
-                EXPECT_EQ(pi, PatternIndex(2));
-                break;
-            case 2:
-                EXPECT_EQ(pi, PatternIndex(3));
-                break;
-            case 3:
-                EXPECT_EQ(pi, PatternIndex(4));
-                break;
-        }
+        EXPECT_TRUE(i < expectedResults.size());
+        EXPECT_EQ(pi, expectedResults.at(i));
         EXPECT_TRUE(prevPi < pi);
         prevPi = pi;
         ++i;
     }
-    EXPECT_EQ(i, 4);
+    EXPECT_EQ(i, expectedResults.size());
 }
 
 TEST(DeviceIdTest, DeviceIdPattern_domain_iteration_regular)
 {
     DeviceIdPattern pat("[0|1-4:2-5][1|3-6:4-7][0|1-4:2-5]");
-    // DeviceIdPattern pat(std::vector<unsigned>({0, 1, 0}),
-    //                     std::vector<std::map<unsigned, unsigned>>(
-    //                         {{{1, 2}, {2, 3}, {3, 4}, {4, 5}},
-    //                          {{3, 4}, {4, 5}, {5, 6}, {6, 7}},
-    //                          {{1, 2}, {2, 3}, {3, 4}, {4, 5}}}));
     unsigned i = 0;
     PatternIndex prevPi;
     for (const auto& pi : pat.domain())
     {
-        std::cout << "pattern index = '" << pi << "'" << std::endl;
         switch (i)
         {
             case 0:
@@ -360,14 +239,10 @@ TEST(DeviceIdTest, DeviceIdPattern_domain_iteration_regular)
 TEST(DeviceIdTest, DeviceIdPattern_domain_iteration_gap)
 {
     DeviceIdPattern pat("[3|1-4:2-5]");
-    // DeviceIdPattern pat(std::vector<unsigned>({3}),
-    //                     std::vector<std::map<unsigned, unsigned>>(
-    //                         {{{1, 2}, {2, 3}, {3, 4}, {4, 5}}}));
     unsigned i = 0;
     PatternIndex prevPi;
     for (const auto& pi : pat.domain())
     {
-        std::cout << "pattern index = '" << pi << "'" << std::endl;
         switch (i)
         {
             case 0:
@@ -401,15 +276,10 @@ TEST(DeviceIdTest, DeviceIdPattern_domain_iteration_gap)
 TEST(DeviceIdTest, DeviceIdPattern_domain_iteration_gap1)
 {
     DeviceIdPattern pat("[1|21-22:11][3|1-4:2-5]");
-    // DeviceIdPattern pat(
-    //     std::vector<unsigned>({1, 3}),
-    //     std::vector<std::map<unsigned, unsigned>>(
-    //         {{{21, 11}, {22, 11}}, {{1, 2}, {2, 3}, {3, 4}, {4, 5}}}));
     unsigned i = 0;
     PatternIndex prevPi;
     for (const auto& pi : pat.domain())
     {
-        std::cout << "pattern index = '" << pi << "'" << std::endl;
         switch (i)
         {
             case 0:
@@ -455,14 +325,9 @@ TEST(DeviceIdTest, DeviceIdPattern_domain_iteration_gap1)
 TEST(DeviceIdTest, DeviceIdPattern_domain_iteration_empty)
 {
     DeviceIdPattern pat;
-    // DeviceIdPattern pat = DeviceIdPattern(
-    //     std::vector<unsigned>(), std::vector<std::map<unsigned,
-    //     unsigned>>());
-    std::cout << "before loop" << std::endl;
     unsigned i = 0;
     for (const auto& pi : pat.domain())
     {
-        std::cout << "pattern index = '" << pi << "'" << std::endl;
         switch (i)
         {
             case 0:
@@ -474,6 +339,7 @@ TEST(DeviceIdTest, DeviceIdPattern_domain_iteration_empty)
     EXPECT_EQ(i, 1);
 }
 
+// marcinw:TODO: to remove
 // TEST(DeviceIdTest, DeviceIdPattern_domainVec)
 // {
 //     DeviceIdPattern pat =
@@ -503,9 +369,10 @@ TEST(DeviceIdTest, DeviceIdPattern_domain_iteration_empty)
 
 // TEST(DeviceIdTest, DeviceIdPattern_checkIsInDomain_gap)
 // {
-//     DeviceIdPattern pat = DeviceIdPattern(
-//         std::vector<unsigned>({1}),
-//         std::vector<std::map<unsigned, unsigned>>({{{17, 71}, {13, 31}}}));
+//     DeviceIdPattern pat("[1|17:71,13:31]");
+//     // = DeviceIdPattern(
+//     //    std::vector<unsigned>({1}),
+//     //    std::vector<std::map<unsigned, unsigned>>({{{17, 71}, {13, 31}}}));
 //     EXPECT_NO_THROW(
 //         pat.checkIsInDomain(PatternIndex(PatternIndex::unspecified, 17)));
 //     EXPECT_NO_THROW(pat.checkIsInDomain(PatternIndex(31337, 17)));
@@ -515,12 +382,77 @@ TEST(DeviceIdTest, DeviceIdPattern_domain_iteration_empty)
 //     EXPECT_ANY_THROW(pat.checkIsInDomain(PatternIndex(17)));
 // }
 
+TEST(DeviceIdTest, DeviceIdPattern_checkIsInDomain_single)
+{
+    DeviceIdPattern five("_[5]_");
+    EXPECT_NO_THROW(five.checkIsInDomain(PatternIndex(5)));
+    EXPECT_ANY_THROW(five.checkIsInDomain(PatternIndex(6)));
+    EXPECT_ANY_THROW(five.checkIsInDomain(PatternIndex()));
+    EXPECT_NO_THROW(five.checkIsInDomain(PatternIndex(5, 2, 2)));
+    DeviceIdPattern five1("_[1|5]_");
+    EXPECT_NO_THROW(
+        five1.checkIsInDomain(PatternIndex(PatternIndex::unspecified, 5)));
+    EXPECT_NO_THROW(five1.checkIsInDomain(
+        PatternIndex(PatternIndex::unspecified, 5, PatternIndex::unspecified)));
+    EXPECT_NO_THROW(
+        five1.checkIsInDomain(PatternIndex(PatternIndex::unspecified, 5, 6)));
+    EXPECT_NO_THROW(five1.checkIsInDomain(PatternIndex(1, 5, 6)));
+    EXPECT_ANY_THROW(
+        five1.checkIsInDomain(PatternIndex(1, PatternIndex::unspecified, 6)));
+    EXPECT_ANY_THROW(five1.checkIsInDomain(PatternIndex(1, 7, 6)));
+}
+
+TEST(DeviceIdTest, DeviceIdPattern_checkIsInDomain_span)
+{
+    DeviceIdPattern span("_[10-20]_");
+    for (unsigned i = 0u; i < 30; ++i)
+    {
+        if (10 <= i && i <= 20)
+        {
+            EXPECT_NO_THROW(span.checkIsInDomain(PatternIndex(i)));
+            EXPECT_NO_THROW(span.checkIsInDomain(
+                PatternIndex(i, PatternIndex::unspecified)));
+            EXPECT_NO_THROW(span.checkIsInDomain(PatternIndex(i, 4, 5, 0)));
+            EXPECT_NO_THROW(span.checkIsInDomain(PatternIndex(i, i)));
+            EXPECT_ANY_THROW(span.checkIsInDomain(
+                PatternIndex(PatternIndex::unspecified, i)));
+            EXPECT_ANY_THROW(span.checkIsInDomain(PatternIndex(0, i)));
+        }
+        else // ! 10 <= i && i <= 20
+        {
+            EXPECT_ANY_THROW(span.checkIsInDomain(PatternIndex(i)));
+            EXPECT_ANY_THROW(span.checkIsInDomain(
+                PatternIndex(i, PatternIndex::unspecified)));
+            EXPECT_ANY_THROW(span.checkIsInDomain(PatternIndex(i, 4, 5, 0)));
+            EXPECT_ANY_THROW(span.checkIsInDomain(PatternIndex(i, i)));
+            EXPECT_ANY_THROW(span.checkIsInDomain(
+                PatternIndex(PatternIndex::unspecified, i)));
+            EXPECT_ANY_THROW(span.checkIsInDomain(PatternIndex(0, i)));
+        }
+    }
+}
+
+TEST(DeviceIdTest, DeviceIdPattern_checkIsInDomain_span_gap)
+{
+    DeviceIdPattern span("_[2|10-20]_");
+    for (unsigned i = 0u; i < 30; ++i)
+    {
+        if (10 <= i && i <= 20)
+        {
+            EXPECT_NO_THROW(span.checkIsInDomain(PatternIndex(
+                PatternIndex::unspecified, PatternIndex::unspecified, i)));
+        }
+        else // ! 10 <= i && i <= 20
+        {
+            EXPECT_ANY_THROW(span.checkIsInDomain(PatternIndex(
+                PatternIndex::unspecified, PatternIndex::unspecified, i)));
+        }
+    }
+}
+
 TEST(DeviceIdTest, DeviceIdPattern_checkIsInDomain_empty)
 {
     DeviceIdPattern pat;
-    // DeviceIdPattern pat = DeviceIdPattern(
-    //     std::vector<unsigned>(), std::vector<std::map<unsigned,
-    //     unsigned>>());
     EXPECT_NO_THROW(pat.checkIsInDomain(PatternIndex()));
     EXPECT_NO_THROW(
         pat.checkIsInDomain(PatternIndex(PatternIndex::unspecified)));
@@ -540,30 +472,9 @@ TEST(DeviceIdTest, DeviceIdPattern_eval)
     EXPECT_ANY_THROW(pat.eval(PatternIndex(732, 19)));
 }
 
-// TEST(DeviceIdTest, DeviceIdPattern_eval)
-// {
-//     DeviceIdPattern pat = DeviceIdPattern(
-//         {"abc_"sv, "_def_"sv, "_ghi"sv}, std::vector<unsigned>({1, 0}),
-//         std::vector<std::map<unsigned, unsigned>>(
-//             {{{17, 71}, {13, 31}}, {{731, 137}, {246, 642}}}));
-
-//     EXPECT_EQ(pat.eval(PatternIndex(731, 13)), "abc_31_def_137_ghi");
-//     EXPECT_EQ(pat.eval(PatternIndex(246, 13)), "abc_31_def_642_ghi");
-//     EXPECT_EQ(pat.eval(PatternIndex(731, 17)), "abc_71_def_137_ghi");
-//     EXPECT_EQ(pat.eval(PatternIndex(246, 17)), "abc_71_def_642_ghi");
-//     EXPECT_EQ(pat.eval(PatternIndex(246, 17, 100)), "abc_71_def_642_ghi");
-//     EXPECT_EQ(pat.eval(PatternIndex(246, 17, 100, 9)), "abc_71_def_642_ghi");
-//     EXPECT_ANY_THROW(pat.eval(PatternIndex(246)));
-//     EXPECT_ANY_THROW(pat.eval(PatternIndex(246, 18)));
-// }
-
 TEST(DeviceIdTest, DeviceIdPattern_values)
 {
     DeviceIdPattern pat("abc_[1|17-18:71-72]_def_[0|731-732:246-247]_ghi");
-    // DeviceIdPattern pat = DeviceIdPattern(
-    //     {"abc_"sv, "_def_"sv, "_ghi"sv}, std::vector<unsigned>({1, 0}),
-    //     std::vector<std::map<unsigned, unsigned>>(
-    //         {{{17, 71}, {13, 31}}, {{731, 137}, {246, 642}}}));
     unsigned i = 0;
     for (const auto& v : pat.values())
     {
@@ -582,44 +493,11 @@ TEST(DeviceIdTest, DeviceIdPattern_values)
                 EXPECT_EQ(v, "abc_72_def_247_ghi");
                 break;
         }
-        std::cout << v << std::endl;
         ++i;
     }
     EXPECT_EQ(i, 4);
     EXPECT_TRUE(pat.isInjective());
 }
-
-// TEST(DeviceIdTest, DeviceIdPattern_values)
-// {
-//     DeviceIdPattern pat("abc_[]_def_642_ghi");
-//     DeviceIdPattern pat = DeviceIdPattern(
-//         {"abc_"sv, "_def_"sv, "_ghi"sv}, std::vector<unsigned>({1, 0}),
-//         std::vector<std::map<unsigned, unsigned>>(
-//             {{{17, 71}, {13, 31}}, {{731, 137}, {246, 642}}}));
-//     unsigned i = 0;
-//     for (const auto& v : pat.values())
-//     {
-//         switch (i)
-//         {
-//             case 0:
-//                 EXPECT_EQ(v, "abc_31_def_642_ghi");
-//                 break;
-//             case 1:
-//                 EXPECT_EQ(v, "abc_71_def_642_ghi");
-//                 break;
-//             case 2:
-//                 EXPECT_EQ(v, "abc_31_def_137_ghi");
-//                 break;
-//             case 3:
-//                 EXPECT_EQ(v, "abc_71_def_137_ghi");
-//                 break;
-//         }
-//         std::cout << v << std::endl;
-//         ++i;
-//     }
-//     EXPECT_EQ(i, 4);
-//     EXPECT_TRUE(pat.isInjective());
-// }
 
 TEST(DeviceIdTest, DeviceIdPattern_match_empty)
 {
@@ -667,9 +545,11 @@ TEST(DeviceIdTest, DeviceIdPattern_match_double)
 TEST(DeviceIdTest, DeviceIdPattern_dimDomain)
 {
     DeviceIdPattern pat("[1-3:11-13][4-7]");
-    EXPECT_EQ(pat.dimDomain(0), std::vector<unsigned>({1, 2, 3}));
-    EXPECT_EQ(pat.dimDomain(1), std::vector<unsigned>({4, 5, 6, 7}));
-    EXPECT_EQ(pat.dimDomain(2), std::vector<unsigned>({}));
+    EXPECT_EQ(pat.dimDomain(0),
+              PatternInputDomain(std::vector<unsigned>({1, 2, 3})));
+    EXPECT_EQ(pat.dimDomain(1),
+              PatternInputDomain(std::vector<unsigned>({4, 5, 6, 7})));
+    EXPECT_EQ(pat.dimDomain(2), PatternInputDomain());
 }
 
 // TEST(DeviceIdTest, DeviceIdPattern_match_noninjective)
@@ -688,39 +568,6 @@ TEST(DeviceIdTest, DeviceIdPattern_dimDomain)
 //     EXPECT_THAT(pat.match("HSC_0"), UnorderedElementsAre());
 //     EXPECT_FALSE(pat.isInjective());
 // }
-
-TEST(Test, tokenizer)
-{
-    using tokenizer = boost::tokenizer<boost::char_separator<char>>;
-    std::string s = "Boost C++ Libraries";
-    tokenizer tok{s};
-    for (tokenizer::iterator it = tok.begin(); it != tok.end(); ++it)
-        std::cout << *it << std::endl;
-}
-
-TEST(Test, splitting)
-{
-    using namespace boost::algorithm;
-    std::string pattern{"GPU_SXM_[1-8]/NVLink_[0-39]"};
-    std::vector<std::string> result;
-    split(result, pattern, is_any_of("[]"));
-    for (const auto& elem : result)
-    {
-        std::cout << "elem = '" << elem << "'" << std::endl;
-    }
-}
-
-TEST(Test, splitting1)
-{
-    using namespace boost::algorithm;
-    std::string pattern{"GPU_SXM_[1-8]"};
-    std::vector<std::string> result;
-    split(result, pattern, is_any_of("[]"));
-    for (const auto& elem : result)
-    {
-        std::cout << "elem = '" << elem << "'" << std::endl;
-    }
-}
 
 TEST(DeviceIdTest, DeviceIdPattern_separateTextAndBracketContents_single)
 {
@@ -761,12 +608,24 @@ TEST(DeviceIdTest, DeviceIdPattern_separateTextAndBracketContents_empty)
     EXPECT_THAT(bracketContents, ElementsAre());
 }
 
+TEST(DeviceIdTest, shiftedMappingsSameInputPos)
+{
+    DeviceIdPattern pat("FPGA_SXM[1-8:0-7]_EROT_RECOV_L GPU_SXM_[0|1-8]");
+    EXPECT_THAT(pat.valuesVec(),
+                ElementsAre("FPGA_SXM0_EROT_RECOV_L GPU_SXM_1",
+                            "FPGA_SXM1_EROT_RECOV_L GPU_SXM_2",
+                            "FPGA_SXM2_EROT_RECOV_L GPU_SXM_3",
+                            "FPGA_SXM3_EROT_RECOV_L GPU_SXM_4",
+                            "FPGA_SXM4_EROT_RECOV_L GPU_SXM_5",
+                            "FPGA_SXM5_EROT_RECOV_L GPU_SXM_6",
+                            "FPGA_SXM6_EROT_RECOV_L GPU_SXM_7",
+                            "FPGA_SXM7_EROT_RECOV_L GPU_SXM_8"));
+}
+
 TEST(DeviceIdTest, DeviceIdPattern_full)
 {
     DeviceIdPattern ip(
         "/xyz/openbmc_project/inventory/system/processors/GPU_SXM_[1-8]");
-
-    std::cout << "Testing index pattern \"" << ip << "\"" << std::endl;
 
     EXPECT_THAT(ip.domainVec(),
                 ElementsAre(PatternIndex(1), PatternIndex(2), PatternIndex(3),
@@ -813,11 +672,525 @@ TEST(DeviceIdTest, DeviceIdPattern_full)
     // EXPECT_THAT(ip.dimDomain(0), ElementsAre(1, 2, 3, 4, 5, 6, 7, 8));
 }
 
+// Consistency check on all the strings found in event_info.json
+TEST(DeviceIdTest, DeviceIdPattern_consistency_all_event_info)
+{
+    DeviceIdPattern ip("Critical");
+    auto eventInfoStrings = {
+        "",
+        "-invalidate GPU_SXM_[1-8]",
+        "-invalidate NVSwitch_[0-3]",
+        "-invalidate PCIeSwitch_0",
+        "/xyz/openbmc_project/GpioStatusHandler",
+        "/xyz/openbmc_project/GpuOobRecovery",
+        "/xyz/openbmc_project/inventory/system/chassis/HGX_Chassis_0",
+        "/xyz/openbmc_project/inventory/system/chassis/HGX_GPU_SXM_[1-8]",
+        "/xyz/openbmc_project/inventory/system/chassis/HGX_GPU_SXM_[1-8]/PCIeDevices/GPU_SXM_[0|1-8]",
+        "/xyz/openbmc_project/inventory/system/chassis/HGX_NVSwitch_0/PCIeDevices/NVSwitch_0",
+        "/xyz/openbmc_project/inventory/system/chassis/HGX_NVSwitch_[0-3]",
+        "/xyz/openbmc_project/inventory/system/chassis/HGX_NVSwitch_[0-3]/PCIeDevices/NVSwitch_[0|0-3]",
+        "/xyz/openbmc_project/inventory/system/chassis/HGX_PCIeSwitch_0/PCIeDevices/PCIeSwitch_0",
+        "/xyz/openbmc_project/inventory/system/fabrics/HGX_NVLinkFabric_0/Switches/NVSwitch_[0-3]",
+        "/xyz/openbmc_project/inventory/system/fabrics/HGX_NVLinkFabric_0/Switches/NVSwitch_[0-3]/Ports/NVLink_[0-39]",
+        "/xyz/openbmc_project/inventory/system/fabrics/HGX_PCIeRetimerTopology_[0-7]/Switches/PCIeRetimer_[0|0-7]",
+        "/xyz/openbmc_project/inventory/system/fabrics/HGX_PCIeRetimerTopology_[0-7]/Switches/PCIeRetimer_[0|0-7]/Ports/DOWN_0",
+        "/xyz/openbmc_project/inventory/system/fabrics/HGX_PCIeSwitchTopology_0/Switches/PCIeSwitch_0/Ports/DOWN_[0-3]",
+        "/xyz/openbmc_project/inventory/system/fabrics/HGX_PCIeSwitchTopology_0/Switches/PCIeSwitch_0/Ports/UP_0",
+        "/xyz/openbmc_project/inventory/system/memory/GPU_SXM_[1-8]_DRAM_0",
+        "/xyz/openbmc_project/inventory/system/processors/FPGA_0/Ports/PCIeToHMC_0",
+        "/xyz/openbmc_project/inventory/system/processors/FPGA_0/Ports/PCIeToHost_0",
+        "/xyz/openbmc_project/inventory/system/processors/GPU_SXM_[1-8]",
+        "/xyz/openbmc_project/inventory/system/processors/GPU_SXM_[1-8]/Ports/NVLink_[0-17]",
+        "/xyz/openbmc_project/sensors/power/HGX_Chassis_0_HSC_[0-9]_Power_0",
+        "/xyz/openbmc_project/sensors/temperature/HGX_Chassis_0_PCB_0_Temp_0",
+        "/xyz/openbmc_project/sensors/temperature/HGX_GPU_SXM_[1-8]_TEMP_0",
+        "/xyz/openbmc_project/sensors/temperature/HGX_NVSwitch_[0-3]_TEMP_0",
+        "/xyz/openbmc_project/sensors/temperature/HGX_PCIeRetimer_[0-7]_TEMP_0",
+        "/xyz/openbmc_project/sensors/temperature/HGX_PCIeSwitch_0_TEMP_0",
+        "/xyz/openbmc_project/software/HGX_FW_BMC_0",
+        "/xyz/openbmc_project/software/HGX_FW_GPU_SXM_[1-8]",
+        "/xyz/openbmc_project/software/HGX_FW_NVSwitch_[0-3]",
+        "0",
+        "0x0000",
+        "0x7FFFFFFF",
+        "0xfa1d",
+        "1",
+        "1024",
+        "128",
+        "16",
+        "16384",
+        "1V8 Abnormal Power Change",
+        "2",
+        "2048",
+        "256",
+        "32",
+        "32768",
+        "3V3 Abnormal Power Change",
+        "4",
+        "4096",
+        "512",
+        "5V Abnormal Power Change",
+        "6",
+        "64",
+        "768",
+        "769",
+        "770",
+        "774",
+        "8",
+        "8192",
+        "<NOTANEVENT> GPU mctp-vdm-util cache invalidation",
+        "<NOTANEVENT> NVSwitch mctp-vdm-util cache invalidation",
+        "<NOTANEVENT> PCIeSwitch mctp-vdm-util cache invalidation",
+        "AP0_BOOTCOMPLETE_TIMEOUT GPU_SXM_[1-8]",
+        "AP0_BOOTCOMPLETE_TIMEOUT NVSwitch_[0-3]",
+        "AP0_BOOTCOMPLETE_TIMEOUT PCIeSwitch_0",
+        "AP0_SPI_READ_FAILURE GPU_SXM_[1-8]",
+        "AP0_SPI_READ_FAILURE NVSwitch_[0-3]",
+        "AP0_SPI_READ_FAILURE PCIeSwitch_0",
+        "Abnormal Power Change",
+        "Abnormal Presence State Change",
+        "Abnormal Speed Change",
+        "Abnormal State Change",
+        "Abnormal Width Change",
+        "AbnormalPowerChange",
+        "Absent",
+        "ActiveWidth",
+        "Alert caused by HSC alert",
+        "BMC PCIe Uncorrectable Error",
+        "BackendErrorCode",
+        "Base.1.13.ResetRecommended",
+        "Base.1.13.ResetRequired",
+        "BaseBoard components will retry if encounters errors. If problem persists, analyze FPGA log or ERoT log.",
+        "Baseboard GPU Presence change Interrupt",
+        "Baseboard_0",
+        "Baseboard_0 HSC Fault",
+        "Boot Complete Failure",
+        "Boot completed failure",
+        "CMDLINE",
+        "Chassis_0_PCB_0_Temp_0",
+        "Circuit breaker fault triggered or status is present is STATUS_OTHER byte",
+        "Collect ERoT logs and cordon HGX server from the cluster for RMA evaluation.",
+        "Communication fault has occurred",
+        "Controlled by Host BMC or a power cycle of baseboard would re-enable SMBPBI access privilege to HMC",
+        "Cordon the HGX server node for further diagnosis.",
+        "Cordon the HGX server node from the cluster for RMA evaluation.",
+        "Correctable Error Count {PCIe Correctable Error}",
+        "Critical",
+        "CriticalHigh",
+        "Current PCIe link speed",
+        "Current PCIe link width",
+        "Current Temperature",
+        "CurrentDeviceName",
+        "CurrentSpeed",
+        "DBUS",
+        "DIRECT",
+        "DVDD Abnormal Power Change",
+        "DataCRCCount",
+        "Device is busy and could not respond to PMBus access",
+        "DeviceCoreAPI",
+        "Drain and Reset Recommended",
+        "DrainAndResetRequired",
+        "EEPROM Error",
+        "ERoT Fatal Abnormal State Change",
+        "ERoT Recovery",
+        "ERoT is in recovery mode, and HostBMC need to deassert EROT_RECOV and reboot the device. If problem persists, collect ERoT logs and cordon HGX server from the cluster for RMA evaluation.",
+        "ERoT will try to recover AP by a reset/reboot. If there is still a problem, collect ERoT logs and reflash AP FW with recovery flow.",
+        "ERoT_GPU_SXM_[0|1-8] ERoT_Fatal",
+        "ERoT_GPU_SXM_[0|1-8] Firmware",
+        "ERoT_NVSwitch_[0|0-3] ERoT_Fatal",
+        "ERoT_NVSwitch_[0|0-3] Firmware",
+        "ERoT_PCIeSwitch_0 ERoT_Fatal",
+        "ERoT_PCIeSwitch_0 Firmware",
+        "FET is shorted or manufacture specific fault or warning has occurred",
+        "FPGA - BMC PCIe Error",
+        "FPGA - HMC PCIe Error",
+        "FPGA BMC PCIe Correctable Error Count",
+        "FPGA BMC PCIe Fatal Error Count",
+        "FPGA BMC PCIe Non Fatal Error Count",
+        "FPGA HMC PCIe Correctable Error Count",
+        "FPGA HMC PCIe Fatal Error Count",
+        "FPGA HMC PCIe Non Fatal Error Count",
+        "FPGA Temp Alert",
+        "FPGA Temperature",
+        "FPGA Thermal Parameter",
+        "FPGA_0",
+        "FPGA_0 PCIe",
+        "FPGA_0 Temperature",
+        "FPGA_0_TEMP_0",
+        "FPGA_NVSW[0-3]_EROT_RECOV_L NVSwitch_[0-3]",
+        "FPGA_PEXSW_EROT_RECOV_L PCIeSwitch_0",
+        "FPGA_SXM[0-7]_EROT_RECOV_L GPU_SXM_[1-8]",
+        "FW Update with WP engaged - GPU",
+        "FW Update with WP engaged - HMC",
+        "FW Update with WP engaged - NVSwitch",
+        "FW_ERoT_GPU_SXM_[0|1-8]",
+        "FW_ERoT_NVSwitch_[0|0-3]",
+        "FW_ERoT_PCIeSwitch_0",
+        "Failover to Redundant Interface(i2c)",
+        "Fatal Error Count {PCIe Fatal Error}",
+        "FlitCRCCount",
+        "For triage, contact Nvidia support.",
+        "ForceRestart",
+        "GPU",
+        "GPU Drain and Reset Recommended",
+        "GPU Nvlink Recovery Error",
+        "GPU Nvlink Training Error",
+        "GPU Power Good Abnormal change",
+        "GPU Reset Required",
+        "GPU_SXM_[0|1-8]",
+        "GPU_SXM_[0|1-8] Firmware",
+        "GPU_SXM_[0|1-8] I2C",
+        "GPU_SXM_[0|1-8] Memory",
+        "GPU_SXM_[0|1-8] NVLink_[1|0-17]",
+        "GPU_SXM_[0|1-8] PCIe",
+        "GPU_SXM_[0|1-8] PowerGood",
+        "GPU_SXM_[0|1-8] SRAM",
+        "GPU_SXM_[0|1-8] Temperature",
+        "GPU_SXM_[0|1-8] ThrottleReason",
+        "GPU_SXM_[0|1-8]/NVLink_[1|0-17]",
+        "GPU_SXM_[0|1-8]_DRAM_0",
+        "GPU_SXM_[0|1-8]_TEMP_0",
+        "GPU_SXM_[0|1-8]_VR",
+        "GPU_SXM_[1-8]",
+        "HMC SMBPBI Failover",
+        "HMC {PCIe Uncorrectable Error}",
+        "HMC_0",
+        "HMC_0_VR_1V8",
+        "HMC_0_VR_3V3",
+        "HSC Current Power",
+        "HSC Power Good Abnormal change",
+        "HSC detailed alert status",
+        "HSC_[0-9]",
+        "HSC_[0|0-9]_VR",
+        "HVDD Abnormal Power Change",
+        "Hang",
+        "HardShutdownHigh",
+        "I2C EEPROM Error",
+        "I2C Hang - Bus Timeout",
+        "I2C Hang - FSM Timeout",
+        "I2C3_ALERT",
+        "I2C4_ALERT",
+        "If WP enabled, ERoT/AP shall not be able to update SPI. This is a HW protection.",
+        "Incorrect link speed",
+        "Incorrect link width",
+        "Increase the BaseBoard cooling and check thermal environmental to ensure Inlet Temperature reading is under UpperCritical threshold.",
+        "Increase the BaseBoard cooling and check thermal environmental to ensure Inlet Temperature reading is under UpperCritical threshold. ",
+        "Increase the BaseBoard cooling and check thermal environmental to ensure the GPU operates under UpperCritical threshold. ",
+        "Increase the BaseBoard cooling and check thermal environmental to ensure the NVSwtich operates under UpperCritical threshold. ",
+        "Inlet Sensor Temperature Alert",
+        "Inlet Thermal Parameters",
+        "Inlet_Temp_0",
+        "Inlet_Temp_0 (FPGA_0) Temperature",
+        "Input voltage or current fault has occurred",
+        "LTSSM Link Down",
+        "LTSSMState",
+        "LanesInUse",
+        "MCTP Runtime Failure",
+        "MCTP runtime failures",
+        "MinSpeed",
+        "NVLink Data CRC Error Count",
+        "NVLink Data CRC Error count",
+        "NVLink Flit CRC Error Count",
+        "NVLink Flit CRC Error count",
+        "NVLink Recovery Error Count",
+        "NVLink Recovery Error count",
+        "NVLink Recovery Error count is {Nvlink Recovery Error}",
+        "NVLink Replay Error Count",
+        "NVLink Replay Error count",
+        "NVLink Training Error count is {Nvlink Training Error}",
+        "NVSW PRSNT state run time change",
+        "NVSW[1-4]_INT_PRSNT_N NVSwitch_[0-3]",
+        "NVSwitch",
+        "NVSwitch 1V8 Abnormal change",
+        "NVSwitch 3V3 Abnormal change",
+        "NVSwitch 5V Abnormal change",
+        "NVSwitch DVDD Abnormal change",
+        "NVSwitch HVDD Abnormal change",
+        "NVSwitch IBC Abnormal change",
+        "NVSwitch NVLink Training Error",
+        "NVSwitch Nvlink Recovery Error",
+        "NVSwitch PCIe link speed",
+        "NVSwitch VDD Abnormal change",
+        "NVSwitch_[0-3]",
+        "NVSwitch_[0|0-3]",
+        "NVSwitch_[0|0-3] Firmware",
+        "NVSwitch_[0|0-3] I2C",
+        "NVSwitch_[0|0-3] NVLink_[1|0-39]",
+        "NVSwitch_[0|0-3] PCIe",
+        "NVSwitch_[0|0-3] PowerGood",
+        "NVSwitch_[0|0-3] SMBPBI",
+        "NVSwitch_[0|0-3] Temperature",
+        "NVSwitch_[0|0-3]/NVLink_[1|0-39]",
+        "NVSwitch_[0|0-3]_TEMP_0",
+        "NVSwitch_[0|0-3]_VR_3V3",
+        "NVSwitch_[0|0-3]_VR_5V",
+        "NVSwitch_[0|0-3]_VR_DVDD",
+        "NVSwitch_[0|0-3]_VR_HVDD",
+        "NVSwitch_[0|0-3]_VR_VDD",
+        "NVSwitch_[0|0-3]_VR_VDD_1V8",
+        "No immediate recovery required. If this event occurs multiple times in a short period, need to check other PCIe error status for further diagnostics.",
+        "No immediate recovery required. Reset the GPU at next service window.",
+        "No recovery required since FPGA will recover the fault automatically",
+        "No recovery required.",
+        "NonFatal Error Count {PCIe NonFatal Error}",
+        "Not supported; always 0",
+        "One or more bits in MFR_SYSTEM_STATUS1 are set",
+        "Output Overcurrent fault has occurred",
+        "Output Overvoltage fault has occurred",
+        "Output current/power fault or warning has occurred",
+        "Output voltage fault or warning has occurred",
+        "OverTemp",
+        "PCB Thermal Warning",
+        "PCIe LTSSM state",
+        "PCIe LTSSM state downstream",
+        "PCIe LTSSM state upstream",
+        "PCIe Link Error - Downstream",
+        "PCIe Link Error - Upstream",
+        "PCIe Link Speed State Change",
+        "PCIe Link Width State Change",
+        "PCIe Switch 0V8 Abnormal Power change",
+        "PCIe Uncorrectable Error {PCIe Uncorrectable Error}",
+        "PCIe fatal error counts - Downstream",
+        "PCIe fatal error counts - Upstream",
+        "PCIe link error - Correctable",
+        "PCIe link error - Fatal",
+        "PCIe link error - NonFatal",
+        "PCIe link goes down - Downstream",
+        "PCIe link goes down - Upstream",
+        "PCIe link speed state",
+        "PCIe link width state",
+        "PCIe non fatal error counts - Downstream",
+        "PCIe non fatal error counts - Upstream",
+        "PCIe uncorrectable error - Downstream",
+        "PCIe uncorrectable error - Upstream",
+        "PCIeRetimer 0V9 Abnormal Power Change",
+        "PCIeRetimer 1V8VDD Abnormal Power Change",
+        "PCIeRetimer PCIe Link Speed",
+        "PCIeRetimer PCIe Link Width",
+        "PCIeRetimer Power Change",
+        "PCIeRetimer_[0-7]",
+        "PCIeRetimer_[0|0-7] 0v9 PowerGood",
+        "PCIeRetimer_[0|0-7] 1.8v PowerGood",
+        "PCIeRetimer_[0|0-7] Firmware",
+        "PCIeRetimer_[0|0-7] PCIe",
+        "PCIeRetimer_[0|0-7] PowerGood",
+        "PCIeRetimer_[0|0-7] Temperature",
+        "PCIeRetimer_[0|0-7]_TEMP_0",
+        "PCIeRetimer_[0|0-7]_VR_0V9",
+        "PCIeRetimer_[0|0-7]_VR_1V8VDD",
+        "PCIeSwitch PCIe Link Speed",
+        "PCIeSwitch PCIe Link Width",
+        "PCIeSwitch_0",
+        "PCIeSwitch_0 Firmware",
+        "PCIeSwitch_0 PCIe Upstream Port",
+        "PCIeSwitch_0 PowerGood",
+        "PCIeSwitch_0 Temperature",
+        "PCIeSwitch_0 UP PCIe",
+        "PCIeSwitch_0/DOWN_[0-3]",
+        "PCIeSwitch_0/DOWN_[0|0-3]",
+        "PCIeSwitch_0/DOWN_[0|0-3] PCIe",
+        "PCIeSwitch_0/DOWN_[0|0-3] PCIe Downstream Port",
+        "PCIeSwitch_0_TEMP_0",
+        "PCIeSwitch_0_VR_0V8",
+        "PCIeType",
+        "Physically Missing",
+        "Power Good signal has been negated",
+        "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation",
+        "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation.",
+        "Power off the BaseBoard within 1 second, and GPU will shutdown autonomously. Check thermal environmental to ensure the GPU operates under UpperFatal threshold and power cycle the Baseboard to recover.",
+        "Power off the BaseBoard within 1 second, and the Retimer will be held in reset. Check thermal environmental to ensure the Retimer operates under UpperFatal threshold and power cycle the BaseBoard to recover. ",
+        "Power off the BaseBoard within 1 second, the NVSwitch will be held in reset. Check thermal environmental to ensure the NVSwitch operates under UpperFatal threshold and power cycle the BaseBoard to recover. ",
+        "Power off the BaseBoard within 1 second, the PCIe Switch will be held in reset. Check thermal environmental to ensure the PCIe Switch operates under UpperFatal threshold and power cycle the BaseBoard to recover. ",
+        "Power off the BaseBoard within 1 second. Check thermal environmental to ensure FPGA operates under UpperFatal threshold and power cycle the BaseBoard to recover. ",
+        "Privilege Disabled",
+        "RecoveryCount",
+        "ReplayErrorsCount",
+        "Reset Required",
+        "Reset the GPU or power cycle the BaseBoard. If problem persists, isolate the server for RMA evaluation.",
+        "Reset the GPU. If the GPU continues to exhibit the problem, isolate the server for RMA evaluation.",
+        "Reset the link. If problem persists, isolate the server for RMA evaluation.",
+        "ResetRequired",
+        "ResourceEvent.1.0.ResourceErrorThresholdExceeded",
+        "ResourceEvent.1.0.ResourceErrorsDetected",
+        "ResourceEvent.1.0.ResourceWarningThresholdExceeded",
+        "ResourceEvent.1.1.ResourceStateChanged",
+        "Restart Fabric Manager or power cycle the BaseBoard. If problem persists, isolate the server for RMA evaluation.",
+        "Retimer PWR_GD state run time change",
+        "Row Remapping Count - Correctable",
+        "Row Remapping Count - Uncorrectable",
+        "Row Remapping Failure",
+        "Row Remapping Failure Count",
+        "Row Remapping Pending",
+        "Row Remapping Pending Count",
+        "Row-Remapping Failure",
+        "Row-Remapping Pending",
+        "RowRemappingFailureState",
+        "RowRemappingPendingState",
+        "SMBPBI Fencing state change",
+        "SMBPBI Server Unavailable",
+        "SMBPBIFencingState",
+        "SMBPBIInterface",
+        "SPI Flash Error",
+        "SPI flash error",
+        "SRAM ECC uncorrectable error count",
+        "SYS VR 1V 8 Abnormal Power change",
+        "SYS VR 3V3 Abnormal Power change",
+        "Secure Boot Failure",
+        "Secure boot failure",
+        "SelfTest",
+        "Server Unavailable",
+        "System VR 1V8 Fault",
+        "System VR 3V3 Fault",
+        "THERM_OVERT",
+        "Talk to ERoT directly via PLDM vendor command to triage.",
+        "Temperature fault or warning has occurred",
+        "The MOSFET is not switched on for any reason or hot swap gate is off",
+        "Thermal Warning",
+        "ThrottleReason",
+        "Throttled State",
+        "Training Error count is {NVLink Training Error}",
+        "TrainingError",
+        "Uncorrectable ECC Error",
+        "Unknown fault or warning has occurred",
+        "Upper Critical Temperature",
+        "Upper Critical Temperature Threshold",
+        "Upper Fatal Temperature",
+        "VDD Abnormal Power Change",
+        "VIN under voltage fault has occurred",
+        "VR Failure",
+        "VR Failure - 1V8 Abnormal Power Change",
+        "VR Failure - 3V3 Abnormal Power Change",
+        "VR Failure - 5V Abnormal Power Change",
+        "VR Failure - DVDD Abnormal Power Change",
+        "VR Failure - HVDD Abnormal Power Change",
+        "VR Failure - VDD Abnormal Power Change",
+        "VR Fault",
+        "VR Fault 0.9V",
+        "VR Fault 1.8V",
+        "Value",
+        "VendorId",
+        "Warning",
+        "WriteProtected",
+        "active_auth_status GPU_SXM_[1-8]",
+        "active_auth_status NVSwitch_[0-3]",
+        "active_auth_status PCIeSwitch_0",
+        "baseboard.pcb.temperature.alert",
+        "cache_invalidation",
+        "ceCount",
+        "ceRowRemappingCount",
+        "com.nvidia.MemoryRowRemapping",
+        "com.nvidia.SMPBI",
+        "erot_control",
+        "false",
+        "feCount",
+        "firmware_status",
+        "fpga.thermal.alert",
+        "fpga.thermal.temperature.singlePrecision",
+        "fpga_regtbl_wrapper",
+        "gpu.interrupt.PresenceInfo",
+        "gpu.interrupt.erot",
+        "gpu.interrupt.powerGoodAbnormalChange",
+        "gpu.thermal.alert",
+        "gpu.thermal.temperature.overTemperatureInfo",
+        "hmc.interrupt.erot",
+        "hsc.device.alert",
+        "hsc.power.abnormalPowerChange",
+        "inletTemp.thermal.alert",
+        "interface_status",
+        "mctp-error-detection",
+        "mctp-vdm-util-wrapper",
+        "nonfeCount",
+        "nvswitch.1V8.abnormalPowerChange",
+        "nvswitch.3V3.abnormalPowerChange",
+        "nvswitch.5V.abnormalPowerChange",
+        "nvswitch.device.abnormalPresenceChange",
+        "nvswitch.dvdd.abnormalPowerChange",
+        "nvswitch.hvdd.abnormalPowerChange",
+        "nvswitch.interrupt.erot",
+        "nvswitch.thermal.alert",
+        "nvswitch.thermal.temperature.overTemperatureInfo",
+        "nvswitch.vdd.abnormalPowerChange",
+        "pcie",
+        "pcieretimer.0V9.abnormalPowerChange",
+        "pcieretimer.1V8VDD.abnormalPowerChange",
+        "pcieretimer.thermal.temperature.overTemperatureInfo",
+        "pcieswitch.0V8.abnormalPowerChange",
+        "pcieswitch.interrupt.erot",
+        "pcieswitch.pcie.linkStatus.page6",
+        "pcieswitch.thermal.temperature.overTemperatureInfo",
+        "pin_status",
+        "power_rail",
+        "protocol_status",
+        "range",
+        "sysvr1v8.power.abnormalPowerChange",
+        "sysvr3v3.power.abnormalPowerChange",
+        "true",
+        "ueCount",
+        "ueRowRemappingCount",
+        "xyz.openbmc_project.GpioStatus",
+        "xyz.openbmc_project.GpuOobRecovery.Server",
+        "xyz.openbmc_project.Inventory.Item.Cpu.OperatingConfig",
+        "xyz.openbmc_project.Inventory.Item.PCIeDevice",
+        "xyz.openbmc_project.Inventory.Item.PCIeDevice.PCIeTypes.Gen4",
+        "xyz.openbmc_project.Inventory.Item.PCIeDevice.PCIeTypes.Gen5",
+        "xyz.openbmc_project.Inventory.Item.PCIeDevice.PCIeTypes.Unknown",
+        "xyz.openbmc_project.Inventory.Item.Port",
+        "xyz.openbmc_project.Inventory.Item.Switch",
+        "xyz.openbmc_project.Memory.MemoryECC",
+        "xyz.openbmc_project.PCIe.LTSSMState",
+        "xyz.openbmc_project.PCIe.PCIeECC",
+        "xyz.openbmc_project.Sensor.Threshold.Critical",
+        "xyz.openbmc_project.Sensor.Threshold.HardShutdown",
+        "xyz.openbmc_project.Sensor.Value",
+        "xyz.openbmc_project.Software.Settings",
+        "xyz.openbmc_project.State.PowerChange",
+        "xyz.openbmc_project.State.ProcessorPerformance",
+        "xyz.openbmc_project.State.ProcessorPerformance.ThrottleReasons.None",
+        "xyz.openbmc_project.State.ResetStatus",
+        "{ERoTId} ERoT_Fatal",
+        "{HMCId} Firmware",
+        "{HMCId} SMBPBI",
+        "{HSCId} Alert",
+        "{HSCId} PowerGood",
+        "{PCBTempId} Temperature",
+        "{SysVRId} PowerGood",
+        "{Throttle Reason}",
+        "{UpperCritical Threshold}",
+        "{UpperFatal Threshold}"};
+
+    for (const auto& str : eventInfoStrings)
+    {
+        EXPECT_NO_THROW({
+            DeviceIdPattern pat(str);
+            EXPECT_EQ(pat.pattern(), str);
+            auto domain = pat.domainVec();
+            auto values = pat.valuesVec();
+            EXPECT_EQ(domain.size(), values.size());
+            unsigned dimDomainProd = 1;
+            for (unsigned i = 0u; i < pat.dim(); ++i)
+            {
+                dimDomainProd *= pat.dimDomain(i).size();
+            }
+            EXPECT_EQ(domain.size(), dimDomainProd);
+            unsigned i = 0;
+            for (const auto& arg : pat.domain())
+            {
+                auto value = pat.eval(arg);
+                EXPECT_EQ(domain.at(i), arg);
+                EXPECT_EQ(values.at(i), value);
+                EXPECT_TRUE(pat.matches(value));
+                auto matchRes = pat.match(value);
+                EXPECT_EQ(matchRes.size(), 1);
+                EXPECT_EQ(matchRes.at(0), arg);
+                i++;
+            }
+        });
+    }
+}
+
 TEST(DeviceIdTest, PatternInputMapping_ZeroPattern)
 {
     DeviceIdPattern ip("Critical");
-
-    std::cout << "Testing index pattern \"" << ip << "\"" << std::endl;
 
     EXPECT_THAT(ip.domainVec(), ElementsAre(PatternIndex()));
 
@@ -840,424 +1213,86 @@ TEST(DeviceIdTest, PatternInputMapping_ZeroPattern)
     EXPECT_EQ(ip.dim(), 0);
 }
 
-TEST(DeviceIdTest, all_event_info_strings)
-{
-    DeviceIdPattern ip("Critical");
-    auto eventInfoStrings = {
-        "",
-        "/redfish/v1/Chassis/HGX_PCIeRetimer_[0-7]/Sensors/HGX_PCIeRetimer_[0-7]_Temp_0",
-        "/redfish/v1/Chassis/HGX_PCIeSwitch_0/Sensors/HGX_PCIeSwitch_0_Temp_0",
-        "/xyz/openbmc_project/GpioStatusHandler",
-        "/xyz/openbmc_project/GpuOobRecovery",
-        "/xyz/openbmc_project/inventory/system/chassis/HGX_Chassis_0",
-        "/xyz/openbmc_project/inventory/system/chassis/HGX_GPU_SXM_[1-8]",
-        "/xyz/openbmc_project/inventory/system/chassis/HGX_GPU_SXM_[0|1-8]/PCIeDevices/GPU_SXM_[0|1-8]",
-        "/xyz/openbmc_project/inventory/system/chassis/HGX_NVSwitch_[0-3]",
-        "/xyz/openbmc_project/inventory/system/chassis/HGX_NVSwitch_[0-3]/PCIeDevices/NVSwitch_[0|0-3]",
-        "/xyz/openbmc_project/inventory/system/fabrics/HGX_NVLinkFabric_0/Switches/NVSwitch_[0-3]",
-        "/xyz/openbmc_project/inventory/system/fabrics/HGX_NVLinkFabric_0/Switches/NVSwitch_[0-3]/Ports/NVLink_[0-39]",
-        "/xyz/openbmc_project/inventory/system/fabrics/HGX_PCIeRetimerTopology_[0-7]/Switches/PCIeRetimer_[0|0-7]",
-        "/xyz/openbmc_project/inventory/system/fabrics/HGX_PCIeRetimerTopology_[0-7]/Switches/PCIeRetimer_[0|0-7]/Ports/DOWN_0",
-        "/xyz/openbmc_project/inventory/system/fabrics/HGX_PCIeSwitchTopology_0/Switches/PCIeSwitch_0/Ports/DOWN_[0-3]",
-        "/xyz/openbmc_project/inventory/system/fabrics/HGX_PCIeSwitchTopology_0/Switches/PCIeSwitch_0/Ports/UP_0",
-        "/xyz/openbmc_project/inventory/system/memory/GPU_SXM_[1-8]_DRAM_0",
-        "/xyz/openbmc_project/inventory/system/processors/FPGA_0/Ports/PCIeToHMC_0",
-        "/xyz/openbmc_project/inventory/system/processors/FPGA_0/Ports/PCIeToHMC_0 ",
-        "/xyz/openbmc_project/inventory/system/processors/GPU_SXM_[1-8]",
-        "/xyz/openbmc_project/sensors/temperature/HGX_GPU_SXM_[1-8]_TEMP_0",
-        "/xyz/openbmc_project/sensors/temperature/HGX_NVSwitch_[0-3]_TEMP_0",
-        "/xyz/openbmc_project/software/HGX_FW_BMC_0",
-        "/xyz/openbmc_project/software/HGX_FW_GPU_SXM_[1-8]",
-        "/xyz/openbmc_project/software/HGX_FW_NVSwitch_[0-3]",
-        "0",
-        "0xfa1d",
-        "1",
-        "1024",
-        "128",
-        "16",
-        "16384",
-        "2",
-        "2048",
-        "256",
-        "32",
-        "32768",
-        "4",
-        "4096",
-        "5",
-        "512",
-        "6",
-        "64",
-        "768",
-        "769",
-        "770",
-        "774",
-        "8",
-        "8192",
-        "AP0_BOOTCOMPLETE_TIMEOUT GPU_SXM_[1-8]",
-        "AP0_BOOTCOMPLETE_TIMEOUT NVSwitch_[0-3]",
-        "AP0_BOOTCOMPLETE_TIMEOUT PCIeSwitch_0",
-        "AP0_PRIMARY_FW_AUTHENTICATION_STATUS GPU_SXM_[1-8]",
-        "AP0_PRIMARY_FW_AUTHENTICATION_STATUS NVSwitch_[0-3]",
-        "AP0_PRIMARY_FW_AUTHENTICATION_STATUS PCIeSwitch_0",
-        "AP0_SPI_READ_FAILURE GPU_SXM_[1-8]",
-        "AP0_SPI_READ_FAILURE NVSwitch_[0-3]",
-        "AP0_SPI_READ_FAILURE PCIeSwitch_0",
-        "Abnormal Power Change",
-        "Abnormal Presence State Change",
-        "Abnormal Speed Change",
-        "Abnormal State Change",
-        "Abnormal Width Change",
-        "AbnormalPowerChange",
-        "Absent",
-        "ActiveWidth",
-        "Alert caused by HSC alert",
-        "BMC PCIe Uncorrectable Error",
-        "BMC PCIe fatal error counts",
-        "BackendErrorCode",
-        "BaseBoard components will retry if encounters errors. If problem persists, analyze FPGA log or ERoT log.",
-        "Baseboard GPU Presence change Interrupt",
-        "Baseboard_0",
-        "Baseboard_0 HSC Fault",
-        "Boot completed failure",
-        "CMDLINE",
-        "Circuit breaker fault triggered or status is present is STATUS_OTHER byte",
-        "Communication fault has occurred",
-        "Cordon HGX server from the cluster for RMA evaluation.",
-        "Cordon the HGX server node for further diagnosis.",
-        "Cordon the HGX server node from the cluster for RMA evaluation.",
-        "Critical",
-        "CriticalHigh",
-        "Current PCIe link speed",
-        "Current PCIe link width",
-        "Current Recovery Count",
-        "Current Replay Count",
-        "Current Temperature",
-        "Current Training Error Count",
-        "CurrentDeviceName",
-        "CurrentSpeed",
-        "DBUS",
-        "DIRECT",
-        "Data CRC Errors",
-        "DataCRCCount",
-        "Device is busy and could not respond to PMBus access",
-        "DeviceCoreAPI",
-        "Drain and Reset Recommended",
-        "DrainAndResetRequired",
-        "EEPROM Error",
-        "EROT is in recovery mode, and HostBMC need to deassert EROT_RECOV and reboot the device. If proplem persists, cordon HGX server from the cluster for RMA evaluation.",
-        "ERoT Fatal Abnormal State Change",
-        "ERoT Recovery",
-        "Error",
-        "EventsPendingRegister",
-        "FET is shorted or manufacture specific fault or warning has occurred",
-        "FPGA - BMC PCIe Error",
-        "FPGA - HMC PCIe Error",
-        "FPGA HMC PCIe Correctable Error Count",
-        "FPGA HMC PCIe Fatal Error Count",
-        "FPGA HMC PCIe Non Fatal Error Count",
-        "FPGA HMC PCIe UnCorrectable Error Count",
-        "FPGA Temp Alert",
-        "FPGA Temperature",
-        "FPGA Thermal Parameter",
-        "FPGA_0",
-        "FPGA_NVSW[0-3]_EROT_RECOV_L NVSwitch_[0-3]",
-        "FPGA_PEXSW_EROT_RECOV_L PCIeSwitch_0",
-        "FPGA_SXM[0-7]_EROT_RECOV_L GPU_SXM_[1-8]",
-        "FW Update with WP engaged - GPU",
-        "FW Update with WP engaged - HMC",
-        "FW Update with WP engaged - NVSwitch",
-        "Failover to Redundant Interface(i2c)",
-        "Flit CRC Errors",
-        "FlitCRCCount",
-        "ForceRestart",
-        "GPU",
-        "GPU Drain and Reset Recommended",
-        "GPU Power Good Abnormal change",
-        "GPU Reset Required",
-        "GPU_SXM_[1-8]",
-        "GPU_SXM_[1-8] gpu.xid.event XidTextMessage",
-        "HMC SMBPBI Failover",
-        "HMC {PCIe Uncorrectable Error}",
-        "HMC_0",
-        "HSC Power Good Abnormal change",
-        "HSC detailed alert status",
-        "HSC_[0-9]",
-        "Hang",
-        "HardShutdownHigh",
-        "I2C EEPROM Error",
-        "I2C Hang - Bus Timeout",
-        "I2C Hang - FSM Timeout",
-        "I2C3_ALERT",
-        "I2C4_ALERT",
-        "If WP enabled, Glacier/AP shall not be able to update SPI. This is a HW protection.",
-        "Incorrect link speed",
-        "Incorrect link width",
-        "Increase the BaseBoard cooling and check thermal environmental to ensure Inlet Temperature reading is under UpperCritical threshold.",
-        "Increase the BaseBoard cooling and check thermal environmental to ensure Inlet Temperature reading is under UpperCritical threshold. ",
-        "Increase the BaseBoard cooling and check thermal environmental to ensure the GPU operates under UpperCritical threshold. ",
-        "Increase the BaseBoard cooling and check thermal environmental to ensure the NVSwtich operates under UpperCritical threshold. ",
-        "Inlet Sensor Temperature Alert",
-        "Inlet Thermal Parameters",
-        "Input voltage or current fault has occurred",
-        "LTSSM Link Down",
-        "LanesInUse",
-        "Link data CRC error count",
-        "Link flit CRC error count",
-        "MCTP runtime failures",
-        "NVLink data CRC error count",
-        "NVLink flit error count",
-        "NVLink recovery error count",
-        "NVLink replay error count",
-        "NVSW PRSNT state run time change",
-        "NVSwitch",
-        "NVSwitch 1V8 Abnormal change",
-        "NVSwitch 3V3 Abnormal change",
-        "NVSwitch 5V Abnormal change",
-        "NVSwitch DVDD Abnormal change",
-        "NVSwitch HVDD Abnormal change",
-        "NVSwitch IBC Abnormal change",
-        "NVSwitch Link Training Error",
-        "NVSwitch PCIe link speed",
-        "NVSwitch VDD Abnormal change",
-        "NVSwitch_[0-3]",
-        "NVSwitch_[0-3] nvswitch.Sxid.event XidTextMessage",
-        "No immediate recovery required. If this event occurs multiple times in a short period, need to check other PCIe error status for further diagnostics.",
-        "No immediate recovery required. Reset the GPU at next service window.",
-        "No recovery required since FPGA will recover the fault automatically",
-        "No recovery required.",
-        "Not supported, always 0",
-        "Nvlink Recovery Error",
-        "Nvlink Replay Error",
-        "OK",
-        "One or more bits in MFR_SYSTEM_STATUS1 are set",
-        "Output Overcurrent fault has occurred",
-        "Output Overvoltage fault has occurred",
-        "Output current/power fault or warning has occurred",
-        "Output voltage fault or warning has occurred",
-        "OverTemp",
-        "PCB Thermal Warning",
-        "PCIe LTSSM state",
-        "PCIe Link Error - Downstream",
-        "PCIe Link Error - Upstream",
-        "PCIe Link Speed State Change",
-        "PCIe Link Width State Change",
-        "PCIe Switch 0V8 Abnormal Power change",
-        "PCIe fatal error counts - Downstream",
-        "PCIe fatal error counts - Upstream",
-        "PCIe link error",
-        "PCIe link goes down - Downstream",
-        "PCIe link goes down - Upstream",
-        "PCIe link speed state",
-        "PCIe link width state",
-        "PCIe non fatal error counts - Upstream",
-        "PCIeRetimer 1V8VDD Abnormal Power Change",
-        "PCIeRetimer PCIe Link Speed",
-        "PCIeRetimer PCIe Link Width",
-        "PCIeRetimer Power Change",
-        "PCIeRetimer_[0-7]",
-        "PCIeSwitch PCIe Link Speed",
-        "PCIeSwitch PCIe Link Width",
-        "PCIeSwitch_0",
-        "PCIeType",
-        "Physically Missing",
-        "Power Good signal has been negated",
-        "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation",
-        "Power cycle the BaseBoard. If the problem persists, isolate the server for RMA evaluation.",
-        "Power off the BaseBoard within 1 second, and GPU will shutdown autonomously. Check thermal environmental to ensure the GPU operates under UpperFatal threshold and power cycle the Baseboard to recover.",
-        "Power off the BaseBoard within 1 second, and the Retimer will be held in reset. Check thermal environmental to ensure the Retimer operates under UpperFatal threshold and power cycle the BaseBoard to recover. ",
-        "Power off the BaseBoard within 1 second, the NVSwitch will be held in reset. Check thermal environmental to ensure the NVSwitch operates under UpperFatal threshold and power cycle the BaseBoard to recover. ",
-        "Power off the BaseBoard within 1 second, the PCIe Switch will be held in reset. Check thermal environmental to ensure the PCIe Switch operates under UpperFatal threshold and power cycle the BaseBoard to recover. ",
-        "Power off the BaseBoard within 1 second. Check thermal environmental to ensure FPGA operates under UpperFatal threshold and power cycle the BaseBoard to recover. ",
-        "Presence",
-        "RecoveryCount",
-        "ReplayCount",
-        "Reset Required",
-        "Reset the GPU or power cycle the BaseBoard.  If problem persists, isolate the server for RMA evaluation.",
-        "Reset the GPU or power cycle the BaseBoard. If problem persists, isolate the server for RMA evaluation.",
-        "Reset the GPU. If the GPU continues to exhibit the problem, isolate the server for RMA evaluation.",
-        "Reset the link. If problem persists, isolate the server for RMA evaluation.",
-        "ResetRequired",
-        "ResourceEvent.1.0.ResourceErrorThresholdExceeded",
-        "ResourceEvent.1.0.ResourceErrorsDetected",
-        "ResourceEvent.1.1.ResourceStateChanged",
-        "Restart Fabric Manager or power cycle the BaseBoard. If problem persists, isolate the server for RMA evaluation.",
-        "Retimer PWR_GD state run time change",
-        "Row Remapping Count - Correctable",
-        "Row Remapping Count - Uncorrectable",
-        "Row Remapping Failure",
-        "Row Remapping Failure Count",
-        "Row Remapping Pending",
-        "Row Remapping Pending Count",
-        "Row-Remapping Pending",
-        "RowRemappingFailureState",
-        "RowRemappingPendingState",
-        "SMBPBI Server Unavailable",
-        "SMBPBIInterface",
-        "SPI flash error",
-        "SRAM ECC uncorrectable error count",
-        "SXID Error",
-        "SXID: {SXidErrMsg}",
-        "SYS VR 1V 8 Abnormal Power change",
-        "SYS VR 3V3 Abnormal Power change",
-        "Secure boot failure",
-        "SelfTest",
-        "Server Unavailable",
-        "Successful Recoveries",
-        "Successful Replays",
-        "Successful link recoveries",
-        "Successful link replays",
-        "System VR 1V8 Fault",
-        "System VR 3V3 Fault",
-        "THERM_OVERT",
-        "Talk to glacier directly via PLDM vendor command to triage.",
-        "Temperature fault or warning has occurred",
-        "The MOSFET is not switched on for any reason or hot swap gate is off",
-        "Thermal Warning",
-        "ThrottleReason",
-        "Throttled State",
-        "Training Error",
-        "TrainingError",
-        "Unknown fault or warning has occurred",
-        "Upper Critical Temperature",
-        "Upper Critical Temperature Threshold",
-        "Upper Fatal Temperature",
-        "VIN under voltage fault has occurred",
-        "VR Failure",
-        "VR Fault",
-        "VR Fault 0.9V",
-        "VR Fault 1.8V",
-        "Value",
-        "VendorId",
-        "Warning",
-        "Width",
-        "WriteProtected",
-        "XID Error",
-        "XID: {XidErrMsg}",
-        "baseboard.pcb.temperature.alert",
-        "ceCount",
-        "ceRowRemappingCount",
-        "com.nvidia.MemoryRowRemapping",
-        "com.nvidia.SMPBI",
-        "eROT will try to recover AP by a reset/reboot. If there is still a problem, AP FW needs to be re-flashed.",
-        "false",
-        "feCount",
-        "fpga.thermal.alert",
-        "fpga.thermal.temperature.singlePrecision",
-        "fpga_regtbl_wrapper",
-        "gpu.interrupt.PresenceInfo",
-        "gpu.interrupt.erot",
-        "gpu.interrupt.powerGoodAbnormalChange",
-        "gpu.nvlink.recoveryErrCount",
-        "gpu.nvlink.replayErrCount",
-        "gpu.thermal.alert",
-        "gpu.thermal.temperature.overTemperatureInfo",
-        "hmc.interrupt.erot",
-        "hostBmc.pcie.linkStatus.page5",
-        "hsc.device.alert",
-        "hsc.power.abnormalPowerChange",
-        "inletTemp.thermal.alert",
-        "mctp-error-detection",
-        "mctp-vdm-util-wrapper",
-        "nonfeCount",
-        "nvswitch.1V8.abnormalPowerChange",
-        "nvswitch.3V3.abnormalPowerChange",
-        "nvswitch.5V.abnormalPowerChange",
-        "nvswitch.device.abnormalPresenceChange",
-        "nvswitch.device.vrFault",
-        "nvswitch.dvdd.abnormalPowerChange",
-        "nvswitch.hvdd.abnormalPowerChange",
-        "nvswitch.interrupt.erot",
-        "nvswitch.thermal.alert",
-        "nvswitch.thermal.temperature.overTemperatureInfo",
-        "nvswitch.vdd.abnormalPowerChange",
-        "pcie",
-        "pcieretimer.0V9.abnormalPowerChange",
-        "pcieretimer.1V8VDD.abnormalPowerChange",
-        "pcieretimer.thermal.temperature.overTemperatureInfo",
-        "pcieswitch.0V8.abnormalPowerChange",
-        "pcieswitch.interrupt.erot",
-        "pcieswitch.pcie.linkStatus.page6",
-        "pcieswitch.thermal.temperature.overTemperatureInfo",
-        "range",
-        "sysvr1v8.power.abnormalPowerChange",
-        "sysvr3v3.power.abnormalPowerChange",
-        "true",
-        "ueCount",
-        "ueRowRemappingCount",
-        "xid-event-util-wrapper",
-        "xyz.openbmc_project.GpioStatus",
-        "xyz.openbmc_project.GpuOobRecovery.Server",
-        "xyz.openbmc_project.Inventory.Item.PCIeDevice",
-        "xyz.openbmc_project.Inventory.Item.PCIeDevice.PCIeTypes.Gen5",
-        "xyz.openbmc_project.Inventory.Item.Port",
-        "xyz.openbmc_project.Inventory.Item.Switch",
-        "xyz.openbmc_project.Memory.MemoryECC",
-        "xyz.openbmc_project.PCIe.PCIeECC",
-        "xyz.openbmc_project.Sensor.Threshold.Critical",
-        "xyz.openbmc_project.Sensor.Threshold.HardShutdown",
-        "xyz.openbmc_project.Sensor.Value",
-        "xyz.openbmc_project.Software.Settings",
-        "xyz.openbmc_project.State.PowerChange",
-        "xyz.openbmc_project.State.PresenceState",
-        "xyz.openbmc_project.State.ProcessorPerformance",
-        "xyz.openbmc_project.State.ProcessorPerformance.ThrottleReasons.None",
-        "xyz.openbmc_project.State.ResetStatus",
-        "xyz.openbmc_project.com.nvidia.Events.PendingRegister",
-        "{APId} Firmware",
-        "{ERoTId} ERoT_Fatal",
-        "{ERoTId} Firmware",
-        "{FPGAId} PCIe",
-        "{FPGAId} Temperature",
-        "{GPUId}",
-        "{GPUId} Driver Event Message",
-        "{GPUId} I2C",
-        "{GPUId} Memory",
-        "{GPUId} PCIe",
-        "{GPUId} PowerGood",
-        "{GPUId} Temperature",
-        "{GPUId} {NVLinkId}",
-        "{HMCId} Firmware",
-        "{HMCId} SMBPBI",
-        "{HSCId} Alert",
-        "{HSCId} PowerGood",
-        "{InletTempId} Temperature",
-        "{NVSwitchId}",
-        "{NVSwitchId} Driver Event Message",
-        "{NVSwitchId} I2C",
-        "{NVSwitchId} PCIe",
-        "{NVSwitchId} PowerGood",
-        "{NVSwitchId} SMBPBI",
-        "{NVSwitchId} Temperature",
-        "{NVSwitchId} {NVLinkId}",
-        "{PCIe Uncorrectable Error}",
-        "{PCIeRetimerId} Firmware",
-        "{PCIeRetimerId} PCIe",
-        "{PCIeRetimerId} PowerGood",
-        "{PCIeRetimerId} Temperature",
-        "{PCIeSwitchId} PCIe",
-        "{PCIeSwitchId} PowerGood",
-        "{PCIeSwitchId} Temperature",
-        "{SysVRId} PowerGood",
-        "{UpperCritical Threshold}",
-        "{UpperFatal Threshold}"};
+// Helper functions ///////////////////////////////////////////////////////////
 
-    for (const auto& str : eventInfoStrings)
-    {
-        try
-        {
-            DeviceIdPattern pat(str);
-            std::cout << "'" << str << "': " << std::endl;
-            for (const auto& arg : pat.domain())
-            {
-                std::cout << arg << ": '" << pat.eval(arg) << "'" << std::endl;
-            }
-            std::cout << std::endl;
-        }
-        catch (const std::exception& e)
-        {
-            EXPECT_NO_THROW({ DeviceIdPattern pat(str); });
-        }
-    }
+TEST(DeviceIdTest, calcInputIndexToBracketPoss)
+{
+    EXPECT_THAT(
+        calcInputIndexToBracketPoss(std::vector<unsigned>({0, 4, 0, 1, 1})),
+        UnorderedElementsAre(std::vector<unsigned>{0, 2},
+                             std::vector<unsigned>{3, 4},
+                             std::vector<unsigned>{}, std::vector<unsigned>{},
+                             std::vector<unsigned>{1}));
+    EXPECT_THAT(calcInputIndexToBracketPoss(std::vector<unsigned>()),
+                UnorderedElementsAre());
+}
+
+TEST(DeviceIdTest, calcInputDomain)
+{
+    EXPECT_EQ(calcInputDomain({}, {}), PatternInputDomain());
+    auto primes =
+        syntax::BracketMap{{2, 1}, {3, 2}, {5, 3}, {7, 4}, {11, 5}, {13, 6}};
+    EXPECT_EQ(calcInputDomain({0}, {primes}),
+              PatternInputDomain(
+                  std::vector<syntax::DeviceIndex>{2, 3, 5, 7, 11, 13}));
+    auto primes1 =
+        syntax::BracketMap{{3, 2}, {5, 3}, {7, 4}, {11, 5}, {13, 6}, {17, 7}};
+    EXPECT_EQ(
+        calcInputDomain({0, 1}, {primes, primes1}),
+        PatternInputDomain(std::vector<syntax::DeviceIndex>{3, 5, 7, 11, 13}));
+    auto odds = syntax::BracketMap{{1, 1}, {3, 2},  {5, 3},  {7, 4},
+                                   {9, 5}, {11, 6}, {13, 7}, {15, 8}};
+    auto evens = syntax::BracketMap{{2, 1},  {4, 2},  {6, 3},  {8, 4},
+                                    {10, 5}, {12, 6}, {14, 7}, {16, 8}};
+    EXPECT_EQ(
+        calcInputDomain({0, 1}, {primes, odds}),
+        PatternInputDomain(std::vector<syntax::DeviceIndex>{3, 5, 7, 11, 13}));
+    EXPECT_EQ(calcInputDomain({0, 1}, {primes, evens}),
+              PatternInputDomain(std::vector<syntax::DeviceIndex>{2}));
+    EXPECT_EQ(calcInputDomain({0, 1}, {odds, evens}),
+              PatternInputDomain(std::vector<syntax::DeviceIndex>()));
+    EXPECT_EQ(calcInputDomain({0, 1, 2}, {odds, odds, odds}),
+              PatternInputDomain(
+                  std::vector<syntax::DeviceIndex>{1, 3, 5, 7, 9, 11, 13, 15}));
+    EXPECT_ANY_THROW(calcInputDomain({0, 1, 2}, {odds}));
+}
+
+TEST(DeviceIdTest, calcInputDomains)
+{
+    auto primes =
+        syntax::BracketMap{{2, 1}, {3, 2}, {5, 3}, {7, 4}, {11, 5}, {13, 6}};
+    auto primes1 =
+        syntax::BracketMap{{3, 2}, {5, 3}, {7, 4}, {11, 5}, {13, 6}, {17, 7}};
+    auto odds = syntax::BracketMap{{1, 1}, {3, 2},  {5, 3},  {7, 4},
+                                   {9, 5}, {11, 6}, {13, 7}, {15, 8}};
+    auto evens = syntax::BracketMap{{2, 1},  {4, 2},  {6, 3},  {8, 4},
+                                    {10, 5}, {12, 6}, {14, 7}, {16, 8}};
+    // ""
+    EXPECT_EQ(calcInputDomains({}, {}), std::vector<PatternInputDomain>({}));
+    // "[0|<primes>]_[0|<primes1>]"
+    EXPECT_EQ(calcInputDomains({{0, 1}}, {primes, primes}),
+              std::vector<PatternInputDomain>({PatternInputDomain(
+                  std::vector<syntax::DeviceIndex>({2, 3, 5, 7, 11, 13}))}));
+    // "[0|<primes>]_[0|<primes1>]"
+    EXPECT_EQ(calcInputDomains({{0, 1}}, {primes, primes1}),
+              std::vector<PatternInputDomain>({PatternInputDomain(
+                  std::vector<syntax::DeviceIndex>({3, 5, 7, 11, 13}))}));
+    // "[0|<primes>]_[1|<odds>]_[2|<evens>]"
+    EXPECT_EQ(calcInputDomains({{0}, {1}, {2}}, {primes, odds, evens}),
+              std::vector<PatternInputDomain>(
+                  {PatternInputDomain(
+                       std::vector<syntax::DeviceIndex>{2, 3, 5, 7, 11, 13}),
+                   PatternInputDomain(std::vector<syntax::DeviceIndex>{
+                       1, 3, 5, 7, 9, 11, 13, 15}),
+                   PatternInputDomain(std::vector<syntax::DeviceIndex>{
+                       2, 4, 6, 8, 10, 12, 14, 16})}));
+    // "[0|<primes>]_[2|<odds>]_[0|<evens>]"
+    EXPECT_EQ(calcInputDomains({{0, 2}, {}, {1}}, {primes, odds, evens}),
+              std::vector<PatternInputDomain>(
+                  {PatternInputDomain(std::vector<syntax::DeviceIndex>{2}),
+                   PatternInputDomain(),
+                   PatternInputDomain(std::vector<syntax::DeviceIndex>{
+                       1, 3, 5, 7, 9, 11, 13, 15})}));
 }
 
 namespace syntax

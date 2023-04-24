@@ -156,6 +156,13 @@ void PatternIndex::normalize()
     {
         indexes.pop_back();
     }
+    for (unsigned i = 0u; i < indexes.size(); ++i)
+    {
+        if (indexes.at(i) < 0)
+        {
+            indexes[i] = PatternIndex::unspecified;
+        }
+    }
 }
 
 // CartesianProductRange //////////////////////////////////////////////////////
@@ -252,7 +259,7 @@ unsigned CartesianProductRange::size() const
 }
 
 unsigned CartesianProductRange::product(
-    const std::vector<PatternInputMapping>& values)
+    const std::vector<PatternInputDomain>& values)
 {
     unsigned result = 1;
     for (const auto& elem : values)
@@ -260,50 +267,6 @@ unsigned CartesianProductRange::product(
         result *= elem.size();
     }
     return result;
-}
-
-// PatternInputMapping ////////////////////////////////////////////////////////
-
-PatternInputMapping::PatternInputMapping(
-    const std::map<unsigned, unsigned>& valuesMapping) :
-    unspecified(false),
-    valuesMapping(valuesMapping), indexToEntry()
-{
-    for (const auto& [key, value] : valuesMapping)
-    {
-        indexToEntry.push_back(key);
-    }
-}
-
-int PatternInputMapping::operator[](int i) const
-{
-    return unspecified ? PatternIndex::unspecified : indexToEntry[i];
-}
-
-std::size_t PatternInputMapping::size() const
-{
-    return unspecified ? 1 : indexToEntry.size();
-}
-
-bool PatternInputMapping::operator==(const PatternInputMapping& other) const
-{
-    return this == &other || (this->unspecified && other.unspecified) ||
-           this->valuesMapping == other.valuesMapping;
-}
-
-unsigned PatternInputMapping::eval(unsigned x) const
-{
-    if (!unspecified)
-    {
-        return valuesMapping.at(x);
-    }
-    else
-    {
-        std::stringstream ss;
-        ss << "The mapping is unspecified "
-           << "and cannot be evaluate at point '" << x << "'";
-        throw std::runtime_error(ss.str().c_str());
-    }
 }
 
 std::map<unsigned, unsigned>
@@ -332,45 +295,119 @@ std::map<unsigned, unsigned>
     return result;
 }
 
+// PatternInputDomain ////////////////////////////////////////////////////////
+
+PatternInputDomain::PatternInputDomain() : _unspecified(true), _domain()
+{}
+
+std::size_t PatternInputDomain::size() const
+{
+    return _unspecified ? 1 : _domain.size();
+}
+
+int PatternInputDomain::operator[](int i) const
+{
+    return _unspecified ? PatternIndex::unspecified : _domain[i];
+}
+
+bool PatternInputDomain::operator==(const PatternInputDomain& other) const
+{
+    return this == &other || (this->_unspecified && other._unspecified) ||
+           (!this->_unspecified && !other._unspecified &&
+            this->_domain == other._domain);
+    // As long as the domain is sorted (it is) the vector equality suffices
+}
+
+bool PatternInputDomain::isUnspecified() const
+{
+    return _unspecified;
+}
+
+bool PatternInputDomain::contains(int elem) const
+{
+    return _unspecified ||
+           (elem >= 0 && std::find(_domain.cbegin(), _domain.cend(), elem) !=
+                             _domain.cend());
+}
+
 // DeviceIdPattern ////////////////////////////////////////////////////////////
 
 DeviceIdPattern::DeviceIdPattern(const std::string& devIdPattern) :
     _rawPattern(devIdPattern)
 {
+    // The data transformation flow is best explained by
+    // following example execution for
+    //
+    // devIdPattern = "FPGA_SXM[0|1-8:0-7]_EROT_RECOV_L GPU_SXM_[0|1-8]"
+
+    // _rawPattern = "FPGA_SXM[0|1-8:0-7]_EROT_RECOV_L GPU_SXM_[0|1-8]"
+    using ::operator<<;
     std::vector<std::string> bracketContents;
     DeviceIdPattern::separateTextAndBracketContents(
         _rawPattern, _patternNonBracketFragments, bracketContents);
-    // Parse the brackets content
-    std::vector<syntax::IndexedBracketMap> indexedBracketMappins;
+    // bracketContents = 'vector{ [0]: "0|1-8:0-7", [1]: "0|1-8" }'
+    //
+    // _patternNonBracketFragments = 'vector{ [0]: "FPGA_SXM", [1]:
+    // "_EROT_RECOV_L GPU_SXM_", [2]: "" }'
+
+    std::vector<syntax::IndexedBracketMap> indexedBracketMappings;
     for (const auto& bracketContent : bracketContents)
     {
-        indexedBracketMappins.push_back(
+        indexedBracketMappings.push_back(
             syntax::IndexedBracketMap::parse(bracketContent));
     }
+    // indexedBracketMappings = vector{
+    //     [0]: (-1: map{ [1]: 0, [2]: 1, [3]: 2, [4]: 3,
+    //                    [5]: 4, [6]: 5, [7]: 6, [8]: 7 }),
+    //     [1]: (0: map{ [1]: 1, [2]: 2, [3]: 3, [4]: 4,
+    //                   [5]: 5, [6]: 6, [7]: 7, [8]: 8 })
+    // }
+
     syntax::IndexedBracketMap::fillImplicitInputPositions(
-        indexedBracketMappins);
-    // marcinw:TODO: calculate input mappings directly from IndexedBracketMap
-    // objects
-    for (const auto& ibm : indexedBracketMappins)
+        indexedBracketMappings);
+    // indexedBracketMappings = vector{
+    //     [0]: (0: map{ [1]: 0, [2]: 1, [3]: 2, [4]: 3,
+    //                   [5]: 4, [6]: 5, [7]: 6, [8]: 7 }),
+    //     [1]: (0: map{ [1]: 1, [2]: 2, [3]: 3, [4]: 4,
+    //                   [5]: 5, [6]: 6, [7]: 7, [8]: 8 })
+    // }
+
+    // _bracketPosToInputPos = vector{}
+    for (const auto& ibm : indexedBracketMappings)
     {
         _bracketPosToInputPos.push_back(ibm.getInputPosition());
     }
-    std::vector<std::map<unsigned, unsigned>> bracketMappings;
-    for (const auto& ibm : indexedBracketMappins)
+    // _bracketPosToInputPos = vector{ [0]: 0, [1]: 0 }
+
+    for (const auto& ibm : indexedBracketMappings)
     {
-        bracketMappings.push_back(ibm.map());
+        _bracketInputMappings.push_back(ibm.map());
     }
-    _inputMappings = calcInputMappings(
-        calcInputIndexToBracketPoss(_bracketPosToInputPos), bracketMappings);
+    // _bracketInputMappings = vector{
+    //     [0]: map{ [1]: 0, [2]: 1, [3]: 2, [4]: 3,
+    //               [5]: 4, [6]: 5, [7]: 6, [8]: 7 },
+    //     [1]: map{ [1]: 1, [2]: 2, [3]: 3, [4]: 4,
+    //               [5]: 5, [6]: 6, [7]: 7, [8]: 8 }
+    // }
+
+    // calcInputIndexToBracketPoss(_bracketPosToInputPos) =
+    //     vector{ [0]: vector{ [0]: 0, [1]: 1 } }
+    _patternInputDomains =
+        calcInputDomains(calcInputIndexToBracketPoss(_bracketPosToInputPos),
+                         _bracketInputMappings);
 }
 
 std::string DeviceIdPattern::eval(const PatternIndex& pi) const
 {
     checkIsInDomain(pi);
-    auto evalBracket = [this, &pi](auto inputPos) {
-        return _inputMappings[inputPos].eval(pi[inputPos]);
+    // Calculate the values of brackets for the given pattern index
+    auto evalBracket = [this, &pi](auto bracketPos) {
+        auto inputPos = _bracketPosToInputPos[bracketPos];
+        return _bracketInputMappings.at(bracketPos).at(pi[inputPos]);
     };
-    auto values = _bracketPosToInputPos | std::views::transform(evalBracket);
+    auto values = std::views::iota(0u, _bracketInputMappings.size()) |
+                  std::views::transform(evalBracket);
+    // Interleave the bracket results with static strings
     std::stringstream ss;
     ss << _patternNonBracketFragments[0];
     for (unsigned i = 0; i < _bracketPosToInputPos.size(); ++i)
@@ -383,7 +420,7 @@ std::string DeviceIdPattern::eval(const PatternIndex& pi) const
 
 CartesianProductRange DeviceIdPattern::domain() const
 {
-    return CartesianProductRange(_inputMappings);
+    return CartesianProductRange(_patternInputDomains);
 }
 
 std::vector<PatternIndex> DeviceIdPattern::domainVec() const
@@ -441,12 +478,19 @@ bool DeviceIdPattern::isInjective() const
            std::set<std::string>(v.cbegin(), v.cend()).size();
 }
 
+unsigned DeviceIdPattern::dim() const
+{
+    return _patternInputDomains.size();
+}
+
 void DeviceIdPattern::checkIsInDomain(const PatternIndex& pi) const
 {
-    auto badPositions = std::views::iota(0u, dim()) |
-                        std::views::filter([this, &pi](unsigned i) {
-                            return !_inputMappings[i].contains(pi[i]);
-                        });
+    auto badPositions =
+        std::views::iota(0u, dim()) |
+        std::views::filter([this, &pi](unsigned patternInputIndex) {
+            return !_patternInputDomains[patternInputIndex].contains(
+                pi[patternInputIndex]);
+        });
     if (!std::ranges::empty(badPositions))
     {
         std::stringstream ss;
@@ -465,7 +509,113 @@ void DeviceIdPattern::checkIsInDomain(const PatternIndex& pi) const
     }
 }
 
-std::vector<std::vector<unsigned>> DeviceIdPattern::calcInputIndexToBracketPoss(
+std::string DeviceIdPattern::pattern() const
+{
+    return _rawPattern;
+}
+
+PatternInputDomain DeviceIdPattern::dimDomain(unsigned axis) const
+{
+    if (axis < dim())
+    {
+        return _patternInputDomains[axis];
+    }
+    else
+    {
+        return PatternInputDomain();
+    }
+}
+
+// Helper functions ///////////////////////////////////////////////////////////
+
+/**
+ * @brief Calculate the domain of the pattern input at a given position
+ *
+ * The brackets in device id lang specify independent integer mappings. The
+ * values for pattern evaluation aren't provided to the brackets directly,
+ * however, but to the "input positions" with which the bracket mappings are
+ * associated. From these input positions the pattern arguments are forwarded to
+ * bracket mappings and translated there into what will finally replace the
+ * bracket.
+ *
+ * If the input position is associated with just one bracket mapping then the
+ * domain of this position is just the domain of the bracket mapping. However,
+ * if the same input position is associated with multiple brackets then the
+ * domain must be the cross section of the domains from all these mappings.
+ *
+ * This function calculates this cross section issuing warnings along the way if
+ * there are some elements left (while it's not an error, the behavior of such
+ * pattern may be surprising to the user).
+ *
+ * @param[in] inputPos
+ *
+ * @param[in] bracketPositions
+ *
+ * @param[in] allBracketMappings
+ */
+PatternInputDomain
+    calcInputDomain(const std::vector<unsigned>& bracketPositions,
+                    const std::vector<syntax::BracketMap>& allBracketMappings)
+{
+    if (bracketPositions.empty())
+    {
+        // If this input position is not used in any of the
+        // brackets then it's unspecified
+        return PatternInputDomain();
+    }
+    else // ! bracketPositions.empty()
+    {
+        // Calculate the intersection of the domains of all the mappings
+        // corresponding to this input position. Start with the first set and
+        // reduce it by every element which doesn't appear also in all other
+        // bracket mapping domains.
+        const auto& firstBracketArgs =
+            allBracketMappings.at(bracketPositions.at(0)) | std::views::keys;
+        std::set<unsigned> resultSet(firstBracketArgs.begin(),
+                                     firstBracketArgs.end());
+        std::erase_if(
+            resultSet, [&allBracketMappings, &bracketPositions](unsigned elem) {
+                return !std::ranges::all_of(
+                    bracketPositions, [&allBracketMappings, elem](unsigned i) {
+                        return allBracketMappings.at(i).contains(elem);
+                    });
+            });
+        return PatternInputDomain(resultSet);
+    }
+}
+
+/**
+ * @brief Calculate input domains based on the bracket mappings
+ *
+ * Function extends the logic of 'calcInputDomain()' on all the possible input
+ * positions, defined implicitly by the @c inputPosToBracketPos mapping.
+ *
+ * This may leave some input positions not associated with any bracket. The
+ * domain of such input is unspecified ('isUnspecified()' returning true),
+ * which, for all intents and purposes equals the full set of natural numbers -
+ * whatever argument is passed at this position is accepted, but it doesn't
+ * affect the evaluation of the pattern in any way.
+ *
+ * @param[in] inputPosToBracketPos Mapping of pattern input positions to the
+ * positions of associated brackets
+ *
+ * @param[in] bracketMappings The mappings for each of the bracket in a pattern.
+ */
+std::vector<PatternInputDomain> calcInputDomains(
+    const std::vector<std::vector<unsigned>>& inputPosToBracketPos,
+    const std::vector<syntax::BracketMap>& bracketMappings)
+{
+    std::vector<PatternInputDomain> result(inputPosToBracketPos.size());
+    for (unsigned inputPosition = 0;
+         inputPosition < inputPosToBracketPos.size(); ++inputPosition)
+    {
+        result[inputPosition] = calcInputDomain(
+            inputPosToBracketPos[inputPosition], bracketMappings);
+    }
+    return result;
+}
+
+std::vector<std::vector<unsigned>> calcInputIndexToBracketPoss(
     const std::vector<unsigned>& bracketPosToInputPos)
 {
     if (bracketPosToInputPos.size() > 0)
@@ -483,108 +633,6 @@ std::vector<std::vector<unsigned>> DeviceIdPattern::calcInputIndexToBracketPoss(
     else // ! bracketPosToInputPos
     {
         return std::vector<std::vector<unsigned>>();
-    }
-}
-
-PatternInputMapping DeviceIdPattern::calcInputMapping(
-    unsigned inputPos, const std::vector<unsigned>& bracketPositions,
-    const std::vector<std::map<unsigned, unsigned>>& bracketMappings)
-{
-    if (bracketPositions.empty())
-    {
-        return PatternInputMapping();
-    }
-    else // ! bracketPositions.empty()
-    {
-        std::map<unsigned, unsigned> resultMap;
-        for (unsigned i = 0; i < bracketPositions.size(); ++i)
-        {
-            const auto& bracketPos = bracketPositions[i];
-            for (const auto& [key, value] : bracketMappings[bracketPos])
-            {
-                if (resultMap.contains(key))
-                {
-                    if (resultMap.at(key) != value)
-                    {
-                        std::stringstream ss;
-                        ss << "Ambivalent mapping: bracket at position "
-                           << bracketPos << " maps " << key << " to " << value
-                           << ", but previous brackets at positions ";
-                        std::copy_n(bracketPositions.begin(), i,
-                                    std::ostream_iterator<unsigned>(ss, ", "));
-                        ss << "bound to the same input position " << inputPos
-                           << " map " << key << " to " << resultMap.at(key);
-                        throw std::runtime_error(ss.str().c_str());
-                    }
-                }
-                else // ! resultMap.contains(key)
-                {
-                    // marcinw:TODO: awful code, get rid of this
-                    auto notDefinedPos = std::find_if_not(
-                        bracketPositions.cbegin(), bracketPositions.cend(),
-                        [key, &bracketMappings](unsigned i) {
-                            return bracketMappings[i].contains(key);
-                        });
-                    if (notDefinedPos == bracketPositions.cend())
-                    {
-                        resultMap[key] = value;
-                    }
-                    else
-                    {
-                        shortlogs_wrn(
-                            << "Incomplete mapping: bracket at position "
-                            << bracketPos << " maps " << key << " to " << value
-                            << ", but bracket at position " << *notDefinedPos
-                            << " bound to the same input position " << inputPos
-                            << " doesn't specify any mapping for " << key
-                            << ". Dropping from the input domain.");
-                    }
-                }
-            }
-        }
-        return PatternInputMapping(resultMap);
-    }
-}
-
-std::vector<PatternInputMapping> DeviceIdPattern::calcInputMappings(
-    const std::vector<std::vector<unsigned>>& inputPossToBracketPoss,
-    const std::vector<std::map<unsigned, unsigned>>& bracketMappings)
-{
-    std::vector<PatternInputMapping> result(inputPossToBracketPoss.size());
-    for (unsigned inputPosition = 0;
-         inputPosition < inputPossToBracketPoss.size(); ++inputPosition)
-    {
-        result[inputPosition] = calcInputMapping(
-            inputPosition, inputPossToBracketPoss[inputPosition],
-            bracketMappings);
-    }
-    return result;
-}
-
-std::string DeviceIdPattern::pattern() const
-{
-    return _rawPattern;
-}
-
-std::vector<unsigned> DeviceIdPattern::dimDomain(unsigned axis) const
-{
-    if (axis < dim())
-    {
-        std::vector<unsigned> result;
-        // marcinw:TODO: terrible, terrible implementation. No time though
-        for (const auto& arg : domain())
-        {
-            if (std::ranges::find(result, (unsigned)arg[axis]) == result.end())
-            {
-                result.push_back(arg[axis]);
-            }
-        }
-        std::ranges::sort(result);
-        return result;
-    }
-    else // ! axis >= dim()
-    {
-        return {};
     }
 }
 
