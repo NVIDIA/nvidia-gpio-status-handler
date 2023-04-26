@@ -207,7 +207,6 @@ void updateDevicesHealthBasedOnReport(
     }
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief Entry Point
@@ -280,7 +279,7 @@ int main(int argc, char* argv[])
 
     PROFILING_SWITCH(TS.addTimepoint("health_updated_&_log_resolved"));
 
-    selftest::Report reportGenerator;
+    selftest::Report reportGenerator(selftest::Report::getDBusFwVersionString);
     if (!reportGenerator.generateReport(reportResult))
     {
         std::cerr << "Error: failed to generate report!" << std::endl;

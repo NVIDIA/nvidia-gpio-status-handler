@@ -824,7 +824,14 @@ TEST(selftestReportTest, generateReport)
     // std::cout << reportResult;
 
     /* When */
-    selftest::Report reportGenerator;
+    selftest::Report reportGeneratorNoFwVer(nullptr);
+    EXPECT_EQ(true, reportGeneratorNoFwVer.generateReport(reportResult));
+    auto jNoFwVer = reportGeneratorNoFwVer.getReport();
+    EXPECT_EQ(jNoFwVer["header"]["version"], "1.1");
+    EXPECT_EQ(jNoFwVer["header"]["HMC-version"], "Reading fw version disabled.");
+
+    auto fwVerMock = [] () {return "HGX-22.10-1-rc34";};
+    selftest::Report reportGenerator(fwVerMock);
     EXPECT_EQ(true, reportGenerator.generateReport(reportResult));
 
     /* Then */
@@ -833,18 +840,19 @@ TEST(selftestReportTest, generateReport)
     EXPECT_EQ(j["header"]["summary"]["test-case-failed"], 6);
     EXPECT_EQ(j["header"]["summary"]["test-case-total"], 12);
     EXPECT_EQ(j["header"]["timestamp"].type(), nlohmann::json::value_t::string);
-    EXPECT_EQ(j["header"]["version"], "1.0");
+    EXPECT_EQ(j["header"]["version"], "1.1");
+    EXPECT_EQ(j["header"]["HMC-version"], "HGX-22.10-1-rc34");
 
     EXPECT_EQ(j["tests"][0]["device-name"], "GPU0");
     EXPECT_EQ(j["tests"][0]["timestamp"].type(),
               nlohmann::json::value_t::string);
-    EXPECT_EQ(j["tests"][0]["firmware-version"], "<todo>");
+
     generateReportSubtestLayers(j["tests"][0], false);
 
     EXPECT_EQ(j["tests"][1]["device-name"], "HSC0");
     EXPECT_EQ(j["tests"][1]["timestamp"].type(),
               nlohmann::json::value_t::string);
-    EXPECT_EQ(j["tests"][1]["firmware-version"], "<todo>");
+
     generateReportSubtestLayers(j["tests"][1], true);
 
     // std::cout << reportGenerator;
@@ -886,7 +894,7 @@ TEST(selftestReportTest, fieldOrder)
     reportResult["GPU0"] = dummyDevice;
 
     /* When */
-    selftest::Report reportGenerator;
+    selftest::Report reportGenerator(nullptr);
     EXPECT_EQ(true, reportGenerator.generateReport(reportResult));
 
     /* Then */
@@ -904,7 +912,7 @@ TEST(selftestReportTest, fieldOrder)
 
     /* check 2. requirement */
     const std::vector<std::string> deviceKeysOrderLut = {
-        "device-name",     "firmware-version",
+        "device-name",
         "timestamp",       "erot-control-status",
         "firmware-status", "interface-status",
         "pin-status",      "power-rail-status",

@@ -12,6 +12,7 @@
       "required": [
         "name",
         "version",
+        "HMC-version",
         "timestamp",
         "summary"
       ],
@@ -21,6 +22,9 @@
           "type" : "string"
         },
         "version" : {
+          "type" : "string"
+        },
+        "HMC-version" : {
           "type" : "string"
         },
         "timestamp" : {
@@ -52,7 +56,6 @@
         "type" : "object",
         "required": [
           "device-name",
-          "firmware-version",
           "timestamp",
           "power-rail-status",
           "erot-control-status",
@@ -65,9 +68,6 @@
         "additionalProperties": false,
         "properties" : {
           "device-name" : {
-            "type" : "string"
-          },
-          "firmware-version" : {
             "type" : "string"
           },
           "timestamp" : {

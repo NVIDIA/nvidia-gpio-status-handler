@@ -7,6 +7,7 @@
 
 #include "dbus_accessor.hpp"
 #include "util.hpp"
+#include "property_accessor.hpp"
 
 #include <boost/algorithm/string.hpp>
 #include <boost/asio.hpp>
@@ -419,7 +420,6 @@ bool Report::generateReport(ReportResult& reportRes)
         auto& devTestLayers = dev.second.layer;
         nlohmann::ordered_json jdev;
         jdev["device-name"] = dev.first;
-        jdev["firmware-version"] = "<todo>";
         jdev["timestamp"] = currentTimestamp;
 
         for (auto& layer : devTestLayers)
@@ -461,8 +461,15 @@ const nlohmann::ordered_json& Report::getReport(void)
 
 void Report::writeSummaryHeader(void)
 {
+    std::string fwVersion = "Reading fw version disabled.";
+    if (getFwVersionClbk)
+    {
+        fwVersion = getFwVersionClbk();
+    }
+
     this->_report["header"]["name"] = "Self test report";
-    this->_report["header"]["version"] = "1.0";
+    this->_report["header"]["version"] = "1.1";
+    this->_report["header"]["HMC-version"] = fwVersion;
     this->_report["header"]["timestamp"] = getTimestampString();
     this->_report["header"]["summary"]["test-case-total"] = this->tpTotal;
     this->_report["header"]["summary"]["test-case-failed"] = this->tpFailed;
@@ -575,7 +582,7 @@ aml::RcCode RootCauseTracer::process([
 
     PROFILING_SWITCH(TS.addTimepoint("generate report"));
 
-    selftest::Report reportGenerator;
+    selftest::Report reportGenerator(selftest::Report::getDBusFwVersionString);
     if (!reportGenerator.generateReport(completeReportRes))
     {
         std::cerr << "Error: rootCauseTracer failed to generate report!"

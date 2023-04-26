@@ -73,11 +73,31 @@ using ReportResult = std::map<std::string, DeviceResult>;
 class Report
 {
   public:
-    Report() : tpTotal(0), tpFailed(0)
+    Report(std::function<std::string()> fwVerClbk) : tpTotal(0), tpFailed(0), getFwVersionClbk(fwVerClbk)
     {}
     ~Report() = default;
 
   public:
+    /**
+     * @brief Default implementation of fw version getter for report, 
+     *        read from dbus in this case.
+     * @return fw version in text format
+     */
+    static std::string getDBusFwVersionString()
+    {
+        std::string fwVersion = "Failed to read firmware version.";
+        auto propVariant = 
+        dbus::readDbusProperty("/xyz/openbmc_project/software/HGX_FW_BMC_0",
+                  "xyz.openbmc_project.Software.Version", "Version");
+
+        if (isValidVariant(propVariant))
+        {
+            fwVersion = data_accessor::PropertyValue(propVariant).getString();
+        }
+
+        return fwVersion;
+    }
+
     /**
      * @brief Generates internal json report.
      *
@@ -131,6 +151,9 @@ class Report
 
     /** @brief Failed test points count (counted during report generation) **/
     uint32_t tpFailed;
+
+    /** @brief Method to fill report *version* field. **/
+    std::function<std::string()> getFwVersionClbk = getDBusFwVersionString;
 };
 
 /**
