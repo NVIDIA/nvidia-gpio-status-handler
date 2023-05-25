@@ -49,7 +49,6 @@ void EventDetection::workerThreadProcessEvents()
         PcDataType pc;
         if (queue->pop(pc))
         {
-            auto sender = pc.sender;
             auto objectPath = pc.path;
             auto msgInterface = pc.interface;
             auto eventProperty = pc.propertyName;
@@ -73,9 +72,9 @@ void EventDetection::workerThreadProcessEvents()
                 continue;
             }
             // printing DBUS trigger here as one trigger can generate several events
-            logs_err("[sdbusplus::message] sender: %s, Path: %s, "
+            logs_err("[sdbusplus::message] Path: %s, "
                     " Intf: %s, Prop: %s,VarIndex: %d, Value: '%s'\n",
-                    sender, objectPath.c_str(), msgInterface.c_str(),
+                    objectPath.c_str(), msgInterface.c_str(),
                     eventProperty.c_str(), index,
                     propertyValue.getString().c_str());
 
@@ -212,24 +211,7 @@ void EventDetection::dbusEventHandlerCallback(sdbusplus::message::message& msg)
         data_accessor::PropertyValue propertyValue(variant);
         data_accessor::DataAccessor accessor(j, propertyValue);
 
-        bool interestingPc = false;
-        for (auto& eventPerDevType : *eventDetectionPtr->_eventMap)
-        {
-            for (auto& event : eventPerDevType.second)
-            {
-                if (event_info::EventNode::getIsAccessorInteresting(event, accessor))
-                {
-                    interestingPc = true;
-                    break;
-                }
-            }
-            if (interestingPc)
-            {
-                break;
-            }
-        }
-
-        if (interestingPc)
+        if (eventDetectionPtr->getIsAccessorInteresting(accessor))
         {
             bool pushSuccess = queue->push(PcDataType{
                 //.timestamp = timestamp,
@@ -244,8 +226,8 @@ void EventDetection::dbusEventHandlerCallback(sdbusplus::message::message& msg)
             {
                 std::string propertyValueString = propertyValue.getString();
                 logs_err("callback: failed to push event to queue! "
-                         "sender: %s, path: %s, interface: %s, property name: %s, "
-                         "property value: %s\n", sender.c_str(), objectPath.c_str(),
+                         "path: %s, interface: %s, property name: %s, "
+                         "property value: %s\n", objectPath.c_str(),
                          msgInterface.c_str(), eventProperty.c_str(),
                          propertyValueString.c_str());
             }
@@ -261,7 +243,12 @@ void EventDetection::dbusEventHandlerCallback(sdbusplus::message::message& msg)
         }
         else
         {
-            logs_dbg("pc does not correspond to any accessor so it is not needed\n");
+            std::string propertyValueString = propertyValue.getString();
+            logs_dbg("pc does not correspond to any accessor so it is not needed: "
+                        "path: %s, interface: %s, property name: %s, "
+                        "property value: %s\n", objectPath.c_str(),
+                        msgInterface.c_str(), eventProperty.c_str(),
+                        propertyValueString.c_str());
         }
     } // end for (auto& pc : propertiesChanged)
     logs_dbg("finished dbusEventHandlerCallback\n");
@@ -284,6 +271,7 @@ DbusEventHandlerList EventDetection::startEventDetection(
         {
             subscribeAcc(event.trigger, uniqueRegisterMap, conn, handlerList);
             subscribeAcc(event.accessor, uniqueRegisterMap, conn, handlerList);
+            subscribeAcc(event.recovery_accessor, uniqueRegisterMap, conn, handlerList);
         }
     }
     log_dbg("dbusEventHandlerMatcher created.\n");
@@ -317,6 +305,42 @@ void EventDetection::subscribeAcc(
         {
             log_dbg("object:interface already subscribed: %s\n", key.c_str());
         }
+    }
+}
+
+bool EventDetection::getIsAccessorInteresting(
+    const data_accessor::DataAccessor& accessor)
+{
+    if (accessor.isEmpty())
+    {
+        log_dbg("empty accessor is never interesting\n");
+        return false;
+    }
+    if (accessor.isTypeDbus())
+    {
+        // the set stores elements in reverse order for comparison efficiency
+        auto eventProperty = accessor.getProperty();
+        auto msgInterface = accessor.getDbusInterface();
+        auto objectPath = accessor.getDbusObjectPath();
+        return _propertyFilterSet->contains({eventProperty, msgInterface,
+            objectPath});
+    }
+    else
+    {
+        for (auto& eventPerDevType : *eventDetectionPtr->_eventMap)
+        {
+            for (auto& event : eventPerDevType.second)
+            {
+                if (event_info::EventNode::getIsAccessorInterestingToEvent(
+                    event, accessor))
+                {
+                    logs_err("Event %s has interesting accessor!!!!!!\n",
+                            event.event.c_str());
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }
 

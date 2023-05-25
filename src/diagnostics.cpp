@@ -637,7 +637,8 @@ EventInfoParseTest::ResultExt EventInfoParseTest::rawRunWithArtifact([
     [maybe_unused]] const nlohmann::json& resultsSoFar)
 {
     event_info::EventMap eventMap;
-    event_info::loadFromJson(eventMap,
+    event_info::PropertyFilterSet propertyFilterSet;
+    event_info::loadFromJson(eventMap, propertyFilterSet,
                              Dependency<EventInfoInnerConsistencyTest>::get()
                                  ->Dependency<JsonSchemaTest>::get()
                                  ->Dependency<JsonReadTest>::get()

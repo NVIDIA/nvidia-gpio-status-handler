@@ -107,7 +107,28 @@ std::string MessageArgPattern::substPlaceholders(
     return result;
 }
 
-void loadFromJson(EventMap& eventMap, const nlohmann::json& j)
+void addEventToPropertyFilterSet(const EventNode& eventNode,
+    PropertyFilterSet& propertyFilterSet)
+{
+    for (const auto& accessor : {eventNode.accessor, eventNode.trigger,
+        eventNode.recovery_accessor})
+    {
+        if (accessor.isEmpty() || !accessor.isTypeDbus())
+        {
+            continue;
+        }
+        device_id::DeviceIdPattern pattern(accessor.getDbusObjectPath());
+        std::string iface = accessor.getDbusInterface();
+        std::string prop = accessor.getProperty();
+        for (auto path : pattern.values())
+        {
+            propertyFilterSet.emplace(prop, iface, path);
+        }
+    }
+}
+
+void loadFromJson(EventMap& eventMap, PropertyFilterSet& propertyFilterSet,
+    const nlohmann::json& j)
 {
     for (const auto& el : j.items())
     {
@@ -137,14 +158,20 @@ void loadFromJson(EventMap& eventMap, const nlohmann::json& j)
             logs_dbg("%s", ss.str().c_str());
 
             v.push_back(eventNode);
+
+            // also add eventNode's accessors to the dbus property filter set
+            addEventToPropertyFilterSet(eventNode, propertyFilterSet);
         }
         eventMap.insert(
             std::pair<std::string, std::vector<event_info::EventNode>>(
                 deviceType, v));
     }
+    logs_err("size of propertyFilterSet: %zu\n", propertyFilterSet.size());
+    // printSet(propertyFilterSet);
 }
 
-void loadFromFile(EventMap& eventMap, const std::string& file)
+void loadFromFile(EventMap& eventMap, PropertyFilterSet& propertyFilterSet,
+    const std::string& file)
 {
     std::stringstream ss;
     ss << "loadFromFile func (" << file << ").";
@@ -153,7 +180,7 @@ void loadFromFile(EventMap& eventMap, const std::string& file)
     json j;
     i >> j;
 
-    loadFromJson(eventMap, j);
+    loadFromJson(eventMap, propertyFilterSet, j);
 }
 
 void printMap(const EventMap& eventMap)
@@ -169,6 +196,21 @@ void printMap(const EventMap& eventMap)
         }
 
         std::cerr << "\n";
+    }
+}
+
+void printSet(const PropertyFilterSet& propertyFilterSet)
+{
+    for (const auto& tuple : propertyFilterSet)
+    {
+        std::cerr << "<";
+        std::cerr << std::get<0>(tuple);
+        std::cerr << ", ";
+        std::cerr << std::get<1>(tuple);
+        std::cerr << ", ";
+        std::cerr << std::get<2>(tuple);
+        std::cerr << ">";
+        std::cerr << std::endl;
     }
 }
 
@@ -705,11 +747,12 @@ EventCategory::operator std::string() const
     return category;
 }
 
-bool EventNode::getIsAccessorInteresting(EventNode& event,
-    data_accessor::DataAccessor& otherAccessor)
+bool EventNode::getIsAccessorInterestingToEvent(const EventNode& event,
+    const data_accessor::DataAccessor& otherAccessor)
 {
     return event.accessor == otherAccessor ||
-        (!event.trigger.isEmpty() && event.trigger == otherAccessor);
+        (!event.trigger.isEmpty() && event.trigger == otherAccessor) ||
+        (!event.recovery_accessor.isEmpty() && event.recovery_accessor == otherAccessor);
 }
 
 } // namespace event_info

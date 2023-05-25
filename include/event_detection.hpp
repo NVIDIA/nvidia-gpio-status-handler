@@ -70,9 +70,10 @@ class EventDetection : public object::Object
 {
   public:
     EventDetection(const std::string& name, event_info::EventMap* eventMap,
+                   event_info::PropertyFilterSet* propertyFilterSet,
                    event_handler::EventHandlerManager* hdlrMgr) :
         object::Object(name),
-        _eventMap(eventMap), _hdlrMgr(hdlrMgr)
+        _eventMap(eventMap), _propertyFilterSet(propertyFilterSet), _hdlrMgr(hdlrMgr)
     {}
     ~EventDetection() = default;
 
@@ -536,6 +537,14 @@ class EventDetection : public object::Object
         log_err("finished RunEventHandlers\n");
     }
 
+    /**
+     * @brief  Check if an incoming D-bus signal is "interesting" (used by any event)
+     * @param  objectPath the D-Bus object path the signal occurred on
+     * @param  msgInterface the D-Bus interface where a property changed
+     * @param  eventProperty the name of the property whose value changed
+    */
+    bool getIsAccessorInteresting(const data_accessor::DataAccessor& accessor);
+
   private:
     /**
      * @brief  Subscribe Accessor Dbus objects to receive PropertyChanged signal
@@ -556,6 +565,14 @@ class EventDetection : public object::Object
      *
      */
     event_info::EventMap* _eventMap;
+
+    /**
+     * @brief Pointer to the propertyFilterSet.
+     * Despite object path being expandable, the possible options are finite
+     * and thanks to util::expandDeviceRange(getDbusObjectPath()), we can
+     * just add all possible tuples to a set
+     */
+    event_info::PropertyFilterSet* _propertyFilterSet;
 
     /**
      * @brief Pointer to the eventHanlderManager.

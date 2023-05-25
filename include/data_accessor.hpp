@@ -19,6 +19,14 @@
 #include <tuple>
 #include <vector>
 
+#ifndef SUBPROCESS_RUNNING_TIMEOUT_MS
+#define SUBPROCESS_RUNNING_TIMEOUT_MS 6000
+#endif
+
+#ifndef SUBPROCESS_RUNNING_POLL_MS
+#define SUBPROCESS_RUNNING_POLL_MS 50
+#endif
+
 namespace event_info
 {
 class EventNode;
@@ -43,7 +51,6 @@ constexpr auto argumentsKey = "arguments";
 constexpr auto deviceNameKey = "device_name";
 constexpr auto testValueKey = "test_value";
 constexpr auto deviceidKey = "device_id";
-constexpr auto executeBgKey = "execute_bg";
 constexpr auto valueKey = "value";
 constexpr auto readFailedReturn = "Value_Not_Available";
 

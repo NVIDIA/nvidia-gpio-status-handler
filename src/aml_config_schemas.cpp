@@ -59,8 +59,6 @@ std::shared_ptr<json_schema::JsonSchema> dataAccessorSchema()
                properties(literal(false), property("type", values("CMDLINE")),
                           property("executable", types(json::value_t::string)),
                           property("arguments", types(json::value_t::string)),
-                          property("execute_bg",
-                                   schema(types(json::value_t::boolean))),
                           property("check", checkerSchema),
                           property("name", types(json::value_t::string))));
     auto directAccessorProperties =

@@ -67,6 +67,7 @@ namespace profile
 {
 
 event_info::EventMap eventMap;
+event_info::PropertyFilterSet propertyFilterSet;
 std::map<std::string, dat_traverse::Device> datMap;
 
 } // namespace profile
@@ -301,7 +302,9 @@ int main(int argc, char* argv[])
     logs_err("Trying to load Events from file\n");
 
     // Initialization
-    event_info::loadFromFile(aml::profile::eventMap, aml::configuration.event);
+    event_info::loadFromFile(aml::profile::eventMap,
+        aml::profile::propertyFilterSet,
+        aml::configuration.event);
 
     // event_info::printMap(aml::profile::eventMap);
 
@@ -353,7 +356,8 @@ int main(int argc, char* argv[])
     selftest::ReportResult rep_res;
 
     event_detection::EventDetection eventDetection(
-        "EventDetection1", &aml::profile::eventMap, &eventHdlrMgr);
+        "EventDetection1", &aml::profile::eventMap,
+        &aml::profile::propertyFilterSet, &eventHdlrMgr);
 
     auto thread = std::make_unique<std::thread>([rep_res, selftest,
                                                  eventDetection]() mutable {
@@ -365,7 +369,7 @@ int main(int argc, char* argv[])
             // the threadpool has reached the max queued tasks limit,
             // don't run this event thread
             logs_err(
-                "Thread pool over maxTotal tasks limit, exiting event thread\n");
+                "Thread pool over maxTotal tasks limit, exiting bootup selftest thread\n");
             return;
         }
         if (selftest.performEntireTree(rep_res,

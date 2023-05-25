@@ -546,16 +546,29 @@ class EventNode : public object::Object
 
     std::vector<EventCategory> getCategories() const;
     std::vector<std::string> getStringCategories() const;
+
     /**
      * @brief Return whether the DataAccessor is interesting
      * (matches our D-Bus object/interface/property)
      */
-    static bool
-        getIsAccessorInteresting(EventNode& event,
-                                 data_accessor::DataAccessor& otherAccessor);
+    static bool getIsAccessorInterestingToEvent(const EventNode& event,
+        const data_accessor::DataAccessor& otherAccessor);
 };
 
 using EventMap = std::map<std::string, std::vector<event_info::EventNode>>;
+/** @brief tuple (property, interface, object path)
+ * Note it is in REVERSE order for operator< efficiency
+ */
+using PropertyFilterTuple = std::tuple<std::string, std::string, std::string>;
+using PropertyFilterSet = std::set<PropertyFilterTuple>;
+
+/** @brief Add D-Bus properties from @c eventNode to @c propertyFilterSet
+ *
+ * @param[in]      eventNode
+ * @param[in,out]  propertyFilterSet
+*/
+void addEventToPropertyFilterSet(const EventNode& eventNode,
+    PropertyFilterSet& propertyFilterSet);
 
 /** @brief Load class contents from JSON profile
  *
@@ -565,7 +578,8 @@ using EventMap = std::map<std::string, std::vector<event_info::EventNode>>;
  * @param[in]  file
  *
  */
-void loadFromFile(EventMap& eventMap, const std::string& file);
+void loadFromFile(EventMap& eventMap, PropertyFilterSet& propertyFilterSet,
+    const std::string& file);
 
 /**
  * @brief Read data from the json object @c j into @c eventMap
@@ -573,7 +587,8 @@ void loadFromFile(EventMap& eventMap, const std::string& file);
  * @param[out] eventMap
  * @param[in] j
  */
-void loadFromJson(EventMap& eventMap, const nlohmann::json& j);
+void loadFromJson(EventMap& eventMap, PropertyFilterSet& propertyFilterSet,
+    const nlohmann::json& j);
 
 /** @brief Prints out memory map to verify field population
  *
@@ -581,6 +596,13 @@ void loadFromJson(EventMap& eventMap, const nlohmann::json& j);
  *
  */
 void printMap(const EventMap& eventMap);
+
+/** @brief Prints out D-Bus property set to verify field population
+ *
+ * @param[in]  propertyFilterSet
+ *
+ */
+void printSet(const PropertyFilterSet& propertyFilterSet);
 
 } // namespace event_info
 

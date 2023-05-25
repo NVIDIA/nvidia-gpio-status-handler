@@ -129,23 +129,42 @@ bool DataAccessor::runCommandLine(const std::string& device,
         {
             std::string line{""};
             log_elapsed("running cmd: %s", cmd.c_str());
-            if (_acc.count(executeBgKey) != 0 && _acc[executeBgKey].get<bool>() == true)
-            {
-                // Quotes are necessary to make boost::process do the right thing
-                std::string newcmd("/bin/sh -c \"" + cmd + " &\"");
-                boost::process::child process(newcmd);
-                process.wait();
-                return ret;
-            }
             boost::process::ipstream pipe_stream;
-            boost::process::child process(cmd, boost::process::std_out >
-                                                   pipe_stream);
-            while (pipe_stream && std::getline(pipe_stream, line) &&
-                   line.empty() == false)
+            boost::process::group g;
+            boost::process::child process(cmd, g, boost::process::std_out > pipe_stream);
+            int waits_remaining = (SUBPROCESS_RUNNING_TIMEOUT_MS / SUBPROCESS_RUNNING_POLL_MS);
+            while (process.running() && waits_remaining > 0)
             {
-                result += line;
+                //std::cerr << "process still running, " << waits_remaining << " waits remaining" << std::endl;
+                std::this_thread::sleep_for(std::chrono::milliseconds(SUBPROCESS_RUNNING_POLL_MS));
+                waits_remaining--;
             }
+            std::error_code ec;
+            if (process.running())
+            {
+                log_err("process still running, going to terminate group\n");
+                // terminate process and any subprocesses it launched as well
+                g.terminate(ec);
+                // prevent direct child becoming zombie (grandchildren are reparented
+                // to init which reaps them)
+                process.wait();
+                if (ec && ec.value() != ESRCH)
+                {
+                    throw std::runtime_error("error terminating subprocess group: " + ec.message());
+                }
+                throw std::runtime_error("child process timed out and was terminated!");
+            }
+            log_dbg("process finished within timeout\n");
+            // store main process's exit code now, before cleanup
             process.wait();
+            // make sure children (if any) are cleaned up once the main process exits
+            // since these are indirect children, they will be reparented to init
+            // which reaps them.
+            g.terminate(ec);
+            if (ec && ec.value() != ESRCH)
+            {
+                throw std::runtime_error("error terminating subprocess group: " + ec.message());
+            }
             processExitCode = static_cast<uint64_t>(process.exit_code());
             log_dbg("returnCode=%llu cmd='%s'\n", processExitCode, cmd.c_str());
             if (processExitCode != 0)
@@ -156,6 +175,12 @@ bool DataAccessor::runCommandLine(const std::string& device,
                 ss.str(std::string()); // Clear the stream
                 ss << "Error running the command \'" << cmd << "\' " << error;
                 log_err("%s\n", ss.str().c_str());
+                return ret;
+            }
+            while (pipe_stream && std::getline(pipe_stream, line) &&
+                   line.empty() == false)
+            {
+                result += line;
             }
         }
         catch (const std::exception& error)
