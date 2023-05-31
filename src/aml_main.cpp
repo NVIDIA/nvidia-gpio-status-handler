@@ -267,6 +267,12 @@ int main(int argc, char* argv[])
     logger.setLevel(DEF_DBG_LEVEL);
     logs_info("Default log level: %d. Current log level: %d\n", DEF_DBG_LEVEL,
               getLogLevel(logger.getLevel()));
+
+#ifdef EVENTING_FEATURE_ONLY
+    logs_err("Eventing only feature is on\n");
+#endif // EVENTING_FEATURE_ONLY
+
+
     try
     {
         cmd_line::CmdLine cmdLine(argc, argv, aml::cmdLineArgs);
@@ -308,6 +314,10 @@ int main(int argc, char* argv[])
 
     // event_info::printMap(aml::profile::eventMap);
 
+#ifdef EVENTING_FEATURE_ONLY
+    // Register event handlers
+    message_composer::MessageComposer msgComposer("MsgComp1");
+#else
     dat_traverse::Device::populateMap(aml::profile::datMap,
                                       aml::configuration.dat);
 
@@ -339,6 +349,7 @@ int main(int argc, char* argv[])
                 "HealthRollup & OriginOfCondition can't be supported at the moment due to Dbus Error.\n");
         }
     }
+#endif // EVENTING_FEATURE_ONLY
 
     // Create threadpool manager
     event_detection::threadpoolManager = std::make_unique<ThreadpoolManager>(
@@ -349,16 +360,21 @@ int main(int argc, char* argv[])
 
     event_handler::ClearEvent clearEvent("ClearEvent");
     event_handler::EventHandlerManager eventHdlrMgr("EventHandlerManager");
+
+#ifndef EVENTING_FEATURE_ONLY
     event_handler::RootCauseTracer rootCauseTracer("RootCauseTracer",
                                                    aml::profile::datMap);
 
     selftest::Selftest selftest("bootupSelftest", aml::profile::datMap);
     selftest::ReportResult rep_res;
+#endif // EVENTING_FEATURE_ONLY
+
 
     event_detection::EventDetection eventDetection(
         "EventDetection1", &aml::profile::eventMap,
         &aml::profile::propertyFilterSet, &eventHdlrMgr);
 
+#ifndef EVENTING_FEATURE_ONLY
     auto thread = std::make_unique<std::thread>([rep_res, selftest,
                                                  eventDetection]() mutable {
         PROFILING_SWITCH(selftest::TsLatcher TS("bootup-selftest")); 
@@ -411,6 +427,7 @@ int main(int argc, char* argv[])
     /* Event handlers registration order is important - msgComposer uses data
     acquired by previous handlers; handlers are used in registration order. */
     eventHdlrMgr.RegisterHandler(&rootCauseTracer);
+#endif // EVENTING_FEATURE_ONLY
     eventHdlrMgr.RegisterHandler(&msgComposer);
     eventHdlrMgr.RegisterHandler(&clearEvent);
 

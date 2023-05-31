@@ -8,3 +8,5 @@ option ('log_elapsed_time', type : 'feature', value : 'disabled',
         description : 'Enable generation of the Elpased time logs')
 option('profile_selftest_and_recovery', type : 'feature', value : 'disabled',
         description : 'Enable to see time profiling logs of selftest/recovery')
+option('eventing_feature_only', type : 'feature', value : 'disabled',
+        description : 'Turn off self-test, origin of condition, and health rollup')

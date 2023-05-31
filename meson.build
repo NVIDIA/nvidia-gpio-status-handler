@@ -41,6 +41,10 @@ if get_option('profile_selftest_and_recovery').enabled()
     add_project_arguments('-DPROFILING_SELFTEST_AND_RECOVERY_FLOW', language : lang)
 endif
 
+if get_option('eventing_feature_only').enabled()
+    add_project_arguments('-DEVENTING_FEATURE_ONLY', language : lang)
+endif
+
 # Get the options and enable the respective features
 ## create a MAP of  "options : feature_flag"
 

@@ -29,12 +29,19 @@ namespace message_composer
 class MessageComposer : public event_handler::EventHandler
 {
   public:
+#ifdef EVENTING_FEATURE_ONLY
+    MessageComposer(const std::string& name = __PRETTY_FUNCTION__) :
+        event_handler::EventHandler(name)
+    {}
+#else
     MessageComposer(std::map<std::string, dat_traverse::Device>& datMap,
                     const std::string& name = __PRETTY_FUNCTION__) :
         event_handler::EventHandler(name),
         dat(datMap)
 
     {}
+#endif // EVENTING_FEATURE_ONLY
+
     ~MessageComposer();
 
   public:
@@ -154,7 +161,9 @@ class MessageComposer : public event_handler::EventHandler
      */
     bool createLog(event_info::EventNode& event);
 
+#ifndef EVENTING_FEATURE_ONLY
     std::map<std::string, dat_traverse::Device>& dat;
+#endif
 };
 
 } // namespace message_composer

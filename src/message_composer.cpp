@@ -41,6 +41,7 @@ std::map<std::string, std::string> severityMapper{
 MessageComposer::~MessageComposer()
 {}
 
+#ifndef EVENTING_FEATURE_ONLY
 std::string MessageComposer::getOriginOfConditionObjectPath(
     const std::string& deviceId) const
 {
@@ -76,6 +77,7 @@ std::string MessageComposer::getOriginOfConditionObjectPath(
         }
     }
 }
+#endif // EVENTING_FEATURE_ONLY
 
 bool MessageComposer::createLog(event_info::EventNode& event)
 {
@@ -89,6 +91,9 @@ bool MessageComposer::createLog(event_info::EventNode& event)
     auto messageArgs = event.getStringMessageArgs();
     auto telemetries = collectDiagData(event);
 
+#ifdef EVENTING_FEATURE_ONLY
+    std::string originOfCondition{"Not supported"};
+#else
     std::string oocDevice{""};
     std::string originOfCondition{""};
     if (dat.count(event.device) > 0)
@@ -107,6 +112,8 @@ bool MessageComposer::createLog(event_info::EventNode& event)
     }
 
     log_dbg("originOfCondition = '%s'\n", originOfCondition.c_str());
+#endif // EVENTING_FEATURE_ONLY
+
 
     auto pNamespace = getPhosphorLoggingNamespace(event);
 
