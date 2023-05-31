@@ -11,8 +11,9 @@ show_help()
 {
     echo "A wrapper for xid events for GPUs and NVSwitches, ver=${APP_VER}."
     echo "<usage>"
-    echo "  ${APP_NAME} [-dry-run] <device_id> <oob_property> <xid_data>"
-    echo "  ${APP_NAME} [-dry-run] --monitor-from-file <file_name>"
+    echo "  ${APP_NAME} [--dry-run] <device_id> <oob_property> <xid_data>"
+    echo "  ${APP_NAME} [--dry-run] --test-event-log <device_id> <oob_property> <xid_data>"
+    echo "  ${APP_NAME} [--dry-run] --monitor-from-file <file_name>"
     echo
     echo "<options>"
     echo "  --dry-run           - Only print ${APP_NAME} cmdline."
@@ -24,6 +25,7 @@ show_help()
     echo "  xid_data            - XID Data Types Supported: XidId, TextMessage, XidTextMessage"
     echo
     echo "  --monitor-from-file - monitor a list of <device_id> <oob_property> <xid_data> from <file_name>"
+    echo "  --test-event-log    - just creates the event log and exits, useful to see the EventLog and the notification"
 echo
 }
 
@@ -79,9 +81,24 @@ function createLog()
   xid="_XID"
   msg_arg="$1"
   msg_arg=$(echo $msg_arg | sed 's/,/;/g')
-  createlogCmd="busctl call xyz.openbmc_project.Logging /xyz/openbmc_project/logging xyz.openbmc_project.Logging.Create Create ssa{ss} \""$event" Error\" \"xyz.openbmc_project.Logging.Entry.Level.Error\" 3 \"REDFISH_MESSAGE_ARGS\" \""$deviceName" Driver Event Message, "${msg_arg}"\" \"REDFISH_MESSAGE_ID\" \"ResourceEvent.1.0.ResourceErrorsDetected\" \"namespace\" \""$deviceName$xid"\""
-  bash -c "$createlogCmd"
-  rc=$?
+  createlogCmd="\
+  busctl call xyz.openbmc_project.Logging /xyz/openbmc_project/logging xyz.openbmc_project.Logging.Create Create ssa{ss} \""$event" Error\"
+  \"xyz.openbmc_project.Logging.Entry.Level.Critical\" 6
+  \"REDFISH_MESSAGE_ARGS\" \""$deviceName" Driver Event Message, "$msg_arg"\"
+  \"REDFISH_MESSAGE_ID\" \"ResourceEvent.1.0.ResourceErrorsDetected\"
+  \"namespace\" \"${deviceName}${xid}\"
+  \"EVENT_NAME\" \"$event\"
+  \"DEVICE_NAME\" \"$deviceName\"
+  \"REDFISH_ORIGIN_OF_CONDITION\" \"/xyz/openbmc_project/inventory/system/chassis/${DEVICE_NAME_PREFIX}${deviceName}\"
+  "
+
+  if [ $DRY_RUN -eq 1 ]; then
+    echo  "$createlogCmd"
+    rc=$?
+  else
+    eval $createlogCmd
+    rc=$?
+  fi
   return $rc
   
 }
@@ -328,6 +345,21 @@ function monitor_main()
   fi
 }
 
+
+function test_event_creation_notfication()
+{
+   deviceName=$1
+   local XidTime="Sun Apr 12 12:47:07 UTC 1970"
+   local XidSeqNum="10944768"
+   local XidFlags="00"
+   local event="XID"
+   local XidId="43"
+   local ascii="dCh 00000008"
+   local result="[$XidTime][$XidSeqNum][$XidFlags] $event $XidId $ascii"
+   createLog "$result"
+}
+
+
 ## MAIN
 DRY_RUN=0
 
@@ -336,6 +368,14 @@ if [ "$1"  = "--dry-run" ]; then
    DRY_RUN=1
    shift
 fi
+
+
+if [ "$1" = "--test-event-log" ]; then
+   shift
+   test_event_creation_notfication "$@"
+   exit 0
+fi
+
 
 if [ "$1"  = "--monitor-from-file" ]; then
   # README: returing 1 (which monitor_main does) is needed for the script to exit
