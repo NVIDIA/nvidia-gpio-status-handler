@@ -175,7 +175,7 @@ class PropertyValueDataHelper
          {
              std::vector<std::string> list =
                         std::get<std::vector<std::string>>(varVar);
-             data->strValue = boost::join(list, ", ");
+             data->strValue = boost::join(list, " ");
              data->value64 = 0;
              data->state = PropertyValueData::StringOnly;
              return true;
