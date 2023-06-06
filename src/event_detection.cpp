@@ -1,4 +1,3 @@
-
 /*
  *
  */
@@ -285,14 +284,14 @@ void EventDetection::subscribeAcc(
             auto key = dbusInfo.begin()->second.at(i) + ":" + interface;
             if (map.count(key) == 0)
             {
-                log_err("subscribing object:interface : %s\n", key.c_str());
+                log_dbg("subscribing object:interface : %s\n", key.c_str());
                 handlerList.push_back(dbus::registerServicePropertyChanged(
                     conn, object, interface, genericHandler));
                 map[key] = 1; // global map, indicate it is already subscribed
             }
             else
             {
-                log_err("object:interface already subscribed: %s\n", key.c_str());
+                log_dbg("object:interface already subscribed: %s\n", key.c_str());
             }
             i++;
         }
