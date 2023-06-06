@@ -279,21 +279,22 @@ void EventDetection::subscribeAcc(
     if (dbusInfo.empty() == false)
     {
         const auto& interface = dbusInfo.begin()->first;
-        // key is checked just for the first object from the range (if exists)
-        auto key = dbusInfo.begin()->second.at(0) + ":" + interface;
-        if (map.count(key) == 0)
+        size_t i = 0;
+        for (const auto& object : dbusInfo.begin()->second)
         {
-            log_dbg("subscribing object:interface : %s\n", key.c_str());
-            for (const auto& object : dbusInfo.begin()->second)
+            auto key = dbusInfo.begin()->second.at(i) + ":" + interface;
+            if (map.count(key) == 0)
             {
+                log_err("subscribing object:interface : %s\n", key.c_str());
                 handlerList.push_back(dbus::registerServicePropertyChanged(
                     conn, object, interface, genericHandler));
+                map[key] = 1; // global map, indicate it is already subscribed
             }
-            map[key] = 1; // global map, indicate it is already subscribed
-        }
-        else
-        {
-            log_dbg("object:interface already subscribed: %s\n", key.c_str());
+            else
+            {
+                log_err("object:interface already subscribed: %s\n", key.c_str());
+            }
+            i++;
         }
     }
 }
