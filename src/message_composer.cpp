@@ -114,7 +114,6 @@ bool MessageComposer::createLog(event_info::EventNode& event)
     log_dbg("originOfCondition = '%s'\n", originOfCondition.c_str());
 #endif // EVENTING_FEATURE_ONLY
 
-
     auto pNamespace = getPhosphorLoggingNamespace(event);
 
     method.append(std::array<std::pair<std::string, std::string>, 9>(

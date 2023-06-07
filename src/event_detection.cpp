@@ -7,6 +7,7 @@
 #include "aml.hpp"
 #include "aml_main.hpp"
 #include "data_accessor.hpp"
+#include "event_handler.hpp"
 #include "pc_event.hpp"
 
 #include <boost/container/flat_map.hpp>
@@ -44,70 +45,69 @@ void EventDetection::workerThreadProcessEvents()
     while (true)
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        // std::cerr << "thread2: check loop" << std::endl << std::flush;
-        // std::cerr << "thread2: queue length: " << queue->read_available() << std::endl << std::flush;
         PcDataType pc;
         if (queue->pop(pc))
         {
-            auto objectPath = pc.path;
-            auto msgInterface = pc.interface;
-            auto eventProperty = pc.propertyName;
-            auto variant = pc.value;
-            auto index = variant.index();
-            data_accessor::PropertyValue propertyValue(variant);
+            data_accessor::DataAccessor accessor = pc.accessor;
+            data_accessor::PropertyValue propertyValue =
+                accessor.getDataValue();
 
-            const std::string type = "DBUS";
-            nlohmann::json j;
-            j[data_accessor::typeKey] = type;
-            j[data_accessor::accessorTypeKeys[type][0]] = objectPath;
-            j[data_accessor::accessorTypeKeys[type][1]] = msgInterface;
-            j[data_accessor::accessorTypeKeys[type][2]] = eventProperty;
-            std::string json_str = j.dump();
-            logs_dbg("Got queue element with json: %s\n", json_str.c_str());
-            data_accessor::DataAccessor accessor(j, propertyValue);
-            auto assertedEventsList = eventDetectionPtr->LookupEventFrom(accessor);
+            auto assertedEventsList =
+                eventDetectionPtr->LookupEventFrom(accessor);
+
             if (assertedEventsList.empty() == true)
             {
                 logs_dbg("No event found in the supporting list.\n");
                 continue;
             }
-            // printing DBUS trigger here as one trigger can generate several events
-            logs_err("[sdbusplus::message] Path: %s, "
-                    " Intf: %s, Prop: %s,VarIndex: %d, Value: '%s'\n",
-                    objectPath.c_str(), msgInterface.c_str(),
-                    eventProperty.c_str(), index,
-                    propertyValue.getString().c_str());
+
+            std::stringstream ss;
+            accessor.print(ss);
+            logs_err("Accessor contents: %s\n", ss.str().c_str());
+            logs_err("Data value: %s \n", propertyValue.getString().c_str());
 
             for (auto& assertedEvent : assertedEventsList)
             {
-                auto& candidate = *assertedEvent.first;
+                auto& candidate =
+                    *std::get<0>(assertedEvent); 
                 int eventValue = invalidIntParam;
                 if (candidate.valueAsCount)
                 {
                     eventValue = propertyValue.getInteger();
                 }
-                const auto& assertedDeviceList = assertedEvent.second;
+                const auto& assertedDeviceList =
+                    std::get<1>(assertedEvent); 
+                bool isRecovery =
+                    std::get<2>(assertedEvent); 
                 if (assertedDeviceList.empty() == true)
                 {
                     logs_err("event: '%s' no asserted devices, exiting...\n",
-                            candidate.event.c_str());
+                             candidate.event.c_str());
                     continue;
                 }
                 // now loop thru assertedDeviceList
                 for (const auto& assertedDevice : assertedDeviceList)
                 {
-                    // IsEvent() needs device
                     candidate.device = assertedDevice.device;
+                    auto event = candidate;
+                    event.trigger = assertedDevice.trigger;
+                    event.accessor = assertedDevice.accessor;
+                    event.setDeviceIndexTuple(assertedDevice.deviceIndexTuple);
+                    if (isRecovery)
+                    {
+                        logs_err(
+                            "event: '%s' on dev %s doing recovery...running event handlers\n",
+                            event.event.c_str(), event.device.c_str());
+                        eventDetectionPtr->RunEventHandler(event, "RootCauseTracer");
+                        continue;
+                    }
                     if (eventDetectionPtr->IsEvent(candidate, eventValue))
                     {
-                        auto event = candidate;
-                        event.trigger = assertedDevice.trigger;
-                        event.accessor = assertedDevice.accessor;
-                        event.setDeviceIndexTuple(assertedDevice.deviceIndexTuple);
                         std::stringstream ss;
-                        ss << "Throw out an eventHdlrMgr. device: " << event.device
-                        << " event: '" << event.event << "'"
-                        << " deviceIndex: " << assertedDevice.deviceIndexTuple;
+                        ss << "Throw out an eventHdlrMgr. device: "
+                           << event.device << " event: '" << event.event << "'"
+                           << " deviceIndex: "
+                           << assertedDevice.deviceIndexTuple;
                         logs_err("%s\n", ss.str().c_str());
                         eventDetectionPtr->RunEventHandlers(event);
                         logs_dbg(
@@ -119,7 +119,8 @@ void EventDetection::workerThreadProcessEvents()
                         if (eventsDetected.count(eventKey) == 0)
                         {
                             eventsDetected.insert(
-                                std::pair<std::string, std::vector<std::string>>(
+                                std::pair<std::string,
+                                          std::vector<std::string>>(
                                     eventKey,
                                     std::vector<std::string>{event.device}));
                         }
@@ -141,12 +142,39 @@ void EventDetection::workerThreadMainLoop()
         auto bus = sdbusplus::bus::new_default_system();
         logs_err("thread2: starting event processing\n");
         workerThreadProcessEvents();
-        logs_err("thread2: exiting because workerThreadProcessEvents returned!!\n");
+        logs_err(
+            "thread2: exiting because workerThreadProcessEvents returned!!\n");
     }
     catch (const std::exception& e)
     {
         logs_err("thread2: %s\n", e.what());
         return;
+    }
+}
+
+void EventDetection::eventDetermination(data_accessor::DataAccessor& accessor)
+{
+    if (eventDetectionPtr->getIsAccessorInteresting(accessor))
+    {
+        bool pushSuccess = queue->push(PcDataType{.accessor = accessor});
+        if (!pushSuccess)
+        {
+            logs_err("callback: failed to push event to queue! \n");
+            std::stringstream ss;
+            accessor.print(ss);
+            logs_err("Accessor contents: %s\n", ss.str().c_str());
+            logs_err("Data value: %s \n",
+                     accessor.getDataValue().getString().c_str());
+        }
+        size_t availableSpace = queue->write_available();
+        logs_err("callback: queue now has space for %zu elements\n",
+                 availableSpace);
+        if (availableSpace < PROPERTIESCHANGED_QUEUE_SIZE / 2)
+        {
+            logs_err("callback: queue has less than 50%% space available "
+                     "(%zu available, %zu total)\n",
+                     availableSpace, (size_t)PROPERTIESCHANGED_QUEUE_SIZE);
+        }
     }
 }
 
@@ -167,7 +195,7 @@ void EventDetection::dbusEventHandlerCallback(sdbusplus::message::message& msg)
         return;
     }
 
-    //pcTimestampType timestamp = std::chrono::steady_clock::now();
+    // pcTimestampType timestamp = std::chrono::steady_clock::now();
 
     for (auto& pc : propertiesChanged)
     {
@@ -210,46 +238,7 @@ void EventDetection::dbusEventHandlerCallback(sdbusplus::message::message& msg)
         // std::cerr << "j is " << j << std::endl << std::flush;
         data_accessor::PropertyValue propertyValue(variant);
         data_accessor::DataAccessor accessor(j, propertyValue);
-
-        if (eventDetectionPtr->getIsAccessorInteresting(accessor))
-        {
-            bool pushSuccess = queue->push(PcDataType{
-                //.timestamp = timestamp,
-                .sender = sender,
-                .path = objectPath,
-                .interface = msgInterface,
-                .propertyName = eventProperty,
-                .value = variant
-            });
-
-            if (!pushSuccess)
-            {
-                std::string propertyValueString = propertyValue.getString();
-                logs_err("callback: failed to push event to queue! "
-                         "path: %s, interface: %s, property name: %s, "
-                         "property value: %s\n", objectPath.c_str(),
-                         msgInterface.c_str(), eventProperty.c_str(),
-                         propertyValueString.c_str());
-            }
-            size_t availableSpace = queue->write_available();
-            logs_err("callback: queue now has space for %zu elements\n",
-                availableSpace);
-            if (availableSpace < PROPERTIESCHANGED_QUEUE_SIZE / 2)
-            {
-                logs_err("callback: queue has less than 50%% space available "
-                    "(%zu available, %zu total)\n",
-                    availableSpace, (size_t) PROPERTIESCHANGED_QUEUE_SIZE);
-            }
-        }
-        else
-        {
-            std::string propertyValueString = propertyValue.getString();
-            logs_dbg("pc does not correspond to any accessor so it is not needed: "
-                        "path: %s, interface: %s, property name: %s, "
-                        "property value: %s\n", objectPath.c_str(),
-                        msgInterface.c_str(), eventProperty.c_str(),
-                        propertyValueString.c_str());
-        }
+        eventDetermination(accessor);
     } // end for (auto& pc : propertiesChanged)
     logs_dbg("finished dbusEventHandlerCallback\n");
 }
@@ -271,7 +260,8 @@ DbusEventHandlerList EventDetection::startEventDetection(
         {
             subscribeAcc(event.trigger, uniqueRegisterMap, conn, handlerList);
             subscribeAcc(event.accessor, uniqueRegisterMap, conn, handlerList);
-            subscribeAcc(event.recovery_accessor, uniqueRegisterMap, conn, handlerList);
+            subscribeAcc(event.recovery_accessor, uniqueRegisterMap, conn,
+                         handlerList);
         }
     }
     log_dbg("dbusEventHandlerMatcher created.\n");
@@ -322,8 +312,8 @@ bool EventDetection::getIsAccessorInteresting(
         auto eventProperty = accessor.getProperty();
         auto msgInterface = accessor.getDbusInterface();
         auto objectPath = accessor.getDbusObjectPath();
-        return _propertyFilterSet->contains({eventProperty, msgInterface,
-            objectPath});
+        return _propertyFilterSet->contains(
+            {eventProperty, msgInterface, objectPath});
     }
     else
     {
@@ -332,10 +322,10 @@ bool EventDetection::getIsAccessorInteresting(
             for (auto& event : eventPerDevType.second)
             {
                 if (event_info::EventNode::getIsAccessorInterestingToEvent(
-                    event, accessor))
+                        event, accessor))
                 {
-                    logs_err("Event %s has interesting accessor!!!!!!\n",
-                            event.event.c_str());
+                    logs_err("Event %s has interesting accessor!\n",
+                             event.event.c_str());
                     return true;
                 }
             }

@@ -40,6 +40,7 @@ using namespace phosphor::logging;
 
 const auto APPNAME = "oobamld";
 const auto APPVER = "0.1";
+const auto HMC_BOOTUP_TMP_FILE = "/tmp/hmc_up";
 
 /**
  * @brief RETRY_DBUS_INFO_COUNTER and RETRY_SLEEP are used to wait for other
@@ -238,7 +239,7 @@ int showHelp()
     return 0;
 }
 
-//sd_bus* bus = nullptr;
+// sd_bus* bus = nullptr;
 
 } // namespace aml
 
@@ -249,10 +250,9 @@ void startWorkerThread(std::shared_ptr<boost::asio::io_context> io)
         event_detection::EventDetection::workerThreadMainLoop();
         // the main loop exited for whatever reason, so
         // queue a task to the main thread to restart the worker thread
-        logs_err("worker thread event loop exited unexpectedly, restarting it\n");
-        io->post([io]() {
-            startWorkerThread(io);
-        });
+        logs_err(
+            "worker thread event loop exited unexpectedly, restarting it\n");
+        io->post([io]() { startWorkerThread(io); });
     });
     thread->detach();
 }
@@ -271,7 +271,6 @@ int main(int argc, char* argv[])
 #ifdef EVENTING_FEATURE_ONLY
     logs_err("Eventing only feature is on\n");
 #endif // EVENTING_FEATURE_ONLY
-
 
     try
     {
@@ -309,8 +308,8 @@ int main(int argc, char* argv[])
 
     // Initialization
     event_info::loadFromFile(aml::profile::eventMap,
-        aml::profile::propertyFilterSet,
-        aml::configuration.event);
+                             aml::profile::propertyFilterSet,
+                             aml::configuration.event);
 
     // event_info::printMap(aml::profile::eventMap);
 
@@ -356,7 +355,8 @@ int main(int argc, char* argv[])
         aml::configuration.running_thread_limit,
         aml::configuration.total_thread_limit);
 
-    event_detection::queue = std::make_unique<PcQueueType>(PROPERTIESCHANGED_QUEUE_SIZE);
+    event_detection::queue =
+        std::make_unique<PcQueueType>(PROPERTIESCHANGED_QUEUE_SIZE);
 
     event_handler::ClearEvent clearEvent("ClearEvent");
     event_handler::EventHandlerManager eventHdlrMgr("EventHandlerManager");
@@ -369,7 +369,6 @@ int main(int argc, char* argv[])
     selftest::ReportResult rep_res;
 #endif // EVENTING_FEATURE_ONLY
 
-
     event_detection::EventDetection eventDetection(
         "EventDetection1", &aml::profile::eventMap,
         &aml::profile::propertyFilterSet, &eventHdlrMgr);
@@ -377,7 +376,7 @@ int main(int argc, char* argv[])
 #ifndef EVENTING_FEATURE_ONLY
     auto thread = std::make_unique<std::thread>([rep_res, selftest,
                                                  eventDetection]() mutable {
-        PROFILING_SWITCH(selftest::TsLatcher TS("bootup-selftest")); 
+        PROFILING_SWITCH(selftest::TsLatcher TS("bootup-selftest"));
         logs_wrn("started bootup selftest\n");
         ThreadpoolGuard guard(event_detection::threadpoolManager.get());
         if (!guard.was_successful())
@@ -388,9 +387,26 @@ int main(int argc, char* argv[])
                 "Thread pool over maxTotal tasks limit, exiting bootup selftest thread\n");
             return;
         }
+
+        bool reEvalLogs = true;
+        std::ifstream infile(HMC_BOOTUP_TMP_FILE);
+        if (infile.good())
+        {
+            logs_err(
+                "Did not detect HMC Boot-up. Will not resolve all logs.\n");
+            reEvalLogs = false;
+        }
+        else
+        {
+            logs_err(
+                "HMC Boot-up detected. All logs will be resolved. Logs will be regenerated for active conditions based on Self Test.\n");
+            std::ofstream outfile(HMC_BOOTUP_TMP_FILE);
+            outfile.close();
+        }
+
         if (selftest.performEntireTree(rep_res,
-                                       std::vector<std::string>{"data_dump"}) !=
-            aml::RcCode::succ)
+                                       std::vector<std::string>{"data_dump"},
+                                       reEvalLogs) != aml::RcCode::succ)
         {
             logs_err("Bootup Selftest failed\n");
             return;
@@ -400,16 +416,14 @@ int main(int argc, char* argv[])
             logs_dbg("SelfTest Device: %s\n", entry.first.c_str());
             if (selftest.evaluateDevice(entry.second))
             {
-                logs_dbg(
-                    "Device %s healthy based on SelfTest. Performing recovery actions.\n",
-                    entry.first.c_str());
-                eventDetection.updateDeviceHealthAndResolve(entry.first,
-                                                            std::string(""));
+                logs_dbg("Device %s healthy based on SelfTest.\n",
+                         entry.first.c_str());
             }
             else
             {
-                logs_err("SelfTest for Device %s failed\n",
-                         entry.first.c_str());
+                logs_err(
+                    "SelfTest for Device %s failed. One or more event logs have been created for this device.\n",
+                    entry.first.c_str());
             }
         }
         logs_wrn("finished bootup selftest\n");

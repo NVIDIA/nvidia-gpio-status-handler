@@ -153,7 +153,9 @@ TEST(selftestTest, evalTestReportTest)
     selftest::Selftest selftest("selftestObj", datMap);
 
     selftest::ReportResult reportResult;
-    struct selftest::TestPointResult dummyTp = {.targetName = "sampleTp",
+    struct selftest::TestPointResult dummyTp = {.isTypeDevice = false,
+                                                .severity = {},
+                                                .targetName = "sampleTp",
                                                 .valRead = "OK",
                                                 .valExpected = "OK",
                                                 .result = true};
@@ -793,7 +795,10 @@ TEST(selftestReportTest, generateReport)
 
     /* Given */
     selftest::ReportResult reportResult;
-    struct selftest::TestPointResult dummyTp = {.targetName = "sampleTp",
+
+    struct selftest::TestPointResult dummyTp = {.isTypeDevice = false,
+                                                .severity = {},
+                                                .targetName = "sampleTp",
                                                 .valRead = "123",
                                                 .valExpected = "OK",
                                                 .result = false};
@@ -828,9 +833,10 @@ TEST(selftestReportTest, generateReport)
     EXPECT_EQ(true, reportGeneratorNoFwVer.generateReport(reportResult));
     auto jNoFwVer = reportGeneratorNoFwVer.getReport();
     EXPECT_EQ(jNoFwVer["header"]["version"], "1.1");
-    EXPECT_EQ(jNoFwVer["header"]["HMC-version"], "Reading fw version disabled.");
+    EXPECT_EQ(jNoFwVer["header"]["HMC-version"],
+              "Reading fw version disabled.");
 
-    auto fwVerMock = [] () {return "HGX-22.10-1-rc34";};
+    auto fwVerMock = []() { return "HGX-22.10-1-rc34"; };
     selftest::Report reportGenerator(fwVerMock);
     EXPECT_EQ(true, reportGenerator.generateReport(reportResult));
 
@@ -868,12 +874,16 @@ TEST(selftestReportTest, fieldOrder)
 
     /* Given */
     selftest::ReportResult reportResult;
-    struct selftest::TestPointResult dummyTpExp = {.targetName = "expValTp",
+    struct selftest::TestPointResult dummyTpExp = {.isTypeDevice = false,
+                                                   .severity = {},
+                                                   .targetName = "expValTp",
                                                    .valRead = "dummy read",
                                                    .valExpected = "OK",
                                                    .result = false};
 
-    struct selftest::TestPointResult dummyTpNoExp = {.targetName = "noExpValTp",
+    struct selftest::TestPointResult dummyTpNoExp = {.isTypeDevice = false,
+                                                     .severity = {},
+                                                     .targetName = "noExpValTp",
                                                      .valRead = "dummy read",
                                                      .valExpected = "",
                                                      .result = true};
@@ -912,11 +922,9 @@ TEST(selftestReportTest, fieldOrder)
 
     /* check 2. requirement */
     const std::vector<std::string> deviceKeysOrderLut = {
-        "device-name",
-        "timestamp",       "erot-control-status",
-        "firmware-status", "interface-status",
-        "pin-status",      "power-rail-status",
-        "protocol-status", "data-dump"};
+        "device-name",       "timestamp",        "erot-control-status",
+        "firmware-status",   "interface-status", "pin-status",
+        "power-rail-status", "protocol-status",  "data-dump"};
     idx = 0;
 
     for (auto& el : j.at("tests").at(0).items())

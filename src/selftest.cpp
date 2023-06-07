@@ -6,8 +6,9 @@
 #include "selftest.hpp"
 
 #include "dbus_accessor.hpp"
-#include "util.hpp"
+#include "event_detection.hpp"
 #include "property_accessor.hpp"
+#include "util.hpp"
 
 #include <boost/algorithm/string.hpp>
 #include <boost/asio.hpp>
@@ -29,8 +30,8 @@ namespace selftest
 
 static constexpr auto reportResultPass = "Pass";
 static constexpr auto reportResultFail = "Fail";
-static data_accessor::PropertyString
-    propertyValueResultFail(std::string{reportResultFail});
+static data_accessor::PropertyString propertyValueResultFail(std::string{
+    reportResultFail});
 
 using phosphor::logging::entry;
 using phosphor::logging::level;
@@ -40,7 +41,8 @@ void Selftest::resolveLogEntry(
     const std::string& device,
     const dbus::utility::ManagedObjectType& result) const
 {
-    log_dbg("IN SELFTEST RESOLVE LOG ENTRY looking for log with device %s\n", device.c_str());
+    log_dbg("IN SELFTEST RESOLVE LOG ENTRY looking for log with device %s\n",
+            device.c_str());
     const std::vector<std::string>* additionalDataRaw = nullptr;
     bool resolved = false;
     for (auto& objectPath : result)
@@ -175,18 +177,59 @@ void Selftest::updateDeviceHealth(const std::string& device,
     }
 }
 
+void Selftest::updateHealthBasedOnResults(const ReportResult& reportRes)
+{
+    for (auto& dev : reportRes)
+    {
+        auto severity = getDeviceTestResult(dev.second);
+        updateDeviceHealth(dev.first, severity);
+    }
+}
+
 bool Selftest::evaluateDevice(const DeviceResult& deviceResult)
 {
+    auto isTpFailed =
+        [](TestPointResult tp) { /* return true on failed tp and false on ok */
+                                 if (tp.isTypeDevice)
+                                 { /* ignore result of children device */
+                                     return false;
+                                 }
+
+                                 return !tp.result;
+        };
+
     for (auto& layer : deviceResult.layer)
     {
-        if (std::any_of(layer.second.begin(), layer.second.end(),
-                        [](auto tp) { return !tp.result; }))
+        if (std::any_of(layer.second.begin(), layer.second.end(), isTpFailed))
         {
             return false;
         }
     }
 
     return true;
+}
+
+std::string Selftest::getDeviceTestResult(const DeviceResult& deviceResult)
+{
+    dat_traverse::TestPointSeverity worstSeverityFound(
+        dat_traverse::TestPointSeverity::SEVERITY::SEVERITY_OK);
+    for (auto& layer : deviceResult.layer)
+    {
+        auto testPoints = layer.second;
+        for (auto& tp : testPoints)
+        {
+            if (tp.result || tp.isTypeDevice)
+            {
+                continue;
+            }
+            if (tp.severity.value() > worstSeverityFound.value())
+            {
+                worstSeverityFound.set_severity(tp.severity.value());
+            }
+        }
+    }
+
+    return worstSeverityFound.string();
 }
 
 bool Selftest::evaluateTestReport(const ReportResult& reportRes)
@@ -215,40 +258,57 @@ bool Selftest::isDeviceCached(const std::string& devName,
 
 aml::RcCode Selftest::perform(const dat_traverse::Device& dev,
                               ReportResult& reportRes,
-                              std::vector<std::string> layersToIgnore)
+                              std::vector<std::string> layersToIgnore,
+                              const bool& doEventDetermination)
 {
     shortlog_dbg(<< "selftest: device visited: '" << dev.name << "'");
- 
+
     bool shouldSkip = !isDeviceRegular(dev) && !dev.hasTestpoints();
     if (isDeviceCached(dev.name, reportRes) || shouldSkip)
     {
-        shortlog_dbg(<< "selftest: skipping device: '" << dev.name << 
-                "' reason: " << (shouldSkip ? "optimized" : "already tested"));
+        shortlog_dbg(<< "selftest: skipping device: '" << dev.name
+                     << "' reason: "
+                     << (shouldSkip ? "optimized" : "already tested"));
         return aml::RcCode::succ;
     }
 
-    auto fillTpRes = [](selftest::TestPointResult& tp,
-                        const std::string& expVal,
-                        const data_accessor::PropertyValue& readVal,
-                        const std::string& name) {
-        tp.targetName = name;
-        tp.valExpected = expVal;
-        // it will empty when if DataAccessor::read() has failed
-        if (readVal.empty())
-        {
-            tp.valRead = "Error - TP read failed.";
-            tp.result = false;
-        }
-        else
-        {
-            tp.valRead = readVal.getString();
-            // in case of empty expected value default to positive result
-            tp.result = (expVal.size() == 0) ? true
-                              : readVal == data_accessor::PropertyValue(expVal);
-        }
-    };
+    if (doEventDetermination)
+    {
+        shortlog_dbg(<< "doing event determination for device: '" << dev.name);
+    }
 
-    PROFILING_SWITCH(selftest::TsLatcher TS("selftest-perform-" + dev.name)); 
+    auto fillTpRes =
+        [](selftest::TestPointResult& tp, const std::string& expVal,
+           const data_accessor::PropertyValue& readVal, const std::string& name,
+           data_accessor::DataAccessor& accessor,
+           const bool& doEventDetermination, auto& severity, bool isDevice) {
+            tp.targetName = name;
+            tp.valExpected = expVal;
+            tp.severity = severity;
+            tp.isTypeDevice = isDevice;
+            // it will empty when if DataAccessor::read() has failed
+            if (readVal.empty())
+            {
+                tp.valRead = "Error - TP read failed.";
+                tp.result = false;
+            }
+            else
+            {
+                tp.valRead = readVal.getString();
+                // in case of empty expected value default to positive result
+                tp.result =
+                    (expVal.size() == 0)
+                        ? true
+                        : readVal == data_accessor::PropertyValue(expVal);
+            }
+
+            if (doEventDetermination && !tp.result)
+            {
+                event_detection::EventDetection::eventDetermination(accessor);
+            }
+        };
+
+    PROFILING_SWITCH(selftest::TsLatcher TS("selftest-perform-" + dev.name));
     auto& availableLayers = dev.test;
     DeviceResult tmpDeviceReport;
     /* Important, preinsert new device test to detect recursed device. */
@@ -286,23 +346,26 @@ aml::RcCode Selftest::perform(const dat_traverse::Device& dev,
                 if (!isDeviceCached(devName, reportRes))
                 {
                     selftestRes =
-                        this->perform(devNested, reportRes, layersToIgnore);
+                        this->perform(devNested, reportRes, layersToIgnore,
+                                      doEventDetermination);
                 }
 
                 bool devEvalRes = (selftestRes == aml::RcCode::succ) &&
                                   evaluateDevice(reportRes[devName]);
 
                 fillTpRes(tmpTestPointResult, testPoint.expectedValue,
-                        (devEvalRes) ?
-                           data_accessor::PropertyValue(testPoint.expectedValue)
-                           : propertyValueResultFail,
-                        devName);
+                          (devEvalRes) ? data_accessor::PropertyValue(
+                                             testPoint.expectedValue)
+                                       : propertyValueResultFail,
+                          devName, acc, doEventDetermination,
+                          testPoint.severity, true);
             }
             else
             {
                 acc.read(dev.name);
                 fillTpRes(tmpTestPointResult, testPoint.expectedValue,
-                          acc.getDataValue(),  tp.first);
+                          acc.getDataValue(), tp.first, acc,
+                          doEventDetermination, testPoint.severity, false);
             }
             tmpLayerReport.insert(tmpLayerReport.begin(), tmpTestPointResult);
         }
@@ -312,17 +375,27 @@ aml::RcCode Selftest::perform(const dat_traverse::Device& dev,
 }
 
 aml::RcCode Selftest::performEntireTree(ReportResult& reportRes,
-                                        std::vector<std::string> layersToIgnore)
+                                        std::vector<std::string> layersToIgnore,
+                                        const bool& doEventDetermination)
 {
-    PROFILING_SWITCH(selftest::TsLatcher TS("selftest-perform-entire-tree")); 
+    PROFILING_SWITCH(selftest::TsLatcher TS("selftest-perform-entire-tree"));
+
+    if (doEventDetermination)
+    {
+        for (auto& dev : _dat)
+        {
+            event_detection::EventDetection::resolveDeviceLogs(dev.second.name,
+                                                               std::string(""));
+        }
+    }
     for (auto& dev : _dat)
     {
-        if (perform(dev.second, reportRes, layersToIgnore) != aml::RcCode::succ)
+        if (perform(dev.second, reportRes, layersToIgnore,
+                    doEventDetermination) != aml::RcCode::succ)
         {
             return aml::RcCode::error;
         }
     }
-
     return aml::RcCode::succ;
 }
 
@@ -530,8 +603,7 @@ bool RootCauseTracer::findRootCauseGeneral(
 }
 
 void RootCauseTracer::updateRootCause(dat_traverse::Device& dev,
-                                      dat_traverse::Device& rootCauseDevice,
-                                      selftest::Selftest& selftester)
+                                      dat_traverse::Device& rootCauseDevice)
 {
     dat_traverse::Status status;
     status.health = "Critical";
@@ -540,7 +612,6 @@ void RootCauseTracer::updateRootCause(dat_traverse::Device& dev,
     status.triState = "Error";
     DATTraverse::setHealthProperties(dev, status);
     DATTraverse::setOriginOfCondition(dev, status);
-    selftester.updateDeviceHealth(dev.name, status.health);
 }
 
 aml::RcCode RootCauseTracer::process([
@@ -554,7 +625,8 @@ aml::RcCode RootCauseTracer::process([
         return aml::RcCode::error;
     }
 
-    PROFILING_SWITCH(selftest::TsLatcher TS("RootCauseTracer-proces-" + problemDevice)); 
+    PROFILING_SWITCH(
+        selftest::TsLatcher TS("RootCauseTracer-proces-" + problemDevice));
     selftest::ReportResult completeReportRes;
     selftest::Selftest selftester("rootCauseSelftester", _dat);
     std::string rootCauseCandidateName{};
@@ -571,13 +643,17 @@ aml::RcCode RootCauseTracer::process([
         return aml::RcCode::error;
     }
 
+    std::string health =
+        selftester.getDeviceTestResult(completeReportRes[problemDevice]);
+    selftester.updateDeviceHealth(problemDevice, health);
+
     PROFILING_SWITCH(TS.addTimepoint("find root cause"));
-    
+
     if (findRootCause(problemDevice, completeReportRes, event,
                       rootCauseCandidateName))
     {
-        updateRootCause(_dat.at(problemDevice), _dat.at(rootCauseCandidateName),
-                        selftester);
+        updateRootCause(_dat.at(problemDevice),
+                        _dat.at(rootCauseCandidateName));
     }
 
     PROFILING_SWITCH(TS.addTimepoint("generate report"));

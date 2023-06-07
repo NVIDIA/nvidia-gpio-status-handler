@@ -242,6 +242,16 @@ Device::Device(const std::string& name, const json& j)
                                    ? ""
                                    : point["expected_value"].get<std::string>();
             std::string name = point["name"].get<std::string>();
+            if (point.contains("severity"))
+            {
+                std::string severity = point["severity"];
+                tp.severity.set_severity(severity);
+            }
+            else
+            {
+                tp.severity.set_severity("Critical");
+            }
+
             testPoints.insert(
                 std::pair<std::string, dat_traverse::TestPoint>(name, tp));
             this->testpointCount++;

@@ -7,13 +7,14 @@
 
 #include "aml.hpp"
 #include "check_accessor.hpp"
+#include "dat_traverse.hpp"
 #include "dbus_accessor.hpp"
 #include "event_handler.hpp"
 #include "event_info.hpp"
 #include "object.hpp"
 #include "pc_event.hpp"
-#include "threadpool_manager.hpp"
 #include "selftest.hpp"
+#include "threadpool_manager.hpp"
 
 #include <boost/container/flat_map.hpp>
 #include <dbus_log_utils.hpp>
@@ -26,7 +27,6 @@
 #include <string>
 #include <thread>
 #include <variant>
-#include <string> 
 
 #ifndef PROPERTIESCHANGED_QUEUE_SIZE
 #define PROPERTIESCHANGED_QUEUE_SIZE 100
@@ -48,9 +48,12 @@ using DbusEventHandlerList =
  *  This list is used in LookupEventFrom(),
  *
  *  Each event carries an assertedDeviceList (list of devices and their data)
+ *  The tuple will also carry a flag for whether the device will follow recovery
+ *  flow or not.
  */
-using AssertedEventList = std::vector<
-    std::pair<event_info::EventNode*, data_accessor::AssertedDeviceList>>;
+using AssertedEventList =
+    std::vector<std::tuple<event_info::EventNode*,
+                           data_accessor::AssertedDeviceList, bool>>;
 
 /**
  *   A map to check if a pair object-path + interface has already been
@@ -73,7 +76,8 @@ class EventDetection : public object::Object
                    event_info::PropertyFilterSet* propertyFilterSet,
                    event_handler::EventHandlerManager* hdlrMgr) :
         object::Object(name),
-        _eventMap(eventMap), _propertyFilterSet(propertyFilterSet), _hdlrMgr(hdlrMgr)
+        _eventMap(eventMap), _propertyFilterSet(propertyFilterSet),
+        _hdlrMgr(hdlrMgr)
     {}
     ~EventDetection() = default;
 
@@ -81,13 +85,20 @@ class EventDetection : public object::Object
     void identifyEventCandidate(const std::string& objPath,
                                 const std::string& signature,
                                 const std::string& property);
+
+    /**
+     * @brief determine event based on accessor
+     */
+    static void eventDetermination(data_accessor::DataAccessor& accessor);
+
     /**
      * @brief This is the main function of the worker thread
      */
     static void workerThreadMainLoop();
 
     /**
-     * @brief This is the loop which actually processes PropertiesChanged messages
+     * @brief This is the loop which actually processes PropertiesChanged
+     * messages
      */
     static void workerThreadProcessEvents();
 
@@ -114,17 +125,17 @@ class EventDetection : public object::Object
      * @param eventName
      * @param deviceType
      */
-    void recoverFromFault(const std::string& eventName,
-                          const std::string& deviceType)
+    static void recoverFromFault(const std::string& eventName,
+                                 const std::string& deviceType)
     {
         std::string eventKey = eventName + deviceType;
         if (eventsDetected.count(eventKey) > 0)
         {
             for (const auto& dev : eventsDetected.at(eventKey))
             {
-                log_dbg("Performing recovery on device %s for event %s\n",
-                        dev.c_str(), eventName.c_str());
-                updateDeviceHealthAndResolve(dev, eventName);
+                logs_dbg("Performing recovery on device %s for event %s\n",
+                         dev.c_str(), eventName.c_str());
+                resolveDeviceLogs(dev, eventName);
             }
             eventsDetected.at(eventKey).clear();
         }
@@ -135,7 +146,7 @@ class EventDetection : public object::Object
      *
      * @param devId
      */
-    void resetDeviceHealth(const std::string& devId)
+    static void resetDeviceHealth(const std::string& devId)
     {
         dbus::DirectObjectMapper om;
         const std::string healthInterface(
@@ -148,14 +159,14 @@ class EventDetection : public object::Object
                 "xyz.openbmc_project.State.Decorator.Health.HealthType.OK";
             for (const auto& objPath : objPathsToAlter)
             {
-                log_dbg("Setting Health Property for: %s healthState: %s\n",
-                        objPath.c_str(), healthState.c_str());
+                logs_dbg("Setting Health Property for: %s healthState: %s\n",
+                         objPath.c_str(), healthState.c_str());
                 bool ok = dbus::setDbusProperty(
                     objPath, "xyz.openbmc_project.State.Decorator.Health",
                     "Health", PropertyVariant(healthState));
                 if (ok == true)
                 {
-                    log_dbg("Changed health property as expected\n");
+                    logs_dbg("Changed health property as expected\n");
                 }
             }
         }
@@ -167,8 +178,8 @@ class EventDetection : public object::Object
      * @param objPath
      * @param bus
      */
-    void setLogEntryResolved(const std::string objPath,
-                             sdbusplus::bus::bus& bus)
+    static void setLogEntryResolved(const std::string objPath,
+                                    sdbusplus::bus::bus& bus)
     {
         try
         {
@@ -183,7 +194,7 @@ class EventDetection : public object::Object
         }
         catch (const sdbusplus::exception::exception& e)
         {
-            log_err(" Dbus Error: %s\n", e.what());
+            logs_err(" Dbus Error: %s\n", e.what());
             throw std::runtime_error(e.what());
         }
     }
@@ -195,57 +206,16 @@ class EventDetection : public object::Object
      * @param result
      * @param bus
      */
-    void recoverFromPowerCycleEvents(
+    static void recoverFromPowerCycleEvents(
         const std::string& devId,
         const dbus::utility::ManagedObjectType& result,
         sdbusplus::bus::bus& bus)
     {
         for (auto& objectPath : result)
         {
-            bool resolved = false;
-            const std::vector<std::string>* additionalDataRaw = nullptr;
-
-            for (auto& interfaceMap : objectPath.second)
-            {
-                if (interfaceMap.first == "xyz.openbmc_project.Logging.Entry")
-                {
-                    for (auto& propertyMap : interfaceMap.second)
-                    {
-                        if (propertyMap.first == "AdditionalData")
-                        {
-                            additionalDataRaw =
-                                std::get_if<std::vector<std::string>>(
-                                    &propertyMap.second);
-                        }
-                        else if (propertyMap.first == "Resolved")
-                        {
-                            const bool* resolveptr =
-                                std::get_if<bool>(&propertyMap.second);
-                            if (resolveptr == nullptr)
-                            {
-                                log_dbg("Resolved Property pointer is null\n");
-                                return;
-                            }
-                            resolved = *resolveptr;
-                        }
-                    }
-                }
-            }
-
-            bool powerCycle = true;
-            redfish::AdditionalData additional(*additionalDataRaw);
-            if (additional.count("RECOVERY_TYPE") > 0)
-            {
-                powerCycle = additional["RECOVERY_TYPE"] !=
-                                     std::string("property_change")
-                                 ? true
-                                 : false;
-            }
-
-            if (!resolved && powerCycle)
-            {
-                setLogEntryResolved(objectPath.first.str, bus);
-            }
+            logs_err("Resolving log %s for device %s\n",
+                     objectPath.first.str.c_str(), devId.c_str());
+            setLogEntryResolved(objectPath.first.str, bus);
         }
         resetDeviceHealth(devId);
     }
@@ -257,8 +227,8 @@ class EventDetection : public object::Object
      * @param devId
      * @param eventName
      */
-    void updateDeviceHealthAndResolve(const std::string& devId,
-                                      const std::string& eventName)
+    static void resolveDeviceLogs(const std::string& devId,
+                                  const std::string& eventName)
     {
         auto bus = sdbusplus::bus::new_default_system();
         dbus::utility::ManagedObjectType result;
@@ -271,19 +241,19 @@ class EventDetection : public object::Object
                                        "GetAll");
             method.append(devId);
             method.append(
-                "xyz.openbmc_project.Logging.Namespace.ResolvedFilterType.Both");
+                "xyz.openbmc_project.Logging.Namespace.ResolvedFilterType.Unresolved");
             auto reply = method.call();
             reply.read(result);
         }
         catch (const sdbusplus::exception::exception& e)
         {
-            log_err(" Dbus Error: %s\n", e.what());
+            logs_err(" Dbus Error: %s\n", e.what());
             throw std::runtime_error(e.what());
         }
 
-        PROFILING_SWITCH(selftest::TsLatcher TS("updateDeviceHealthAndResolve-" 
-                        + devId + "-" + eventName + "-logsNumber-" + 
-                        std::to_string(result.size())));
+        PROFILING_SWITCH(selftest::TsLatcher TS(
+            "resolveDeviceLogs-" + devId + "-" + eventName + "-logsNumber-" +
+            std::to_string(result.size())));
 
         if (eventName.length() == 0)
         {
@@ -292,7 +262,6 @@ class EventDetection : public object::Object
         }
 
         const std::vector<std::string>* additionalDataRaw = nullptr;
-        bool resolved = false;
         for (auto& objectPath : result)
         {
             for (auto& interfaceMap : objectPath.second)
@@ -307,24 +276,13 @@ class EventDetection : public object::Object
                                 std::get_if<std::vector<std::string>>(
                                     &propertyMap.second);
                         }
-                        else if (propertyMap.first == "Resolved")
-                        {
-                            const bool* resolveptr =
-                                std::get_if<bool>(&propertyMap.second);
-                            if (resolveptr == nullptr)
-                            {
-                                log_dbg("Resolved Property pointer is null\n");
-                                return;
-                            }
-                            resolved = *resolveptr;
-                        }
                     }
                 }
             }
 
             std::string messageArgs;
             std::string addlEventName;
-            if (!resolved && additionalDataRaw != nullptr)
+            if (additionalDataRaw != nullptr)
             {
                 redfish::AdditionalData additional(*additionalDataRaw);
                 if (additional.count("REDFISH_MESSAGE_ARGS") > 0)
@@ -338,9 +296,10 @@ class EventDetection : public object::Object
                 if (eventName == addlEventName &&
                     messageArgs.find(devId) != std::string::npos)
                 {
-                    resetDeviceHealth(devId);
+                    logs_err("Resolving log %s for device %s for event %s\n",
+                             objectPath.first.str.c_str(), devId.c_str(),
+                             eventName.c_str());
                     setLogEntryResolved(objectPath.first.str, bus);
-                    return;
                 }
             }
         }
@@ -404,8 +363,8 @@ class EventDetection : public object::Object
                         }
                         if (accCheck.check(accessor, triggerCheck))
                         {
-                            eventList.push_back(std::make_pair(
-                                &event, accCheck.getAssertedDevices()));
+                            eventList.push_back(std::make_tuple(
+                                &event, accCheck.getAssertedDevices(), false));
                             continue;
                         }
                     }
@@ -416,8 +375,8 @@ class EventDetection : public object::Object
                     const auto& accessor = event.accessor;
                     if (accCheck.check(accessor, trigger))
                     {
-                        eventList.push_back(std::make_pair(
-                            &event, accCheck.getAssertedDevices()));
+                        eventList.push_back(std::make_tuple(
+                            &event, accCheck.getAssertedDevices(), false));
                         continue;
                     }
                 }
@@ -441,9 +400,22 @@ class EventDetection : public object::Object
                         log_dbg(
                             "Recovering from property-changed signal fault %s\n",
                             event.event.c_str());
-                        
-                        PROFILING_SWITCH(selftest::TsLatcher TS("event-detection-recovery-flow-" + event.event + "-" + event.getMainDeviceType())); 
-                        recoverFromFault(event.event, event.getMainDeviceType());
+
+                        PROFILING_SWITCH(selftest::TsLatcher TS(
+                            "event-detection-recovery-flow-" + event.event +
+                            "-" + event.getMainDeviceType()));
+
+                        for (const auto& entry :
+                             recoveryCheck.getAssertedDevices())
+                        {
+                            log_err("Asserted Recovery Device: %s\n",
+                                    entry.device.c_str());
+                        }
+                        eventList.push_back(std::make_tuple(
+                            &event, recoveryCheck.getAssertedDevices(), true));
+
+                        recoverFromFault(event.event,
+                                         event.getMainDeviceType());
                     }
                 }
                 log_dbg("skipping event : %s\n", event.event.c_str());
@@ -498,6 +470,45 @@ class EventDetection : public object::Object
      *
      * @param event
      */
+    void RunEventHandler(event_info::EventNode& event, const std::string& name)
+    {
+        log_err("entered RunEventHandler\n");
+        auto guard = std::make_shared<ThreadpoolGuard>(threadpoolManager.get());
+        if (!guard->was_successful())
+        {
+            log_err(
+                "Thread pool over maxTotal tasks limit, not creating thread\n");
+            log_err("finished RunEventHandlers\n");
+            return;
+        }
+        auto thread =
+            std::make_unique<std::thread>([this, event, guard, name]() mutable {
+                log_err("started event thread\n");
+                std::stringstream ss;
+                ss << "calling hdlrMgr: " << this->_hdlrMgr->getName()
+                   << " event: " << event.event;
+                log_dbg("%s\n", ss.str().c_str());
+                auto hdlrMgr = *this->_hdlrMgr;
+                hdlrMgr.RunHandler(event, name);
+                log_err("finished event thread\n");
+            });
+
+        if (thread != nullptr)
+        {
+            thread->detach(); // separate, this no longer owns this thread
+        }
+        else
+        {
+            log_err("Create thread to process event failed!\n");
+        }
+        log_err("finished RunEventHandler\n");
+    }
+
+    /**
+     * @brief Throw out a thread to run all event handlers on the Event.
+     *
+     * @param event
+     */
     void RunEventHandlers(event_info::EventNode& event)
     {
         log_err("entered RunEventHandlers\n");
@@ -515,16 +526,17 @@ class EventDetection : public object::Object
         // of the ThreadpoolGuard so that it only gets destructed
         // (and the thread slot released) when both this trigger function
         // and the thread have finished executing.
-        auto thread = std::make_unique<std::thread>([this, event, guard]() mutable {
-            log_err("started event thread\n");
-            std::stringstream ss;
-            ss << "calling hdlrMgr: " << this->_hdlrMgr->getName()
-               << " event: " << event.event;
-            log_dbg("%s\n", ss.str().c_str());
-            auto hdlrMgr = *this->_hdlrMgr;
-            hdlrMgr.RunAllHandlers(event);
-            log_err("finished event thread\n");
-        });
+        auto thread =
+            std::make_unique<std::thread>([this, event, guard]() mutable {
+                log_err("started event thread\n");
+                std::stringstream ss;
+                ss << "calling hdlrMgr: " << this->_hdlrMgr->getName()
+                   << " event: " << event.event;
+                log_dbg("%s\n", ss.str().c_str());
+                auto hdlrMgr = *this->_hdlrMgr;
+                hdlrMgr.RunAllHandlers(event);
+                log_err("finished event thread\n");
+            });
 
         if (thread != nullptr)
         {
@@ -538,11 +550,12 @@ class EventDetection : public object::Object
     }
 
     /**
-     * @brief  Check if an incoming D-bus signal is "interesting" (used by any event)
+     * @brief  Check if an incoming D-bus signal is "interesting" (used by any
+     * event)
      * @param  objectPath the D-Bus object path the signal occurred on
      * @param  msgInterface the D-Bus interface where a property changed
      * @param  eventProperty the name of the property whose value changed
-    */
+     */
     bool getIsAccessorInteresting(const data_accessor::DataAccessor& accessor);
 
   private:

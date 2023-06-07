@@ -17,6 +17,7 @@
 #include <list>
 #include <map>
 #include <string>
+#include <system_error>
 #include <vector>
 
 using json = nlohmann::json;
@@ -32,10 +33,76 @@ struct Status
     std::string triState;
 };
 
+class TestPointSeverity
+{
+  public:
+    enum SEVERITY
+    {
+      SEVERITY_OK = 0,
+      SEVERITY_WARNING = 1,
+      SEVERITY_CRITICAL = 2,
+      SEVERITY_TOP = 3
+    };
+    static constexpr const char* severityLookup[SEVERITY_TOP] = {
+        "OK", "Warning", "Critical"};
+
+    TestPointSeverity() : severity(SEVERITY_CRITICAL)
+    {}
+
+    TestPointSeverity(enum SEVERITY init_severity) : severity(init_severity)
+    {}
+
+    TestPointSeverity(std::string init_severity)
+    {
+        set_severity(init_severity);
+    }
+
+    void set_severity(std::string severity_str)
+    {
+        if (severity_str == severityLookup[SEVERITY_OK])
+        {
+            severity = SEVERITY_OK;
+        }
+        else if (severity_str == severityLookup[SEVERITY_WARNING])
+        {
+            severity = SEVERITY_WARNING;
+        }
+        else if (severity_str == severityLookup[SEVERITY_CRITICAL])
+        {
+            severity = SEVERITY_CRITICAL;
+        }
+        else
+        {
+            std::string msg = "Unknown severity (" + severity_str +
+                              "). Error in dat.json config.";
+            throw std::runtime_error(msg);
+        }
+    }
+
+    void set_severity(enum SEVERITY newSeverity)
+    {
+        severity = newSeverity;
+    }
+
+    std::string string()
+    {
+        return severityLookup[severity];
+    }
+
+    enum SEVERITY value()
+    {
+        return severity;
+    }
+
+  private:
+    enum SEVERITY severity;
+};
+
 struct TestPoint
 {
     data_accessor::DataAccessor accessor;
     std::string expectedValue;
+    TestPointSeverity severity;
 };
 
 struct TestLayer
@@ -203,7 +270,7 @@ class Device
     ~Device();
 
   private:
-    /** @brief Helper counter of test points not to calculate them over again 
+    /** @brief Helper counter of test points not to calculate them over again
      *         as they're static after loading from config file **/
     unsigned int testpointCount;
 };

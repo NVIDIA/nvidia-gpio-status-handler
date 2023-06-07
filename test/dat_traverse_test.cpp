@@ -287,3 +287,45 @@ TEST(DatTraverseTest, testTypeAndCount)
     EXPECT_EQ(gpu2.getType(), dat_traverse::DeviceType::types::UNKNOWN_TYPE);
     EXPECT_EQ(gpu3.getType(), dat_traverse::DeviceType::types::PORT);
 }
+
+TEST(DatTraverseTest, testLoadSeverity)
+{
+    /* test loading of severity + throwing on unknown severity + default when
+     * none specified
+     */
+    nlohmann::json j;
+    j["power_rail"] = nlohmann::json::array();
+    j["erot_control"] = nlohmann::json::array();
+    j["pin_status"] = nlohmann::json::array();
+    j["interface_status"] = nlohmann::json::array();
+    j["firmware_status"] = nlohmann::json::array();
+    j["protocol_status"] = nlohmann::json::array();
+
+    nlohmann::json jDevTp;
+    jDevTp["name"] = "DUMMY";
+    jDevTp["expected_value"] = "pass";
+    jDevTp["accessor"]["type"] = "DEVICE";
+    jDevTp["accessor"]["device_name"] = "DUMMY";
+
+    nlohmann::json jgpu1 = j;
+    jgpu1["name"] = "GPU1";
+    jgpu1["type"] = "regular";
+    jgpu1["association"] = nlohmann::json::array();
+    jDevTp["name"] = "DUMMY_NAME1";
+    jgpu1["power_rail"] += jDevTp;
+    jDevTp["name"] = "DUMMY_NAME2";
+    jDevTp["severity"] = "Warning";
+    jgpu1["power_rail"] += jDevTp;
+    jDevTp["name"] = "DUMMY_NAME3";
+    jDevTp["severity"] = "Critical";
+    jgpu1["power_rail"] += jDevTp;
+    dat_traverse::Device gpu1("GPU1", jgpu1);
+    auto& tps = gpu1.test["power_rail"].testPoints;
+    EXPECT_EQ(tps["DUMMY_NAME1"].severity.string(), "Critical");
+    EXPECT_EQ(tps["DUMMY_NAME2"].severity.string(), "Warning");
+    EXPECT_EQ(tps["DUMMY_NAME3"].severity.string(), "Critical");
+
+    jDevTp["severity"] = "unknown severity expecting to throw";
+    jgpu1["protocol_status"] += jDevTp;
+    EXPECT_ANY_THROW(dat_traverse::Device gpu_throw("GPUthrow", jgpu1););
+}

@@ -4,30 +4,49 @@
 
 #pragma once
 
-#include <chrono>
+#include "data_accessor.hpp"
 
-#include <boost/lockfree/queue.hpp>
+#include <chrono>
+#include <mutex>
+
 #include <boost/lockfree/spsc_queue.hpp>
 
 struct PcCompare;
 
-// using PcTimestampType = std::chrono::time_point<std::chrono::steady_clock>;
-
-// using PcDataType = std::tuple<PcTimestampType, std::string, std::string,
-//         std::string, std::string, PropertyVariant>;
-
 struct PcDataType {
-    //PcTimestampType timestamp;
-    std::string sender;
-    std::string path;
-    std::string interface;
-    std::string propertyName;
-    PropertyVariant value;
+    data_accessor::DataAccessor accessor;
 };
 
-//using PcQueueType = PrioQueue<::PcDataType, std::vector<::PcDataType>, ::PcCompare>;
-//using PcQueueType = PrioQueue<PcDataType>;
-using PcQueueType = boost::lockfree::spsc_queue<PcDataType>;
+class PcQueueType
+{
+  public:
+    PcQueueType(size_t queueSize)
+        : _queue(queueSize), _mutex{}
+    {
+    }
+
+    bool push(PcDataType const & d)
+    {
+        std::scoped_lock lock(_mutex);
+        return _queue.push(d);
+    }
+
+    bool pop(PcDataType & d)
+    {
+        std::scoped_lock lock(_mutex);
+        return _queue.pop(d);
+    }
+
+    size_t write_available()
+    {
+        std::scoped_lock lock(_mutex);  // TODO: is this necessary?
+        return _queue.write_available();
+    }
+
+  private:
+    boost::lockfree::spsc_queue<PcDataType> _queue;
+    std::mutex _mutex;
+};
 
 /*
 struct PcCompare

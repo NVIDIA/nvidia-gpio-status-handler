@@ -6,9 +6,9 @@
 #pragma once
 
 #include "aml.hpp"
+#include "data_accessor.hpp"
 #include "event_info.hpp"
 #include "object.hpp"
-#include "data_accessor.hpp"
 #include "util.hpp"
 
 #include <memory>
@@ -58,20 +58,24 @@ class ClearEvent : public EventHandler
         if (event.accessor.isTypeDeviceCoreApi())
         {
             std::string property = event.accessor.getProperty();
-            if (!property.empty()){
-              int deviceId = util::getMappedDeviceId(event.event);
-              if (deviceId == util::InvalidDeviceId)
-              {
-                  // not all devices are mapped, ten use common getDeviceId()
-                  deviceId = util::getDeviceId(event.event);
-              }
-              log_dbg("Clear API Debug property(%s) of deviceId(%d)!\n", property.c_str(), deviceId);
-              int rc = dbus::deviceClearCoreAPI(deviceId, property);
-              if (rc != 0)
-              {
-                  log_err("Clear API Error on property(%s) of deviceId(%d), rc=%d!\n", property.c_str(), deviceId, rc);
-                  return aml::RcCode::error;
-              }
+            if (!property.empty())
+            {
+                int deviceId = util::getMappedDeviceId(event.event);
+                if (deviceId == util::InvalidDeviceId)
+                {
+                    // not all devices are mapped, ten use common getDeviceId()
+                    deviceId = util::getDeviceId(event.event);
+                }
+                log_dbg("Clear API Debug property(%s) of deviceId(%d)!\n",
+                        property.c_str(), deviceId);
+                int rc = dbus::deviceClearCoreAPI(deviceId, property);
+                if (rc != 0)
+                {
+                    log_err(
+                        "Clear API Error on property(%s) of deviceId(%d), rc=%d!\n",
+                        property.c_str(), deviceId, rc);
+                    return aml::RcCode::error;
+                }
             }
         }
 
@@ -104,6 +108,34 @@ class EventHandlerManager : public object::Object
     }
 
     /**
+     * @brief Run a particular handler by name.
+     *
+     * @param event
+     * @return aml::RcCode
+     */
+    aml::RcCode RunHandler(event_info::EventNode& event,
+                           const std::string& name)
+    {
+        for (auto& hdlr : _handlers)
+        {
+            if (name == hdlr->getName())
+            {
+                log_dbg("running handler(%s) on event(%s)\n",
+                        hdlr->getName().c_str(), event.getName().c_str());
+                auto rc = hdlr->process(event);
+                if (rc != aml::RcCode::succ)
+                {
+                    log_err("handler(%s) on event(%s) failed, rc = %d!\n",
+                            hdlr->getName().c_str(), event.getName().c_str(),
+                            aml::to_integer(rc));
+                }
+                return aml::RcCode::succ;
+            }
+        }
+        return aml::RcCode::succ;
+    }
+
+    /**
      * @brief Run all registered event handlers in order.
      *
      * @param event
@@ -114,7 +146,7 @@ class EventHandlerManager : public object::Object
         for (auto& hdlr : _handlers)
         {
             log_dbg("running handler(%s) on event(%s)\n",
-                     hdlr->getName().c_str(), event.getName().c_str());
+                    hdlr->getName().c_str(), event.getName().c_str());
 
             auto rc = hdlr->process(event);
 

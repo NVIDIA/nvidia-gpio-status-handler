@@ -8,14 +8,14 @@
 #include "aml.hpp"
 #include "dat_traverse.hpp"
 #include "event_handler.hpp"
-#include <dbus_utility.hpp>
 
+#include <dbus_utility.hpp>
 #include <nlohmann/json.hpp>
 
+#include <chrono>
 #include <ostream>
 #include <string>
 #include <vector>
-#include <chrono>
 
 namespace selftest
 {
@@ -25,6 +25,13 @@ namespace selftest
  */
 struct TestPointResult
 {
+    /** @brief this flag is needed to speed up result evaluation and used to
+     *         skip TP result if set to true **/
+    bool isTypeDevice;
+
+    /** @brief test point severity **/
+    dat_traverse::TestPointSeverity severity;
+
     /** @brief test point name, eg. "PGOOD", "DEVICE_HSC0" **/
     std::string targetName;
 
@@ -73,22 +80,23 @@ using ReportResult = std::map<std::string, DeviceResult>;
 class Report
 {
   public:
-    Report(std::function<std::string()> fwVerClbk) : tpTotal(0), tpFailed(0), getFwVersionClbk(fwVerClbk)
+    Report(std::function<std::string()> fwVerClbk) :
+        tpTotal(0), tpFailed(0), getFwVersionClbk(fwVerClbk)
     {}
     ~Report() = default;
 
   public:
     /**
-     * @brief Default implementation of fw version getter for report, 
+     * @brief Default implementation of fw version getter for report,
      *        read from dbus in this case.
      * @return fw version in text format
      */
     static std::string getDBusFwVersionString()
     {
         std::string fwVersion = "Failed to read firmware version.";
-        auto propVariant = 
-        dbus::readDbusProperty("/xyz/openbmc_project/software/HGX_FW_BMC_0",
-                  "xyz.openbmc_project.Software.Version", "Version");
+        auto propVariant = dbus::readDbusProperty(
+            "/xyz/openbmc_project/software/HGX_FW_BMC_0",
+            "xyz.openbmc_project.Software.Version", "Version");
 
         if (isValidVariant(propVariant))
         {
@@ -167,12 +175,11 @@ class Selftest : public event_handler::EventHandler
     ~Selftest() = default;
 
   public:
-
     /**
      * @brief Resolves DBUS log entry associated with device
      *
      * @param[in] device - name of device
-     * @param[in] result - log results 
+     * @param[in] result - log results
      */
     void resolveLogEntry(const std::string& device,
                          const dbus::utility::ManagedObjectType& result) const;
@@ -185,6 +192,13 @@ class Selftest : public event_handler::EventHandler
      */
     void updateDeviceHealth(const std::string& device,
                             const std::string& health) const;
+
+    /**
+     * @brief Updates healths on all devices present in results
+     *
+     * @param[in] reportRes
+     */
+    void updateHealthBasedOnResults(const ReportResult& reportRes);
 
     /**
      * @brief Aggregates selftest results of report->devices->testpoints
@@ -252,7 +266,8 @@ class Selftest : public event_handler::EventHandler
      */
     aml::RcCode perform(const dat_traverse::Device& dev,
                         ReportResult& reportRes,
-                        std::vector<std::string> layersToIgnore = {});
+                        std::vector<std::string> layersToIgnore = {},
+                        const bool& doEventDetermination = false);
 
     /** @brief Performs selftest on entire DAT.
      *
@@ -263,7 +278,8 @@ class Selftest : public event_handler::EventHandler
      * @return aml::RcCode meaning testing operation status, not test results
      */
     aml::RcCode performEntireTree(ReportResult& reportRes,
-                                  std::vector<std::string> layersToIgnore = {});
+                                  std::vector<std::string> layersToIgnore = {},
+                                  const bool& doEventDetermination = false);
 
     /**
      * @brief Checks selftest result of particular device -> testpoints
@@ -272,6 +288,16 @@ class Selftest : public event_handler::EventHandler
      * @return true - all TP in *device* passed, false - any TP failed
      */
     static bool evaluateDevice(const DeviceResult& deviceResult);
+
+    /**
+     * @brief based on device result in case of failed test points evaluate
+     *        severity
+     * @param[in] deviceResult
+     * @return returns "OK" if no failures found or depending on test point
+     * configuration: "Warning" or "Critical"
+     */
+    static std::string
+        getDeviceTestResult(const DeviceResult& deviceResult);
 
   private:
     inline bool isDeviceRegular(const dat_traverse::Device& dev)
@@ -283,63 +309,64 @@ class Selftest : public event_handler::EventHandler
     const std::map<std::string, dat_traverse::Device>& _dat;
 };
 
+
 #ifdef PROFILING_SELFTEST_AND_RECOVERY_FLOW
-    #define PROFILING_SWITCH(x)   x
-    /**
-     * @brief intended use is to create object (which latches start time) and 
-     * let it end its scope to print profiling data. More timepoints can be 
-     * added in the same scope with labels
-     */
-    class TsLatcher
+#define PROFILING_SWITCH(x) x
+/**
+ * @brief intended use is to create object (which latches start time) and
+ * let it end its scope to print profiling data. More timepoints can be
+ * added in the same scope with labels
+ */
+class TsLatcher
+{
+  public:
+    TsLatcher(std::string name, std::string startingLabel = "start",
+              std::string exitingLabel = "exit") :
+        instanceName(name),
+        startLabel(startingLabel), exitLabel(exitingLabel)
     {
-      public:
-        TsLatcher(std::string name, std::string startingLabel = "start",
-          std::string exitingLabel = "exit") : instanceName(name), 
-          startLabel(startingLabel), exitLabel(exitingLabel)
-        {
-            addTimepoint(startLabel);
-        }
+        addTimepoint(startLabel);
+    }
 
-        ~TsLatcher() 
-        {
-            addTimepoint(exitLabel);
-            printSummary();
-        }
+    ~TsLatcher()
+    {
+        addTimepoint(exitLabel);
+        printSummary();
+    }
 
-      public:
-        void addTimepoint(std::string label)
-        {
-            timepoints.push_back(std::make_pair(label, 
-                                std::chrono::high_resolution_clock::now()));
-        }
+  public:
+    void addTimepoint(std::string label)
+    {
+        timepoints.push_back(
+            std::make_pair(label, std::chrono::high_resolution_clock::now()));
+    }
 
-        void printSummary()
+    void printSummary()
+    {
+        for (unsigned int i = 0; i < (timepoints.size() - 1); i++)
         {
-            for (unsigned int i = 0; i < (timepoints.size() - 1); i++)
-            {
-                auto t1 = timepoints[i].second;
-                auto t2 = timepoints[i+1].second;
-                auto ms_int = std::chrono::duration_cast<
-                                            std::chrono::milliseconds>(t2 - t1);
-                std::stringstream ss;
-                ss << instanceName << ": " << timepoints[i].first << " <-> " 
-                      << timepoints[i+1].first << " took " << ms_int.count() 
-                      << "ms";
-                log_err("%s\n", ss.str().c_str());
-            }
+            auto t1 = timepoints[i].second;
+            auto t2 = timepoints[i + 1].second;
+            auto ms_int =
+                std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1);
+            std::stringstream ss;
+            ss << instanceName << ": " << timepoints[i].first << " <-> "
+               << timepoints[i + 1].first << " took " << ms_int.count() << "ms";
+            log_err("%s\n", ss.str().c_str());
         }
+    }
 
-      private:
-        std::vector<std::pair<std::string, 
-              decltype(std::chrono::high_resolution_clock::now())>> timepoints;
-        std::string instanceName;
-        std::string startLabel;
-        std::string exitLabel;
-    };
+  private:
+    std::vector<std::pair<std::string,
+                          decltype(std::chrono::high_resolution_clock::now())>>
+        timepoints;
+    std::string instanceName;
+    std::string startLabel;
+    std::string exitLabel;
+};
 #else
-    #define PROFILING_SWITCH(x)
-#endif   // #if PROFILE_SELFTEST_AND_RECOVERY_FLOW
-
+#define PROFILING_SWITCH(x)
+#endif // #if PROFILE_SELFTEST_AND_RECOVERY_FLOW
 
 } // namespace selftest
 
@@ -398,8 +425,7 @@ class RootCauseTracer : public EventHandler
      * @param[in] selftester - self test object
      */
     void updateRootCause(dat_traverse::Device& dev,
-                         dat_traverse::Device& rootCauseDevice,
-                         selftest::Selftest& selftester);
+                         dat_traverse::Device& rootCauseDevice);
 
     /**
      * @brief finds most nested device that caused the problem

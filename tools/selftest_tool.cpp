@@ -162,7 +162,7 @@ int show_help([[maybe_unused]] cmd_line::ArgFuncParamType params)
 constexpr const char* badHealth = "Critical";
 constexpr const char* goodHealth = "OK";
 
-void updateDevicesHealthBasedOnReport(
+void updateDevicesHealthBasedOnResults(
     selftest::Selftest& selftest, const selftest::ReportResult& reportResult)
 {
     std::cout << "About to update devices health. To update: "
@@ -172,37 +172,11 @@ void updateDevicesHealthBasedOnReport(
 
     for (auto& dev : reportResult)
     {
-        std::string deviceHealth = goodHealth;
-        if (!selftest.evaluateDevice(dev.second))
-        {
-            logs_err("%s unhealthy - failed selftest.\n", dev.first.c_str());
-            deviceHealth = badHealth;
-        }
-        else
-        {
-            logs_err("%s healthy. Resolving associated log(s) if found\n", dev.first.c_str());
+        std::string deviceHealth =
+            selftest.getDeviceTestResult(dev.second);
 
-            try
-            {
-                dbus::utility::ManagedObjectType result;
-                dbus::DelayedMethod method(
-                bus, "xyz.openbmc_project.Logging", "/xyz/openbmc_project/logging",
-                "xyz.openbmc_project.Logging.Namespace", "GetAll");
-                method.append(dev.first);
-                method.append("xyz.openbmc_project.Logging.Namespace.ResolvedFilterType.Unresolved");
-                auto reply = method.call();
-                reply.read(result);
-
-                selftest.resolveLogEntry(dev.first, result);
-            }
-            catch (const sdbusplus::exception::exception& e)
-            {
-                logs_err(" Dbus Error: %s\n", e.what());
-                throw std::runtime_error(e.what());
-            }
-        }
-        std::cout << "Setting health: " << dev.first << " = " << deviceHealth
-                  << "\n";
+        std::cout << "Setting health " << dev.first << " = " << deviceHealth
+                  << "\r\n";
         selftest.updateDeviceHealth(dev.first, deviceHealth);
     }
 }
@@ -275,7 +249,7 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    updateDevicesHealthBasedOnReport(selftest, reportResult);
+    updateDevicesHealthBasedOnResults(selftest, reportResult);
 
     PROFILING_SWITCH(TS.addTimepoint("health_updated_&_log_resolved"));
 
