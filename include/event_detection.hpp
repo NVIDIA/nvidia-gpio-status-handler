@@ -40,6 +40,22 @@ extern std::unique_ptr<PcQueueType> queue;
 
 extern std::unique_ptr<ThreadpoolManager> threadpoolManager;
 
+/** check() from event.trigger against dbusAcc returned false */
+constexpr auto msgFalseCheckTriggerCriteria =
+    "event.trigger check criteria does not match dbusAcc property value";
+
+/** Fields from event.trigger and dbusAcc are not the same */
+constexpr auto msgTriggerFieldsDoNotMatch =
+    "event.trigger fields do not match dbusAcc fields";
+
+/** check() from event.accessor against dbusAcc returned false */
+constexpr auto msgFalseCheckAccessorCriteria =
+    "event.accessor check criteria does not match dbusAcc property value";
+
+/** empty event.trigger and event.accessor fields do not match dbusAcc fields */
+constexpr auto msgEmptyTriggerAccessorFieldsDoNotMatch =
+ "event.trigger is empty and event.accessor fields do not match dbusAcc fields";
+
 constexpr int invalidIntParam = -1;
 using DbusEventHandlerList =
     std::vector<std::unique_ptr<sdbusplus::bus::match_t>>;
@@ -315,10 +331,10 @@ class EventDetection : public object::Object
 
     /**
      * @brief LookupEventFrom
-     * @param acc the DataAccessor which came from DBus and will trigger Events
+     * @param dbusAcc the DataAccessor made from DBUS PropertyChange signal
      * @return an AssertedEventList with the Events to be generated
      */
-    AssertedEventList LookupEventFrom(const data_accessor::DataAccessor& acc)
+    AssertedEventList LookupEventFrom(const data_accessor::DataAccessor& dbusAcc)
     {
         AssertedEventList eventList;
         for (auto& eventPerDevType : *this->_eventMap)
@@ -332,59 +348,98 @@ class EventDetection : public object::Object
                    << "\n\tevent.device: " << event.device
                    << "\n\tevent.accessor: " << event.accessor
                    << "\n\tevent.trigger: " << event.trigger
-                   << "\n\tacc: " << acc;
+                   << "\n\tdbusAcc: " << dbusAcc;
                 log_dbg("%s\n", ss.str().c_str());
 
                 /**
-                 * event.trigger is compared first, when it macthes:
-                 *   1. event.trigger performs a check against the data from acc
-                 *   2. if check passes and event.accessor is not empty
-                 *     2.1 event.accessor reads its data
+                 * Event Creation logic
+                 *
+                 * if event.trigger exists and matches dbusAcc fields,
+                 *     two checks need be performed
+                 * otherwise, if event.trigger is empty and accessor
+                 *     matches dbusAcc fields only one check needs be performed
                  */
-                const auto& trigger = acc;
-                if (!event.trigger.isEmpty() && event.trigger == trigger)
+                if (!event.trigger.isEmpty())
                 {
-                    data_accessor::CheckAccessor triggerCheck(deviceType);
-                    const auto& accessor = event.trigger;
-                    if (triggerCheck.check(accessor, trigger))
+                    if (event.trigger == dbusAcc)
+                    {
+                        data_accessor::CheckAccessor triggerCheck(deviceType);
+                        if (triggerCheck.check(event.trigger, dbusAcc))
+                        {
+                            // redefines accessor to reuse data
+                            auto accessor = event.accessor;
+                            if (accessor == dbusAcc)
+                            {
+                                // avoids going again to dbus to get data
+                                accessor.setDataValue(dbusAcc.getDataValue());
+                            }
+                            data_accessor::CheckAccessor accCheck(deviceType);
+                            /* Note: accCheck uses info stored in triggerCheck
+                             *  1. the original trigger/dbusAcc
+                             *  2. Maybe needs triggerCheck asserted devices
+                             *      example the event "DRAM Contained ECC Error"
+                             */
+                            if (accCheck.check(accessor, triggerCheck))
+                            {
+                                 eventList.push_back(std::make_tuple(
+                                    &event, accCheck.getAssertedDevices(),
+                                    false));
+                                continue;
+                            }
+                            else
+                            {
+                                log_dbg("skipping event '%s' %s\n",
+                                        event.event.c_str(),
+                                        msgFalseCheckAccessorCriteria);
+                            }
+                        }
+                        else
+                        {
+                             log_dbg("skipping event '%s' %s\n",
+                                    event.event.c_str(),
+                                    msgFalseCheckTriggerCriteria);
+                        }
+                    }
+                    else
+                    {
+                         log_dbg("skipping event '%s' %s\n",
+                                event.event.c_str(),
+                                msgTriggerFieldsDoNotMatch);
+                    }
+                }
+                else
+                {
+                    // event.trigger is empty, then check event.accessor
+                    if (event.accessor == dbusAcc)
                     {
                         data_accessor::CheckAccessor accCheck(deviceType);
-                        /* Note: accCheck uses info stored in triggerCheck
-                         *   1. the original trigger
-                         *   2. Maybe needs triggerCheck asserted devices data
-                         *      for example the event "DRAM Contained ECC Error"
-                         */
-                        // redefines accessor
-                        auto accessor = event.accessor;
-                        if (accessor == trigger)
-                        {
-                            // avoids going again to dbus to get data
-                            accessor.setDataValue(trigger.getDataValue());
-                        }
-                        if (accCheck.check(accessor, triggerCheck))
+                        if (accCheck.check(event.accessor, dbusAcc))
                         {
                             eventList.push_back(std::make_tuple(
                                 &event, accCheck.getAssertedDevices(), false));
                             continue;
                         }
+                        else
+                        {
+                            log_dbg("skipping event '%s' %s\n",
+                                    event.event.c_str(),
+                                    msgFalseCheckAccessorCriteria);
+                        }
                     }
-                }
-                else if (event.accessor == trigger)
-                {
-                    data_accessor::CheckAccessor accCheck(deviceType);
-                    const auto& accessor = event.accessor;
-                    if (accCheck.check(accessor, trigger))
+                    else
                     {
-                        eventList.push_back(std::make_tuple(
-                            &event, accCheck.getAssertedDevices(), false));
-                        continue;
+                        log_dbg("skipping event '%s' %s\n",
+                                event.event.c_str(),
+                                msgEmptyTriggerAccessorFieldsDoNotMatch);
                     }
-                }
+                } // end Event Creation logic
+
+                // event was not generated above, check recovery
                 if (!event.recovery_accessor.isEmpty() &&
-                    event.recovery_accessor == trigger)
+                    event.recovery_accessor == dbusAcc)
                 {
                     data_accessor::CheckAccessor recoveryCheck(deviceType);
-                    if (recoveryCheck.check(event.recovery_accessor, trigger))
+                    if (recoveryCheck.check(event.recovery_accessor, dbusAcc))
                     {
                         log_dbg("Checking content of events detected map\n");
                         for (const auto& e : eventsDetected)
@@ -418,7 +473,6 @@ class EventDetection : public object::Object
                                          event.getMainDeviceType());
                     }
                 }
-                log_dbg("skipping event : %s\n", event.event.c_str());
             }
         }
         log_dbg("got total events : %lu\n", eventList.size());
