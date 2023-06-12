@@ -131,6 +131,9 @@
               "name" : {
                 "type" : "string"
               },
+              "device" : {
+                "type" : "boolean"
+              },
               "value" : {
                 "type" : "string"
               },

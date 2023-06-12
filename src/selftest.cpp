@@ -456,20 +456,24 @@ bool Report::processLayer(nlohmann::ordered_json& jdev,
             layerPassOrFail = false;
         }
 
-        if (tp.valExpected.size() == 0)
+        nlohmann::ordered_json newTp{};
+        newTp["name"] = tp.targetName;
+
+        if (tp.isTypeDevice)
         {
-            jdev[layerKey]["test-points"] +=
-                {{"name", tp.targetName}, {"value", tp.valRead}};
+            newTp["device"] = true;
         }
-        else
+
+        newTp["value"] = tp.valRead;
+
+        if (tp.valExpected.size() != 0)
         {
             auto resStr = tp.result ? reportResultPass : reportResultFail;
-            jdev[layerKey]["test-points"] +=
-                {{"name", tp.targetName},
-                 {"value", tp.valRead},
-                 {"value-expected", tp.valExpected},
-                 {"result", resStr}};
+            newTp["value-expected"] = tp.valExpected;
+            newTp["result"] = resStr;
         }
+
+        jdev[layerKey]["test-points"] += newTp;
     }
 
     jdev[layerKey]["result"] =
@@ -541,7 +545,7 @@ void Report::writeSummaryHeader(void)
     }
 
     this->_report["header"]["name"] = "Self test report";
-    this->_report["header"]["version"] = "1.1";
+    this->_report["header"]["version"] = "1.2";
     this->_report["header"]["HMC-version"] = fwVersion;
     this->_report["header"]["timestamp"] = getTimestampString();
     this->_report["header"]["summary"]["test-case-total"] = this->tpTotal;

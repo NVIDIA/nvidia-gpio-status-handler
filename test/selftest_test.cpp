@@ -832,7 +832,7 @@ TEST(selftestReportTest, generateReport)
     selftest::Report reportGeneratorNoFwVer(nullptr);
     EXPECT_EQ(true, reportGeneratorNoFwVer.generateReport(reportResult));
     auto jNoFwVer = reportGeneratorNoFwVer.getReport();
-    EXPECT_EQ(jNoFwVer["header"]["version"], "1.1");
+    EXPECT_EQ(jNoFwVer["header"]["version"], "1.2");
     EXPECT_EQ(jNoFwVer["header"]["HMC-version"],
               "Reading fw version disabled.");
 
@@ -846,7 +846,7 @@ TEST(selftestReportTest, generateReport)
     EXPECT_EQ(j["header"]["summary"]["test-case-failed"], 6);
     EXPECT_EQ(j["header"]["summary"]["test-case-total"], 12);
     EXPECT_EQ(j["header"]["timestamp"].type(), nlohmann::json::value_t::string);
-    EXPECT_EQ(j["header"]["version"], "1.1");
+    EXPECT_EQ(j["header"]["version"], "1.2");
     EXPECT_EQ(j["header"]["HMC-version"], "HGX-22.10-1-rc34");
 
     EXPECT_EQ(j["tests"][0]["device-name"], "GPU0");
