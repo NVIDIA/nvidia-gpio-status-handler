@@ -54,7 +54,7 @@ constexpr auto msgFalseCheckAccessorCriteria =
 
 /** empty event.trigger and event.accessor fields do not match dbusAcc fields */
 constexpr auto msgEmptyTriggerAccessorFieldsDoNotMatch =
- "event.trigger is empty and event.accessor fields do not match dbusAcc fields";
+    "event.trigger is empty and event.accessor fields do not match dbusAcc fields";
 
 constexpr int invalidIntParam = -1;
 using DbusEventHandlerList =
@@ -334,7 +334,8 @@ class EventDetection : public object::Object
      * @param dbusAcc the DataAccessor made from DBUS PropertyChange signal
      * @return an AssertedEventList with the Events to be generated
      */
-    AssertedEventList LookupEventFrom(const data_accessor::DataAccessor& dbusAcc)
+    AssertedEventList
+        LookupEventFrom(const data_accessor::DataAccessor& dbusAcc)
     {
         AssertedEventList eventList;
         for (auto& eventPerDevType : *this->_eventMap)
@@ -381,7 +382,7 @@ class EventDetection : public object::Object
                              */
                             if (accCheck.check(accessor, triggerCheck))
                             {
-                                 eventList.push_back(std::make_tuple(
+                                eventList.push_back(std::make_tuple(
                                     &event, accCheck.getAssertedDevices(),
                                     false));
                                 continue;
@@ -395,15 +396,14 @@ class EventDetection : public object::Object
                         }
                         else
                         {
-                             log_dbg("skipping event '%s' %s\n",
+                            log_dbg("skipping event '%s' %s\n",
                                     event.event.c_str(),
                                     msgFalseCheckTriggerCriteria);
                         }
                     }
                     else
                     {
-                         log_dbg("skipping event '%s' %s\n",
-                                event.event.c_str(),
+                        log_dbg("skipping event '%s' %s\n", event.event.c_str(),
                                 msgTriggerFieldsDoNotMatch);
                     }
                 }
@@ -428,8 +428,7 @@ class EventDetection : public object::Object
                     }
                     else
                     {
-                        log_dbg("skipping event '%s' %s\n",
-                                event.event.c_str(),
+                        log_dbg("skipping event '%s' %s\n", event.event.c_str(),
                                 msgEmptyTriggerAccessorFieldsDoNotMatch);
                     }
                 } // end Event Creation logic
@@ -469,8 +468,18 @@ class EventDetection : public object::Object
                         eventList.push_back(std::make_tuple(
                             &event, recoveryCheck.getAssertedDevices(), true));
 
-                        recoverFromFault(event.event,
-                                         event.getMainDeviceType());
+                        try
+                        {
+                            recoverFromFault(event.event,
+                                             event.getMainDeviceType());
+                        }
+                        catch (std::runtime_error& e)
+                        {
+                            log_err(
+                                "Failed to recover from fault %s on %s due to %s. Corresponding log may not have been resolved.\n",
+                                event.event.c_str(), event.device.c_str(),
+                                e.what());
+                        }
                     }
                 }
             }

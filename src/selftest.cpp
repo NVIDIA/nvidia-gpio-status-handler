@@ -384,8 +384,16 @@ aml::RcCode Selftest::performEntireTree(ReportResult& reportRes,
     {
         for (auto& dev : _dat)
         {
-            event_detection::EventDetection::resolveDeviceLogs(dev.second.name,
-                                                               std::string(""));
+            try
+            {
+                event_detection::EventDetection::resolveDeviceLogs(
+                    dev.second.name, std::string(""));
+            }
+            catch (std::runtime_error& e)
+            {
+                log_err("Failed to resolve device logs for %s due to %s\n.",
+                        dev.second.name.c_str(), e.what());
+            }
         }
     }
     for (auto& dev : _dat)
