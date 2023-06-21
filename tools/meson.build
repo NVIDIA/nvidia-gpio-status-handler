@@ -26,7 +26,6 @@ if get_option('eventing_feature_only').disabled()
         ],
         install: false,
     )
-
-    subdir('jtag')
-
 endif
+subdir('jtag')
+
