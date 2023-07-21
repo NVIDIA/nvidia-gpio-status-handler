@@ -80,7 +80,12 @@ function createLog()
 {
   xid="_XID"
   msg_arg="$1"
-  msg_arg=$(echo $msg_arg | sed 's/,/;/g')
+  # Replace "," with ";" from all the XID messages
+  # "," are used to split message args, "," in a XID Message would increase the MessageArgs count to be greater than 2
+  msg_arg=${msg_arg//,/;}
+  # Replace "=" with ":" from all the XID messages
+  # Refer bug: https://nvbugs/4204066
+  msg_arg=${msg_arg//=/:}
   createlogCmd="\
   busctl call xyz.openbmc_project.Logging /xyz/openbmc_project/logging xyz.openbmc_project.Logging.Create Create ssa{ss} \""$event" Error\"
   \"xyz.openbmc_project.Logging.Entry.Level.Critical\" 6
