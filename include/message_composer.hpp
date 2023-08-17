@@ -161,6 +161,13 @@ class MessageComposer : public event_handler::EventHandler
      */
     bool createLog(event_info::EventNode& event);
 
+    /**
+     * @brief Gets origin of condition of the event
+     * @param event
+     * @return string representation of OOC
+     */
+    std::string getOriginOfCondition(event_info::EventNode& event);
+
 #ifndef EVENTING_FEATURE_ONLY
     std::map<std::string, dat_traverse::Device>& dat;
 #endif

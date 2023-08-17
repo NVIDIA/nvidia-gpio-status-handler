@@ -79,6 +79,43 @@ std::string MessageComposer::getOriginOfConditionObjectPath(
 }
 #endif // EVENTING_FEATURE_ONLY
 
+std::string MessageComposer::getOriginOfCondition(event_info::EventNode& event)
+{
+    std::string oocDevice{""};
+    std::string originOfCondition{""};
+    if (event.getOriginOfCondition().has_value())
+    {
+        {
+            std::string val = event.getOriginOfCondition().value();
+            if (boost::starts_with(val, "/redfish/v1"))
+            {
+                logs_dbg("Message Composer to use fixed redfish URI OOC '%s'\n",
+                         val.c_str());
+                originOfCondition = val;
+            }
+        }
+    }
+    if (originOfCondition.empty())
+    {
+        if (this->dat.count(event.device) > 0)
+        {
+            oocDevice =
+                this->dat.at(event.device).healthStatus.originOfCondition;
+            if (false == oocDevice.empty())
+            {
+                originOfCondition = getOriginOfConditionObjectPath(oocDevice);
+            }
+        }
+        else
+        {
+            logs_dbg("Device does not exist in DAT: '%s'\n",
+                     event.device.c_str());
+            return "";
+        }
+    }
+    return originOfCondition;
+}
+
 bool MessageComposer::createLog(event_info::EventNode& event)
 {
     auto bus = sdbusplus::bus::new_default_system();
@@ -94,20 +131,12 @@ bool MessageComposer::createLog(event_info::EventNode& event)
 #ifdef EVENTING_FEATURE_ONLY
     std::string originOfCondition{"Not supported"};
 #else
-    std::string oocDevice{""};
-    std::string originOfCondition{""};
-    if (dat.count(event.device) > 0)
+
+    std::string originOfCondition = getOriginOfCondition(event);
+    if (originOfCondition.empty())
     {
-        oocDevice = dat.at(event.device).healthStatus.originOfCondition;
-        if (false == oocDevice.empty())
-        {
-            originOfCondition = getOriginOfConditionObjectPath(oocDevice);
-        }
-    }
-    else
-    {
-        std::cerr << "Device does not exist in DAT: " << event.device
-                  << std::endl;
+        log_err("Origin of Condition for event %s is empty\n",
+                event.event.c_str());
         return false;
     }
 

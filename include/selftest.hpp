@@ -296,8 +296,7 @@ class Selftest : public event_handler::EventHandler
      * @return returns "OK" if no failures found or depending on test point
      * configuration: "Warning" or "Critical"
      */
-    static std::string
-        getDeviceTestResult(const DeviceResult& deviceResult);
+    static std::string getDeviceTestResult(const DeviceResult& deviceResult);
 
   private:
     inline bool isDeviceRegular(const dat_traverse::Device& dev)
@@ -308,7 +307,6 @@ class Selftest : public event_handler::EventHandler
     /** @brief Internal DAT reference. **/
     const std::map<std::string, dat_traverse::Device>& _dat;
 };
-
 
 #ifdef PROFILING_SELFTEST_AND_RECOVERY_FLOW
 #define PROFILING_SWITCH(x) x
@@ -421,11 +419,12 @@ class RootCauseTracer : public EventHandler
      * @brief updates device root cause of failure
      *
      * @param[out] dev  - device to update health and origin of condition
-     * @param[in] rootCauseDevice - device which failed selftest
+     * @param[in] rootCauseDeviceName - device name which failed selftest
      * @param[in] selftester - self test object
      */
     void updateRootCause(dat_traverse::Device& dev,
-                         dat_traverse::Device& rootCauseDevice);
+                         std::string& rootCauseDeviceName,
+                         std::map<std::string, dat_traverse::Device>& dat);
 
     /**
      * @brief finds most nested device that caused the problem

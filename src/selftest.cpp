@@ -614,13 +614,23 @@ bool RootCauseTracer::findRootCauseGeneral(
     return true;
 }
 
-void RootCauseTracer::updateRootCause(dat_traverse::Device& dev,
-                                      dat_traverse::Device& rootCauseDevice)
+void RootCauseTracer::updateRootCause(
+    dat_traverse::Device& dev, std::string& rootCauseDeviceName,
+    std::map<std::string, dat_traverse::Device>& dat)
 {
     dat_traverse::Status status;
     status.health = "Critical";
     status.healthRollup = "Critical";
-    status.originOfCondition = rootCauseDevice.name;
+    if (dat.count(rootCauseDeviceName) > 0)
+    {
+        status.originOfCondition = dat.at(rootCauseDeviceName).name;
+    }
+    else
+    {
+        log_dbg("Root Cause Candidate %s not in DAT\n",
+                rootCauseDeviceName.c_str());
+        status.originOfCondition = rootCauseDeviceName;
+    }
     status.triState = "Error";
     DATTraverse::setHealthProperties(dev, status);
     DATTraverse::setOriginOfCondition(dev, status);
@@ -664,8 +674,7 @@ aml::RcCode RootCauseTracer::process([
     if (findRootCause(problemDevice, completeReportRes, event,
                       rootCauseCandidateName))
     {
-        updateRootCause(_dat.at(problemDevice),
-                        _dat.at(rootCauseCandidateName));
+        updateRootCause(_dat.at(problemDevice), rootCauseCandidateName, _dat);
     }
 
     PROFILING_SWITCH(TS.addTimepoint("generate report"));

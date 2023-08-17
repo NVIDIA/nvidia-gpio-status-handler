@@ -137,6 +137,49 @@ TEST(EventTelemtries, MakeCall)
     EXPECT_EQ(jCollected["selftest"].size(), 0);
 }
 
+TEST(EventTelemtries, TestPatternOOC)
+{
+    nlohmann::json j;
+    j["event"] = "Event0";
+    j["device_type"] = "GPU";
+    j["sub_type"] = "";
+    j["severity"] = "Critical";
+    j["resolution"] = "Contact NVIDIA Support";
+    j["redfish"]["message_id"] = "ResourceEvent.1.0.ResourceErrorsDetected";
+    j["redfish"]["message_args"]["patterns"] = {"p1", "p2"};
+    j["redfish"]["message_args"]["parameters"] = nlohmann::json::array();
+    j["redfish"]["origin_of_condition"] =
+        "/redfish/v1/Chassis/HGX_GPU_SXM_[1-8]";
+    j["telemetries"] = {
+        {{"name", "temperature"},
+         {"type", "DBUS"},
+         {"object", "xyz.openbmc_project.Inventory.Decorator.Dimension"},
+         {"interface", "Depth"}},
+        {{"name", "power"},
+         {"type", "DBUS"},
+         {"object", "xyz.openbmc_project.Inventory.Decorator.Dimension"},
+         {"interface", "Depth"}}};
+    j["trigger_count"] = 0;
+    j["event_trigger"] = "trigger";
+    j["action"] = "do something";
+    j["event_counter_reset"]["type"] = "type";
+    j["event_counter_reset"]["metadata"] = "metadata";
+    j["accessor"]["metadata"] = "metadata";
+    j["accessor"]["type"] = "DBUS";
+    j["value_as_count"] = false;
+    event_info::EventNode event("test event");
+    event.loadFrom(j);
+
+    std::vector<std::string> deviceTypeList{{"GPU"}};
+    event.setDeviceTypes(deviceTypeList);
+
+    device_id::PatternIndex gpuId(4);
+    event.setDeviceIndexTuple(gpuId);
+    EXPECT_EQ(event.getOriginOfCondition().has_value(), true);
+    EXPECT_EQ(event.getOriginOfCondition().value(),
+              "/redfish/v1/Chassis/HGX_GPU_SXM_4");
+}
+
 TEST(EventSeverityLevel, Critical)
 {
     auto level = message_composer::MessageComposer::makeSeverity("Critical");
