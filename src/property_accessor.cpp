@@ -87,6 +87,21 @@ bool PropertyValue::check(const CheckDefinitionMap& map,
             ret = bitmask(criteria::getValueFromCriteria(redefCriteria,
                                                          accessorCheck.second));
         }
+        else if (key == bitsetKey)
+        {
+            ret = bitset(criteria::getValueFromCriteria(redefCriteria,
+                                                         accessorCheck.second));
+        }
+        else if (key == notBitmaskKey)
+        {
+            ret = notBitmask(criteria::getValueFromCriteria(redefCriteria,
+                                                        accessorCheck.second));
+        }
+        else if (key == notBitsetKey)
+        {
+            ret = notBitset(criteria::getValueFromCriteria(redefCriteria,
+                                                            accessorCheck.second));
+        }
         else if (key == lookupKey)
         {
             ret = lookup(criteria::getStringFromCriteria(redefCriteria,
@@ -112,6 +127,42 @@ bool PropertyValue::check(const CheckDefinitionMap& map,
     return ret;
 }
 
+bool PropertyValue::notBitmask(const uint64_t mask) const
+{
+    return (bitmask(mask) == false);
+}
+
+bool PropertyValue::notBitmask(const PropertyValue& other) const
+{
+    return other.isValidInteger() && notBitmask(other._data.value64);
+}
+
+bool PropertyValue::bitset(const uint64_t mask) const
+{
+    bool ret = isValidInteger();
+    if (ret == true)
+    {
+        uint64_t result = _data.value64 & mask;
+        ret = (result != 0);
+    }
+    return ret;
+}
+
+bool PropertyValue::bitset(const PropertyValue& other) const
+{
+    return other.isValidInteger() && bitset(other._data.value64);
+}
+
+bool PropertyValue::notBitset(const uint64_t mask) const
+{
+    return (bitset(mask) == false);
+}
+
+bool PropertyValue::notBitset(const PropertyValue& other) const
+{
+    return other.isValidInteger() && notBitset(other._data.value64);
+}
+
 bool PropertyValue::bitmask(const uint64_t mask) const
 {
     bool ret = isValidInteger();
@@ -123,9 +174,9 @@ bool PropertyValue::bitmask(const uint64_t mask) const
     return ret;
 }
 
-bool PropertyValue::bitmask(const PropertyValue& otherMask) const
+bool PropertyValue::bitmask(const PropertyValue& other) const
 {
-    return otherMask.isValidInteger() && bitmask(otherMask._data.value64);
+    return other.isValidInteger() && bitmask(other._data.value64);
 }
 
 bool PropertyValue::lookup(const std::string& lookupString,

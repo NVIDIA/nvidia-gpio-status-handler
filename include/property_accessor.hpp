@@ -24,7 +24,10 @@ namespace data_accessor
 using CheckDefinitionMap = std::map<std::string, std::string>;
 
 constexpr auto bitmaskKey = "bitmask";
+constexpr auto notBitmaskKey = "not_bitmask";
 constexpr auto bitmapKey = "bitmap";
+constexpr auto bitsetKey = "bitset";
+constexpr auto notBitsetKey = "not_bitset";
 constexpr auto lookupKey = "lookup";
 constexpr auto equalKey = "equal";
 constexpr auto notEqualKey = "not_equal";
@@ -189,6 +192,34 @@ class PropertyValueDataHelper
  *
  *   Converts supported types to integer 64 bits and does operations such as
  *      and bit a bit among others
+ *
+ *   Explanation:
+ *
+ *   PropertyValue  itself stores an integer or a string in the struct '_data'
+ *   Considering integer values, the integer is '_data.value64' then
+ *     the following boolean operations are available:
+ *
+ *    Key           Method in PropertyValue class
+ *  ----------------------------------------------------------------------------
+ *  'bitmask'     bool bitmask(const uint64_t mask)     (value64 & mask) == mask
+ *  'not_bitmask' bool notBitmask(const uint64_t mask)  (value64 & mask) != mask
+ *  'bitset'      bool bitset(const uint64_t mask)      (value64 & mask) != 0
+ *  'not_bitset'  bool notBitset(const uint64_t mask)   (value64 & mask) == 0
+ *
+ *  Wrappers to perform bit operations between 2 PropertyValue objects:
+ *
+ *     bool bitmask(const PropertyValue& other)
+ *     bool notBitmask(const PropertyValue& other)
+ *     bool bitset(const PropertyValue& other)
+ *     bool notBitset(const PropertyValue& other)
+ *
+ *  @note
+ *     'bitmap' key in the class PropertyValue behaves as 'bitmask' key,
+ *     the shifting is managed by the class @sa CheckAccessor
+ *     passing it as different criteria for @sa PropertyValue::check(),
+ *     @sa PropertyValue::check() and @sa criteria::getValueFromCriteria()
+ *
+ *
  */
 class PropertyValue
 {
@@ -255,30 +286,47 @@ class PropertyValue
                const PropertyVariant& redefCriteria = PropertyVariant()) const;
 
     /**
-     * @brief bitmask performs a bitmask (or bit a bit) from  the value stored
-     *                in _data against the value of mask
-     *
-     * @param mask  the bitmask to check
-     *
-     * @return true if all bits set from mask are also set in the integer value
-     *              from _data
+     * @brief checks if a bitmask is present in @a _data.value64
+     * @param mask  the bitmask (bits set) to check
+     * @return true if all bits in mask are also in @a _data.value64
      */
     bool bitmask(const uint64_t mask) const;
 
-    /**
-     * @brief bitmask performs a bitmask (or bit a bit) from  the value stored
-     *                in _data against the mask stored in otherMask
-     *
-     * @param otherMask the PropertyValue which contais the mask
-     *
-     * @return true if all bits set from the integer value in otherMask
-     *              are also set the integer value from _data
-     */
+    /** [redefinition] performs bitmask operation between two  objects */
     bool bitmask(const PropertyValue& otherMask) const;
 
     /**
-     * @brief lookup searches lookupString in the string representation of the
-     *                       _data
+     * @brief checks if a bitmask is @bold not present in @a _data.value64
+     * @param mask  the bitmask (bits set) to check
+     * @return true if all bits in mask are not in @a _data.value64
+     */
+    bool notBitmask(const uint64_t mask) const;
+
+    /** [redefinition] performs notBitmask operation between two  objects */
+    bool notBitmask(const PropertyValue& other) const;
+
+    /**
+     * @brief checks if any bit from a bitmask is also in @a _data.value64
+     * @param mask  the bitmask (bits set) to check
+     * @return true if at least one bit in mask is also in @a _data.value64
+     */
+    bool bitset(const uint64_t mask) const;
+
+    /** [redefinition] performs bitset operation between two  objects */
+    bool bitset(const PropertyValue& other) const;
+
+    /**
+     * @brief checks if any bit from a bitmask is @bold not in @a _data.value64
+     * @param mask  the bitmask (bits set) to check
+     * @return true if no single bit in mask is also in @a _data.value64
+     */
+    bool notBitset(const uint64_t mask) const;
+
+    /** [redefinition] performs notBitset operation between two  objects */
+    bool notBitset(const PropertyValue& other) const;
+
+    /**
+     * @brief searches lookupString in the string representation of the _data
      *
      * @param lookupString string to search in _data
      *
@@ -290,12 +338,12 @@ class PropertyValue
                 CaseSensitivity cs = caseSensitive) const;
 
     /**
-     * @brief lookup searches the string otherLookup._data.strValue in the
-     *               string representation of the _data
+     * @brief searches the string otherLookup._data.strValue in the
+     *           string representation of the _data
      *
      * @param otherLookup contains the string representation to search
      *
-     * @param cs  peforms the search case sensitive or insensitive
+     * @param cs  performs the search case sensitive or insensitive
      *
      * @return  true if otherLookup._data.strValue was found in the string
      *          from _data

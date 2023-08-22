@@ -200,3 +200,88 @@ TEST(PropertyValue, EqualOperator)
     EXPECT_EQ(PropertyValue(std::string("001")) == PropertyValue(1), true);
     EXPECT_EQ(PropertyValue(std::string("001")) == PropertyValue(0x01), true);
 }
+
+TEST(PropertyValue, Bitset)
+{
+    PropertyValue bits_4_5_12_13(0x3030);
+    uint64_t bit_4 = 0x10;
+    uint64_t bit_5 = 0x20;
+    uint64_t bit_12 = 0x1000;
+    uint64_t bit_13 = 0x2000;
+
+    EXPECT_EQ(bits_4_5_12_13.bitset(bit_4), true);
+    EXPECT_EQ(bits_4_5_12_13.bitset(bit_5), true);
+    EXPECT_EQ(bits_4_5_12_13.bitset(bit_12), true);
+    EXPECT_EQ(bits_4_5_12_13.bitset(bit_13), true);
+    EXPECT_EQ(bits_4_5_12_13.bitset(PropertyValue(bit_4)), true);
+    EXPECT_EQ(bits_4_5_12_13.bitset(PropertyValue(bit_5)), true);
+    EXPECT_EQ(bits_4_5_12_13.bitset(PropertyValue(bit_12)), true);
+    EXPECT_EQ(bits_4_5_12_13.bitset(PropertyValue(bit_13)), true);
+
+    EXPECT_EQ(bits_4_5_12_13.bitset(uint64_t(0x00)), false);
+    EXPECT_EQ(bits_4_5_12_13.bitset(uint64_t(0x01)), false);
+    EXPECT_EQ(bits_4_5_12_13.bitset(uint64_t(0x02)), false);
+    EXPECT_EQ(bits_4_5_12_13.bitset(uint64_t(0x03)), false);
+    EXPECT_EQ(bits_4_5_12_13.bitset(uint64_t(0x05)), false);
+    EXPECT_EQ(bits_4_5_12_13.bitset(uint64_t(0x06)), false);
+
+    uint64_t zero = 0x00;
+    PropertyValue zeroMask(zero);
+    EXPECT_EQ(bits_4_5_12_13.bitset(zeroMask), false);
+    PropertyValue zeroValue(zero);
+    EXPECT_EQ(zeroValue.bitset(bits_4_5_12_13), false);
+}
+
+TEST(PropertyValue, NotBitset)
+{
+    PropertyValue bits_4_5_12_13(0x3030);
+    uint64_t bit_4 = 0x10;
+    uint64_t bit_5 = 0x20;
+    uint64_t bit_12 = 0x1000;
+    uint64_t bit_13 = 0x2000;
+
+    EXPECT_NE(bits_4_5_12_13.notBitset(bit_4), true);
+    EXPECT_NE(bits_4_5_12_13.notBitset(bit_5), true);
+    EXPECT_NE(bits_4_5_12_13.notBitset(bit_12), true);
+    EXPECT_NE(bits_4_5_12_13.notBitset(bit_13), true);
+    EXPECT_NE(bits_4_5_12_13.notBitset(PropertyValue(bit_4)), true);
+    EXPECT_NE(bits_4_5_12_13.notBitset(PropertyValue(bit_5)), true);
+    EXPECT_NE(bits_4_5_12_13.notBitset(PropertyValue(bit_12)), true);
+    EXPECT_NE(bits_4_5_12_13.notBitset(PropertyValue(bit_13)), true);
+
+    EXPECT_EQ(bits_4_5_12_13.notBitset(uint64_t(0x00)), true);
+    EXPECT_EQ(bits_4_5_12_13.notBitset(uint64_t(0x01)), true);
+    EXPECT_EQ(bits_4_5_12_13.notBitset(uint64_t(0x02)), true);
+    EXPECT_EQ(bits_4_5_12_13.notBitset(uint64_t(0x03)), true);
+    EXPECT_EQ(bits_4_5_12_13.notBitset(uint64_t(0x05)), true);
+    EXPECT_EQ(bits_4_5_12_13.notBitset(uint64_t(0x06)), true);
+
+    uint64_t zero = 0x00;
+    PropertyValue zeroMask(zero);
+    EXPECT_EQ(bits_4_5_12_13.notBitset(zeroMask), true);
+    PropertyValue zeroValue(zero);
+    EXPECT_EQ(zeroValue.notBitset(bits_4_5_12_13), true);
+}
+
+TEST(PropertyValue, NotBitmask)
+{
+    PropertyValue bits_0_1_2(0x07);
+    uint64_t bit_0 = 0x01;
+    uint64_t bit_1 = 0x02;
+    uint64_t bit_2 = 0x04;
+    uint64_t bit_3 = 0x08;
+    uint64_t bit_4 = 0x10;
+    uint64_t mask = 0x07;
+
+    EXPECT_EQ(bits_0_1_2.bitmask(bits_0_1_2), true); // itself
+    EXPECT_EQ(bits_0_1_2.bitmask(mask), true); // same value
+
+    EXPECT_NE(bits_0_1_2.notBitmask(bits_0_1_2), true); // itself
+    EXPECT_NE(bits_0_1_2.notBitmask(mask), true); // same value
+
+    EXPECT_NE(bits_0_1_2.notBitmask(bit_0), true);
+    EXPECT_NE(bits_0_1_2.notBitmask(bit_1), true);
+    EXPECT_NE(bits_0_1_2.notBitmask(bit_2), true);
+    EXPECT_EQ(bits_0_1_2.notBitmask(bit_3), true);
+    EXPECT_EQ(bits_0_1_2.notBitmask(bit_4), true);
+}
