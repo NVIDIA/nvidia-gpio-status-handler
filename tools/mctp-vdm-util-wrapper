@@ -47,11 +47,11 @@ getDeviceEid() #1=device name
 
     for device_eid in $DEVICENAME_EID_LIST
     do
-        local name=$(echo $device_eid | cut -f1 -d,)
+        local name="${device_eid%%,*}"
         ## comparing with ignorecase
         if [ "${name,,}" = "${device,,}" ]
         then
-            eid=$(echo $device_eid | cut -f2 -d,)
+            eid="${device_eid##*,}"
             echo $eid
             return 0
         fi
@@ -272,24 +272,37 @@ mctp_access() #(dev_eid, pretty_cmd) => <value>
         # create the file if it does not exist, store fd number in $cachefd
         exec {cachefd}<>"$cachefile"
         flock -x "$cachefd"  # lock the file by fd
-        local age=$(( $(date '+%s') - $(date -r "/dev/fd/$cachefd" '+%s') ))
-        if [ $age -gt $CACHE_STALE_AGE ] || [ ! -s "/dev/fd/$cachefd" ]
+
+        local monotonic_time=`awk '{print int($i)}' /proc/uptime`
+        local file_time=0
+        local file_data;
+
+        if [ -s "/dev/fd/$cachefd" ]
         then
-            # cachefile is currently empty or stale, so populate it (if the command is successful)
+            file_data=`cat "/dev/fd/$cachefd"`
+            file_time=`echo "$file_data" | head -n 1`
+        fi
+        
+        local file_rc=0
+        local age=$(( $monotonic_time - $file_time ))
+        if [ $age -gt $CACHE_STALE_AGE ] || [ $file_time -eq 0 ]
+        then
+            # cachefile is currently empty or stale, so populate it with rc and output
+            >&2 echo "cache for EID=${dev_eid} is empty or stale, refilling it"
             local output;output=`timeout $MCTP_CACHE_COMMAND_TIMEOUT $cmdline`;rc=$?
-            if [ "$rc" -ne 0 ]
-            then
-                flock -u "$cachefd"  # unlock the file by fd
-                return $rc
-            else
-                echo -n "$output" > "/dev/fd/$cachefd"  # write the output to the cache file
-            fi
+            printf "%s\n%s\n%s" "$monotonic_time" "$rc" "$output" > "/dev/fd/$cachefd"
         else
-            # cachefile contains the result, read from there
-            local output;output=`cat "/dev/fd/$cachefd"`
+            # cachefile contains the file time, rc and output, read from there 
+            # skipping time metadata (first line)
+            file_rc=`echo "$file_data" | head -n 2 | tail -n 1`
+            local output;output=`echo "$file_data" | tail -n +3`
         fi
         flock -u "$cachefd"  # unlock the file by fd
 
+        if [[ $file_rc -ne 0 ]]
+        then
+            return $file_rc
+        fi
 
     else
         if [ "$mctp_cmd" == "$SELFTEST_CMD" ]
@@ -360,6 +373,7 @@ invalidate()
             exit $rc
         fi
 
+        >&2 echo "Cache manually invalidated for DEVNAME=${DEVNAME} EID=${device_id}"
         local cmdline="rm -f ""${MCTP_CACHE_FILE_PREFIX}${device_id}"
         if [ "$DRY_RUN" -eq 1 ]; then
             echo "$cmdline"
