@@ -496,45 +496,6 @@ TEST(DataAccessor, BitmapWithoutRangeInDeviceType)
     EXPECT_EQ(devices[0].device, "PCIeSwitch");
 }
 
-TEST(DataAccessor, CmdLineRegexExpansion)
-{
-    const nlohmann::json jsonCMDLINE = {
-        {"type", "CMDLINE"},
-        {"executable", "/bin/echo"},
-        {"arguments", "AP0_BOOTCOMPLETE_TIMEOUT GPU[0-7]"},
-        {"check", {{"lookup", "AP0_BOOTCOMPLETE_TIMEOUT GPU1"}}}};
-
-    DataAccessor cmdAccessor{jsonCMDLINE};
-    const std::string deviceType{"GPU[0-7]"};
-    CheckAccessor accCheck(deviceType);
-    // if the "lookup" worked then the expansion is fine
-    EXPECT_EQ(accCheck.check(cmdAccessor, cmdAccessor), true);
-    auto assertedDevices = accCheck.getAssertedDevices();
-    EXPECT_EQ(assertedDevices.size(), 1);
-    EXPECT_EQ(assertedDevices[0].device, "GPU1");
-}
-
-
-TEST(DataAccessor, CmdLineEmptyRegexExpansionUseDevicetypeInstead)
-{
-    const nlohmann::json jsonCMDLINE = {
-        {"type", "CMDLINE"},
-        {"executable", "/bin/echo"},
-        {"arguments", "AP0_BOOTCOMPLETE_TIMEOUT []"},
-        {"check", {{"lookup", "AP0_BOOTCOMPLETE_TIMEOUT GPU1"}}}};
-
-    DataAccessor cmdAccessor{jsonCMDLINE};
-    const std::string deviceType{"GPU[0-7]"};
-    CheckAccessor accCheck(deviceType);
-
-    // if the "lookup" worked then the expansion is fine
-    EXPECT_EQ(accCheck.check(cmdAccessor, cmdAccessor), true);
-    auto assertedDevices = accCheck.getAssertedDevices();
-    EXPECT_EQ(assertedDevices.size(), 1);
-    EXPECT_EQ(assertedDevices[0].device, "GPU1");
-}
-
-
 TEST(DataAccessor, CopyOperator)
 {
     DataAccessor source(PropertyVariant(int(1)));

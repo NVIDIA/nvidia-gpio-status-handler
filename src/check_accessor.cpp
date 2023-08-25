@@ -241,12 +241,4 @@ bool CheckAccessor::subCheck(const DataAccessor& jsonAcc, DataAccessor& dataAcc,
     return ret;
 }
 
-void CheckAccessor::saveDeviceTypePattern(const std::string& deviceType)
-{
-    if (_devIdData.pattern.dim() == 0 && false == deviceType.empty())
-    {
-        _devIdData.pattern = device_id::DeviceIdPattern(deviceType);
-    }
-}
-
 } // namespace data_accessor

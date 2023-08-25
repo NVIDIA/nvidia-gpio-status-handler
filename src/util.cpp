@@ -173,60 +173,6 @@ int getDeviceId(const std::string& deviceName, const std::string& range)
     return ret;
 }
 
-std::string replaceRangeByMatchedValue(const std::string& regxValue,
-                                       const std::string& matchedValue,
-                                       const DeviceIdData* devIdData)
-{
-    auto ret{regxValue};
-    // only deviceType can be empty
-    if (matchedValue.empty() || ret.empty())
-    {
-        return ret;
-    }
-    auto patternRangeInfo = util::getMinMaxRange(ret);
-    auto patternRangeVec = std::get<0>(patternRangeInfo);
-    // check using the string because empty range '[]' is allowed
-    auto patternRange = std::get<1>(patternRangeInfo);
-    if (false == patternRange.empty())
-    {
-        std::string devType{""};
-        if (devIdData != nullptr)
-        {
-            devType = getFirstDeviceTypePattern(devIdData->pattern.pattern());
-        }
-        auto deviceTypeRangeInfo = util::getMinMaxRange(devType);
-        auto deviceTypeRangeVec = std::get<0>(deviceTypeRangeInfo);
-        auto deviceId = util::getDeviceId(matchedValue, devType);
-        while (false == patternRange.empty())
-        {
-            auto position = ret.find(patternRange);
-            if (position == std::string::npos)
-            {
-                break;
-            }
-            auto deviceIdStr = matchedValue;
-            if (patternRangeVec.size() == 2 && position != 0 &&
-                ret.at(position - 1) != ' ')
-            {
-                auto adjustedDeviceId = deviceId;
-                // deviceType cannot be present or pattern may have empty range
-                // '[]'
-                if (deviceTypeRangeVec.size())
-                {
-                    adjustedDeviceId +=
-                        patternRangeVec.at(1) - deviceTypeRangeVec.at(1);
-                }
-                deviceIdStr = std::to_string(adjustedDeviceId);
-            }
-            ret = ret.replace(position, patternRange.size(), deviceIdStr);
-            patternRangeInfo = util::getMinMaxRange(ret);
-            patternRangeVec = std::get<0>(patternRangeInfo);
-            patternRange = std::get<1>(patternRangeInfo);
-        }
-    }
-    return ret;
-}
-
 std::tuple<std::vector<int>, std::string> getMinMaxRange(const std::string& rgx)
 {
     std::vector<int> minMax;
@@ -484,27 +430,41 @@ std::regex createRegexDigitsRange(const std::string& pattern)
     return reg;
 }
 
-std::string introduceDeviceInObjectpath(const std::string& objPath,
-                                        const std::string& device,
-                                        const DeviceIdData* devIdData)
+/**
+ * The 'const DeviceIdData* devIdData' if present comes from the event
+ *    @sa EventNode::getDataDeviceType()
+ *    @sa util::DeviceIdData
+ *
+ * Tests that cover this method:
+ * grep TEST\(IntroduceDeviceInObjectpath util_test.cpp
+    TEST(IntroduceDeviceInObjectpath, DoubleRangeDoubleRangeViewWithDeviceData)
+    TEST(IntroduceDeviceInObjectpath, SingleRangeWithDeviceData)
+    TEST(IntroduceDeviceInObjectpath, DoubleDeviceWithDeviceData)
+    TEST(IntroduceDeviceInObjectpath, NoRangeWithDeviceIdData)
+ */
+std::string introduceDeviceInObjectpath(
+    const std::string& objPath, const device_id::PatternIndex& deviceIndex)
 {
-    device_id::PatternIndex  deviceIndex;
-    if (devIdData == nullptr)
+    std::string ret{objPath};
+    device_id::DeviceIdPattern  objPattern(objPath);
+    std::stringstream ss;
+    ss << deviceIndex;
+    // objPath should have a range specification, if not just return itself
+    if (objPattern.dim() > 0)
     {
-        std::vector<std::string> deviceTypes;
-        boost::split(deviceTypes, device, boost::is_any_of("/"));
-        for (unsigned counter = 0; counter < deviceTypes.size(); ++counter)
+        if (deviceIndex.dim() == objPattern.dim())
         {
-            deviceIndex.set(counter, getDeviceId(deviceTypes.at(counter)));
+            ret = objPattern.eval(deviceIndex);
+        }
+        else
+        {
+            logs_err("indexes do NOT match ret='%s' index=%s objPath='%s'\n",
+                     ret.c_str(), ss.str().c_str(), objPath.c_str());
+            return ret;
         }
     }
-    else
-    {
-        deviceIndex = devIdData->index;
-    }
-    device_id::DeviceIdPattern  objPattern(objPath);
-    auto ret = objPattern.eval(deviceIndex);
-    logs_dbg("ret=%s device=%s objPath=%s\n", ret.c_str(), device.c_str(),
+    // else return objPath, ret is already set
+    logs_dbg("ret='%s' index=%s objPath='%s'\n", ret.c_str(), ss.str().c_str(),
              objPath.c_str());
     return ret;
 }

@@ -284,7 +284,7 @@ class DataAccessor
 
         if (isTypeDbus() == true)
         {
-            readDbus(device, devIdData);
+            readDbus(devIdData);
         }
         else if (isTypeDevice() == true)
         {
@@ -292,7 +292,7 @@ class DataAccessor
         }
         else if (isTypeCmdline() == true)
         {
-            runCommandLine(device, devIdData);
+            runCommandLine(devIdData);
         }
         else if (isTypeDeviceCoreApi() == true)
         {
@@ -618,8 +618,7 @@ class DataAccessor
      *
      * @return true if the read operation was successful, false otherwise
      */
-    bool readDbus(const std::string& device,
-                  const util::DeviceIdData* devIdData = nullptr);
+    bool readDbus(const util::DeviceIdData* devIdData = nullptr);
 
     /**
      * Runs commands from Accessor type CMDLINE
@@ -632,8 +631,7 @@ class DataAccessor
      *             "lookup": "00 02 40"
      *       }
      */
-    bool runCommandLine(const std::string& device = std::string{""},
-                        const util::DeviceIdData* devIdData = nullptr);
+    bool runCommandLine(const util::DeviceIdData* devIdData = nullptr);
 
     /**
      * @brief   just initializes the _dataValue creating a PropertyVariant

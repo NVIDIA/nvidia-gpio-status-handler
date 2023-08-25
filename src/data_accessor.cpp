@@ -69,8 +69,7 @@ InterfaceObjectsMap DataAccessor::getDbusInterfaceObjectsMap() const
     return ret;
 }
 
-bool DataAccessor::readDbus(const std::string& device,
-                            const util::DeviceIdData* devIdData)
+bool DataAccessor::readDbus(const util::DeviceIdData* devIdData)
 {
     log_elapsed();
     clearData();
@@ -84,11 +83,11 @@ bool DataAccessor::readDbus(const std::string& device,
          * readDbusProperty() forwards an exception when receives it from Dbus
          */
         std::string objPath = _acc[objectKey].get<std::string>();
-        if (util::existsRange(objPath) == true && false == device.empty())
+        if (util::existsRange(objPath) == true && devIdData != nullptr)
         {
             // apply the device into the "object" to replace the range
             objPath =
-                util::introduceDeviceInObjectpath(objPath, device, devIdData);
+                util::introduceDeviceInObjectpath(objPath, devIdData->index);
         }
         auto propVariant = dbus::readDbusProperty(
             objPath, _acc[interfaceKey], _acc[propertyKey]);
@@ -98,8 +97,7 @@ bool DataAccessor::readDbus(const std::string& device,
     return ret;
 }
 
-bool DataAccessor::runCommandLine(const std::string& device,
-                                  const util::DeviceIdData* devIdData)
+bool DataAccessor::runCommandLine(const util::DeviceIdData* devIdData)
 {
     log_elapsed();
     clearData();
@@ -110,10 +108,10 @@ bool DataAccessor::runCommandLine(const std::string& device,
         if (_acc.count(argumentsKey) != 0)
         {
             auto args = _acc[argumentsKey].get<std::string>();
-            if (device.empty() == false)
+            if (devIdData != nullptr)
             {
                 // if args does not have range, it does nothing
-                args = util::replaceRangeByMatchedValue(args, device, devIdData);
+                args = util::introduceDeviceInObjectpath(args, devIdData->index);
             }
             else // expand the range inside args
             {
@@ -254,22 +252,9 @@ util::DeviceIdMap
     if (isValidCmdlineAccessor() == true && _acc.count(argumentsKey) != 0)
     {
         auto args = _acc[argumentsKey].get<std::string>();
-        auto cmdLineRange = util::getRangeInformation(args);
-        auto sizeRangeString = std::get<0>(cmdLineRange);
-        if (sizeRangeString > 0)
+        if (util::existsRange(args))
         {
-            /** check for empty brackets like {"arguments", "AP0_BOOT []"},
-             *  size will be 2 even there were spaces (were ignored) between the
-             *  brackets, then use deviceType which must have range
-             */
-            if (sizeRangeString == 2 && util::existsRange(deviceType))
-            {
-                devArgs = util::expandDeviceRange(deviceType);
-            }
-            else
-            {
-                devArgs = util::expandDeviceRange(std::get<2>(cmdLineRange));
-            }
+            devArgs = util::expandDeviceRange(deviceType);
         }
     }
     return devArgs;

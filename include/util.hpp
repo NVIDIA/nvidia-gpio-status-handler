@@ -166,23 +166,6 @@ std::string getDeviceName(const std::string& name);
  */
 int getDeviceId(const std::string& deviceName,
                 const std::string& range = std::string{""});
-
-/** Allows multiple range replacement, uses deviceType to adjust the deviceId
- *
- *  @example:
- *  replaceRangeByMatchedValue("FPGA_SXM[0-7]_EROT_RECOV_L GPU_SXM_[1-8]",
- *                         "GPU_SXM_4", "GPU_SXM_[1-8]");
- *
- *  returns:  "FPGA_SXM3_EROT_RECOV_L GPU_SXM_4" // deviceId 4 is adjust to 3
- *
- *  @return  the string replaced or the 'pattern' if there is no range
- *
- */
-std::string
-    replaceRangeByMatchedValue(const std::string& regxValue,
-                               const std::string& matchedValue,
-                               const DeviceIdData* devIdData = nullptr);
-
 /**
  * @brief Print the vector @c vec to the output stream @c os (e.g. std::cout,
  * std::cerr, std::stringstream) with every line prefixed with @c indent.
@@ -309,22 +292,20 @@ bool matchRegexString(const std::string& regstr, const std::string& str);
 std::regex createRegexDigitsRange(const std::string& pattern);
 
 /**
- * @brief Replaces occurrencies of 'device' with range in  objPath by device
+ * @brief Gets the real Object path applying @a deviceIndex if path has range
  *
  * @param objPath having range specification such as:
  *
  *     "/xyz/inventory/chassis/HGX_GPU_SXM_[1-8]"
  *  or
- *     "/xyz/inventory/chassis/HGX_GPU_SXM_[1-8]/PCIeDevices/GPU_SXM_()"
+ *     "/xyz/inventory/chassis/HGX_GPU_SXM_[0|1-8]/PCIeDevices/GPU_SXM_[0|1-8]"
  *
- * @param device device name such as "GPU_SMX_1"
+ *  @param deviceIndex the device index which can be multi device
  *
- * @return an Object path without range if 'device' matches with 'objPath'
- *         otherwise returns 'objPath'
+ * @return a Object path without ranges
  */
 std::string
     introduceDeviceInObjectpath(const std::string& objPath,
-                                const std::string& device,
-                                const DeviceIdData* devIdData = nullptr);
+                                const device_id::PatternIndex& deviceIndex);
 
 } // namespace util

@@ -194,86 +194,6 @@ TEST(UtilExpandDeviceRange, TwoDigits)
     EXPECT_EQ(devMap.size(), 20);
 }
 
-TEST(UtilreplaceRangeByMatchedValue, IsolatedRangeAtEnd)
-{
-    auto ret = replaceRangeByMatchedValue("begin [0-7]", "GPU6");
-    EXPECT_EQ(ret, "begin GPU6");
-
-    ret = replaceRangeByMatchedValue("begin [5-7]", "GPU6");
-    EXPECT_EQ(ret, "begin GPU6");
-
-    ret = replaceRangeByMatchedValue("begin [6-7]", "GPU6");
-    EXPECT_EQ(ret, "begin GPU6");
-
-#if 0
-    /**
-     * no longer works, matched value is not checked anymore
-     * replaceRangeByMatchedValue used to call getMinMaxRange() to check that
-     * now it calls getRangeInformation() to allow empty range '[]' works
-     */
-
-    // does not match
-    ret = replaceRangeByMatchedValue("begin [0-7]", "none");
-    EXPECT_EQ(ret, "begin [0-7]");
-
-
-    // out of range
-    ret = replaceRangeByMatchedValue("begin [0-7]", "GPU8");
-    EXPECT_EQ(ret, "begin [0-7]");
-
-    // out of range
-    ret = replaceRangeByMatchedValue("begin [2-7]", "GPU0");
-    EXPECT_EQ(ret, "begin [2-7]");
-    ret = replaceRangeByMatchedValue("begin [2-7]", "GPU1");
-    EXPECT_EQ(ret, "begin [2-7]");
-#endif
-}
-
-TEST(UtilreplaceRangeByMatchedValue, DeviceRange)
-{
-    auto ret = replaceRangeByMatchedValue("GPU[0-7]", "GPU6");
-    EXPECT_EQ(ret, "GPU6");
-}
-
-TEST(UtilreplaceRangeByMatchedValue, DoubleRangeDependingOnDeviceType)
-{
-    DeviceIdData devType_1_8("GPU_SXM_[1-8]");
-    auto ret =
-       replaceRangeByMatchedValue("FPGA_SXM[0-7]_EROT_RECOV_L GPU_SXM_[1-8]",
-                                  "GPU6", &devType_1_8);
-
-    // device is "GPU6", [0-7] is replaced by 5 and [1-8] is repalced by 6
-    EXPECT_EQ(ret, "FPGA_SXM5_EROT_RECOV_L GPU_SXM_6");
-
-    DeviceIdData devType_0_7("GPU_SXM_[0-7]");
-    ret =
-        replaceRangeByMatchedValue("FPGA_SXM[0-7]_EROT_RECOV_L GPU_SXM_[1-8]",
-                                   "GPU6", &devType_0_7);
-
-    // as device_type is [1-8], [0-7] i replaced by 6 and [1-8] is replaced by 7
-    EXPECT_EQ(ret, "FPGA_SXM6_EROT_RECOV_L GPU_SXM_7");
-}
-
-TEST(UtilreplaceRangeByMatchedValue, DoubleRangeWithoutDeviceType)
-{
-    auto ret =
-       replaceRangeByMatchedValue("FPGA_SXM[0-7]_EROT_RECOV_L GPU_SXM_[1-8]",
-                                  "GPU6");
-    // without 'device type' replaceRangeByMatchedValue() is not able
-    // to perform adjustments, just replaces the range which in this case is 6
-    EXPECT_EQ(ret, "FPGA_SXM6_EROT_RECOV_L GPU_SXM_6");
-}
-
-TEST(UtilreplaceRangeByMatchedValue, TripleRangeDependingOnDeviceType)
-{
-    DeviceIdData deviceType("_[1-8]");
-    auto ret =
-            replaceRangeByMatchedValue("one_[0-7] two_[0-6] three_[1-8]",
-                                       "GPU6", &deviceType);
-    // three diffrent range specifications, expected indexes: 5, 4 and 6
-    EXPECT_EQ(ret, "one_5 two_4 three_6");
-}
-
 TEST(Util, GetRangeInformation)
 {
     auto info = getRangeInformation("");
@@ -303,36 +223,50 @@ TEST(Util, GetRangeInformation)
     EXPECT_EQ(std::get<2>(info), "01GPU[0-3]");
 }
 
-TEST(IntroduceDeviceInObjectpath, SingleRange)
+TEST(IntroduceDeviceInObjectpath, PatternIndex)
 {
+    std::string obj{"FPGA_SXM[0|1-8:0-7]_EROT_RECOV_L GPU_SXM_[0|1-8]"};
+    device_id::DeviceIdPattern  objPattern(obj);
+    EXPECT_EQ(objPattern.dim(), 1);
+
+    std::string pcsw{"PCIeSwitch_0"};
+    device_id::DeviceIdPattern noRange(pcsw);
+    EXPECT_EQ(noRange.eval(device_id::PatternIndex()), pcsw);
+    EXPECT_EQ(noRange.eval(device_id::PatternIndex(0)), pcsw);
+}
+
+TEST(IntroduceDeviceInObjectpath, DoubleRangeDoubleRangeViewWithDeviceData)
+{
+    std::string obj{"FPGA_SXM[0|1-8:0-7]_EROT_RECOV_L GPU_SXM_[0|1-8]"};
+    device_id::DeviceIdPattern  objPattern(obj);
+
+    device_id::PatternIndex index(6);
+    auto ret = introduceDeviceInObjectpath(obj, index);
+    EXPECT_EQ(ret, "FPGA_SXM5_EROT_RECOV_L GPU_SXM_6");
+}
+
+TEST(IntroduceDeviceInObjectpath, SingleRangeWithDeviceData)
+{
+    device_id::PatternIndex index(3);
     std::string obj= "/xyz/HGX_GPU_SXM_[1-8]/PCIeDevices";
-    auto result = util::introduceDeviceInObjectpath(obj, "GPU_SXM_3");
+    auto result = util::introduceDeviceInObjectpath(obj, index);
     EXPECT_EQ(result, "/xyz/HGX_GPU_SXM_3/PCIeDevices");
 }
 
-TEST(IntroduceDeviceInObjectpath, DoubleRange)
+TEST(IntroduceDeviceInObjectpath, DoubleDeviceWithDeviceData)
 {
-    std::string obj= "/chassis/HGX_GPU_SXM_[1-8]/PCIeDevices/GPU_SXM_[0|1-8]";
-    auto result = util::introduceDeviceInObjectpath(obj, "GPU_SXM_3");
-    EXPECT_EQ(result, "/chassis/HGX_GPU_SXM_3/PCIeDevices/GPU_SXM_3");
-}
-
-TEST(IntroduceDeviceInObjectpath, DoubleDevice)
-{
-    std::string deviceType{"GPU_SXM_[1-8]/NVLink_[0-17]"};
     std::string obj= "/processors/GPU_SXM_[1-8]/Ports/NVLink_[0-17]";
-    DeviceIdData devData(device_id::DeviceIdPattern(deviceType),
-                         device_id::PatternIndex(3,15));
-
-    auto result = util::introduceDeviceInObjectpath(obj, "GPU_SXM_3", &devData);
+    device_id::PatternIndex index(3,15);
+    auto result = util::introduceDeviceInObjectpath(obj, index);
     EXPECT_EQ(result, "/processors/GPU_SXM_3/Ports/NVLink_15");
 }
 
-TEST(IntroduceDeviceInObjectpath, DoubleDeviceWithoutDeviceData)
+TEST(IntroduceDeviceInObjectpath, NoRangeWithDeviceIdData)
 {
-    std::string obj= "/processors/GPU_SXM_[1-8]/Ports/NVLink_[0-17]";
-    auto result = util::introduceDeviceInObjectpath(obj, "GPU_SXM_4/NVLink_3");
-    EXPECT_EQ(result, "/processors/GPU_SXM_4/Ports/NVLink_3");
+    std::string obj= "/processors/GPU_SXM_1/Ports/NVLink_7";
+    device_id::PatternIndex index(3,15);
+    auto result = util::introduceDeviceInObjectpath(obj, index);
+    EXPECT_EQ(result, obj);
 }
 
 TEST(ExistsRange,  EmptyString)

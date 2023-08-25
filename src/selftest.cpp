@@ -629,7 +629,12 @@ void RootCauseTracer::updateRootCause(
     {
         log_dbg("Root Cause Candidate %s not in DAT\n",
                 rootCauseDeviceName.c_str());
-        status.originOfCondition = rootCauseDeviceName;
+         /**
+          * TODO: the line below causes a crash on
+          *  MessageComposer::getOriginOfConditionObjectPath()
+          *    this->dat.at(deviceId), deviceId was receiving redfish paths
+          */
+        // status.originOfCondition = rootCauseDeviceName;
     }
     status.triState = "Error";
     DATTraverse::setHealthProperties(dev, status);
