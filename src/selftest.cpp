@@ -304,7 +304,7 @@ aml::RcCode Selftest::perform(const dat_traverse::Device& dev,
 
             if (doEventDetermination && !tp.result)
             {
-                event_detection::EventDetection::eventDetermination(accessor);
+                event_detection::EventDetection::eventDiscovery(accessor, true);
             }
         };
 
@@ -627,14 +627,8 @@ void RootCauseTracer::updateRootCause(
     }
     else
     {
-        log_dbg("Root Cause Candidate %s not in DAT\n",
+        log_err("Root Cause Candidate %s not in DAT\n",
                 rootCauseDeviceName.c_str());
-         /**
-          * TODO: the line below causes a crash on
-          *  MessageComposer::getOriginOfConditionObjectPath()
-          *    this->dat.at(deviceId), deviceId was receiving redfish paths
-          */
-        // status.originOfCondition = rootCauseDeviceName;
     }
     status.triState = "Error";
     DATTraverse::setHealthProperties(dev, status);

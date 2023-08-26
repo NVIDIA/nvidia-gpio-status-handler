@@ -128,10 +128,12 @@ TEST(EventLookupTest, TriggerAccessor)
     j5["property"] = "prop";
     j5["type"] = "DBUS";
     data_accessor::DataAccessor accessorNil(j5);
+    std::vector<std::shared_ptr<event_info::EventNode>> eventPtrs;
 
-    EXPECT_NE(eventDetection.LookupEventFrom(accessor).empty(), true);
-    EXPECT_NE(eventDetection.LookupEventFrom(accessorTrigger).empty(), true);
-    EXPECT_EQ(eventDetection.LookupEventFrom(accessorNil).empty(), true);
+    EXPECT_EQ(eventDetection.EventsDetection(accessor, eventPtrs).empty(), true);
+    EXPECT_EQ(eventDetection.EventsDetection(accessorTrigger, eventPtrs).empty(),
+              true);
+    EXPECT_EQ(eventDetection.EventsDetection(accessorNil, eventPtrs).empty(), true);
 }
 
 TEST(EventDetectionTest, TID_1_triggers_instantly)
@@ -399,7 +401,7 @@ TEST(EventDetectionTest, PcQueuePushFull1)
     std::mutex mut;
     mut.lock();
     std::thread worker([&queue, &mut]() {
-        std::scoped_lock lock(mut);  // this will block until pushes are complete
+        std::scoped_lock lock(mut); // this will block until pushes are complete
         // This runs second
         PcDataType d;
         // try to get the 100 elements back
@@ -425,7 +427,7 @@ TEST(EventDetectionTest, PcQueuePushFull1)
     {
         EXPECT_FALSE(queue.push(PcDataType{}));
     }
-    mut.unlock();  // let worker thread run
+    mut.unlock(); // let worker thread run
     worker.join();
 }
 
@@ -447,7 +449,7 @@ TEST(EventDetectionTest, PcQueuePushFull2)
     std::mutex mut;
     mut.lock();
     std::thread worker([&queue, &mut]() {
-        std::scoped_lock lock(mut);  // this will block until pushes are complete
+        std::scoped_lock lock(mut); // this will block until pushes are complete
         // This runs second
         PcDataType d;
         // pop 5 elements
@@ -460,18 +462,19 @@ TEST(EventDetectionTest, PcQueuePushFull2)
 
     // This runs first
     // push 100 elements
+    std::vector<std::shared_ptr<event_info::EventNode>> eventPtrs;
     for (int i = 0; i < 100; i++)
     {
         data_accessor::PropertyValue pv(std::to_string(i));
         data_accessor::DataAccessor acc(j, pv);
-        EXPECT_TRUE(queue.push(PcDataType{acc}));
+        EXPECT_TRUE(queue.push(PcDataType{acc, eventPtrs}));
     }
     // try to push 10 more elements that should fail since the queue is full
     for (int i = 0; i < 10; i++)
     {
         data_accessor::PropertyValue pv(std::to_string(1000 + i));
         data_accessor::DataAccessor acc(j, pv);
-        EXPECT_FALSE(queue.push(PcDataType{acc}));
+        EXPECT_FALSE(queue.push(PcDataType{acc, eventPtrs}));
     }
     // let the worker thread drain 5 elements
     mut.unlock();
@@ -509,11 +512,13 @@ TEST(EventDetectionTest, PcQueueConcurrentStress)
     for (int tid = 0; tid < NTHREADS; tid++)
     {
         threads[tid] = std::make_unique<std::thread>([&queue, j, tid]() {
+            std::vector<std::shared_ptr<event_info::EventNode>> eventPtrs;
             for (int i = 0; i < NELEMENTS; i++)
             {
-                data_accessor::PropertyValue pv(std::to_string(10000 * tid + i));
+                data_accessor::PropertyValue pv(
+                    std::to_string(10000 * tid + i));
                 data_accessor::DataAccessor acc(j, pv);
-                EXPECT_TRUE(queue.push(PcDataType{acc}));
+                EXPECT_TRUE(queue.push(PcDataType{acc, eventPtrs}));
             }
         });
     }

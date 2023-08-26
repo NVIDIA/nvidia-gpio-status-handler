@@ -7,11 +7,13 @@
 
 #include "aml.hpp"
 #include "dbus_accessor.hpp"
+#include "device_id.hpp"
 #include "property_accessor.hpp"
 #include "util.hpp"
 
 #include <nlohmann/json.hpp>
 
+#include <functional>
 #include <iostream>
 #include <map>
 #include <regex>
@@ -73,8 +75,9 @@ class DataAccessor
     {}
 
     explicit DataAccessor(const nlohmann::json& acc,
-                          const PropertyValue& value = PropertyValue())
-       :  _acc(acc), _dataValue(value)
+                          const PropertyValue& value = PropertyValue()) :
+        _acc(acc),
+        _dataValue(value)
     {
         std::stringstream ss;
         ss << "Const.: _acc: " << _acc;
@@ -127,7 +130,6 @@ class DataAccessor
             log_dbg("%s\n", ss.str().c_str());
             return _acc;
         }
-
         _acc = acc;
         return _acc;
     }
@@ -143,11 +145,12 @@ class DataAccessor
     {
         bool ret = isValid(_acc) && isValid(other._acc) &&
                    _acc[typeKey] == other._acc[typeKey];
-        if (ret == true)
+        if (ret)
         {
+            std::string accType = _acc[typeKey];
             for (auto& [key, val] : _acc.items())
             {
-                if (key == typeKey || key == checkKey || key == nameKey) // skip check key
+                if (key == nameKey || key == checkKey)
                 {
                     continue;
                 }
@@ -156,10 +159,44 @@ class DataAccessor
                     ret = false;
                     break;
                 }
-
+                if (key == objectKey || key == argumentsKey)
+                {
+                    std::string patPath = "";
+                    std::string otherPatPath = "";
+                    bool objPathMatches = true;
+                    if (accType == "DBUS")
+                    {
+                        patPath = _acc[objectKey];
+                        otherPatPath = other._acc[objectKey];
+                    }
+                    else if (accType == "CMDLINE")
+                    {
+                        patPath = _acc[argumentsKey];
+                        otherPatPath = other._acc[argumentsKey];
+                    }
+                    if (patPath != otherPatPath)
+                    {
+                        device_id::DeviceIdPattern pat1(patPath);
+                        device_id::DeviceIdPattern pat2(otherPatPath);
+                        objPathMatches =
+                            pat1.matches(otherPatPath) || pat2.matches(patPath);
+                    }
+                    if (!objPathMatches)
+                    {
+                        log_dbg(
+                            "The following accessor fields do not match: %s, %s\n",
+                            patPath.c_str(), otherPatPath.c_str());
+                        ret = false;
+                        break;
+                    }
+                    else
+                    {
+                        continue;
+                    }
+                }
                 auto otherVal = other._acc[key].get<std::string>();
                 auto myVal = val.get<std::string>();
-                if (util::matchRegexString(myVal, otherVal) == false)
+                if (otherVal != myVal)
                 {
                     ret = false;
                     break;
@@ -172,6 +209,29 @@ class DataAccessor
         log_dbg("%s\n", ss.str().c_str());
         return ret;
     }
+
+    struct Hash
+    {
+        size_t operator()([[maybe_unused]] DataAccessor accessor) const noexcept
+        {
+            std::hash<std::string> hashFn;
+            std::string h = accessor._acc[typeKey];
+            if (accessor._acc[typeKey] == "DBUS")
+            {
+                h += accessor._acc[interfaceKey].get<std::string>() +
+                     accessor._acc[propertyKey].get<std::string>();
+            }
+            else if (accessor._acc[typeKey] == "CMDLINE")
+            {
+                h += accessor._acc[executableKey].get<std::string>();
+            }
+            else if (accessor._acc[typeKey] == "DeviceCoreAPI")
+            {
+                h += accessor._acc[propertyKey].get<std::string>();
+            }
+            return hashFn(h);
+        }
+    };
 
     /**
      * @brief contains() checks if other is a sub set of this
@@ -318,7 +378,8 @@ class DataAccessor
             return ret;
         }
 
-        log_dbg("read failed, returning data_accessor::readFailedReturn='%s'\n", data_accessor::readFailedReturn);
+        log_dbg("read failed, returning data_accessor::readFailedReturn='%s'\n",
+                data_accessor::readFailedReturn);
         return std::string{data_accessor::readFailedReturn};
     }
 
@@ -498,7 +559,7 @@ class DataAccessor
      */
     inline PropertyValue getDataValue() const
     {
-       return _dataValue;
+        return _dataValue;
     }
 
     /**
@@ -574,24 +635,24 @@ class DataAccessor
     std::string readUsingMainAccessor(const DataAccessor& otherAcc);
 
     /**
-         * @brief  returns a DeviceIdMap from arguments in accessor type CMDLINE
-         *
-         *    For an Accessor such as:
-         * @code
-         *        "accessor": {
-         *          "type": "CMDaLINE",
-         *          "executable": "mctp-vdm-util-wrapper",
-         *          "arguments": "bla GPU[0-7]",
-         *          ...
-         *         }
-         * @endcode
-         *      returns a map => 0=GPU0 1=GPU1, ...
-         *
-         * @return populated map if type is CMDLINE and has range in arguments
-         *         otherwise an empty map
-         */
+     * @brief  returns a DeviceIdMap from arguments in accessor type CMDLINE
+     *
+     *    For an Accessor such as:
+     * @code
+     *        "accessor": {
+     *          "type": "CMDaLINE",
+     *          "executable": "mctp-vdm-util-wrapper",
+     *          "arguments": "bla GPU[0-7]",
+     *          ...
+     *         }
+     * @endcode
+     *      returns a map => 0=GPU0 1=GPU1, ...
+     *
+     * @return populated map if type is CMDLINE and has range in arguments
+     *         otherwise an empty map
+     */
     util::DeviceIdMap
-    getCmdLineRangeArguments(const std::string& deviceType) const;
+        getCmdLineRangeArguments(const std::string& deviceType) const;
 
     /**
      * @brief setDataValue() just sets a value
@@ -602,7 +663,7 @@ class DataAccessor
         _dataValue = value;
     }
 
- private:
+  private:
     /**
      * @brief clearData() clear the _dataValue if it has a previous value
      */

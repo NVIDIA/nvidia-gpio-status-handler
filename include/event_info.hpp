@@ -12,6 +12,8 @@
 #include <nlohmann/json.hpp>
 
 #include <map>
+#include <memory>
+#include <unordered_map>
 #include <string>
 #include <vector>
 
@@ -562,6 +564,15 @@ using EventMap = std::map<std::string, std::vector<event_info::EventNode>>;
 using PropertyFilterTuple = std::tuple<std::string, std::string, std::string>;
 using PropertyFilterSet = std::set<PropertyFilterTuple>;
 
+using EventTriggerView = std::unordered_multimap<data_accessor::DataAccessor,
+    std::shared_ptr<event_info::EventNode>, data_accessor::DataAccessor::Hash>;
+
+using EventAccessorView = std::unordered_multimap<data_accessor::DataAccessor,
+    std::shared_ptr<event_info::EventNode>, data_accessor::DataAccessor::Hash>;
+
+using EventRecoveryView = std::unordered_multimap<data_accessor::DataAccessor,
+    std::shared_ptr<event_info::EventNode>, data_accessor::DataAccessor::Hash>;
+
 /** @brief Add D-Bus properties from @c eventNode to @c propertyFilterSet
  *
  * @param[in]      eventNode
@@ -579,7 +590,8 @@ void addEventToPropertyFilterSet(const EventNode& eventNode,
  *
  */
 void loadFromFile(EventMap& eventMap, PropertyFilterSet& propertyFilterSet,
-    const std::string& file);
+    EventTriggerView& eventTriggerView, EventAccessorView& eventAccessorView,
+    EventRecoveryView& eventRecoveryView, const std::string& file);
 
 /**
  * @brief Read data from the json object @c j into @c eventMap
@@ -588,7 +600,8 @@ void loadFromFile(EventMap& eventMap, PropertyFilterSet& propertyFilterSet,
  * @param[in] j
  */
 void loadFromJson(EventMap& eventMap, PropertyFilterSet& propertyFilterSet,
-    const nlohmann::json& j);
+    EventTriggerView& eventTriggerView, EventAccessorView& eventAccessorView,
+    EventRecoveryView& eventRecoveryView, const nlohmann::json& j);
 
 /** @brief Prints out memory map to verify field population
  *

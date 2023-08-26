@@ -7,6 +7,7 @@
 #include "aml_main.hpp"
 #include "data_accessor.hpp"
 #include "event_handler.hpp"
+#include "event_info.hpp"
 #include "pc_event.hpp"
 
 #include <boost/container/flat_map.hpp>
@@ -39,6 +40,10 @@ std::unique_ptr<ThreadpoolManager> threadpoolManager;
 
 std::unique_ptr<PcQueueType> queue;
 
+event_info::EventTriggerView eventTriggerView;
+event_info::EventAccessorView eventAccessorView;
+event_info::EventRecoveryView eventRecoveryView;
+
 void EventDetection::workerThreadProcessEvents()
 {
     while (true)
@@ -50,41 +55,40 @@ void EventDetection::workerThreadProcessEvents()
             data_accessor::DataAccessor accessor = pc.accessor;
             data_accessor::PropertyValue propertyValue =
                 accessor.getDataValue();
+            std::vector<std::shared_ptr<event_info::EventNode>> eventPtrs =
+                pc.eventPtrs;
 
-            auto assertedEventsList =
-                eventDetectionPtr->LookupEventFrom(accessor);
+            auto eventsCandidateList =
+                eventDetectionPtr->EventsDetection(accessor, eventPtrs);
 
-            if (assertedEventsList.empty() == true)
+            if (eventsCandidateList.empty() == true)
             {
                 logs_dbg("No event found in the supporting list.\n");
                 continue;
             }
-
             std::stringstream ss;
             accessor.print(ss);
-            logs_err("Accessor contents: %s\n", ss.str().c_str());
+            logs_err(
+                "Event Candidate List has events from PC Trigger/Accessor %s\n",
+                ss.str().c_str());
             logs_err("Data value: %s \n", propertyValue.getString().c_str());
-
-            for (auto& assertedEvent : assertedEventsList)
+            for (auto& assertedEvent : eventsCandidateList)
             {
-                auto& candidate =
-                    *std::get<0>(assertedEvent); 
+                auto& candidate = *std::get<0>(assertedEvent);
+                logs_err("Asserted Event: %s\n", candidate.event.c_str());
                 int eventValue = invalidIntParam;
                 if (candidate.valueAsCount)
                 {
                     eventValue = propertyValue.getInteger();
                 }
-                const auto& assertedDeviceList =
-                    std::get<1>(assertedEvent); 
-                bool isRecovery =
-                    std::get<2>(assertedEvent); 
+                const auto& assertedDeviceList = std::get<1>(assertedEvent);
+                bool isRecovery = std::get<2>(assertedEvent);
                 if (assertedDeviceList.empty() == true)
                 {
                     logs_err("event: '%s' no asserted devices, exiting...\n",
                              candidate.event.c_str());
                     continue;
                 }
-                // now loop thru assertedDeviceList
                 for (const auto& assertedDevice : assertedDeviceList)
                 {
                     candidate.device = assertedDevice.device;
@@ -97,7 +101,8 @@ void EventDetection::workerThreadProcessEvents()
                         logs_err(
                             "event: '%s' on dev %s doing recovery...running event handlers\n",
                             event.event.c_str(), event.device.c_str());
-                        eventDetectionPtr->RunEventHandler(event, "RootCauseTracer");
+                        eventDetectionPtr->RunEventHandler(event,
+                                                           "RootCauseTracer");
                         continue;
                     }
                     if (eventDetectionPtr->IsEvent(candidate, eventValue))
@@ -148,32 +153,6 @@ void EventDetection::workerThreadMainLoop()
     {
         logs_err("thread2: %s\n", e.what());
         return;
-    }
-}
-
-void EventDetection::eventDetermination(data_accessor::DataAccessor& accessor)
-{
-    if (eventDetectionPtr->getIsAccessorInteresting(accessor))
-    {
-        bool pushSuccess = queue->push(PcDataType{.accessor = accessor});
-        if (!pushSuccess)
-        {
-            logs_err("callback: failed to push event to queue! \n");
-            std::stringstream ss;
-            accessor.print(ss);
-            logs_err("Accessor contents: %s\n", ss.str().c_str());
-            logs_err("Data value: %s \n",
-                     accessor.getDataValue().getString().c_str());
-        }
-        size_t availableSpace = queue->write_available();
-        logs_err("callback: queue now has space for %zu elements\n",
-                 availableSpace);
-        if (availableSpace < PROPERTIESCHANGED_QUEUE_SIZE / 2)
-        {
-            logs_err("callback: queue has less than 50%% space available "
-                     "(%zu available, %zu total)\n",
-                     availableSpace, (size_t)PROPERTIESCHANGED_QUEUE_SIZE);
-        }
     }
 }
 
@@ -234,10 +213,17 @@ void EventDetection::dbusEventHandlerCallback(sdbusplus::message::message& msg)
         j[data_accessor::accessorTypeKeys[type][0]] = objectPath;
         j[data_accessor::accessorTypeKeys[type][1]] = msgInterface;
         j[data_accessor::accessorTypeKeys[type][2]] = eventProperty;
-        // std::cerr << "j is " << j << std::endl << std::flush;
         data_accessor::PropertyValue propertyValue(variant);
         data_accessor::DataAccessor accessor(j, propertyValue);
-        eventDetermination(accessor);
+
+        logs_dbg(
+            "Got PC Trigger ... Path: %s, Intf: %s, Prop: '%s', VarIndex: %d\n",
+            objectPath.c_str(), msgInterface.c_str(), eventProperty.c_str(),
+            index);
+        logs_dbg("Passing PC Trigger into Event Discovery phase\n");
+
+        eventDiscovery(accessor);
+
     } // end for (auto& pc : propertiesChanged)
     logs_dbg("finished dbusEventHandlerCallback\n");
 }
@@ -291,11 +277,82 @@ void EventDetection::subscribeAcc(
             }
             else
             {
-                log_dbg("object:interface already subscribed: %s\n", key.c_str());
+                log_dbg("object:interface already subscribed: %s\n",
+                        key.c_str());
             }
             i++;
         }
     }
+}
+
+void pushToQueue(const data_accessor::DataAccessor& pcTrigger,
+                 std::vector<std::shared_ptr<event_info::EventNode>> eventPtrs)
+{
+    bool pushSuccess =
+        queue->push(PcDataType{.accessor = pcTrigger, .eventPtrs = eventPtrs});
+    if (!pushSuccess)
+    {
+        logs_err("callback: failed to push event to queue! \n");
+        std::stringstream ss;
+        pcTrigger.print(ss);
+        logs_err("PC Trigger Accessor contents: %s\n", ss.str().c_str());
+        logs_err("PC Trigger Data value: %s \n",
+                 pcTrigger.getDataValue().getString().c_str());
+    }
+    size_t availableSpace = queue->write_available();
+    logs_err("callback: queue now has space for %zu elements\n",
+             availableSpace);
+    if (availableSpace < PROPERTIESCHANGED_QUEUE_SIZE / 2)
+    {
+        logs_err("callback: queue has less than 50%% space available "
+                 "(%zu available, %zu total)\n",
+                 availableSpace, (size_t)PROPERTIESCHANGED_QUEUE_SIZE);
+    }
+}
+
+void EventDetection::eventDiscovery(const data_accessor::DataAccessor& accessor,
+                                    const bool& bootup)
+{
+    std::vector<std::shared_ptr<event_info::EventNode>> eventPtrs;
+    std::stringstream ss;
+    accessor.print(ss);
+    if (!bootup)
+    {
+        logs_dbg("In Event Discovery phase for pc Trigger %s\n",
+                 ss.str().c_str());
+        auto itr = eventTriggerView.equal_range(accessor);
+        if (itr.first == itr.second)
+        {
+            logs_dbg("PC Trigger %s not found in eventTriggerView\n",
+                     ss.str().c_str());
+            return;
+        }
+        for (auto it = itr.first; it != itr.second; it++)
+        {
+            logs_dbg("Discovered event with matching trigger: %s\n",
+                     it->second->event.c_str());
+            eventPtrs.push_back(it->second);
+        }
+    }
+    else
+    {
+        logs_err("In Bootup Event Detection phase for accessor!!! %s\n",
+                 ss.str().c_str());
+        auto itr = eventAccessorView.equal_range(accessor);
+        if (itr.first == itr.second)
+        {
+            logs_err("Accessor %s not found in eventAccessorView\n",
+                     ss.str().c_str());
+            return;
+        }
+        for (auto it = itr.first; it != itr.second; it++)
+        {
+            logs_err("Discovered bootup event with matching accessor: %s\n",
+                     it->second->event.c_str());
+            eventPtrs.push_back(it->second);
+        }
+    }
+    pushToQueue(accessor, eventPtrs);
 }
 
 bool EventDetection::getIsAccessorInteresting(

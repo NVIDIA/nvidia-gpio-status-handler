@@ -38,6 +38,10 @@ namespace event_detection
 extern std::map<std::string, std::vector<std::string>> eventsDetected;
 extern std::unique_ptr<PcQueueType> queue;
 
+extern event_info::EventTriggerView eventTriggerView;
+extern event_info::EventAccessorView eventAccessorView;
+extern event_info::EventRecoveryView eventRecoveryView;
+
 extern std::unique_ptr<ThreadpoolManager> threadpoolManager;
 
 /** check() from event.trigger against dbusAcc returned false */
@@ -61,14 +65,14 @@ using DbusEventHandlerList =
     std::vector<std::unique_ptr<sdbusplus::bus::match_t>>;
 
 /**
- *  This list is used in LookupEventFrom(),
+ *  This list is used in EventsDetection(),
  *
  *  Each event carries an assertedDeviceList (list of devices and their data)
  *  The tuple will also carry a flag for whether the device will follow recovery
  *  flow or not.
  */
-using AssertedEventList =
-    std::vector<std::tuple<event_info::EventNode*,
+using EventCandidateList =
+    std::vector<std::tuple<std::shared_ptr<event_info::EventNode>,
                            data_accessor::AssertedDeviceList, bool>>;
 
 /**
@@ -103,11 +107,6 @@ class EventDetection : public object::Object
                                 const std::string& property);
 
     /**
-     * @brief determine event based on accessor
-     */
-    static void eventDetermination(data_accessor::DataAccessor& accessor);
-
-    /**
      * @brief This is the main function of the worker thread
      */
     static void workerThreadMainLoop();
@@ -134,7 +133,6 @@ class EventDetection : public object::Object
     DbusEventHandlerList
         startEventDetection(EventDetection* evtDet,
                             std::shared_ptr<sdbusplus::asio::connection> conn);
-
     /**
      * @brief Perform recovery actions for a fault HMC recovers from.
      *
@@ -322,170 +320,121 @@ class EventDetection : public object::Object
     }
 
     /**
-     * @brief Lookup EventNode per the accessor info, which list all the
-     *       asserted EventNode per device instance.
-     *
-     * @param acc
-     * @return event_info::EventNode*
+     * @brief EventsDetection
+     * @param pcTrigger the DataAccessor made from DBUS PropertyChange signal
+     * @param possibleEventsPatternList list of possible event patterns
+     * @return an EventCandidateList with the Events to be generated
      */
-
-    /**
-     * @brief LookupEventFrom
-     * @param dbusAcc the DataAccessor made from DBUS PropertyChange signal
-     * @return an AssertedEventList with the Events to be generated
-     */
-    AssertedEventList
-        LookupEventFrom(const data_accessor::DataAccessor& dbusAcc)
+    EventCandidateList EventsDetection(
+        const data_accessor::DataAccessor& pcTrigger,
+        const std::vector<std::shared_ptr<event_info::EventNode>>&
+            possibleEventPatternList)
     {
-        AssertedEventList eventList;
-        for (auto& eventPerDevType : *this->_eventMap)
-        {
-            for (auto& event : eventPerDevType.second)
-            {
-                auto deviceType = event.getStringifiedDeviceType();
-                std::stringstream ss;
-                ss << "\n\tevent.event: " << event.event
-                   << "\n\tevent.deviceType: " << event.getMainDeviceType()
-                   << "\n\tevent.device: " << event.device
-                   << "\n\tevent.accessor: " << event.accessor
-                   << "\n\tevent.trigger: " << event.trigger
-                   << "\n\tdbusAcc: " << dbusAcc;
-                log_dbg("%s\n", ss.str().c_str());
+        EventCandidateList eventCandidateList;
+        std::stringstream ss;
+        pcTrigger.print(ss);
+        log_dbg("In Detect Event Method for PC trigger %s\n", ss.str().c_str());
 
-                /**
-                 * Event Creation logic
-                 *
-                 * if event.trigger exists and matches dbusAcc fields,
-                 *     two checks need be performed
-                 * otherwise, if event.trigger is empty and accessor
-                 *     matches dbusAcc fields only one check needs be performed
-                 */
-                if (!event.trigger.isEmpty())
+        for (auto& eventPtr : possibleEventPatternList)
+        {
+            auto deviceType = eventPtr->getStringifiedDeviceType();
+            bool passedRecoveryCheck = true;
+            bool checkForRecovery = (!eventPtr->recovery_accessor.isEmpty()) &&
+                                    (eventPtr->recovery_accessor == pcTrigger);
+            if (checkForRecovery)
+            {
+                data_accessor::CheckAccessor recoveryCheck(deviceType);
+                if (!recoveryCheck.check(eventPtr->recovery_accessor,
+                                         pcTrigger))
                 {
-                    if (event.trigger == dbusAcc)
-                    {
-                        data_accessor::CheckAccessor triggerCheck(deviceType);
-                        if (triggerCheck.check(event.trigger, dbusAcc))
-                        {
-                            // redefines accessor to reuse data
-                            auto accessor = event.accessor;
-                            if (accessor == dbusAcc)
-                            {
-                                // avoids going again to dbus to get data
-                                accessor.setDataValue(dbusAcc.getDataValue());
-                            }
-                            data_accessor::CheckAccessor accCheck(deviceType);
-                            /* Note: accCheck uses info stored in triggerCheck
-                             *  1. the original trigger/dbusAcc
-                             *  2. Maybe needs triggerCheck asserted devices
-                             *      example the event "DRAM Contained ECC Error"
-                             */
-                            if (accCheck.check(accessor, triggerCheck))
-                            {
-                                eventList.push_back(std::make_tuple(
-                                    &event, accCheck.getAssertedDevices(),
-                                    false));
-                                continue;
-                            }
-                            else
-                            {
-                                log_dbg("skipping event '%s' %s\n",
-                                        event.event.c_str(),
-                                        msgFalseCheckAccessorCriteria);
-                            }
-                        }
-                        else
-                        {
-                            log_dbg("skipping event '%s' %s\n",
-                                    event.event.c_str(),
-                                    msgFalseCheckTriggerCriteria);
-                        }
-                    }
-                    else
-                    {
-                        log_dbg("skipping event '%s' %s\n", event.event.c_str(),
-                                msgTriggerFieldsDoNotMatch);
-                    }
+                    passedRecoveryCheck = false;
                 }
                 else
                 {
-                    // event.trigger is empty, then check event.accessor
-                    if (event.accessor == dbusAcc)
+                    log_dbg(
+                        "Recovery Case: performing recovery actions for event %s\n",
+                        eventPtr->event.c_str());
+                    log_dbg("Checking content of events detected map\n");
+                    for (const auto& e : eventsDetected)
                     {
-                        data_accessor::CheckAccessor accCheck(deviceType);
-                        if (accCheck.check(event.accessor, dbusAcc))
+                        log_dbg("Event + devtype in event map: %s\n",
+                                e.first.c_str());
+                        for (const auto& dev : e.second)
                         {
-                            eventList.push_back(std::make_tuple(
-                                &event, accCheck.getAssertedDevices(), false));
-                            continue;
-                        }
-                        else
-                        {
-                            log_dbg("skipping event '%s' %s\n",
-                                    event.event.c_str(),
-                                    msgFalseCheckAccessorCriteria);
+                            log_dbg("Dev in map for event+devtype %s: %s\n",
+                                    e.first.c_str(), dev.c_str());
                         }
                     }
-                    else
+                    log_dbg(
+                        "Recovering from property-changed signal fault %s\n",
+                        eventPtr->event.c_str());
+
+                    PROFILING_SWITCH(selftest::TsLatcher TS(
+                        "event-detection-recovery-flow-" + eventPtr->event +
+                        "-" + eventPtr->getMainDeviceType()));
+
+                    for (const auto& entry : recoveryCheck.getAssertedDevices())
                     {
-                        log_dbg("skipping event '%s' %s\n", event.event.c_str(),
-                                msgEmptyTriggerAccessorFieldsDoNotMatch);
+                        log_err("Asserted Recovery Device: %s\n",
+                                entry.device.c_str());
                     }
-                } // end Event Creation logic
+                    eventCandidateList.push_back(std::make_tuple(
+                        eventPtr, recoveryCheck.getAssertedDevices(), true));
 
-                // event was not generated above, check recovery
-                if (!event.recovery_accessor.isEmpty() &&
-                    event.recovery_accessor == dbusAcc)
-                {
-                    data_accessor::CheckAccessor recoveryCheck(deviceType);
-                    if (recoveryCheck.check(event.recovery_accessor, dbusAcc))
+                    try
                     {
-                        log_dbg("Checking content of events detected map\n");
-                        for (const auto& e : eventsDetected)
-                        {
-                            log_dbg("Event + devtype in event map: %s\n",
-                                    e.first.c_str());
-                            for (const auto& dev : e.second)
-                            {
-                                log_dbg("Dev in map for event+devtype %s: %s\n",
-                                        e.first.c_str(), dev.c_str());
-                            }
-                        }
-                        log_dbg(
-                            "Recovering from property-changed signal fault %s\n",
-                            event.event.c_str());
-
-                        PROFILING_SWITCH(selftest::TsLatcher TS(
-                            "event-detection-recovery-flow-" + event.event +
-                            "-" + event.getMainDeviceType()));
-
-                        for (const auto& entry :
-                             recoveryCheck.getAssertedDevices())
-                        {
-                            log_err("Asserted Recovery Device: %s\n",
-                                    entry.device.c_str());
-                        }
-                        eventList.push_back(std::make_tuple(
-                            &event, recoveryCheck.getAssertedDevices(), true));
-
-                        try
-                        {
-                            recoverFromFault(event.event,
-                                             event.getMainDeviceType());
-                        }
-                        catch (std::runtime_error& e)
-                        {
-                            log_err(
-                                "Failed to recover from fault %s on %s due to %s. Corresponding log may not have been resolved.\n",
-                                event.event.c_str(), event.device.c_str(),
-                                e.what());
-                        }
+                        recoverFromFault(eventPtr->event,
+                                         eventPtr->getMainDeviceType());
+                    }
+                    catch (std::runtime_error& e)
+                    {
+                        log_err(
+                            "Failed to recover from fault %s on %s due to %s. Corresponding log may not have been resolved.\n",
+                            eventPtr->event.c_str(), eventPtr->device.c_str(),
+                            e.what());
                     }
                 }
             }
+            if (!checkForRecovery || !passedRecoveryCheck)
+            {
+                log_dbg("Standard Event Detection Case for event %s\n",
+                        eventPtr->event.c_str());
+                data_accessor::CheckAccessor triggerCheck(deviceType);
+                if (!triggerCheck.check(eventPtr->trigger, pcTrigger))
+                {
+                    log_dbg("Trigger check failed for event %s\n",
+                            eventPtr->event.c_str());
+                    if (pcTrigger.isTypeDbus())
+                    {
+                        continue;
+                    }
+                }
+                // accessor to reuse trigger data if they are the same
+                auto accessor = eventPtr->accessor;
+                if (accessor == pcTrigger)
+                {
+                    // avoids going again to dbus to get data
+                    accessor.setDataValue(pcTrigger.getDataValue());
+                }
+                data_accessor::CheckAccessor accCheck(deviceType);
+                /* Note: accCheck uses info stored in triggerCheck
+                 *  1. the original trigger/dbusAcc
+                 *  2. Maybe needs triggerCheck asserted devices
+                 *      example the event "DRAM Contained ECC Error"
+                 */
+                accCheck.check(accessor, triggerCheck);
+                if (accCheck.getAssertedDevices().size() == 0)
+                {
+                    log_dbg("Asserted device list for event %s is empty\n",
+                            eventPtr->event.c_str());
+                    continue;
+                }
+                eventCandidateList.push_back(std::make_tuple(
+                    eventPtr, accCheck.getAssertedDevices(), false));
+            }
         }
-        log_dbg("got total events : %lu\n", eventList.size());
-        return eventList;
+        log_dbg("got total events : %lu\n", eventCandidateList.size());
+        return eventCandidateList;
     }
 
     /**
@@ -620,6 +569,17 @@ class EventDetection : public object::Object
      * @param  eventProperty the name of the property whose value changed
      */
     bool getIsAccessorInteresting(const data_accessor::DataAccessor& accessor);
+
+    /**
+     * @brief Return trigger and vector of possible events
+     *
+     * @param  accessor the trigger/accessor which came from pc signal or
+     * selftest
+     * @param  bootup whether or not we are generating events from bootup
+     * selftest
+     */
+    static void eventDiscovery(const data_accessor::DataAccessor& accessor,
+                               const bool& bootup = false);
 
   private:
     /**

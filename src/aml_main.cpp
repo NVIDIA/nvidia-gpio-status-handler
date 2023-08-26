@@ -69,6 +69,9 @@ namespace profile
 
 event_info::EventMap eventMap;
 event_info::PropertyFilterSet propertyFilterSet;
+event_info::EventTriggerView eventTriggerView;
+event_info::EventAccessorView eventAccessorView;
+event_info::EventRecoveryView eventRecoveryView;
 std::map<std::string, dat_traverse::Device> datMap;
 
 } // namespace profile
@@ -307,9 +310,10 @@ int main(int argc, char* argv[])
     logs_err("Trying to load Events from file\n");
 
     // Initialization
-    event_info::loadFromFile(aml::profile::eventMap,
-                             aml::profile::propertyFilterSet,
-                             aml::configuration.event);
+    event_info::loadFromFile(
+        aml::profile::eventMap, aml::profile::propertyFilterSet,
+        aml::profile::eventTriggerView, aml::profile::eventAccessorView,
+        aml::profile::eventRecoveryView, aml::configuration.event);
 
     // event_info::printMap(aml::profile::eventMap);
 
@@ -357,6 +361,10 @@ int main(int argc, char* argv[])
 
     event_detection::queue =
         std::make_unique<PcQueueType>(PROPERTIESCHANGED_QUEUE_SIZE);
+
+    event_detection::eventTriggerView = aml::profile::eventTriggerView;
+    event_detection::eventAccessorView = aml::profile::eventAccessorView;
+    event_detection::eventRecoveryView = aml::profile::eventRecoveryView;
 
     event_handler::ClearEvent clearEvent("ClearEvent");
     event_handler::EventHandlerManager eventHdlrMgr("EventHandlerManager");

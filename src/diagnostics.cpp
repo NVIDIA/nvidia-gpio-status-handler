@@ -638,7 +638,11 @@ EventInfoParseTest::ResultExt EventInfoParseTest::rawRunWithArtifact([
 {
     event_info::EventMap eventMap;
     event_info::PropertyFilterSet propertyFilterSet;
-    event_info::loadFromJson(eventMap, propertyFilterSet,
+    event_info::EventTriggerView eventTriggerView;
+    event_info::EventAccessorView eventAccessorView;
+    event_info::EventRecoveryView eventRecoveryView;
+    event_info::loadFromJson(eventMap, propertyFilterSet, eventTriggerView,
+                             eventAccessorView, eventRecoveryView,
                              Dependency<EventInfoInnerConsistencyTest>::get()
                                  ->Dependency<JsonSchemaTest>::get()
                                  ->Dependency<JsonReadTest>::get()

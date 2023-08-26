@@ -1,7 +1,5 @@
 #include "check_accessor.hpp"
 #include "data_accessor.hpp"
-#include "check_accessor.hpp"
-#include "data_accessor.hpp"
 #include "nlohmann/json.hpp"
 #include "property_accessor.hpp"
 
@@ -123,7 +121,7 @@ TEST(DataAccessor, CheckPositiveScriptCMDLINE)
 
 TEST(DataAccessor, CheckPositiveBitmaskRedefinition)
 {
-    DataAccessor jAccessor(jsonBITMASK); // {"bitmask", "0x01"}
+    DataAccessor jAccessor(jsonBITMASK);            // {"bitmask", "0x01"}
     DataAccessor dAccessor(PropertyVariant(0x10f)); // bits 0,1,2,3 and 8
 
     // without redefinition
@@ -153,11 +151,12 @@ TEST(DataAccessor, CheckPositiveBitmaskRedefinition)
     EXPECT_EQ(accCheck.check(DataAccessor(jsonBit8), dAccessor), true);
 }
 
-//TEST(DataAccessor, CheckPositiveLookupRedefinition)
+// TEST(DataAccessor, CheckPositiveLookupRedefinition)
 //{
 //    const nlohmann::json json = {{"type", "CMDLINE"},
 //                                 {"executable", "/bin/echo"},
-//                                 {"arguments", "ff 00 00 00 00 00 02 40 66 28"},
+//                                 {"arguments", "ff 00 00 00 00 00 02 40 66
+//                                 28"},
 //                                 {"check", {{"lookup", "_doesNotExist_"}}}};
 //    DataAccessor jAccessor(json);
 
@@ -198,7 +197,7 @@ TEST(DataAccessor, EqualNegativeNoRegxAgainstRegex)
 
     DataAccessor jsonAccessor(jsonFile);
     DataAccessor objectAccessor(dbusProperty);
-    EXPECT_NE(jsonAccessor == objectAccessor, true);
+    EXPECT_EQ(jsonAccessor == objectAccessor, true);
 }
 
 TEST(DataAccessor, EqualPositiveTypeOnly)
@@ -361,6 +360,80 @@ TEST(DataAccessor, EqualOperatorNegativeCompleteAccessorDiffProperty)
     EXPECT_NE(jsonAccessor == objectAccessor, true);
 }
 
+TEST(DataAccessor, TestAccessorEqualityAndHash)
+{
+    std::string pattern =
+        "/xyz/openbmc_project/inventory/system/fabrics/HGX_NVLinkFabric_0/Switches/NVSwitch_[0-3]/Ports/NVLink_[0-39]";
+    std::string concrete =
+        "/xyz/openbmc_project/inventory/system/fabrics/HGX_NVLinkFabric_0/Switches/NVSwitch_3/Ports/NVLink_39";
+    std::string concrete2 =
+        "/xyz/openbmc_project/inventory/system/fabrics/HGX_NVLinkFabric_0/Switches/NVSwitch_3/Ports/NVLink_40";
+
+    const nlohmann::json patternJson = {
+        {"type", "DBUS"},
+        {"object", pattern},
+        {"interface", "xyz.openbmc_project.Inventory.Item.Port"},
+        {"property", "TrainingError"},
+        {"check", {{"not_equal", "0"}}}};
+    const nlohmann::json concreteJson = {
+        {"type", "DBUS"},
+        {"object", concrete},
+        {"interface", "xyz.openbmc_project.Inventory.Item.Port"},
+        {"property", "TrainingError"},
+        {"check", {{"not_equal", "0"}}}};
+    const nlohmann::json concreteJson2 = {
+        {"type", "DBUS"},
+        {"object", concrete2},
+        {"interface", "xyz.openbmc_project.Inventory.Item.Port"},
+        {"property", "TrainingError"},
+        {"check", {{"not_equal", "0"}}}};
+
+    data_accessor::DataAccessor accessorPattern{patternJson};
+    data_accessor::DataAccessor accessorConcrete{concreteJson};
+    data_accessor::DataAccessor accessorConcrete2{concreteJson2};
+
+    EXPECT_EQ(accessorPattern == accessorConcrete, true);
+    EXPECT_EQ(accessorConcrete == accessorPattern, true);
+    EXPECT_NE(accessorConcrete2 == accessorPattern, true);
+    EXPECT_NE(accessorPattern == accessorConcrete2, true);
+
+    data_accessor::DataAccessor::Hash hash;
+    EXPECT_EQ(hash(accessorConcrete) == hash(accessorPattern), true);
+
+    const nlohmann::json cmdLineJson = {
+        {"type", "CMDLINE"},
+        {"executable", "mctp-vdm-util-wrapper"},
+        {"arguments", "AP0_BOOTCOMPLETE_TIMEOUT GPU_SXM_[1-8]"},
+        {"check", {{"equal", "1"}}}};
+
+    const nlohmann::json cmdLineJson2 = {
+        {"type", "CMDLINE"},
+        {"executable", "mctp-vdm-util-wrapper"},
+        {"arguments", "AP0_BOOTCOMPLETE_TIMEOUT GPU_SXM_1"},
+        {"check", {{"equal", "1"}}}};
+
+     const nlohmann::json devCoreApiJson = {
+        {"type", "DeviceCoreAPI"},
+        {"property", "gpu.thermal.temperature.overTemperatureInfo"},
+        {"check", {{"equal", "1"}}}};
+
+     const nlohmann::json devCoreApiJson2 = {
+        {"type", "DeviceCoreAPI"},
+        {"property", "gpu1.thermal.temperature.overTemperatureInfo"},
+        {"check", {{"equal", "1"}}}};
+
+    data_accessor::DataAccessor accessorCmdLine{cmdLineJson};
+    data_accessor::DataAccessor accessorCmdLine2{cmdLineJson2};
+    data_accessor::DataAccessor accessorDevCore{devCoreApiJson};
+    data_accessor::DataAccessor accessorDevCore2{devCoreApiJson2};
+
+    EXPECT_EQ(accessorCmdLine2 == accessorCmdLine, true);
+    EXPECT_EQ(accessorCmdLine == accessorCmdLine2, true);
+    EXPECT_NE(accessorDevCore == accessorDevCore2, true);
+
+    EXPECT_EQ(hash(accessorCmdLine) == hash(accessorCmdLine2), true);
+}
+
 #if 0 // these tests depend on DBUS, TODO: use Goggle Mock
 TEST(DataAccessor, EventTriggerForOverTemperature)
 {
@@ -438,7 +511,6 @@ TEST(DataAccessor, BitmaskWithValueTwo)
         {"object", "/xyz/openbmc_project/inventory/system/chassis/GPU0"},
         {"interface", "xyz.openbmc_project.com.nvidia.Events.PendingRegister"},
         {"property", "EventsPendingRegister"}};
-
 
     DataAccessor accessor(templateAccessor);
     DataAccessor accessorData(eventTrigger, PropertyValue(uint64_t(0x02)));

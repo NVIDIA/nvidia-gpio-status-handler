@@ -6,32 +6,32 @@
 
 #include "data_accessor.hpp"
 
+#include <boost/lockfree/spsc_queue.hpp>
+
 #include <chrono>
 #include <mutex>
 
-#include <boost/lockfree/spsc_queue.hpp>
-
 struct PcCompare;
 
-struct PcDataType {
+struct PcDataType
+{
     data_accessor::DataAccessor accessor;
+    std::vector<std::shared_ptr<event_info::EventNode>> eventPtrs;
 };
 
 class PcQueueType
 {
   public:
-    PcQueueType(size_t queueSize)
-        : _queue(queueSize), _mutex{}
-    {
-    }
+    PcQueueType(size_t queueSize) : _queue(queueSize), _mutex{}
+    {}
 
-    bool push(PcDataType const & d)
+    bool push(PcDataType const& d)
     {
         std::scoped_lock lock(_mutex);
         return _queue.push(d);
     }
 
-    bool pop(PcDataType & d)
+    bool pop(PcDataType& d)
     {
         std::scoped_lock lock(_mutex);
         return _queue.pop(d);
@@ -39,7 +39,7 @@ class PcQueueType
 
     size_t write_available()
     {
-        std::scoped_lock lock(_mutex);  // TODO: is this necessary?
+        std::scoped_lock lock(_mutex); // TODO: is this necessary?
         return _queue.write_available();
     }
 

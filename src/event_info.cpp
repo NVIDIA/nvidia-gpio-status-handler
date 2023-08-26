@@ -13,6 +13,7 @@
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <memory>
 #include <regex>
 #include <string>
 #include <vector>
@@ -128,7 +129,8 @@ void addEventToPropertyFilterSet(const EventNode& eventNode,
 }
 
 void loadFromJson(EventMap& eventMap, PropertyFilterSet& propertyFilterSet,
-    const nlohmann::json& j)
+    EventTriggerView& eventTriggerView, EventAccessorView& eventAccessorView,
+    EventRecoveryView& eventRecoveryView, const nlohmann::json& j)
 {
     for (const auto& el : j.items())
     {
@@ -146,21 +148,28 @@ void loadFromJson(EventMap& eventMap, PropertyFilterSet& propertyFilterSet,
             ss << "\tcreate event (" << event["event"] << ").\n";
             logs_dbg("%s", ss.str().c_str());
 
-            event_info::EventNode eventNode(event["event"]);
+            auto eventNode = std::make_shared<event_info::EventNode>(event["event"]);
 
             ss.str(std::string()); // Clearing the stream first
             ss << "\tload event (" << event["event"] << ").\n";
             logs_dbg("%s", ss.str().c_str());
-            eventNode.loadFrom(event);
+            eventNode->loadFrom(event);
 
             ss.str(std::string()); // Clearing the stream first
             ss << "\tpush event (" << event["event"] << ").\n";
             logs_dbg("%s", ss.str().c_str());
 
-            v.push_back(eventNode);
+            v.push_back(*eventNode);
 
             // also add eventNode's accessors to the dbus property filter set
-            addEventToPropertyFilterSet(eventNode, propertyFilterSet);
+            addEventToPropertyFilterSet(*eventNode, propertyFilterSet);
+
+            eventTriggerView.insert({eventNode->trigger, eventNode});
+            eventAccessorView.insert({eventNode->accessor, eventNode});
+            if (!eventNode->recovery_accessor.isEmpty())
+            {
+                eventRecoveryView.insert({eventNode->recovery_accessor, eventNode});
+            }
         }
         eventMap.insert(
             std::pair<std::string, std::vector<event_info::EventNode>>(
@@ -171,7 +180,8 @@ void loadFromJson(EventMap& eventMap, PropertyFilterSet& propertyFilterSet,
 }
 
 void loadFromFile(EventMap& eventMap, PropertyFilterSet& propertyFilterSet,
-    const std::string& file)
+    EventTriggerView& eventTriggerView, EventAccessorView& eventAccessorView,
+    EventRecoveryView& eventRecoveryView, const std::string& file)
 {
     std::stringstream ss;
     ss << "loadFromFile func (" << file << ").";
@@ -180,7 +190,8 @@ void loadFromFile(EventMap& eventMap, PropertyFilterSet& propertyFilterSet,
     json j;
     i >> j;
 
-    loadFromJson(eventMap, propertyFilterSet, j);
+    loadFromJson(eventMap, propertyFilterSet, eventTriggerView,
+        eventAccessorView, eventRecoveryView, j);
 }
 
 void printMap(const EventMap& eventMap)
@@ -448,7 +459,6 @@ void EventNode::loadFrom(const json& j)
         json_proc::getOptionalAttribute<std::vector<EventCategory>>(j,
                                                                     "category");
 
-    this->trigger = j.at("event_trigger");
     this->subType = j.value("sub_type", "");
 
     for (auto& entry : j.at("telemetries"))
@@ -476,6 +486,9 @@ void EventNode::loadFrom(const json& j)
             : nlohmann::json()};
 
     this->accessor = j.at("accessor");
+    this->trigger = j.at("event_trigger").empty()
+        ? j.at("accessor")
+        : j.at("event_trigger");
 
     std::stringstream ss;
     ss << "Loaded accessor: " << this->accessor << ", j: " << j;
@@ -488,6 +501,14 @@ void EventNode::loadFrom(const json& j)
         ss2 << "Loaded accessor: " << this->recovery_accessor << ", j: " << j;
         log_dbg("%s\n", ss2.str().c_str());
     }
+    // else
+    // {
+    //     std::stringstream ss2;
+    //     ss2 << "did not load recovery accessor, the value in the node is "
+    //         << this->recovery_accessor << ", j: " << j << std::endl
+    //         << "is the accessor empty? " << this->recovery_accessor.isEmpty();
+    //     log_err("%s\n", ss2.str().c_str());
+    // }
 
     this->valueAsCount = j.contains("value_as_count")
                              ? j.at("value_as_count").get<bool>()
