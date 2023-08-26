@@ -10,6 +10,7 @@
 #include "event_handler.hpp"
 
 #include <dbus_utility.hpp>
+#include <util.hpp>
 #include <nlohmann/json.hpp>
 
 #include <chrono>
@@ -30,7 +31,7 @@ struct TestPointResult
     bool isTypeDevice;
 
     /** @brief test point severity **/
-    dat_traverse::TestPointSeverity severity;
+    util::Severity severity;
 
     /** @brief test point name, eg. "PGOOD", "DEVICE_HSC0" **/
     std::string targetName;
@@ -392,7 +393,7 @@ class RootCauseTracer : public EventHandler
 {
   public:
     RootCauseTracer(const std::string& name,
-                    std::map<std::string, dat_traverse::Device>& dat) :
+            std::map<std::string, dat_traverse::Device>& dat) :
         EventHandler(name),
         _dat(dat)
     {}

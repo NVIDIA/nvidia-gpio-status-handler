@@ -211,8 +211,8 @@ bool Selftest::evaluateDevice(const DeviceResult& deviceResult)
 
 std::string Selftest::getDeviceTestResult(const DeviceResult& deviceResult)
 {
-    dat_traverse::TestPointSeverity worstSeverityFound(
-        dat_traverse::TestPointSeverity::SEVERITY::SEVERITY_OK);
+    util::Severity worstSeverityFound(
+        util::Severity::SEVERITY::SEVERITY_OK);
     for (auto& layer : deviceResult.layer)
     {
         auto testPoints = layer.second;
@@ -662,8 +662,15 @@ aml::RcCode RootCauseTracer::process([
         return aml::RcCode::error;
     }
 
-    std::string health =
-        selftester.getDeviceTestResult(completeReportRes[problemDevice]);
+    /* append to already existing event severities a selftest severity then find
+    worst */
+    PROFILING_SWITCH(TS.addTimepoint("update health"));
+    auto selftestSeverity = selftester.getDeviceTestResult(
+                                            completeReportRes[problemDevice]);
+    event.severities.push_back(selftestSeverity);
+    
+    std::string health = util::Severity::findMaxSeverity(event.severities);
+
     selftester.updateDeviceHealth(problemDevice, health);
 
     PROFILING_SWITCH(TS.addTimepoint("find root cause"));

@@ -308,4 +308,88 @@ std::string
     introduceDeviceInObjectpath(const std::string& objPath,
                                 const device_id::PatternIndex& deviceIndex);
 
+/**
+ * @brief Read device health on the DBUS
+ *
+ * @param[in] device - name of device
+ * @return health - health status of device or empty on error
+ */
+std::string getDeviceHealth(const std::string& device);
+
+class Severity
+{
+  public:
+    enum SEVERITY
+    {
+      SEVERITY_OK = 0,
+      SEVERITY_WARNING = 1,
+      SEVERITY_CRITICAL = 2,
+      SEVERITY_TOP = 3
+    };
+    static constexpr const char* severityLookup[SEVERITY_TOP] = {
+        "OK", "Warning", "Critical"};
+
+    Severity() : severity(SEVERITY_CRITICAL)
+    {}
+
+    Severity(enum SEVERITY init_severity) : severity(init_severity)
+    {}
+
+    Severity(std::string init_severity)
+    {
+        set_severity(init_severity);
+    }
+
+    void set_severity(std::string severity_str)
+    {
+        if (severity_str == severityLookup[SEVERITY_OK])
+        {
+            severity = SEVERITY_OK;
+        }
+        else if (severity_str == severityLookup[SEVERITY_WARNING])
+        {
+            severity = SEVERITY_WARNING;
+        }
+        else if (severity_str == severityLookup[SEVERITY_CRITICAL])
+        {
+            severity = SEVERITY_CRITICAL;
+        }
+        else
+        {
+            std::string msg = "Unknown severity (" + severity_str +
+                              "). Error in dat.json config.";
+            throw std::runtime_error(msg);
+        }
+    }
+
+    void set_severity(enum SEVERITY newSeverity)
+    {
+        severity = newSeverity;
+    }
+
+    std::string string()
+    {
+        return severityLookup[severity];
+    }
+
+    enum SEVERITY value()
+    {
+        return severity;
+    }
+
+    static std::string findMaxSeverity(std::vector<Severity>severities)
+    {
+        Severity maxSev("OK");
+        for (auto sev : severities)
+        {
+            maxSev.set_severity(sev.value() > maxSev.value() ? 
+                                    sev.value() : maxSev.value());
+        }
+        return maxSev.string();
+    }
+
+  private:
+    enum SEVERITY severity;
+};
+
 } // namespace util

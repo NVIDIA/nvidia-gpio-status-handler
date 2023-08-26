@@ -10,6 +10,8 @@
 */
 #include "util.hpp"
 
+#include "dbus_accessor.hpp"
+
 #include "log.hpp"
 
 #include <boost/algorithm/string.hpp>
@@ -22,6 +24,7 @@
 
 namespace util
 {
+
 /**
  * With GPU naming changes, 'deviceId' also changed, it is NOT a sequence [1-8]
  */
@@ -468,5 +471,76 @@ std::string introduceDeviceInObjectpath(
              objPath.c_str());
     return ret;
 }
+
+std::string getDeviceHealth(const std::string& device)
+{
+    try
+    {
+        const std::string healthInterface(
+            "xyz.openbmc_project.State.Decorator.Health");
+        dbus::DirectObjectMapper om;
+        std::vector<std::string> objPaths =
+            om.getAllDevIdObjPaths(device, healthInterface);
+        if (!objPaths.empty())
+        {
+            for (const auto& objPath : objPaths)
+            {
+                auto propVariant =
+                    dbus::readDbusProperty(objPath, healthInterface, "Health");
+
+                // assuming health is the same for all, exit early on first if succeed
+                if (isValidVariant(propVariant))
+                {
+                    std::string dbusHealth =
+                        data_accessor::PropertyValue(propVariant).getString();
+                    if (dbusHealth ==
+                        "xyz.openbmc_project.State.Decorator.Health.HealthType.Critical")
+                    {
+                        return "Critical";
+                    }
+                    else if (
+                        dbusHealth ==
+                        "xyz.openbmc_project.State.Decorator.Health.HealthType.Warning")
+                    {
+                        return "Warning";
+                    }
+                    else if (
+                        dbusHealth ==
+                        "xyz.openbmc_project.State.Decorator.Health.HealthType.OK")
+                    {
+                        return "OK";
+                    }
+                    else
+                    {
+                        logs_err("Object %s returned unknown health value\n",
+                                    objPath.c_str());
+                    }
+                }
+                else
+                {
+                    logs_err("Unable to read health from object %s\n",
+                        objPath.c_str());
+                }
+            }
+        }
+        else // ! objPaths.empty()
+        {
+            logs_err("No object paths found in the subtree of "
+                    "'xyz.openbmc_project.ObjectMapper' "
+                    "corresponding to the '%s' device id "
+                    "and implementing the '%s' interface\n",
+                    device.c_str(), healthInterface.c_str());
+        }
+    }
+    catch (const sdbusplus::exception::SdBusError& e)
+    {
+        std::cerr << "ERROR WITH SDBUSPLUS BUS " << e.what() << "\n";
+        logs_err("Failed to establish sdbusplus connection %s\n", e.what());
+    }
+
+    logs_err("getDeviceHealth for device %s failed\n", device.c_str());
+    return "";
+}
+
 
 } // namespace util

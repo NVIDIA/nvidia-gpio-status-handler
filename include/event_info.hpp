@@ -8,6 +8,7 @@
 #include "device_id.hpp"
 #include "json_proc.hpp"
 #include "object.hpp"
+#include "util.hpp"
 
 #include <nlohmann/json.hpp>
 
@@ -405,6 +406,9 @@ class EventNode : public object::Object
 
     /** @brief Report of selftest **/
     nlohmann::ordered_json selftestReport;
+
+    /** @brief Severities to base device health update on **/
+    std::vector<util::Severity> severities;
 
     /**
      * @brief Setter for @c deviceIndexTuple field

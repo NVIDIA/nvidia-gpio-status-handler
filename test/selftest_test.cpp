@@ -1017,7 +1017,28 @@ TEST(rootCauseTraceTest, test1)
     dat.insert(std::pair<std::string, dat_traverse::Device>(hsc8.name, hsc8));
 
     event_handler::RootCauseTracer rootCauseTracer("testTracer", dat);
+    
+    nlohmann::json j;
+    j["event"] = "Event0";
+    j["device_type"] = "GPU0";
+    j["sub_type"] = "";
+    j["severity"] = "Critical";
+    j["resolution"] = "Contact NVIDIA Support";
+    j["redfish"]["message_id"] = "ResourceEvent.1.0.ResourceErrorsDetected";
+    j["redfish"]["message_args"]["patterns"] = {"p1", "p2"};
+    j["redfish"]["message_args"]["parameters"] = nlohmann::json::array();
+    j["telemetries"] = {"t0", "t1"};
+    j["trigger_count"] = 0;
+    j["event_trigger"]["metadata"] = "metadata";
+    j["event_trigger"]["type"] = "DBUS";
+    j["action"] = "do something";
+    j["event_counter_reset"]["type"] = "type";
+    j["event_counter_reset"]["metadata"] = "metadata";
+    j["accessor"]["metadata"] = "metadata";
+    j["accessor"]["type"] = "DBUS";
+    j["value_as_count"] = false;
     event_info::EventNode event("test event");
+    event.loadFrom(j);
     event.device = "GPU0";
 
     EXPECT_EQ(rootCauseTracer.process(event), aml::RcCode::succ);
@@ -1068,3 +1089,5 @@ TEST(rootCauseTraceTest, test1)
     EXPECT_NO_THROW(result = rootCauseTracer.process(event));
     EXPECT_EQ(result, aml::RcCode::error);
 }
+
+

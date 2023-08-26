@@ -92,10 +92,11 @@ void EventDetection::workerThreadProcessEvents()
                 for (const auto& assertedDevice : assertedDeviceList)
                 {
                     candidate.device = assertedDevice.device;
-                    auto event = candidate;
+                    auto event = candidate; // keep it a copy
                     event.trigger = assertedDevice.trigger;
                     event.accessor = assertedDevice.accessor;
                     event.setDeviceIndexTuple(assertedDevice.deviceIndexTuple);
+                    
                     if (isRecovery)
                     {
                         logs_err(
@@ -105,8 +106,21 @@ void EventDetection::workerThreadProcessEvents()
                                                            "RootCauseTracer");
                         continue;
                     }
+
                     if (eventDetectionPtr->IsEvent(candidate, eventValue))
                     {
+                        event.severities.push_back(event.getSeverity());
+                        auto currentDeviceHealth = util::getDeviceHealth(event.device);
+
+                        if (!currentDeviceHealth.empty())
+                        {
+                            event.severities.push_back(currentDeviceHealth);
+                        }
+                        else
+                        {
+                            logs_err("Failed to get current device health (ignored)\n");
+                        }
+
                         std::stringstream ss;
                         ss << "Throw out an eventHdlrMgr. device: "
                            << event.device << " event: '" << event.event << "'"
