@@ -77,7 +77,6 @@ std::string MessageComposer::getOriginOfConditionObjectPath(
         }
     }
 }
-#endif // EVENTING_FEATURE_ONLY
 
 std::string MessageComposer::getOriginOfCondition(event_info::EventNode& event)
 {
@@ -115,6 +114,7 @@ std::string MessageComposer::getOriginOfCondition(event_info::EventNode& event)
     }
     return originOfCondition;
 }
+#endif // EVENTING_FEATURE_ONLY
 
 bool MessageComposer::createLog(event_info::EventNode& event)
 {
