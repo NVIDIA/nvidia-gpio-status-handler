@@ -434,6 +434,188 @@ TEST(DataAccessor, TestAccessorEqualityAndHash)
     EXPECT_EQ(hash(accessorCmdLine) == hash(accessorCmdLine2), true);
 }
 
+TEST(DataAccessor, TestAccessorUniqueKeyMatchAndNormalMatch)
+{
+    const nlohmann::json thisJson = {
+        {"type", "DBUS"},
+        {"unique_key", "GPU-NVLINK-ERR-TRAINING"},
+        {"object", "/xyz/openbmc_project/foo"},
+        {"interface", "xyz.openbmc_project.Inventory.Item.Port"},
+        {"property", "TrainingError"},
+        {"check", {{"not_equal", "0"}}}};
+
+    const nlohmann::json otherJson = {
+        {"type", "DBUS"},
+        {"unique_key", "GPU-NVLINK-ERR-TRAINING"},
+        {"object", "/xyz/openbmc_project/foo"},
+        {"interface", "xyz.openbmc_project.Inventory.Item.Port"},
+        {"property", "TrainingError"},
+        {"check", {{"not_equal", "0"}}}};
+
+    data_accessor::DataAccessor thisAccessor{thisJson};
+    data_accessor::DataAccessor otherAccessor{otherJson};
+    EXPECT_EQ(thisAccessor, otherAccessor);
+
+    data_accessor::DataAccessor::Hash hash;
+    EXPECT_EQ(hash(thisAccessor), hash(otherAccessor));
+}
+
+TEST(DataAccessor, TestAccessorUniqueKeyMatchNormalNotMatch)
+{
+    const nlohmann::json thisJson = {
+        {"type", "DBUS"},
+        {"unique_key", "GPU-NVLINK-ERR-TRAINING"},
+        {"object", "/xyz/openbmc_project/foo"},
+        {"interface", "xyz.openbmc_project.Inventory.Item.Port"},
+        {"property", "TrainingError"},
+        {"check", {{"not_equal", "0"}}}};
+
+    const nlohmann::json otherJson = {
+        {"type", "CMDLINE"},
+        {"unique_key", "GPU-NVLINK-ERR-TRAINING"},
+        {"executable", "nvlink-training-error-wrapper"},
+        {"arguments", "TRAINING GPU_SXM_[0|1-8] NVLink_[1|0-17]"},
+        {"check", {{"equal", "1"}}}};
+
+    data_accessor::DataAccessor thisAccessor{thisJson};
+    data_accessor::DataAccessor otherAccessor{otherJson};
+    EXPECT_EQ(thisAccessor, otherAccessor);
+
+    data_accessor::DataAccessor::Hash hash;
+    EXPECT_EQ(hash(thisAccessor), hash(otherAccessor));
+}
+
+TEST(DataAccessor, TestAccessorUniqueKeyNotMatchAndNormalMatch)
+{
+    const nlohmann::json thisJson = {
+        {"type", "DBUS"},
+        {"unique_key", "GPU-NVLINK-ERR-TRAINING"},
+        {"object", "/xyz/openbmc_project/foo"},
+        {"interface", "xyz.openbmc_project.Inventory.Item.Port"},
+        {"property", "TrainingError"},
+        {"check", {{"not_equal", "0"}}}};
+
+    const nlohmann::json otherJson = {
+        {"type", "DBUS"},
+        {"unique_key", "NVSWITCH-NVLINK-ERR-TRAINING"},
+        {"object", "/xyz/openbmc_project/foo"},
+        {"interface", "xyz.openbmc_project.Inventory.Item.Port"},
+        {"property", "TrainingError"},
+        {"check", {{"not_equal", "0"}}}};
+
+    data_accessor::DataAccessor thisAccessor{thisJson};
+    data_accessor::DataAccessor otherAccessor{otherJson};
+    EXPECT_NE(thisAccessor, otherAccessor);
+}
+
+TEST(DataAccessor, TestAccessorUniqueKeyNotMatchAndNormalNotMatch)
+{
+    const nlohmann::json thisJson = {
+        {"type", "DBUS"},
+        {"unique_key", "GPU-NVLINK-ERR-TRAINING"},
+        {"object", "/xyz/openbmc_project/foo"},
+        {"interface", "xyz.openbmc_project.Inventory.Item.Port"},
+        {"property", "TrainingError"},
+        {"check", {{"not_equal", "0"}}}};
+
+    const nlohmann::json otherJson = {
+        {"type", "CMDLINE"},
+        {"unique_key", "NVSWITCH-NVLINK-ERR-TRAINING"},
+        {"executable", "nvlink-training-error-wrapper"},
+        {"arguments", "TRAINING GPU_SXM_[0|1-8] NVLink_[1|0-17]"},
+        {"check", {{"equal", "1"}}}};
+
+    data_accessor::DataAccessor thisAccessor{thisJson};
+    data_accessor::DataAccessor otherAccessor{otherJson};
+    EXPECT_NE(thisAccessor, otherAccessor);
+}
+
+TEST(DataAccessor, TestAccessorUniqueKeyThisOnlyNormalMatch)
+{
+    const nlohmann::json thisJson = {
+        {"type", "DBUS"},
+        {"unique_key", "GPU-NVLINK-ERR-TRAINING"},
+        {"object", "/xyz/openbmc_project/foo"},
+        {"interface", "xyz.openbmc_project.Inventory.Item.Port"},
+        {"property", "TrainingError"},
+        {"check", {{"not_equal", "0"}}}};
+
+    const nlohmann::json otherJson = {
+        {"type", "DBUS"},
+        {"object", "/xyz/openbmc_project/foo"},
+        {"interface", "xyz.openbmc_project.Inventory.Item.Port"},
+        {"property", "TrainingError"},
+        {"check", {{"not_equal", "0"}}}};
+
+    data_accessor::DataAccessor thisAccessor{thisJson};
+    data_accessor::DataAccessor otherAccessor{otherJson};
+    EXPECT_NE(thisAccessor, otherAccessor);
+}
+
+TEST(DataAccessor, TestAccessorUniqueKeyThisOnlyNormalNotMatch)
+{
+    const nlohmann::json thisJson = {
+        {"type", "DBUS"},
+        {"unique_key", "GPU-NVLINK-ERR-TRAINING"},
+        {"object", "/xyz/openbmc_project/foo"},
+        {"interface", "xyz.openbmc_project.Inventory.Item.Port"},
+        {"property", "TrainingError"},
+        {"check", {{"not_equal", "0"}}}};
+
+    const nlohmann::json otherJson = {
+        {"type", "CMDLINE"},
+        {"executable", "nvlink-training-error-wrapper"},
+        {"arguments", "TRAINING GPU_SXM_[0|1-8] NVLink_[1|0-17]"},
+        {"check", {{"equal", "1"}}}};
+
+    data_accessor::DataAccessor thisAccessor{thisJson};
+    data_accessor::DataAccessor otherAccessor{otherJson};
+    EXPECT_NE(thisAccessor, otherAccessor);
+}
+
+TEST(DataAccessor, TestAccessorUniqueKeyOtherOnlyNormalMatch)
+{
+    const nlohmann::json thisJson = {
+        {"type", "DBUS"},
+        {"object", "/xyz/openbmc_project/foo"},
+        {"interface", "xyz.openbmc_project.Inventory.Item.Port"},
+        {"property", "TrainingError"},
+        {"check", {{"not_equal", "0"}}}};
+
+    const nlohmann::json otherJson = {
+        {"type", "DBUS"},
+        {"unique_key", "GPU-NVLINK-ERR-TRAINING"},
+        {"object", "/xyz/openbmc_project/foo"},
+        {"interface", "xyz.openbmc_project.Inventory.Item.Port"},
+        {"property", "TrainingError"},
+        {"check", {{"not_equal", "0"}}}};
+
+    data_accessor::DataAccessor thisAccessor{thisJson};
+    data_accessor::DataAccessor otherAccessor{otherJson};
+    EXPECT_NE(thisAccessor, otherAccessor);
+}
+
+TEST(DataAccessor, TestAccessorUniqueKeyOtherOnlyNormalNotMatch)
+{
+    const nlohmann::json thisJson = {
+        {"type", "DBUS"},
+        {"object", "/xyz/openbmc_project/foo"},
+        {"interface", "xyz.openbmc_project.Inventory.Item.Port"},
+        {"property", "TrainingError"},
+        {"check", {{"not_equal", "0"}}}};
+
+    const nlohmann::json otherJson = {
+        {"type", "CMDLINE"},
+        {"unique_key", "NVSWITCH-NVLINK-ERR-TRAINING"},
+        {"executable", "nvlink-training-error-wrapper"},
+        {"arguments", "TRAINING GPU_SXM_[0|1-8] NVLink_[1|0-17]"},
+        {"check", {{"equal", "1"}}}};
+
+    data_accessor::DataAccessor thisAccessor{thisJson};
+    data_accessor::DataAccessor otherAccessor{otherJson};
+    EXPECT_NE(thisAccessor, otherAccessor);
+}
+
 #if 0 // these tests depend on DBUS, TODO: use Goggle Mock
 TEST(DataAccessor, EventTriggerForOverTemperature)
 {
