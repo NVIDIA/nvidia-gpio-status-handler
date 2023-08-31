@@ -43,7 +43,6 @@ namespace data_accessor
 using InterfaceObjectsMap = std::map<std::string, std::vector<std::string>>;
 
 constexpr auto typeKey = "type";
-constexpr auto uniqueKeyKey = "unique_key";
 constexpr auto nameKey = "name";
 constexpr auto checkKey = "check";
 constexpr auto objectKey = "object";
@@ -83,9 +82,6 @@ class DataAccessor
         std::stringstream ss;
         ss << "Const.: _acc: " << _acc;
         log_dbg("%s\n", ss.str().c_str());
-        _uniqueKey = acc.contains(uniqueKeyKey)
-            ? std::optional(acc.at(uniqueKeyKey).get<std::string>())
-            : std::nullopt;
     }
 
     /**
@@ -147,42 +143,8 @@ class DataAccessor
      */
     bool operator==(const DataAccessor& other) const
     {
-        if (!isValid(_acc))
-        {
-            log_dbg("isValid(_acc) returned false!\n");
-            return false;
-        }
-        if (!isValid(other._acc))
-        {
-            log_dbg("isValid(other._acc) returned false!\n");
-            return false;
-        }
-        std::stringstream ss;
-        if (_uniqueKey)
-        {
-            if (!other._uniqueKey)
-            {
-                log_dbg("other._uniqueKey does not exist but _uniqueKey does!\n");
-                ss << "\n\tThis: " << _acc << "\n\tOther: " << other._acc;
-                log_dbg("%s\n", ss.str().c_str());
-                return false;
-            }
-            bool ret = (*_uniqueKey == *other._uniqueKey);
-            log_dbg("operator== matching based on unique key\n");
-            ss << "\n\tThis: " << _acc << "\n\tOther: " << other._acc
-                << "\n\treturn: " << ret;
-            log_dbg("%s\n", ss.str().c_str());
-            return ret;
-        }
-        log_dbg("_uniqueKey did not exist\n");
-        if (other._uniqueKey)
-        {
-            log_dbg("other._uniqueKey exists while _uniqueKey doesn't!\n");
-            ss << "\n\tThis: " << _acc << "\n\tOther: " << other._acc;
-            log_dbg("%s\n", ss.str().c_str());
-            return false;
-        }
-        bool ret = _acc[typeKey] == other._acc[typeKey];
+        bool ret = isValid(_acc) && isValid(other._acc) &&
+                   _acc[typeKey] == other._acc[typeKey];
         if (ret)
         {
             std::string accType = _acc[typeKey];
@@ -241,6 +203,7 @@ class DataAccessor
                 }
             }
         }
+        std::stringstream ss;
         ss << "\n\tThis: " << _acc << "\n\tOther: " << other._acc
            << "\n\treturn: " << ret;
         log_dbg("%s\n", ss.str().c_str());
@@ -252,10 +215,6 @@ class DataAccessor
         size_t operator()([[maybe_unused]] DataAccessor accessor) const noexcept
         {
             std::hash<std::string> hashFn;
-            if (accessor._uniqueKey)
-            {
-                return hashFn(*accessor._uniqueKey);
-            }
             std::string h = accessor._acc[typeKey];
             if (accessor._acc[typeKey] == "DBUS")
             {
@@ -764,11 +723,6 @@ class DataAccessor
      * @sa read()
      */
     PropertyValue _dataValue;
-
-    /**
-     * @brief _uniqueKey stores the unique matching key, if any
-    */
-    std::optional<std::string> _uniqueKey;
 };
 
 } // namespace data_accessor
