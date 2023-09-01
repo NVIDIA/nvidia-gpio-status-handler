@@ -150,7 +150,7 @@ class DataAccessor
             std::string accType = _acc[typeKey];
             for (auto& [key, val] : _acc.items())
             {
-                if (key == nameKey || key == checkKey)
+                if (key == nameKey || key == checkKey || key == deviceidKey)
                 {
                     continue;
                 }
@@ -431,6 +431,38 @@ class DataAccessor
             ret = _acc[propertyKey].get<std::string>();
         }
         return ret;
+    }
+
+    /**
+     * @brief helper function to get the CMDLINE arguments
+     * @return
+     */
+    inline std::string getArguments() const
+    {
+        std::string ret{""};
+        if (isTypeCmdline() == true && _acc.count(argumentsKey) != 0)
+        {
+            ret = _acc[argumentsKey].get<std::string>();
+        }
+        return ret;
+    }
+
+    /**
+     * @brief Gets the device set by @sa setDevice(), useful on Seltest Events
+     * @return The device set by @sa setDevice()
+     */
+    inline std::string getDevice() const
+    {
+        return _savedDevice;
+    }
+
+    /**
+     * @brief setDevice
+     * @param device
+     */
+    void setDevice(const std::string& device)
+    {
+        _savedDevice = device;
     }
 
     /**
@@ -723,6 +755,9 @@ class DataAccessor
      * @sa read()
      */
     PropertyValue _dataValue;
+
+    /** save the device used in @sa read() */
+    std::string _savedDevice;
 };
 
 } // namespace data_accessor

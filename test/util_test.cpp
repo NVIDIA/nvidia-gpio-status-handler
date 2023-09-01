@@ -223,6 +223,20 @@ TEST(Util, GetRangeInformation)
     EXPECT_EQ(std::get<2>(info), "01GPU[0-3]");
 }
 
+TEST(IntroduceDeviceInObjectpath, TrainingError)
+{
+    std::string obj{"nvlink-training-error-wrapper TRAINING GPU_SXM_[0|1-8] NVLink_[1|0-17]"};
+    device_id::DeviceIdPattern  objPattern(obj);
+    EXPECT_EQ(objPattern.dim(), 2);
+
+    device_id::DeviceIdPattern devType("GPU_SXM_[0|1-8]/NVLink_[1|0-17]");
+    EXPECT_EQ(devType.dim(), 2);
+
+    device_id::PatternIndex index(3,15);
+    auto result = util::introduceDeviceInObjectpath(obj, index);
+    EXPECT_EQ(result, "nvlink-training-error-wrapper TRAINING GPU_SXM_3 NVLink_15");
+}
+
 TEST(IntroduceDeviceInObjectpath, PatternIndex)
 {
     std::string obj{"FPGA_SXM[0|1-8:0-7]_EROT_RECOV_L GPU_SXM_[0|1-8]"};

@@ -547,3 +547,210 @@ TEST(EventDetectionTest, PcQueueConcurrentStress)
     EXPECT_FALSE(queue.pop(popped_element));
     EXPECT_TRUE(expectedSet.empty());
 }
+
+TEST(EventDetectionTest,  CreateEventFromFailedCmdLineSecureBoot)
+{
+   auto   secureBootEventInfo =
+   R"(
+       {
+            "type": "CMDLINE",
+            "executable": "mctp-vdm-util-wrapper",
+            "arguments": "active_auth_status GPU_SXM_[1-8]",
+            "check": {
+                "equal": "6"
+            }
+        }
+   )";
+
+    auto secureBootSelfTest =
+    R"(
+        {
+            "type": "CMDLINE",
+            "executable": "mctp-vdm-util-wrapper",
+            "arguments": "active_auth_status GPU_SXM_5"
+        }
+    )";
+
+    // Event Info Accessor
+    nlohmann::json eventInfoecureBoot = nlohmann::json::parse(secureBootEventInfo);
+    data_accessor::DataAccessor eventInfoSecureBoot(eventInfoecureBoot);
+
+    // SelfTest Accessor
+    data_accessor::PropertyValue fail(uint32_t(6));
+    nlohmann::json jsonSecureBoot = nlohmann::json::parse(secureBootSelfTest);
+    data_accessor::DataAccessor failedSecureBoot(jsonSecureBoot, fail);
+
+    data_accessor::CheckAccessor checkObj("GPU_SXM_[1-8]");
+    bool passed = checkObj.check(eventInfoSecureBoot, failedSecureBoot);
+    EXPECT_EQ(passed, true);
+    auto assertedData = checkObj.getAssertedDevices();
+    EXPECT_EQ(assertedData.size(), 1);
+    EXPECT_EQ(assertedData.at(0).device, "GPU_SXM_5");
+    EXPECT_EQ(assertedData.at(0).deviceIndexTuple, device_id::PatternIndex(5));
+}
+
+TEST(EventDetectionTest,  CreateEventFromFailedCoreApiTestPoint)
+{
+    auto eventInfoGpuOverTemp =
+    R"(
+      {
+        "type": "DeviceCoreAPI",
+                 "property": "gpu.thermal.temperature.overTemperatureInfo",
+                              "check": {
+            "equal": "1"
+        }
+      }
+    )";
+
+    auto selftestGpuOverTemp =
+    R"(
+       {
+          "type": "DeviceCoreAPI",
+          "property": "gpu.thermal.temperature.overTemperatureInfo"
+       }
+    )";
+
+    // failed Accessor from SelfTest
+    data_accessor::PropertyValue fail(uint32_t(1));
+    nlohmann::json jsonGpuOverTemp = nlohmann::json::parse(selftestGpuOverTemp);
+    data_accessor::DataAccessor failedGpuOverTemp(jsonGpuOverTemp);
+    // lets it save the device
+    std::string inputDevice{"GPU_SXM_4"};
+    failedGpuOverTemp.setDevice(inputDevice);
+    failedGpuOverTemp.setDataValue(fail); // input the failure data
+
+    // Accessor from Event Info
+    nlohmann::json eventInfoGpuOverJson =
+        nlohmann::json::parse(eventInfoGpuOverTemp);
+    data_accessor::DataAccessor eventInfoGpuOverTempAcc(eventInfoGpuOverJson);
+    data_accessor::CheckAccessor checkObj("GPU_SXM_[1-8]");
+    bool passed = checkObj.check(eventInfoGpuOverTempAcc, failedGpuOverTemp);
+    EXPECT_EQ(passed, true);
+    auto assertedData = checkObj.getAssertedDevices();
+    EXPECT_EQ(assertedData.size(), 1);
+    auto& assertedEvent = assertedData.at(0);
+    auto& device = assertedEvent.device;
+    EXPECT_EQ(device, inputDevice);
+    auto& index  = assertedEvent.deviceIndexTuple;
+    EXPECT_EQ(index, device_id::PatternIndex(4));
+}
+
+/**
+ * @brief Simulation of the Event Detection logic in event_detection.hpp
+ */
+TEST(CheckAccessor, Logic)
+{
+    auto eventInfo =
+        R"(
+      {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/inventory/system/processors/GPU_SXM_[1-8]",
+        "interface": "xyz.openbmc_project.Inventory.Item.Cpu.OperatingConfig",
+        "property": "MinSpeed",
+        "check": {
+          "equal": "0"
+        }
+      }
+    )";
+
+    auto pcTrigger =
+        R"(
+      {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/inventory/system/processors/GPU_SXM_5",
+        "interface": "xyz.openbmc_project.Inventory.Item.Cpu.OperatingConfig",
+        "property": "MinSpeed"
+      }
+    )";
+
+    auto cmdLine =
+        R"(
+       {
+        "type": "CMDLINE",
+        "executable": "echo",
+        "arguments": "AP0_BOOTCOMPLETE_TIMEOUT GPU_SXM_[1-8]",
+        "check": {
+          "equal": "AP0_BOOTCOMPLETE_TIMEOUT GPU_SXM_5"
+        }
+       }
+    )";
+
+    nlohmann::json jsonEventINfo = nlohmann::json::parse(pcTrigger);
+    data_accessor::PropertyValue vv(int32_t(0));
+    data_accessor::PropertyValue value(vv);
+    data_accessor::DataAccessor pcTriggerAcc(jsonEventINfo, value);
+
+    nlohmann::json jsonPcTrigger = nlohmann::json::parse(eventInfo);
+    data_accessor::DataAccessor eventTriggerAcc(jsonPcTrigger);
+
+    nlohmann::json jsonCmdLine = nlohmann::json::parse(cmdLine);
+    data_accessor::DataAccessor cmdLineAcc(jsonCmdLine);
+
+    std::unique_ptr<data_accessor::CheckAccessor>
+        checkObj(new data_accessor::CheckAccessor("GPU_SXM_[1-8]"));
+
+    checkObj->check(eventTriggerAcc, cmdLineAcc, pcTriggerAcc);
+    EXPECT_EQ(checkObj->passed(), true);
+}
+
+TEST(CheckAccessor, LogicDiffEventType)
+{
+    auto eventInfo =
+        R"(
+      {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/inventory/system/chassis/HGX_GPU_SXM_[1-8]",
+        "interface": "com.nvidia.SMPBI",
+        "property": "BackendErrorCode",
+        "check": {
+          "not_equal": "0"
+        }
+      }
+    )";
+
+    auto pcTrigger =
+        R"(
+      {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/inventory/system/chassis/HGX_GPU_SXM_5",
+        "interface": "om.nvidia.SMPBI",
+        "property": "BackendErrorCode"
+      }
+    )";
+
+    auto cmdLine =
+        R"(
+       {
+        "type": "CMDLINE",
+        "executable": "echo",
+        "arguments": "AP0_BOOTCOMPLETE_TIMEOUT GPU_SXM_[1-8]",
+        "check": {
+          "equal": "AP0_BOOTCOMPLETE_TIMEOUT GPU_SXM_5"
+        }
+       }
+    )";
+
+    nlohmann::json jsonEventTrigger = nlohmann::json::parse(eventInfo);
+    data_accessor::DataAccessor eventTriggerAcc(jsonEventTrigger);
+
+    data_accessor::PropertyValue vv(int32_t(2));
+    data_accessor::PropertyValue value(vv);
+    nlohmann::json jsonPcTrigger = nlohmann::json::parse(pcTrigger);
+    data_accessor::DataAccessor pcTriggerAcc(jsonPcTrigger, value);
+
+    nlohmann::json jsonCmdLine = nlohmann::json::parse(cmdLine);
+    data_accessor::DataAccessor cmdLineAcc(jsonCmdLine);
+
+    std::string deviceType{"ERoT_GPU_SXM_[1-8]"};
+
+    data_accessor::CheckAccessor checkObj(deviceType);
+    auto ret = checkObj.check(eventTriggerAcc, cmdLineAcc, pcTriggerAcc);
+    EXPECT_EQ(ret, true);
+    auto assertedData = checkObj.getAssertedDevices();
+    EXPECT_EQ(assertedData.size(), 1);
+    auto& assertedEvent = assertedData.at(0);
+    auto& device = assertedEvent.device;
+    EXPECT_EQ(device, std::string{"ERoT_GPU_SXM_5"});
+    auto& index  = assertedEvent.deviceIndexTuple;
+    EXPECT_EQ(index, device_id::PatternIndex(5));
+}

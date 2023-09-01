@@ -434,7 +434,7 @@ int main(int argc, char* argv[])
                     entry.first.c_str());
             }
         }
-        logs_wrn("finished bootup selftest\n");
+        logs_err("finished bootup selftest\n");
     });
 
     if (thread != nullptr)

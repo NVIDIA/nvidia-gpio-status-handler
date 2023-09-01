@@ -399,41 +399,49 @@ class EventDetection : public object::Object
             {
                 log_dbg("Standard Event Detection Case for event %s\n",
                         eventPtr->event.c_str());
-                data_accessor::CheckAccessor triggerCheck(deviceType);
-                if (!triggerCheck.check(eventPtr->trigger, pcTrigger))
+                std::unique_ptr<data_accessor::CheckAccessor>
+                    checkObj(new data_accessor::CheckAccessor(deviceType));
+
+                // eventPtr->trigger doesn't exist or pcTrigger is Boot Selftest
+                if (eventPtr->accessor == pcTrigger)
                 {
-                    log_dbg("Trigger check failed for event %s\n",
-                            eventPtr->event.c_str());
-                    if (pcTrigger.isTypeDbus())
-                    {
-                        continue;
-                    }
+                    checkObj->check(eventPtr->accessor, pcTrigger);
+                    log_dbg("Check=%d against event.accessor Event:'%s'\n",
+                              checkObj->passed(), eventPtr->event.c_str());
                 }
-                // accessor to reuse trigger data if they are the same
-                auto accessor = eventPtr->accessor;
-                if (accessor == pcTrigger)
+                else if (eventPtr->accessor.isEmpty())
                 {
-                    // avoids going again to dbus to get data
-                    accessor.setDataValue(pcTrigger.getDataValue());
+                    // Only eventPtr->trigger exists, check it
+                    checkObj->check(eventPtr->trigger, pcTrigger);
+                    log_dbg("Check=%d against event.trigger Event:'%s'\n",
+                            checkObj->passed(), eventPtr->event.c_str());
                 }
-                data_accessor::CheckAccessor accCheck(deviceType);
-                /* Note: accCheck uses info stored in triggerCheck
-                 *  1. the original trigger/dbusAcc
-                 *  2. Maybe needs triggerCheck asserted devices
-                 *      example the event "DRAM Contained ECC Error"
-                 */
-                accCheck.check(accessor, triggerCheck);
-                if (accCheck.getAssertedDevices().size() == 0)
+                else
+                {   // both event.trigger and event.accessor will be checked
+                    checkObj->check(eventPtr->trigger, eventPtr->accessor,
+                                    pcTrigger);
+                    log_dbg("Check=%d against both event.trigger and "
+                            "event.accessor Event:'%s'\n",
+                            checkObj->passed(), eventPtr->event.c_str());
+                }
+
+                auto check = checkObj.get();
+                if (check != nullptr && check->passed())
                 {
-                    log_dbg("Asserted device list for event %s is empty\n",
-                            eventPtr->event.c_str());
-                    continue;
+                    log_dbg("asserted Event:'%s' Accessor: %s\n",
+                             eventPtr->event.c_str(), ss.str().c_str());
+                    eventCandidateList.push_back(
+                        std::make_tuple(
+                            eventPtr, check->getAssertedDevices(),false));
                 }
-                eventCandidateList.push_back(std::make_tuple(
-                    eventPtr, accCheck.getAssertedDevices(), false));
+                else
+                {
+                    log_dbg("NOT asserted Event:'%s' Accessor: %s\n",
+                            eventPtr->event.c_str(), ss.str().c_str());
+                }
             }
         }
-        log_dbg("got total events : %lu\n", eventCandidateList.size());
+        log_dbg("total of asserted events = %u\n", eventCandidateList.size());
         return eventCandidateList;
     }
 

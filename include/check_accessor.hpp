@@ -94,6 +94,16 @@ class CheckAccessor
      */
     bool check(const DataAccessor& jsonAcc, const DataAccessor& dataAcc);
 
+    /**
+     * @brief Performs double check in sequence, joins 2 other check() versions
+     * @param jsonTrig The event.trigger
+     * @param jsonAcc The event.accessor
+     * @param dataAcc  The Accessor got from DUBS PropertyChange or SelfTest
+     * @return true if Checks match (all asserted)
+     */
+    bool check(const DataAccessor& jsonTrig, const DataAccessor& jsonAcc,
+               const DataAccessor& dataAcc);
+
     /** @brief [overloaded]
      *
      *    Uses the information from a previous CheckAccessor (event.trigger)

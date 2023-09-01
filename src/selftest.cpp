@@ -280,8 +280,7 @@ aml::RcCode Selftest::perform(const dat_traverse::Device& dev,
     auto fillTpRes =
         [](selftest::TestPointResult& tp, const std::string& expVal,
            const data_accessor::PropertyValue& readVal, const std::string& name,
-           data_accessor::DataAccessor& accessor,
-           const bool& doEventDetermination, auto& severity, bool isDevice) {
+           auto& severity, bool isDevice) {
             tp.targetName = name;
             tp.valExpected = expVal;
             tp.severity = severity;
@@ -300,11 +299,6 @@ aml::RcCode Selftest::perform(const dat_traverse::Device& dev,
                     (expVal.size() == 0)
                         ? true
                         : readVal == data_accessor::PropertyValue(expVal);
-            }
-
-            if (doEventDetermination && !tp.result)
-            {
-                event_detection::EventDetection::eventDiscovery(accessor, true);
             }
         };
 
@@ -357,17 +351,21 @@ aml::RcCode Selftest::perform(const dat_traverse::Device& dev,
                           (devEvalRes) ? data_accessor::PropertyValue(
                                              testPoint.expectedValue)
                                        : propertyValueResultFail,
-                          devName, acc, doEventDetermination,
-                          testPoint.severity, true);
+                          devName, testPoint.severity, true);
             }
             else
             {
                 acc.read(dev.name);
                 fillTpRes(tmpTestPointResult, testPoint.expectedValue,
-                          acc.getDataValue(), tp.first, acc,
-                          doEventDetermination, testPoint.severity, false);
+                          acc.getDataValue(), tp.first, testPoint.severity,
+                          false);
             }
             tmpLayerReport.insert(tmpLayerReport.begin(), tmpTestPointResult);
+            if (doEventDetermination && !tmpTestPointResult.result)
+            {
+                acc.setDevice(dev.name);
+                event_detection::EventDetection::eventDiscovery(acc, true);
+            }
         }
     }
     reportRes[dev.name] = tmpDeviceReport;

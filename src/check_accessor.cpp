@@ -59,21 +59,80 @@ bool CheckAccessor::check(const DataAccessor& jsonAcc, // template Accessor
                           const DataAccessor& dataAcc) // trigger  Accessor
 {
     auto tempAccData = dataAcc;
+     _lastStatus = NotPassed;
     // both are DBUS, as dataAcc is always DBUS,
     // calls util::determineDeviceIndex only if device_type also has range
-    if (jsonAcc.isTypeDbus() && util::existsRange(_devIdData.pattern))
+    if (jsonAcc.isTypeDbus())
     {
-        // get the real device index (event multiple devices)
-        auto templateAccessorObj = jsonAcc.getDbusObjectPath();
-        auto triggerAccessorObj = dataAcc.getDbusObjectPath();
-        if (!templateAccessorObj.empty() && !triggerAccessorObj.empty())
+        if (util::existsRange(_devIdData.pattern))
         {
-            device_id::DeviceIdPattern jsonObjPattern(templateAccessorObj);
-            _devIdData.index =
-                util::determineDeviceIndex(jsonObjPattern, triggerAccessorObj);
+            // get the real device index (event multiple devices)
+            auto templateAccessorObj = jsonAcc.getDbusObjectPath();
+            auto triggerAccessorObj = dataAcc.getDbusObjectPath();
+            if (!templateAccessorObj.empty() && !triggerAccessorObj.empty())
+            {
+                device_id::DeviceIdPattern jsonObjPattern(templateAccessorObj);
+                _devIdData.index =
+                 util::determineDeviceIndex(jsonObjPattern, triggerAccessorObj);
+            }
+        }
+    }
+    else if (dataAcc.hasData() && jsonAcc.isTypeCmdline())
+    {
+        device_id::DeviceIdPattern argPattern(jsonAcc.getArguments());
+        auto index =
+            util::determineDeviceIndex(argPattern, dataAcc.getArguments());
+        // device from event.device_type
+        auto device = util::determineDeviceName(_devIdData.pattern, index);
+        int indexInt = index.dim() > 0 ? index[0] : util::InvalidDeviceId;
+        return subCheck(jsonAcc, tempAccData, device, indexInt);
+    }
+    else if (dataAcc.hasData() && jsonAcc.isTypeDeviceCoreApi())
+    {
+        auto device = dataAcc.getDevice();
+        if (!device.empty())
+        {
+            auto deviceId = util::getDeviceId(device);
+            return subCheck(jsonAcc, tempAccData, device, deviceId);
+        }
+        else
+        {
+            std::stringstream ss;
+            dataAcc.print(ss);
+            log_err("Device unknown for the Accessor: %s\n", ss.str().c_str());
         }
     }
     return privCheck(jsonAcc, tempAccData);
+}
+
+bool CheckAccessor::check(const DataAccessor& jsonTrig,
+                          const DataAccessor& jsonAcc,
+                          const DataAccessor& dataAcc)
+{
+    auto eventType = this->_devIdData.pattern.pattern();
+    CheckAccessor triggerCheck(eventType);
+    triggerCheck.check(jsonTrig, dataAcc);
+    if (triggerCheck.passed())
+    {
+        CheckAccessor accessorCheck(eventType);
+        auto accessorJsonAcc = jsonAcc;
+        // accessorJsonAcc contains check criteria and will also contain data
+        if (accessorJsonAcc == dataAcc)
+        {
+            // avoids calling Accessor::read()
+            accessorJsonAcc.setDataValue(jsonAcc.getDataValue());
+        }
+        // else Accessor::read() will called for accessorJsonAcc
+        accessorCheck.check(accessorJsonAcc, triggerCheck);
+        // save current check() result from accessorCheck
+        *this = accessorCheck;
+    }
+    else
+    {
+        // save current check() result from triggerCheck
+        *this = triggerCheck;
+    }
+    return passed();
 }
 
 bool CheckAccessor::privCheck(const DataAccessor& jsonAcc,
@@ -237,6 +296,10 @@ bool CheckAccessor::subCheck(const DataAccessor& jsonAcc, DataAccessor& dataAcc,
     {
         ret = true;
         buildSingleAssertedDeviceName(dataAcc, dev2Read, deviceId);
+    }
+    if (ret == true)
+    {
+        _lastStatus = Passed;
     }
     return ret;
 }

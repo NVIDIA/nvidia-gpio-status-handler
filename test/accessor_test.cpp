@@ -580,3 +580,38 @@ TEST(DataAccessor, CopyOperator)
     EXPECT_EQ(destination.getDataValue().isValidInteger(), true);
     EXPECT_EQ(destination.getDataValue().getInteger(), 1);
 }
+
+TEST(DataAccessor, CompareDeviceId)
+{
+
+    auto failedNvOverTemp =
+        R"(
+       {
+          "type": "DeviceCoreAPI",
+          "device_id": "range",
+          "property": "nvswitch.thermal.temperature.overTemperatureInfo",
+          "check": {
+           "equal": "1"
+          }
+       }
+    )";
+    nlohmann::json failedJsonOverTemp = nlohmann::json::parse(failedNvOverTemp);
+    data_accessor::DataAccessor accNvFailOverTemp(failedJsonOverTemp);
+
+    auto goodNvOverTemp =
+        R"(
+       {
+          "type": "DeviceCoreAPI",
+          "property": "nvswitch.thermal.temperature.overTemperatureInfo",
+          "check": {
+           "equal": "1"
+          }
+       }
+    )";
+
+    nlohmann::json goodJsonNvLink = nlohmann::json::parse(goodNvOverTemp);
+    data_accessor::DataAccessor accGoodNvOverTemp(goodJsonNvLink);
+
+    EXPECT_EQ(accNvFailOverTemp == accGoodNvOverTemp, true);
+    EXPECT_EQ(accGoodNvOverTemp == accNvFailOverTemp, true);
+}
