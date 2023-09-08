@@ -1,0 +1,65 @@
+#!/bin/bash
+
+# Mockup wrappers per the given dat.json.
+# Backup the original wrappers into $bkp folder for recovery.
+
+dat=$1
+[ -z "$dat" ] && printf "<usage>\n  $0 <dat.json>\n" && exit 1
+
+tmp=/tmp/mockup_wrapper.lst
+bkp=/tmp/mw_bkp/
+
+state="cmd"
+echo "" > "$tmp"
+cat $dat | grep executable -A3 | while read line; do
+        [ -z "$line" ] && continue
+        [ "${line::2}" = "--" ] && continue
+        [ "${line:-2}" = "}," ] && continue
+
+        echo "D|line=[$line]"
+        key=`echo $line | cut -d'"' -f2`
+        val=`echo $line | cut -d'"' -f4`
+        echo "D|[\"$key\"=\"$val\"]"
+
+        case $state in
+                "cmd")
+                        if [ "$key" != "executable" ]; then
+                                echo "Wrong state [$state:$key]!"
+                        else
+                                state="arg"
+                                cmd=$val
+                        fi;;
+                "arg")
+                        if [ "$key" != "arguments" ]; then
+                                echo "Wrong state [$state:$key]!"
+                        else
+                                state="exp"
+                                arg="$val"
+                        fi;;
+                "exp")
+                        if [ "$key" != "expected_value" ]; then
+                                echo "Wrong state [$state:$key]!"
+                        else
+                                state="cmd"
+                                str=$val
+                                echo "D|[\"$cmd\", \"$arg\", \"$str\"]"
+                                [ -z "$cmd" ] && continue
+                                [ -z "$arg" ] && continue
+                                [ -z "$str" ] && continue
+
+                                wrapper=`which "$cmd"`
+                                if ! grep "$cmd" "$tmp" &>/dev/null; then
+                                        echo "$cmd" >> "$tmp"
+                                        mkdir -p "$bkp"
+                                        cp -fnr --parents "$wrapper" "${bkp}/"
+                                        echo "#!/bin/bash" > $wrapper
+                                else
+                                        cnt=" = \"$arg\" ]"
+                                        echo "D|[$cnt]"
+                                        grep "$cnt" $wrapper &>/dev/null && continue
+                                        echo "[ \"\$*\"$cnt && echo \"$str\" && exit 0" >> $wrapper
+                                fi
+                        fi;;
+        esac
+done
+
