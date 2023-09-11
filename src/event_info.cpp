@@ -694,7 +694,11 @@ std::string EventNode::getStringifiedDeviceType() const
 
 util::DeviceIdData EventNode::getDataDeviceType() const
 {
-    device_id::PatternIndex indexTuple = *deviceIndexTuple;
+    device_id::PatternIndex indexTuple;
+    if (deviceIndexTuple.has_value())
+    {
+         indexTuple = *deviceIndexTuple;
+    }
     return util::DeviceIdData(getStringifiedDeviceType(), indexTuple);
 }
 
@@ -706,6 +710,62 @@ std::string EventNode::getMainDeviceType() const
             "No main device type associated with this event");
     }
     return this->deviceTypes.at(0);
+}
+
+std::string EventNode::getFullDeviceName(device_id::PatternIndex& index) const
+{
+    std::string fullDevice{""};
+    if (deviceTypes.size() > 0)
+    {
+        device_id::DeviceIdPattern devTypePattern(getStringifiedDeviceType());
+        if (devTypePattern.dim() == index.dim() ||
+            (devTypePattern.dim() == 0 && index.dim() == 1 && index[0] == 0))
+        {
+              fullDevice = devTypePattern.eval(index);
+        }
+        else
+        if (devTypePattern.dim() > 0 && devTypePattern.dim() < index.dim())
+        {
+          // device_type such as "PCIeSwitch_0/Down_[0-3]" must work for both
+          // device_id::DeviceIdPattern(x) and device_id::DeviceIdPattern(0,x)
+              device_id::PatternIndex indexAdjusted;
+              for (unsigned dim = 1; dim <= devTypePattern.dim(); ++dim)
+              {
+                indexAdjusted.set(dim -1, index[dim]);
+              }
+              fullDevice = devTypePattern.eval(indexAdjusted);
+        }
+    }
+    return fullDevice;
+}
+
+std::string EventNode::getFullDeviceName() const
+{
+    device_id::PatternIndex index(0);
+    if (this->deviceIndexTuple.has_value())
+    {
+        index = *(this->deviceIndexTuple);
+    }
+    return getFullDeviceName(index);
+}
+
+std::vector<std::string>
+EventNode::getFullDeviceNameSeparated(device_id::PatternIndex& index) const
+{
+    std::vector<std::string> fullDevices;
+    auto fullDeviceNameSlash = getFullDeviceName(index);
+    return EventNode::separateFullDeviceName(fullDeviceNameSlash);
+}
+
+std::vector<std::string>
+    EventNode::separateFullDeviceName(const std::string& fullName)
+{
+    std::vector<std::string> fullDevices;
+    if (!fullName.empty())
+    {
+         boost::split(fullDevices, fullName, boost::is_any_of("/"));
+    }
+    return fullDevices;
 }
 
 // marcinw:TODO: solve the issue of 'getCategories', 'getStringCategories'

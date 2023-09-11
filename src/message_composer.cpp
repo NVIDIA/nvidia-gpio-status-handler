@@ -145,7 +145,7 @@ bool MessageComposer::createLog(event_info::EventNode& event)
 
     auto pNamespace = getPhosphorLoggingNamespace(event);
 
-    method.append(std::array<std::pair<std::string, std::string>, 9>(
+    method.append(std::array<std::pair<std::string, std::string>, 10>(
         {{{"xyz.openbmc_project.Logging.Entry.Resolution",
            event.getResolution()},
           {"REDFISH_MESSAGE_ID", event.getMessageId()},
@@ -154,6 +154,7 @@ bool MessageComposer::createLog(event_info::EventNode& event)
           {"REDFISH_MESSAGE_ARGS", messageArgs},
           {"REDFISH_ORIGIN_OF_CONDITION", originOfCondition},
           {"DEVICE_NAME", event.device},
+          {"FULL_DEVICE_NAME", event.getFullDeviceName()},
           {"EVENT_NAME", event.event},
           {"RECOVERY_TYPE", !event.recovery_accessor.isEmpty()
                                 ? "property_change"
@@ -161,7 +162,7 @@ bool MessageComposer::createLog(event_info::EventNode& event)
 
     try
     {
-        auto reply = bus.call(method);
+        bus.call(method);
         return true;
     }
     catch (const sdbusplus::exception::SdBusError& e)

@@ -385,7 +385,7 @@ aml::RcCode Selftest::performEntireTree(ReportResult& reportRes,
             try
             {
                 event_detection::EventDetection::resolveDeviceLogs(
-                    dev.second.name, std::string(""));
+                     std::string(""), dev.second.name);
             }
             catch (std::runtime_error& e)
             {

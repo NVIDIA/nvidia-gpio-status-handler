@@ -559,6 +559,22 @@ class EventNode : public object::Object
      */
     static bool getIsAccessorInterestingToEvent(const EventNode& event,
         const data_accessor::DataAccessor& otherAccessor);
+
+    /** @returns The full (single/multi) device name for the @a index
+     *  @param [in] index another index which can be different from the Event
+     */
+    std::string getFullDeviceName(device_id::PatternIndex& index) const;
+
+    /** @returns The current full device name based on internal device index */
+    std::string getFullDeviceName() const;
+
+    /** @returns the full device name not joined by a separator such as '/' */
+    std::vector<std::string> getFullDeviceNameSeparated(
+        device_id::PatternIndex& index) const;
+
+    /** just separates a full device name @sa getFullDeviceName() */
+    static std::vector<std::string>
+        separateFullDeviceName(const std::string& fullName);
 };
 
 using EventMap = std::map<std::string, std::vector<event_info::EventNode>>;

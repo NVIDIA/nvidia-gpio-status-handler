@@ -17,6 +17,7 @@
 #include "threadpool_manager.hpp"
 
 #include <boost/container/flat_map.hpp>
+#include <boost/algorithm/string/join.hpp>
 #include <dbus_log_utils.hpp>
 #include <dbus_utility.hpp>
 #include <sdbusplus/asio/object_server.hpp>
@@ -27,6 +28,7 @@
 #include <string>
 #include <thread>
 #include <variant>
+#include <unordered_set>
 
 #ifndef PROPERTIESCHANGED_QUEUE_SIZE
 #define PROPERTIESCHANGED_QUEUE_SIZE 100
@@ -34,8 +36,6 @@
 
 namespace event_detection
 {
-
-extern std::map<std::string, std::vector<std::string>> eventsDetected;
 extern std::unique_ptr<PcQueueType> queue;
 
 extern event_info::EventTriggerView eventTriggerView;
@@ -134,28 +134,6 @@ class EventDetection : public object::Object
         startEventDetection(EventDetection* evtDet,
                             std::shared_ptr<sdbusplus::asio::connection> conn);
     /**
-     * @brief Perform recovery actions for a fault HMC recovers from.
-     *
-     * @param eventName
-     * @param deviceType
-     */
-    static void recoverFromFault(const std::string& eventName,
-                                 const std::string& deviceType)
-    {
-        std::string eventKey = eventName + deviceType;
-        if (eventsDetected.count(eventKey) > 0)
-        {
-            for (const auto& dev : eventsDetected.at(eventKey))
-            {
-                logs_dbg("Performing recovery on device %s for event %s\n",
-                         dev.c_str(), eventName.c_str());
-                resolveDeviceLogs(dev, eventName);
-            }
-            eventsDetected.at(eventKey).clear();
-        }
-    }
-
-    /**
      * @brief  Reset device health on DBus back to OK
      *
      * @param devId
@@ -238,17 +216,22 @@ class EventDetection : public object::Object
      * @brief Update recovered device's health/healthrollup and log's Resolved
      * DBus property
      *
-     * @param devId
      * @param eventName
+     *
+     * @param fullDeviceName the full device considering multi devices
+     *    example: "PCIeSwitch_0/Down_3" or just "PCIeSwitch_0" if single device
      */
-    static void resolveDeviceLogs(const std::string& devId,
-                                  const std::string& eventName)
+    static void resolveDeviceLogs(const std::string& eventName,
+                                  const std::string& fullDeviceName)
     {
         auto bus = sdbusplus::bus::new_default_system();
         dbus::utility::ManagedObjectType result;
+        std::string devId{""};
+        auto deviceNames = event_info::EventNode::separateFullDeviceName(
+            fullDeviceName);
         try
         {
-
+            devId = deviceNames.at(0);
             dbus::DelayedMethod method(bus, "xyz.openbmc_project.Logging",
                                        "/xyz/openbmc_project/logging",
                                        "xyz.openbmc_project.Logging.Namespace",
@@ -266,7 +249,7 @@ class EventDetection : public object::Object
         }
 
         PROFILING_SWITCH(selftest::TsLatcher TS(
-            "resolveDeviceLogs-" + devId + "-" + eventName + "-logsNumber-" +
+            "resolveDeviceLogs-" + fullDeviceName + "-" + eventName + "-logsNumber-" +
             std::to_string(result.size())));
 
         if (eventName.length() == 0)
@@ -293,30 +276,68 @@ class EventDetection : public object::Object
                     }
                 }
             }
-
             std::string messageArgs;
             std::string addlEventName;
-            if (additionalDataRaw != nullptr)
+            std::string addDeviceName;
+            std::string addFullDeviceName;
+            if (additionalDataRaw == nullptr)
             {
-                redfish::AdditionalData additional(*additionalDataRaw);
-                if (additional.count("REDFISH_MESSAGE_ARGS") > 0)
+                continue;
+            }
+            redfish::AdditionalData additional(*additionalDataRaw);
+
+            if (additional.count("REDFISH_MESSAGE_ARGS") > 0)
+            {
+                messageArgs = additional["REDFISH_MESSAGE_ARGS"];
+            }
+            if (additional.count("EVENT_NAME") > 0)
+            {
+                addlEventName = additional["EVENT_NAME"];
+            }
+            if (additional.count("DEVICE_NAME") > 0)
+            {
+                addDeviceName = additional["DEVICE_NAME"];
+            }
+            if (additional.count("FULL_DEVICE_NAME") > 0)
+            {
+                addFullDeviceName = additional["FULL_DEVICE_NAME"];
+            }
+            // both eventName and devId must match
+            // corresponding AdditionalData fields
+            if (eventName != addlEventName || addDeviceName.empty() ||
+                devId != addDeviceName)
+            {
+                continue;
+            }
+
+            bool foundAllDevices = fullDeviceName == addFullDeviceName;
+            // if addFullDeviceName is empty foundAllDevices is false
+            if (addFullDeviceName.empty() && deviceNames.size() > 1)
+            {
+                // case where new AML version performing entries generated
+                //  by an old AML version which does not save FULL_DEVICE_NAME
+                auto reverseCounter = deviceNames.size() -1;
+                // main device devId was already checked, check only others
+                foundAllDevices = true;
+                for (; reverseCounter > 0; reverseCounter--)
                 {
-                    messageArgs = additional["REDFISH_MESSAGE_ARGS"];
-                }
-                if (additional.count("EVENT_NAME") > 0)
-                {
-                    addlEventName = additional["EVENT_NAME"];
-                }
-                if (eventName == addlEventName &&
-                    messageArgs.find(devId) != std::string::npos)
-                {
-                    logs_err("Resolving log %s for device %s for event %s\n",
-                             objectPath.first.str.c_str(), devId.c_str(),
-                             eventName.c_str());
-                    setLogEntryResolved(objectPath.first.str, bus);
+                    if (messageArgs.find(deviceNames.at(reverseCounter)) ==
+                        std::string::npos)
+                    {
+                        foundAllDevices = false;
+                        break;
+                    }
                 }
             }
-        }
+            if (foundAllDevices)
+            {
+
+                logs_err("Resolving log %s for device '%s' for event '%s'\n",
+                         objectPath.first.str.c_str(), fullDeviceName.c_str(),
+                         eventName.c_str());
+                setLogEntryResolved(objectPath.first.str, bus);
+            }
+        } // for all objects/entries from phosphor logging
     }
 
     /**
@@ -334,7 +355,13 @@ class EventDetection : public object::Object
         std::stringstream ss;
         pcTrigger.print(ss);
         log_dbg("In Detect Event Method for PC trigger %s\n", ss.str().c_str());
+        std::vector<std::shared_ptr<event_info::EventNode>>  eventsOnlyPattern;
 
+        std::unordered_set<std::string> recoveredEventDevices;
+        std::unordered_set<std::string> rootCauseTracerDevice;
+        unsigned recoveredCnt = 0;
+
+        // this loop performs all recoveries first
         for (auto& eventPtr : possibleEventPatternList)
         {
             auto deviceType = eventPtr->getStringifiedDeviceType();
@@ -351,97 +378,129 @@ class EventDetection : public object::Object
                 }
                 else
                 {
-                    log_dbg(
-                        "Recovery Case: performing recovery actions for event %s\n",
-                        eventPtr->event.c_str());
-                    log_dbg("Checking content of events detected map\n");
-                    for (const auto& e : eventsDetected)
-                    {
-                        log_dbg("Event + devtype in event map: %s\n",
-                                e.first.c_str());
-                        for (const auto& dev : e.second)
-                        {
-                            log_dbg("Dev in map for event+devtype %s: %s\n",
-                                    e.first.c_str(), dev.c_str());
-                        }
-                    }
-                    log_dbg(
-                        "Recovering from property-changed signal fault %s\n",
-                        eventPtr->event.c_str());
+                    log_dbg("Recovery Case: performing recovery actions for "
+                            "event %s\n", eventPtr->event.c_str());
 
                     PROFILING_SWITCH(selftest::TsLatcher TS(
                         "event-detection-recovery-flow-" + eventPtr->event +
                         "-" + eventPtr->getMainDeviceType()));
 
-                    for (const auto& entry : recoveryCheck.getAssertedDevices())
+                    for (auto& entry : recoveryCheck.getAssertedDevices())
                     {
-                        log_err("Asserted Recovery Device: %s\n",
-                                entry.device.c_str());
-                    }
-                    eventCandidateList.push_back(std::make_tuple(
-                        eventPtr, recoveryCheck.getAssertedDevices(), true));
-
-                    try
-                    {
-                        recoverFromFault(eventPtr->event,
-                                         eventPtr->getMainDeviceType());
-                    }
-                    catch (std::runtime_error& e)
-                    {
-                        log_err(
-                            "Failed to recover from fault %s on %s due to %s. Corresponding log may not have been resolved.\n",
-                            eventPtr->event.c_str(), eventPtr->device.c_str(),
-                            e.what());
+                        // for multi devices, example:  "PCIeSwitch_0/Down_3"
+                        auto fullDeviceName = eventPtr->getFullDeviceName(
+                            entry.deviceIndexTuple);
+                        if (fullDeviceName.empty())
+                        {
+                            log_err("Empty Device Name Event: '%s'\n",
+                                    eventPtr->event.c_str());
+                            continue;
+                        }
+                        auto eventFullKey = fullDeviceName + eventPtr->event;
+                        if (recoveredEventDevices.count(eventFullKey) == 0)
+                        {
+                            recoveredEventDevices.insert(eventFullKey);
+                            // "PCIeSwitch_0" if
+                            //  fullDeviceName == "PCIeSwitch_0/Down_3
+                            auto& mainDeviceKey = eventPtr->device;
+                            if (rootCauseTracerDevice.count(mainDeviceKey) == 0)
+                            {
+                                rootCauseTracerDevice.insert(mainDeviceKey);
+                                eventCandidateList.push_back(std::make_tuple(
+                                   eventPtr, recoveryCheck.getAssertedDevices(),
+                                   true));
+                            }
+                            else
+                            {
+                                log_dbg("skipping, RootCauseTracer already set "
+                                        "for device %s", mainDeviceKey.c_str());
+                            }
+                            log_err("doing Recovery Device: '%s' Event: '%s'\n",
+                               fullDeviceName.c_str(), eventPtr->event.c_str());
+                            try
+                            {
+                                // devices.at(0) =  Phosphor logging namespace
+                                recoveredCnt++;
+                                resolveDeviceLogs(eventPtr->event, fullDeviceName);
+                            }
+                            catch (std::runtime_error& e)
+                            {
+                                log_err(
+                                    "Failed to recover from fault %s on %s due "
+                                    "to %s. Corresponding log may not have been"
+                                    " resolved.\n", eventPtr->event.c_str(),
+                                     fullDeviceName.c_str(),
+                                    e.what());
+                            }
+                        }
+                        else
+                        {
+                            log_dbg("skipping, already done Recovery "
+                                    "Device:'%s' Event:'%s'\n",
+                               fullDeviceName.c_str(), eventPtr->event.c_str());
+                        }
                     }
                 }
             }
             if (!checkForRecovery || !passedRecoveryCheck)
             {
-                log_dbg("Standard Event Detection Case for event %s\n",
-                        eventPtr->event.c_str());
-                std::unique_ptr<data_accessor::CheckAccessor>
-                    checkObj(new data_accessor::CheckAccessor(deviceType));
-
-                // eventPtr->trigger doesn't exist or pcTrigger is Boot Selftest
-                if (eventPtr->accessor == pcTrigger)
-                {
-                    checkObj->check(eventPtr->accessor, pcTrigger);
-                    log_dbg("Check=%d against event.accessor Event:'%s'\n",
-                              checkObj->passed(), eventPtr->event.c_str());
-                }
-                else if (eventPtr->accessor.isEmpty())
-                {
-                    // Only eventPtr->trigger exists, check it
-                    checkObj->check(eventPtr->trigger, pcTrigger);
-                    log_dbg("Check=%d against event.trigger Event:'%s'\n",
-                            checkObj->passed(), eventPtr->event.c_str());
-                }
-                else
-                {   // both event.trigger and event.accessor will be checked
-                    checkObj->check(eventPtr->trigger, eventPtr->accessor,
-                                    pcTrigger);
-                    log_dbg("Check=%d against both event.trigger and "
-                            "event.accessor Event:'%s'\n",
-                            checkObj->passed(), eventPtr->event.c_str());
-                }
-
-                auto check = checkObj.get();
-                if (check != nullptr && check->passed())
-                {
-                    log_dbg("asserted Event:'%s' Accessor: %s\n",
-                             eventPtr->event.c_str(), ss.str().c_str());
-                    eventCandidateList.push_back(
-                        std::make_tuple(
-                            eventPtr, check->getAssertedDevices(),false));
-                }
-                else
-                {
-                    log_dbg("NOT asserted Event:'%s' Accessor: %s\n",
-                            eventPtr->event.c_str(), ss.str().c_str());
-                }
+                eventsOnlyPattern.push_back(eventPtr);
             }
         }
-        log_dbg("total of asserted events = %u\n", eventCandidateList.size());
+        auto rootCauseTracerCnt = eventCandidateList.size();
+
+        // now perform the check only for events, recoveries already performed
+        for (auto& eventPtr : eventsOnlyPattern)
+        {
+            auto deviceType = eventPtr->getStringifiedDeviceType();
+
+            log_dbg("Standard Event Detection Case for event %s\n",
+                    eventPtr->event.c_str());
+            std::unique_ptr<data_accessor::CheckAccessor>
+                checkObj(new data_accessor::CheckAccessor(deviceType));
+
+            // eventPtr->trigger doesn't exist or pcTrigger is Boot Selftest
+            if (eventPtr->accessor == pcTrigger)
+            {
+                checkObj->check(eventPtr->accessor, pcTrigger);
+                log_dbg("Check=%d against event.accessor Event:'%s'\n",
+                        checkObj->passed(), eventPtr->event.c_str());
+            }
+            else if (eventPtr->accessor.isEmpty())
+            {
+                // Only eventPtr->trigger exists, check it
+                checkObj->check(eventPtr->trigger, pcTrigger);
+                log_dbg("Check=%d against event.trigger Event:'%s'\n",
+                        checkObj->passed(), eventPtr->event.c_str());
+            }
+            else
+            {   // both event.trigger and event.accessor will be checked
+                checkObj->check(eventPtr->trigger, eventPtr->accessor,
+                                pcTrigger);
+                log_dbg("Check=%d against both event.trigger and "
+                        "event.accessor Event:'%s'\n",
+                        checkObj->passed(), eventPtr->event.c_str());
+            }
+
+            auto check = checkObj.get();
+            if (check != nullptr && check->passed())
+            {
+                log_dbg("asserted Event:'%s' Accessor: %s\n",
+                        eventPtr->event.c_str(), ss.str().c_str());
+                eventCandidateList.push_back(
+                    std::make_tuple(
+                        eventPtr, check->getAssertedDevices(),false));
+            }
+            else
+            {
+                log_dbg("NOT asserted Event:'%s' Accessor: %s\n",
+                        eventPtr->event.c_str(), ss.str().c_str());
+            }
+        }
+
+        auto assertedCnt = eventCandidateList.size() - rootCauseTracerCnt;
+        log_dbg("[total] recovered=%u asserted=%u rootCauseTracers=%u\n",
+                  recoveredCnt, assertedCnt, rootCauseTracerCnt);
         return eventCandidateList;
     }
 

@@ -7,6 +7,31 @@
 
 #include "gmock/gmock.h"
 
+static  void create_event_by_device_type(event_info::EventNode& ev,
+                                        const std::string& deviceType)
+{
+    nlohmann::json j;
+    j["event"] = "Event0";
+    j["device_type"] = deviceType;
+    j["sub_type"] = "";
+    j["severity"] = "Critical";
+    j["resolution"] = "Contact NVIDIA Support";
+    j["redfish"]["message_id"] = "ResourceEvent.1.0.ResourceErrorsDetected";
+    j["redfish"]["message_args"]["patterns"] = {"p1", "p2"};
+    j["redfish"]["message_args"]["parameters"] = nlohmann::json::array();
+    j["telemetries"] = {"t0", "t1"};
+    j["trigger_count"] = 0;
+    j["event_trigger"]["metadata"] = "metadata";
+    j["event_trigger"]["type"] = "DBUS";
+    j["action"] = "do something";
+    j["event_counter_reset"]["type"] = "type";
+    j["event_counter_reset"]["metadata"] = "metadata";
+    j["accessor"]["metadata"] = "metadata";
+    j["accessor"]["type"] = "DBUS";
+    j["value_as_count"] = false;
+    ev.loadFrom(j);
+}
+
 static bool setup_event_cnt_test(event_info::EventNode& ev,
                                  int tested_trigger_count,
                                  const std::string& device_name)
@@ -753,4 +778,103 @@ TEST(CheckAccessor, LogicDiffEventType)
     EXPECT_EQ(device, std::string{"ERoT_GPU_SXM_5"});
     auto& index  = assertedEvent.deviceIndexTuple;
     EXPECT_EQ(index, device_id::PatternIndex(5));
+}
+
+
+TEST(EventDeviceType, FullDeviceName)
+{
+    std::string deviceType{"PCIeSwitch_0"};
+    event_info::EventNode event("ev");
+    create_event_by_device_type(event, deviceType);
+    // there is no index yet
+    EXPECT_EQ(event.getDataDeviceType().index.dim(), 0);
+    EXPECT_EQ(event.getFullDeviceName(), deviceType);
+
+    event.setDeviceIndexTuple(device_id::PatternIndex(0));
+    // now there is an index
+    EXPECT_EQ(event.getDataDeviceType().index.dim(), 1);
+    EXPECT_EQ(event.getFullDeviceName(), deviceType);
+
+    deviceType = "GPU_[1-8]";
+    event_info::EventNode gpu("gpu");
+    create_event_by_device_type(gpu, deviceType);
+    gpu.setDeviceIndexTuple(device_id::PatternIndex(3));
+    EXPECT_EQ(gpu.getFullDeviceName(), "GPU_3");
+
+    deviceType = "PCIeSwitch_0/Down[0-3]";
+    event_info::EventNode down("down");
+    create_event_by_device_type(down, deviceType);
+    down.setDeviceIndexTuple(device_id::PatternIndex(3));
+    EXPECT_EQ(down.getFullDeviceName(), "PCIeSwitch_0/Down3");
+
+    deviceType = "NVSwitch_[0-3]/NVLink_[0-17]";
+    event_info::EventNode nvlink("nvlink");
+    create_event_by_device_type(nvlink, deviceType);
+    nvlink.setDeviceIndexTuple(device_id::PatternIndex(3, 15));
+    EXPECT_EQ(nvlink.getFullDeviceName(), "NVSwitch_3/NVLink_15");
+
+    deviceType = "NVSwitch_[0|0-3]/NVLink_[1|0-17]";
+    event_info::EventNode nvlinkSpec("nvlinkSpec");
+    create_event_by_device_type(nvlinkSpec, deviceType);
+    nvlinkSpec.setDeviceIndexTuple(device_id::PatternIndex(3, 15));
+    EXPECT_EQ(nvlinkSpec.getFullDeviceName(), "NVSwitch_3/NVLink_15");
+}
+
+
+TEST(EventDeviceType, getFullDeviceNameSeparated)
+{
+    std::string deviceType{"PCIeSwitch_0"};
+    std::vector<std::string> deviceNames;
+
+    event_info::EventNode event("ev");
+    create_event_by_device_type(event, deviceType);
+    // there is no index yet
+    EXPECT_EQ(event.getDataDeviceType().index.dim(), 0);
+    device_id::PatternIndex  eventIndex(0);
+    deviceNames = event.getFullDeviceNameSeparated(eventIndex);
+    EXPECT_EQ(deviceNames.size(), 1);
+    if (deviceNames.size() == 1)
+    {
+        EXPECT_EQ(deviceNames.at(0), deviceType);
+    }
+
+    deviceType = "GPU_[1-8]";
+    event_info::EventNode gpu("gpu");
+    create_event_by_device_type(gpu, deviceType);
+    device_id::PatternIndex gpuIndex(3);
+    EXPECT_EQ(gpu.getFullDeviceNameSeparated(gpuIndex).size(), 1);
+    EXPECT_EQ(gpu.getFullDeviceNameSeparated(gpuIndex).at(0), "GPU_3");
+
+    deviceType = "PCIeSwitch_0/Down_[0-3]";
+    event_info::EventNode down("down");
+    create_event_by_device_type(down, deviceType);
+    device_id::PatternIndex downIndex(3);
+    auto devices = down.getFullDeviceNameSeparated(downIndex);
+    EXPECT_EQ(devices.size(), 2);
+    EXPECT_EQ(devices.at(0), "PCIeSwitch_0");
+    EXPECT_EQ(devices.at(1), "Down_3");
+
+    device_id::PatternIndex downIndexComplete(0,2);
+    devices = down.getFullDeviceNameSeparated(downIndexComplete);
+    EXPECT_EQ(devices.size(), 2);
+    EXPECT_EQ(devices.at(0), "PCIeSwitch_0");
+    EXPECT_EQ(devices.at(1), "Down_2");
+
+    deviceType = "NVSwitch_[0-3]/NVLink_[0-17]";
+    event_info::EventNode nvlink("nvlink");
+    create_event_by_device_type(nvlink, deviceType);
+    device_id::PatternIndex nvIndex(3, 15);
+    devices = nvlink.getFullDeviceNameSeparated(nvIndex);
+    EXPECT_EQ(devices.size(), 2);
+    EXPECT_EQ(devices.at(0), "NVSwitch_3");
+    EXPECT_EQ(devices.at(1), "NVLink_15");
+
+    deviceType = "NVSwitch_[0|0-3]/NVLink_[1|0-17]";
+    event_info::EventNode nvlinkSpec("nvlinkSpec");
+    create_event_by_device_type(nvlinkSpec, deviceType);
+    device_id::PatternIndex nvIndexSpec(3, 15);
+    devices = nvlinkSpec.getFullDeviceNameSeparated(nvIndexSpec);
+    EXPECT_EQ(devices.size(), 2);
+    EXPECT_EQ(devices.at(0), "NVSwitch_3");
+    EXPECT_EQ(devices.at(1), "NVLink_15");
 }

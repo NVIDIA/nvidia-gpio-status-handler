@@ -31,11 +31,6 @@ namespace event_detection
  */
 static EventDetection* eventDetectionPtr = nullptr;
 
-/**
- * @brief keeps track of events that have been detected
- */
-std::map<std::string, std::vector<std::string>> eventsDetected;
-
 std::unique_ptr<ThreadpoolManager> threadpoolManager;
 
 std::unique_ptr<PcQueueType> queue;
@@ -82,13 +77,13 @@ void EventDetection::workerThreadProcessEvents()
                     eventValue = propertyValue.getInteger();
                 }
                 const auto& assertedDeviceList = std::get<1>(assertedEvent);
-                bool isRecovery = std::get<2>(assertedEvent);
                 if (assertedDeviceList.empty() == true)
                 {
                     logs_err("event: '%s' no asserted devices, exiting...\n",
                              candidate.event.c_str());
                     continue;
                 }
+                bool isRecovery = std::get<2>(assertedEvent);
                 for (const auto& assertedDevice : assertedDeviceList)
                 {
                     candidate.device = assertedDevice.device;
@@ -100,8 +95,8 @@ void EventDetection::workerThreadProcessEvents()
                     if (isRecovery)
                     {
                         logs_err(
-                            "event: '%s' on dev %s doing recovery...running event handlers\n",
-                            event.event.c_str(), event.device.c_str());
+                            "performing RootCauseTracer due to recovery on %s\n",
+                             event.device.c_str());
                         eventDetectionPtr->RunEventHandler(event,
                                                            "RootCauseTracer");
                         continue;
@@ -131,21 +126,6 @@ void EventDetection::workerThreadProcessEvents()
                         logs_dbg(
                             "Adding event %s to internal map with afflicted device %s\n",
                             candidate.event.c_str(), event.device.c_str());
-
-                        auto eventKey =
-                            candidate.event + candidate.getMainDeviceType();
-                        if (eventsDetected.count(eventKey) == 0)
-                        {
-                            eventsDetected.insert(
-                                std::pair<std::string,
-                                          std::vector<std::string>>(
-                                    eventKey,
-                                    std::vector<std::string>{event.device}));
-                        }
-                        else
-                        {
-                            eventsDetected.at(eventKey).push_back(event.device);
-                        }
                     }
                 }
             }
