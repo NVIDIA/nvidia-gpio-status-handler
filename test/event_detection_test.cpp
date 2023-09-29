@@ -124,18 +124,18 @@ TEST(EventLookupTest, TriggerAccessor)
         "EventDetection2", &eventMap, &propertyFilterSet, eventHdlrMgr);
 
     ev.device = "GPU";
-    EXPECT_EQ(eventDetection.IsEvent(ev), true);
+    EXPECT_EQ(eventDetection.IsEvent(ev, ev.device), true);
     EXPECT_EQ(ev.count[ev.device], 0);
 
     ev.valueAsCount = true;
-    EXPECT_EQ(eventDetection.IsEvent(ev, 10), true);
+    EXPECT_EQ(eventDetection.IsEvent(ev, ev.device, 10), true);
 
     ev.triggerCount = 20;
-    EXPECT_EQ(eventDetection.IsEvent(ev, 10), false);
+    EXPECT_EQ(eventDetection.IsEvent(ev, ev.device, 10), false);
 
     ev.count[ev.device] = 10;
     ev.valueAsCount = false;
-    EXPECT_EQ(eventDetection.IsEvent(ev), false);
+    EXPECT_EQ(eventDetection.IsEvent(ev, ev.device), false);
     EXPECT_EQ(ev.count[ev.device], 11);
     ev.triggerCount = 0;
 
@@ -172,7 +172,7 @@ TEST(EventDetectionTest, TID_1_triggers_instantly)
     int trigger_count = 0;
     EXPECT_EQ(setup_event_cnt_test(event, trigger_count, "GPU5"), true);
 
-    EXPECT_EQ(eventDetection.IsEvent(event), true);
+    EXPECT_EQ(eventDetection.IsEvent(event, event.device), true);
 }
 
 TEST(EventDetectionTest, TID_2_triggers_instantly)
@@ -186,7 +186,7 @@ TEST(EventDetectionTest, TID_2_triggers_instantly)
     int trigger_count = 1;
     EXPECT_EQ(setup_event_cnt_test(event, trigger_count, "GPU5"), true);
 
-    EXPECT_EQ(eventDetection.IsEvent(event), true);
+    EXPECT_EQ(eventDetection.IsEvent(event, event.device), true);
 }
 
 TEST(EventDetectionTest, TID_3_triggers_on_trigger_count)
@@ -202,12 +202,12 @@ TEST(EventDetectionTest, TID_3_triggers_on_trigger_count)
 
     for (auto i = 1; i < trigger_count; i++)
     {
-        EXPECT_EQ(eventDetection.IsEvent(event), false);
+        EXPECT_EQ(eventDetection.IsEvent(event, event.device), false);
     }
 
-    EXPECT_EQ(eventDetection.IsEvent(event), true);
-    EXPECT_EQ(eventDetection.IsEvent(event), true);
-    EXPECT_EQ(eventDetection.IsEvent(event), true);
+    EXPECT_EQ(eventDetection.IsEvent(event, event.device), true);
+    EXPECT_EQ(eventDetection.IsEvent(event, event.device), true);
+    EXPECT_EQ(eventDetection.IsEvent(event, event.device), true);
 }
 
 TEST(EventDetectionTest, TID_4_counter_separation)
@@ -232,11 +232,11 @@ TEST(EventDetectionTest, TID_4_counter_separation)
     for (auto i = 1; i < 10; i++)
     {
         /* decrement counter and return false to ternary operator */
-        EXPECT_EQ(eventDetection.IsEvent(ev1),
+        EXPECT_EQ(eventDetection.IsEvent(ev1, ev1.device),
                   (ev1_trig_cnt <= 1) ? (true) : (ev1_trig_cnt--, false));
-        EXPECT_EQ(eventDetection.IsEvent(ev2),
+        EXPECT_EQ(eventDetection.IsEvent(ev2, ev2.device),
                   (ev2_trig_cnt <= 1) ? (true) : (ev2_trig_cnt--, false));
-        EXPECT_EQ(eventDetection.IsEvent(ev3),
+        EXPECT_EQ(eventDetection.IsEvent(ev3, ev3.device),
                   (ev3_trig_cnt <= 1) ? (true) : (ev3_trig_cnt--, false));
     }
 }

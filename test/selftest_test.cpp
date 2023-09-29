@@ -2,6 +2,7 @@
 #include "printing_util.hpp"
 #include "selftest.hpp"
 #include "tests_common_defs.hpp"
+#include "message_composer.hpp"
 
 #include <iostream>
 
@@ -1037,10 +1038,13 @@ TEST(rootCauseTraceTest, test1)
     j["accessor"]["metadata"] = "metadata";
     j["accessor"]["type"] = "DBUS";
     j["value_as_count"] = false;
-    event_info::EventNode event("test event");
-    event.loadFrom(j);
-    event.device = "GPU0";
+    // test expects to make progressive changes and do additional tests
+    event_info::EventNode persistentEvent("test event");
+    persistentEvent.loadFrom(j);
+    persistentEvent.device = "GPU0";
+    persistentEvent.setDeviceIndexTuple(device_id::PatternIndex(0));
 
+    event_info::EventNode event(persistentEvent);
     EXPECT_EQ(rootCauseTracer.process(event), aml::RcCode::succ);
     EXPECT_EQ(event.selftestReport["header"]["summary"]["test-case-failed"], 0);
     EXPECT_EQ(event.selftestReport["tests"].size(), 5);
@@ -1048,7 +1052,11 @@ TEST(rootCauseTraceTest, test1)
     EXPECT_EQ(dat.at("GPU0").healthStatus.health, "OK");
     EXPECT_EQ(dat.at("GPU0").healthStatus.triState, "Error");
     EXPECT_EQ(dat.at("GPU0").healthStatus.originOfCondition, "GPU0");
+    EXPECT_EQ(event.getOriginOfCondition(), std::optional("GPU0"));
+    EXPECT_EQ(persistentEvent.getOriginOfCondition(), std::nullopt);
 
+    /* reset event */
+    event = persistentEvent;
     /* fail least nested GPU0 */
     dat.at("GPU0").test["pin_status"].testPoints.begin()->second.expectedValue =
         "force_test_to_fail";
@@ -1057,7 +1065,11 @@ TEST(rootCauseTraceTest, test1)
     EXPECT_EQ(event.selftestReport["header"]["summary"]["test-case-failed"], 1);
     EXPECT_EQ(event.selftestReport["tests"].size(), 5);
     EXPECT_EQ(dat.at("GPU0").healthStatus.originOfCondition, "GPU0");
+    EXPECT_EQ(event.getOriginOfCondition(), std::optional("GPU0"));
+    EXPECT_EQ(persistentEvent.getOriginOfCondition(), std::nullopt);
 
+    /* reset event */
+    event = persistentEvent;
     /* fail nested Retimer0, check if GPU0 gets OOC set as Retimer0 */
     dat.at("Retimer0")
         .test["pin_status"]
@@ -1071,7 +1083,11 @@ TEST(rootCauseTraceTest, test1)
     EXPECT_EQ(event.selftestReport["header"]["summary"]["test-case-failed"], 3);
     EXPECT_EQ(event.selftestReport["tests"].size(), 5);
     EXPECT_EQ(dat.at("GPU0").healthStatus.originOfCondition, "Retimer0");
+    EXPECT_EQ(event.getOriginOfCondition(), std::optional("Retimer0"));
+    EXPECT_EQ(persistentEvent.getOriginOfCondition(), std::nullopt);
 
+    /* reset event */
+    event = persistentEvent;
     /* fail nested HSC8, check if GPU0 gets OOC set as HSC8 */
     dat.at("HSC8").test["pin_status"].testPoints.begin()->second.expectedValue =
         "force_test_to_fail";
@@ -1083,11 +1099,104 @@ TEST(rootCauseTraceTest, test1)
     EXPECT_EQ(dat.at("GPU0").healthStatus.health, "OK");
     EXPECT_EQ(dat.at("GPU0").healthStatus.triState, "Error");
     EXPECT_EQ(dat.at("GPU0").healthStatus.originOfCondition, "HSC8");
+    EXPECT_EQ(event.getOriginOfCondition(), std::optional("HSC8"));
+    EXPECT_EQ(persistentEvent.getOriginOfCondition(), std::nullopt);
 
+    /* reset event */
+    event = persistentEvent;
     aml::RcCode result = aml::RcCode::succ;
     event.device = "trash_device";
     EXPECT_NO_THROW(result = rootCauseTracer.process(event));
     EXPECT_EQ(result, aml::RcCode::error);
+    EXPECT_EQ(persistentEvent.getOriginOfCondition(), std::nullopt);
 }
 
+TEST(OOCDeterminationTest, test1)
+{
+    std::map<std::string, dat_traverse::Device> dat;
 
+    nlohmann::json jTemplateDevice;
+    jTemplateDevice = json_device_template("template");
+    jTemplateDevice["power_rail"] = {json_testpoint_template()};
+    jTemplateDevice["erot_control"] = {json_testpoint_template()};
+    jTemplateDevice["pin_status"] = {json_testpoint_template()};
+    jTemplateDevice["interface_status"] = {json_testpoint_template()};
+    jTemplateDevice["firmware_status"] = {json_testpoint_template()};
+    jTemplateDevice["protocol_status"] = {json_testpoint_template()};
+
+    nlohmann::json jgpu4 = jTemplateDevice;
+    jgpu4["name"] = "GPU_SXM_4";
+    dat_traverse::Device gpu4("GPU_SXM_4", jgpu4);
+    dat.insert(std::pair<std::string, dat_traverse::Device>(gpu4.name, gpu4));
+
+    nlohmann::json jgpu7 = jTemplateDevice;
+    jgpu7["name"] = "GPU_SXM_7";
+    dat_traverse::Device gpu7("GPU_SXM_7", jgpu7);
+    dat.insert(std::pair<std::string, dat_traverse::Device>(gpu7.name, gpu7));
+
+    nlohmann::json jrt3 = jTemplateDevice;
+    jrt3["name"] = "PCIeRetimer_3";
+    dat_traverse::Device rt3("PCIeRetimer_3", jrt3);
+    dat.insert(std::pair<std::string, dat_traverse::Device>(rt3.name, rt3));
+
+    message_composer::MessageComposer mc(dat, "Test Msg Composer");
+
+    nlohmann::json j;
+    j["event"] = "Event0";
+    j["device_type"] = "GPU_SXM_[1-8]";
+    j["sub_type"] = "";
+    j["severity"] = "Critical";
+    j["resolution"] = "Contact NVIDIA Support";
+    j["redfish"]["message_id"] = "ResourceEvent.1.0.ResourceErrorsDetected";
+    j["redfish"]["message_args"]["patterns"] = {"p1", "p2"};
+    j["redfish"]["message_args"]["parameters"] = nlohmann::json::array();
+    j["telemetries"] = {"t0", "t1"};
+    j["trigger_count"] = 0;
+    j["event_trigger"]["metadata"] = "metadata";
+    j["event_trigger"]["type"] = "DBUS";
+    j["action"] = "do something";
+    j["event_counter_reset"]["type"] = "type";
+    j["event_counter_reset"]["metadata"] = "metadata";
+    j["accessor"]["metadata"] = "metadata";
+    j["accessor"]["type"] = "DBUS";
+    j["value_as_count"] = false;
+    // test expects to make progressive changes and do additional tests
+    event_info::EventNode event("test event");
+    event.loadFrom(j);
+    event.device = "GPU_SXM_4";
+    event.setDeviceIndexTuple(device_id::PatternIndex(4));
+
+    // Test 1: no origin of condition at all
+    EXPECT_EQ(mc.getOriginOfCondition<DummyObjectMapper>(event), "GPU_SXM_4");
+
+    // Test 2: hardcoded redfish path (with and without device ID brackets)
+    event.setOriginOfCondition("/redfish/v1/Chassis/HGX_GPU_SXM_[0|1-8]");
+    EXPECT_EQ(mc.getOriginOfCondition<DummyObjectMapper>(event),
+        "/redfish/v1/Chassis/HGX_GPU_SXM_4");
+
+    event.setOriginOfCondition("/redfish/v1/Chassis/HGX_GPU_SXM_4");
+    EXPECT_EQ(mc.getOriginOfCondition<DummyObjectMapper>(event),
+        "/redfish/v1/Chassis/HGX_GPU_SXM_4");
+
+    event.setOriginOfCondition("/redfish/v1/Chassis/HGX_GPU_SXM_7");
+    EXPECT_EQ(mc.getOriginOfCondition<DummyObjectMapper>(event),
+        "/redfish/v1/Chassis/HGX_GPU_SXM_7");
+
+
+    // Test 3: hardcoded device ID expression (with and without brackets)
+    event.setOriginOfCondition("GPU_SXM_[0|1-8]");
+    EXPECT_EQ(mc.getOriginOfCondition<DummyObjectMapper>(event),
+        "/xyz/openbmc_project/inventory/system/chassis/HGX_GPU_SXM_4");
+
+    event.setOriginOfCondition("GPU_SXM_4");
+    EXPECT_EQ(mc.getOriginOfCondition<DummyObjectMapper>(event),
+        "/xyz/openbmc_project/inventory/system/chassis/HGX_GPU_SXM_4");
+
+    event.setOriginOfCondition("GPU_SXM_7");
+    EXPECT_EQ(mc.getOriginOfCondition<DummyObjectMapper>(event),
+        "/xyz/openbmc_project/inventory/system/chassis/HGX_GPU_SXM_7");
+
+    event.setOriginOfCondition("PCIeRetimer_3");
+    EXPECT_EQ(mc.getOriginOfCondition<DummyObjectMapper>(event),
+        "/xyz/openbmc_project/inventory/system/chassis/HGX_PCIeRetimer_3");
+}

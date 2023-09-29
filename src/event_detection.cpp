@@ -86,8 +86,8 @@ void EventDetection::workerThreadProcessEvents()
                 bool isRecovery = std::get<2>(assertedEvent);
                 for (const auto& assertedDevice : assertedDeviceList)
                 {
-                    candidate.device = assertedDevice.device;
                     auto event = candidate; // keep it a copy
+                    event.device = assertedDevice.device;
                     event.trigger = assertedDevice.trigger;
                     event.accessor = assertedDevice.accessor;
                     event.setDeviceIndexTuple(assertedDevice.deviceIndexTuple);
@@ -102,7 +102,8 @@ void EventDetection::workerThreadProcessEvents()
                         continue;
                     }
 
-                    if (eventDetectionPtr->IsEvent(candidate, eventValue))
+                    if (eventDetectionPtr->IsEvent(candidate, event.device,
+                        eventValue))
                     {
                         event.severities.push_back(event.getSeverity());
                         auto currentDeviceHealth = util::getDeviceHealth(event.device);

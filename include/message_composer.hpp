@@ -8,6 +8,7 @@
 #include "aml.hpp"
 #include "dat_traverse.hpp"
 #include "data_accessor.hpp"
+#include "dbus_accessor.hpp"
 #include "event_handler.hpp"
 #include "event_info.hpp"
 
@@ -62,6 +63,7 @@ class MessageComposer : public event_handler::EventHandler
         return aml::RcCode::error;
     }
 
+#ifndef EVENTING_FEATURE_ONLY
     /**
      * @brief Return an object path from @c xyz.openbmc_project.ObjectMapper
      * service which corresponds to the given @c deviceId.
@@ -75,8 +77,83 @@ class MessageComposer : public event_handler::EventHandler
      *
      * If no associated object path could be found return an empty string.
      */
-    std::string
-        getOriginOfConditionObjectPath(const std::string& deviceId) const;
+    template <typename ObjectMapperType = dbus::DirectObjectMapper>
+    std::string getOriginOfConditionObjectPath(const std::string& deviceId) const
+    {
+        if (this->dat.at(deviceId).hasDbusObjectOocSpecificExplicit())
+        {
+            return *(this->dat.at(deviceId).getDbusObjectOocSpecificExplicit());
+        }
+        else
+        {
+            // If no ooc object path was provided in dat.json explicitly then try to
+            // obtain it by looking what is available on dbus and seems to
+            // correspond to the 'deviceId' given in argument
+            ObjectMapperType om;
+            auto paths = om.getPrimaryDevIdPaths(deviceId);
+            if (paths.size() == 0)
+            {
+                logs_err("No object path found in ObjectMapper subtree "
+                        "corresponding to the device '%s'. "
+                        "Returning empty origin of condition.\n",
+                        deviceId.c_str());
+                return deviceId;
+            }
+            else
+            {
+                if (paths.size() > 1)
+                {
+                    logs_wrn("Multiple object paths in ObjectMapper subtree "
+                            "corresponding to the device '%s'. "
+                            "Choosing the first one as origin of condition.\n",
+                            deviceId.c_str());
+                }
+                return *paths.begin();
+            }
+        }
+    }
+
+    /**
+     * @brief Gets origin of condition of the event
+     * @param event
+     * @return string representation of OOC
+     */
+    template <typename ObjectMapperType = dbus::DirectObjectMapper>
+    std::string getOriginOfCondition(event_info::EventNode& event)
+    {
+        std::string oocDevice{""};
+        // NOTE: expectation is now that in selftest, even if the original JSON
+        // does not have a fixed OOC defined, it will be filled in by the
+        // RootCauseTracer, so this branch should always be entered
+        // unless there was an error
+        if (event.getOriginOfCondition().has_value())
+        {
+            std::string val = event.getOriginOfCondition().value();
+            if (boost::starts_with(val, "/redfish/v1"))
+            {
+                logs_dbg("Message Composer to use fixed redfish URI OOC '%s'\n",
+                            val.c_str());
+                return val;
+            }
+            else
+            {
+                oocDevice = val;
+            }
+        }
+
+        if (!oocDevice.empty())
+        {
+            std::string path = getOriginOfConditionObjectPath<ObjectMapperType>(oocDevice);
+            logs_dbg("Got path '%s' from oocDevice '%s'\n", path.c_str(),
+                oocDevice.c_str());
+            return path;
+        }
+        logs_err("Invalid JSON definition!! No fixed or dynamic OOC found for event: "
+                "'%s', device: '%s' !\n",
+                event.getName().c_str(), event.device.c_str());
+        return event.device;
+    }
+#endif // EVENTING_FEATURE_ONLY
 
     /**
      * @brief Return phosphor logging Namespace to be used for log
@@ -160,13 +237,6 @@ class MessageComposer : public event_handler::EventHandler
      * @return boolean for whether or not it was a success
      */
     bool createLog(event_info::EventNode& event);
-
-    /**
-     * @brief Gets origin of condition of the event
-     * @param event
-     * @return string representation of OOC
-     */
-    std::string getOriginOfCondition(event_info::EventNode& event);
 
 #ifndef EVENTING_FEATURE_ONLY
     std::map<std::string, dat_traverse::Device>& dat;

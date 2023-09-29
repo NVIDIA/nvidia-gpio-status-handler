@@ -668,7 +668,7 @@ aml::RcCode RootCauseTracer::process([
     auto selftestSeverity = selftester.getDeviceTestResult(
                                             completeReportRes[problemDevice]);
     event.severities.push_back(selftestSeverity);
-    
+
     std::string health = util::Severity::findMaxSeverity(event.severities);
 
     selftester.updateDeviceHealth(problemDevice, health);
@@ -678,7 +678,9 @@ aml::RcCode RootCauseTracer::process([
     if (findRootCause(problemDevice, completeReportRes, event,
                       rootCauseCandidateName))
     {
+        // TODO: revisit if calling updateRootCause is necessary
         updateRootCause(_dat.at(problemDevice), rootCauseCandidateName, _dat);
+        event.setOriginOfCondition(rootCauseCandidateName);
     }
 
     PROFILING_SWITCH(TS.addTimepoint("generate report"));
