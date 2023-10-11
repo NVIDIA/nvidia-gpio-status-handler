@@ -36,18 +36,16 @@ bool CheckAccessor::buildSingleAssertedDeviceName(
     return ret;
 }
 
-bool CheckAccessor::loopDevices(const util::DeviceIdMap& devices,
+bool CheckAccessor::loopDevices(const DeviceIndexesList& deviceIndexes,
                                 const DataAccessor& jsonAcc,
                                 DataAccessor& dataAcc)
 {
     bool ret = false;
-    for (auto& arg : devices)
+    for (auto& index : deviceIndexes)
     {
-        // arg.first=deviceId, arg.second=deviceName
-        const auto& deviceId = arg.first;
-        const auto& deviceName = arg.second;
-        dataAcc.read(deviceName, &_devIdData);
-        if (subCheck(jsonAcc, dataAcc, deviceName, deviceId))
+        auto deviceName = this->_devIdData.pattern.eval(index);
+        dataAcc.read(deviceName, &index);
+        if (subCheck(jsonAcc, dataAcc, deviceName, index[0]))
         {
             ret = true; // it at least one passes the entire check also passes
         }
@@ -171,19 +169,18 @@ bool CheckAccessor::privCheck(const DataAccessor& jsonAcc,
          *   2. DeviceCoreAPI having range in event 'device_type', not having
          *      “device_id” field or having “device_id” equal “range”
          */
-        util::DeviceIdMap devRange{};
+        std::vector<device_id::PatternIndex> devRange{};
         if (true == deviceToRead.empty())
         {
-            if (jsonAcc.isTypeCmdline() == true)
+            if (jsonAcc.isTypeCmdline() &&
+                    util::existsRange(jsonAcc.getArguments()))
             {
-                // case 1
-                auto deviceType = _devIdData.pattern.pattern();
-                devRange = jsonAcc.getCmdLineRangeArguments(deviceType);
+                devRange = _devIdData.pattern.domainVec();
             }
             else if (jsonAcc.isTypeDeviceCoreApi() && jsonAcc.isDeviceIdRange())
             {
                 // working so far with 'equal' and 'bitmask'
-                devRange = util::expandDeviceRange(_devIdData.pattern);
+                devRange = _devIdData.pattern.domainVec();
             }
         }
         if (devRange.size() > 0)
@@ -195,7 +192,7 @@ bool CheckAccessor::privCheck(const DataAccessor& jsonAcc,
         {
             if (dataAcc.isTypeDbus() == false || dataAcc.hasData() == false)
             {
-                dataAcc.read(deviceToRead, &_devIdData);
+                dataAcc.read(deviceToRead, &_devIdData.index);
             }
             ret = subCheck(jsonAcc, dataAcc, deviceToRead);
         }
@@ -278,16 +275,17 @@ bool CheckAccessor::subCheck(const DataAccessor& jsonAcc, DataAccessor& dataAcc,
         bitmapValue = PropertyValue(jsonBitmapValue);
         if (bitmapValue.isValidInteger() == true)
         {
-            util::DeviceIdMap devices = util::expandDeviceRange(_devIdData.pattern);
+            auto devRange = _devIdData.pattern.domainVec();
             // now walk thuru devices using a zero based index to shift bits
             int zero_index_bit_shift = 0;
-            for (auto& deviceItem : devices)
+            for (auto& index : devRange)
             {
                 PropertyVariant bitmask(bitmapValue.getInteger() << zero_index_bit_shift++);
                 if (dataAcc.getDataValue().check(checkMap, bitmask) == true)
                 {
                     ret = true;
-                    buildSingleAssertedDeviceName(dataAcc, deviceItem.second, deviceItem.first);
+                    auto deviceName = this->_devIdData.pattern.eval(index);
+                    buildSingleAssertedDeviceName(dataAcc, deviceName, index);
                 }
             }
         }

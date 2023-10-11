@@ -878,3 +878,72 @@ TEST(EventDeviceType, getFullDeviceNameSeparated)
     EXPECT_EQ(devices.at(0), "NVSwitch_3");
     EXPECT_EQ(devices.at(1), "NVLink_15");
 }
+
+TEST(CheckAccessor, BitmapWithoutRangeInCMDLINE)
+{
+    const nlohmann::json triggerJson = {
+        {"type", "DBUS"},
+        {"object", "/xyz/openbmc_project/GpioStatusHandler"},
+        {"interface", "xyz.openbmc_project.GpioStatus"},
+        {"property", "I2C3_ALERT"},
+        {"check", {{"equal", "true"}}}};
+
+    const std::string deviceType{"ERoT_GPU_SXM_[1-8]"};
+
+    data_accessor::DataAccessor triggerAccessor(triggerJson);
+    data_accessor::DataAccessor dataTriggerAccessor(PropertyVariant(std::string{"true"}));
+
+    const nlohmann::json jsonAccessor = {
+        {"type", "CMDLINE"},
+        {"executable", "/bin/echo"},
+        {"arguments", "5"},
+        {"check", {{"bitmap", "1"}}}};
+    data_accessor::DataAccessor accessorFromJson(jsonAccessor);
+
+    data_accessor::CheckAccessor trippleCheck(deviceType);
+    auto ok =
+            trippleCheck.check(triggerAccessor, accessorFromJson,
+                               dataTriggerAccessor);
+
+    EXPECT_EQ(ok, true);
+    auto devicesAsserted = trippleCheck.getAssertedDevices();
+
+    EXPECT_EQ(ok, true);
+    EXPECT_EQ(devicesAsserted.size(), 2);
+    EXPECT_EQ(devicesAsserted[0].device, "ERoT_GPU_SXM_1");
+    EXPECT_EQ(devicesAsserted[1].device, "ERoT_GPU_SXM_3");
+}
+
+TEST(CheckAccessor, BitmapRangeInCMDLINE)
+{
+    const nlohmann::json triggerJson = {
+        {"type", "DBUS"},
+        {"object", "/xyz/openbmc_project/GpioStatusHandler"},
+        {"interface", "xyz.openbmc_project.GpioStatus"},
+        {"property", "I2C3_ALERT"},
+        {"check", {{"equal", "true"}}}};
+
+    const std::string deviceType{"ERoT_GPU_SXM_[1-8]"};
+
+    data_accessor::DataAccessor triggerAccessor(triggerJson);
+    data_accessor::DataAccessor dataTriggerAccessor(PropertyVariant(std::string{"true"}));
+
+    const nlohmann::json jsonAccessor = {
+        {"type", "CMDLINE"},
+        {"executable", "/bin/echo"},
+        {"arguments", "GPU_SXM_[1-8]"},
+        {"check", {{"lookup", "_4"}}}};
+    data_accessor::DataAccessor accessorFromJson(jsonAccessor);
+
+    data_accessor::CheckAccessor trippleCheck(deviceType);
+    auto ok =
+            trippleCheck.check(triggerAccessor, accessorFromJson,
+                               dataTriggerAccessor);
+
+    EXPECT_EQ(ok, true);
+    auto devicesAsserted = trippleCheck.getAssertedDevices();
+
+    EXPECT_EQ(ok, true);
+    EXPECT_EQ(devicesAsserted.size(), 1);
+    EXPECT_EQ(devicesAsserted[0].device, "ERoT_GPU_SXM_4");
+}

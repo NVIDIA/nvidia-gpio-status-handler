@@ -24,6 +24,9 @@ struct AssertedDevice
 
 using AssertedDeviceList = std::vector<AssertedDevice>;
 
+/** indexes from a expanded range */
+using DeviceIndexesList = std::vector<device_id::PatternIndex>;
+
 /**
  * @brief A class for performing check against Data Accessor
  *
@@ -142,11 +145,11 @@ class CheckAccessor
      * @note
      *        *this and dataAcc CANNOT BE THE SAME OBJECT
      *
-     * @param devices map of devicesId with their deviceNames
+     * @param deviceIndexes all indexes from the expanded device range
      * @param dataAcc the Accessor which will have the assertedDeviceList
      * @return a single return, true if one or more checks return true
      */
-    bool loopDevices(const util::DeviceIdMap& devices,
+    bool loopDevices(const DeviceIndexesList& deviceIndexes,
                      const DataAccessor& jsonAcc, DataAccessor& dataAcc);
 
    /**

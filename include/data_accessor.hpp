@@ -337,14 +337,14 @@ class DataAccessor
      * @return std::string
      */
     std::string read(const std::string& device = std::string{""},
-                     const util::DeviceIdData* devIdData = nullptr)
+                     const device_id::PatternIndex* devIndex = nullptr)
     {
         log_elapsed();
         log_dbg("device='%s'\n", device.c_str());
 
         if (isTypeDbus() == true)
         {
-            readDbus(devIdData);
+            readDbus(devIndex);
         }
         else if (isTypeDevice() == true)
         {
@@ -352,7 +352,7 @@ class DataAccessor
         }
         else if (isTypeCmdline() == true)
         {
-            runCommandLine(devIdData);
+            runCommandLine(devIndex);
         }
         else if (isTypeDeviceCoreApi() == true)
         {
@@ -667,26 +667,6 @@ class DataAccessor
     std::string readUsingMainAccessor(const DataAccessor& otherAcc);
 
     /**
-     * @brief  returns a DeviceIdMap from arguments in accessor type CMDLINE
-     *
-     *    For an Accessor such as:
-     * @code
-     *        "accessor": {
-     *          "type": "CMDaLINE",
-     *          "executable": "mctp-vdm-util-wrapper",
-     *          "arguments": "bla GPU[0-7]",
-     *          ...
-     *         }
-     * @endcode
-     *      returns a map => 0=GPU0 1=GPU1, ...
-     *
-     * @return populated map if type is CMDLINE and has range in arguments
-     *         otherwise an empty map
-     */
-    util::DeviceIdMap
-        getCmdLineRangeArguments(const std::string& deviceType) const;
-
-    /**
      * @brief setDataValue() just sets a value
      * @param value
      */
@@ -711,7 +691,7 @@ class DataAccessor
      *
      * @return true if the read operation was successful, false otherwise
      */
-    bool readDbus(const util::DeviceIdData* devIdData = nullptr);
+    bool readDbus(const device_id::PatternIndex* devIndex = nullptr);
 
     /**
      * Runs commands from Accessor type CMDLINE
@@ -724,7 +704,7 @@ class DataAccessor
      *             "lookup": "00 02 40"
      *       }
      */
-    bool runCommandLine(const util::DeviceIdData* devIdData = nullptr);
+    bool runCommandLine(const device_id::PatternIndex* devIndex = nullptr);
 
     /**
      * @brief   just initializes the _dataValue creating a PropertyVariant

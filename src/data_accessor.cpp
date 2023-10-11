@@ -69,7 +69,7 @@ InterfaceObjectsMap DataAccessor::getDbusInterfaceObjectsMap() const
     return ret;
 }
 
-bool DataAccessor::readDbus(const util::DeviceIdData* devIdData)
+bool DataAccessor::readDbus(const device_id::PatternIndex* devIndex)
 {
     log_elapsed();
     clearData();
@@ -83,11 +83,11 @@ bool DataAccessor::readDbus(const util::DeviceIdData* devIdData)
          * readDbusProperty() forwards an exception when receives it from Dbus
          */
         std::string objPath = _acc[objectKey].get<std::string>();
-        if (util::existsRange(objPath) == true && devIdData != nullptr)
+        if (util::existsRange(objPath) == true && devIndex != nullptr)
         {
             // apply the device into the "object" to replace the range
             objPath =
-                util::introduceDeviceInObjectpath(objPath, devIdData->index);
+                util::introduceDeviceInObjectpath(objPath, *devIndex);
         }
         auto propVariant = dbus::readDbusProperty(
             objPath, _acc[interfaceKey], _acc[propertyKey]);
@@ -97,7 +97,7 @@ bool DataAccessor::readDbus(const util::DeviceIdData* devIdData)
     return ret;
 }
 
-bool DataAccessor::runCommandLine(const util::DeviceIdData* devIdData)
+bool DataAccessor::runCommandLine(const device_id::PatternIndex* devIndex)
 {
     log_elapsed();
     clearData();
@@ -108,10 +108,10 @@ bool DataAccessor::runCommandLine(const util::DeviceIdData* devIdData)
         if (_acc.count(argumentsKey) != 0)
         {
             auto args = _acc[argumentsKey].get<std::string>();
-            if (devIdData != nullptr)
+            if (devIndex != nullptr)
             {
                 // if args does not have range, it does nothing
-                args = util::introduceDeviceInObjectpath(args, devIdData->index);
+                args = util::introduceDeviceInObjectpath(args, *devIndex);
             }
             else // expand the range inside args
             {
@@ -245,21 +245,6 @@ bool DataAccessor::readDeviceCoreApi(const std::string& device)
     return ret;
 }
 
-util::DeviceIdMap
-    DataAccessor::getCmdLineRangeArguments(const std::string& deviceType) const
-{
-    util::DeviceIdMap devArgs;
-    if (isValidCmdlineAccessor() == true && _acc.count(argumentsKey) != 0)
-    {
-        auto args = _acc[argumentsKey].get<std::string>();
-        if (util::existsRange(args))
-        {
-            devArgs = util::expandDeviceRange(deviceType);
-        }
-    }
-    return devArgs;
-}
-
 /**
  *   OtherAcc may be the same accessor, or have at least
  *          same "object" not considering the range specification
@@ -327,7 +312,7 @@ std::string DataAccessor::read(const event_info::EventNode& event)
         }
         util::DeviceIdData devIdData = event.getDataDeviceType();
         // common DataAccessor::read() if attempts above failed
-        return read(event.device, &devIdData);
+        return read(event.device, &devIdData.index);
     }
     else
     if (isTypeDevice() || isTypeTest() || isTypeConst() || isTypeDeviceName())
