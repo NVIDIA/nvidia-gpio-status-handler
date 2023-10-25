@@ -210,26 +210,51 @@ class DataAccessor
         return ret;
     }
 
+    /**
+     * @brief getType()
+     * @return The Accessor type
+     */
+    inline std::string getType() const
+    {
+        if (isValid(_acc))
+        {
+            return _acc[typeKey].get<std::string>();
+        }
+        return std::string{""};
+    }
+
+    /**
+     * @brief getExecutable()
+     * @return The executable if that exists
+     */
+    inline std::string getExecutable() const
+    {
+        if (_acc.count(executableKey) != 0)
+        {
+            return _acc[executableKey].get<std::string>();
+        }
+        return std::string{""};
+    }
+
     struct Hash
     {
-        size_t operator()([[maybe_unused]] DataAccessor accessor) const noexcept
+        size_t operator()(DataAccessor accessor) const
         {
+            std::string key = accessor.getType();
+            if (accessor.isValidDbusAccessor())
+            {
+                key += accessor.getDbusInterface() + accessor.getProperty();
+            }
+            else if (accessor.isTypeCmdline())
+            {
+                key += accessor.getExecutable();
+            }
+            else if (accessor.isTypeDeviceCoreApi())
+            {
+                key += accessor.getProperty();
+            }
             std::hash<std::string> hashFn;
-            std::string h = accessor._acc[typeKey];
-            if (accessor._acc[typeKey] == "DBUS")
-            {
-                h += accessor._acc[interfaceKey].get<std::string>() +
-                     accessor._acc[propertyKey].get<std::string>();
-            }
-            else if (accessor._acc[typeKey] == "CMDLINE")
-            {
-                h += accessor._acc[executableKey].get<std::string>();
-            }
-            else if (accessor._acc[typeKey] == "DeviceCoreAPI")
-            {
-                h += accessor._acc[propertyKey].get<std::string>();
-            }
-            return hashFn(h);
+            return hashFn(key);
         }
     };
 

@@ -104,10 +104,10 @@ bool DataAccessor::runCommandLine(const device_id::PatternIndex* devIndex)
     bool ret = isValidCmdlineAccessor();
     if (ret == true)
     {
-        auto cmd = _acc[executableKey].get<std::string>();
+        auto cmd = getExecutable();
         if (_acc.count(argumentsKey) != 0)
         {
-            auto args = _acc[argumentsKey].get<std::string>();
+            auto args = getArguments();
             if (devIndex != nullptr)
             {
                 // if args does not have range, it does nothing
@@ -152,7 +152,6 @@ bool DataAccessor::runCommandLine(const device_id::PatternIndex* devIndex)
                 }
                 throw std::runtime_error("child process timed out and was terminated!");
             }
-            log_dbg("process finished within timeout\n");
             // store main process's exit code now, before cleanup
             process.wait();
             // make sure children (if any) are cleaned up once the main process exits
