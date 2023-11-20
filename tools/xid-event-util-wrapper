@@ -110,12 +110,14 @@ function createLog()
 
 # Convert Hex "48 65 6c 6c 6f 20 57 6f 72 6c 64 00 00 00"
 # To ASCII "Hello World"
+# The null character '00' identifies the end-of-string
 function convertHexToAscii()
 {
   local res
   ascii=""
   for char in $@
   do
+    [ "$char" = "00" ] && break
     res=`printf "\x$char"`
     ascii="$ascii$res"
   done
@@ -283,7 +285,7 @@ function main()
         XidTime=`date -d @$XidTime`
 
         # Read Text Message or byte 12-END from the DEM
-        TextMessage=`echo $dem | cut -d ' ' -f13- | sed 's/00//g'`
+        TextMessage=`echo $dem | cut -d ' ' -f13-`
         convertHexToAscii $TextMessage
 
         # Concatinate the information read above
