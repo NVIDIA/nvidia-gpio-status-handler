@@ -88,7 +88,8 @@ function createLog()
   msg_arg=${msg_arg//=/:}
   createlogCmd="\
   busctl call xyz.openbmc_project.Logging /xyz/openbmc_project/logging xyz.openbmc_project.Logging.Create Create ssa{ss} \""$event" Error\"
-  \"xyz.openbmc_project.Logging.Entry.Level.Critical\" 6
+  \"xyz.openbmc_project.Logging.Entry.Level.Critical\" 7
+  \"xyz.openbmc_project.Logging.Entry.Resolution\" \"Regarding XID documentation and further actions please refer to https://docs.nvidia.com/deploy/xid-errors/index.html\"
   \"REDFISH_MESSAGE_ARGS\" \""$deviceName" Driver Event Message, "$msg_arg"\"
   \"REDFISH_MESSAGE_ID\" \"ResourceEvent.1.0.ResourceErrorsDetected\"
   \"namespace\" \"${deviceName}${xid}\"
