@@ -947,3 +947,181 @@ TEST(CheckAccessor, BitmapRangeInCMDLINE)
     EXPECT_EQ(devicesAsserted.size(), 1);
     EXPECT_EQ(devicesAsserted[0].device, "ERoT_GPU_SXM_4");
 }
+
+TEST(BootupSelfTestDiscovery, IgnoreDbusTriggerIfThereisAccessor)
+{
+    auto eventInfoRaw = R"(
+ {
+  "NVSwitch": [
+   {
+      "event": "Boot completed failure",
+      "device_type": "NVSwitch_[0-3]",
+      "category": [
+        "firmware_status"
+      ],
+      "event_trigger": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/inventory/system/chassis/HGX_NVSwitch_[0-3]/PCIeDevices/NVSwitch_[0|0-3]",
+        "interface": "xyz.openbmc_project.Inventory.Item.PCIeDevice",
+        "property": "PCIeType",
+        "check": {
+          "not_equal": "xyz.openbmc_project.Inventory.Item.PCIeDevice.PCIeTypes.Gen4"
+        }
+      },
+      "accessor": {
+        "type": "CMDLINE",
+        "executable": "mctp-vdm-util-wrapper",
+        "arguments": "AP0_BOOTCOMPLETE_TIMEOUT NVSwitch_[0-3]",
+        "check": {
+          "equal": "1"
+        }
+      },
+      "recovery": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/inventory/system/chassis/HGX_NVSwitch_[0-3]/PCIeDevices/NVSwitch_[0|0-3]",
+        "interface": "xyz.openbmc_project.Inventory.Item.PCIeDevice",
+        "property": "PCIeType",
+        "check": {
+          "equal": "xyz.openbmc_project.Inventory.Item.PCIeDevice.PCIeTypes.Gen4"
+        }
+      },
+      "severity": "Critical",
+      "resolution": "ERoT will try to recover AP by a reset/reboot. If there is still a problem, collect ERoT logs and reflash AP firmware with recovery flow.",
+      "trigger_count": 1,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected",
+        "origin_of_condition": "/redfish/v1/UpdateService/FirmwareInventory/HGX_FW_NVSwitch_[0|0-3]",
+        "message_args": {
+          "patterns": [
+            "NVSwitch_[0|0-3] Firmware",
+            "Boot Complete Failure"
+          ],
+          "parameters": []
+        }
+      },
+      "telemetries": [],
+      "action": "",
+      "value_as_count": false
+    }
+  ]
+ }
+)" ;
+
+    auto triggerJson = R"(
+    {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/inventory/system/chassis/HGX_NVSwitch_0/PCIeDevices/NVSwitch_0",
+        "interface": "xyz.openbmc_project.Inventory.Item.PCIeDevice",
+        "property": "PCIeType"
+    }
+)";
+
+    event_info::EventMap eventMap;
+    event_info::PropertyFilterSet propertyFilterSet;
+
+    event_info::loadFromJson(
+        eventMap, propertyFilterSet,
+        event_detection::eventTriggerView, event_detection::eventAccessorView,
+        event_detection::eventRecoveryView, nlohmann::json::parse(eventInfoRaw));
+
+    std::string strValue("xyz.openbmc_project.Inventory.Item.PCIeDevice.PCIeTypes.Unkown");
+    data_accessor::DataAccessor trigger(nlohmann::json::parse(triggerJson),
+                                        data_accessor::PropertyValue(strValue));
+
+    trigger.setDevice(std::string{"NVSwitch_0"});
+    auto eventsSent = event_detection::EventDetection::eventDiscovery(trigger, true);
+    EXPECT_EQ(eventsSent, 0);
+}
+
+TEST(BootupSelfTestDiscovery, IgnoreCmdLineAccessorWithoutData)
+{
+    auto eventInfoRaw = R"(
+ {
+  "GPU": [
+   {
+      "event": "Secure boot failure",
+      "device_type": "GPU_SXM_[1-8]",
+      "category": [
+        "firmware_status"
+      ],
+      "event_trigger": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/inventory/system/processors/GPU_SXM_[1-8]",
+        "interface": "xyz.openbmc_project.Inventory.Item.Cpu.OperatingConfig",
+        "property": "MinSpeed",
+        "check": {
+          "equal": "0"
+        }
+      },
+      "accessor": {
+        "type": "CMDLINE",
+        "executable": "mctp-vdm-util-wrapper",
+        "arguments": "active_auth_status GPU_SXM_[1-8]",
+        "check": {
+          "equal": "6"
+        }
+      },
+      "recovery": {
+        "type": "DBUS",
+        "object": "/xyz/openbmc_project/inventory/system/processors/GPU_SXM_[1-8]",
+        "interface": "xyz.openbmc_project.Inventory.Item.Cpu.OperatingConfig",
+        "property": "MinSpeed",
+        "check": {
+          "not_equal": "0"
+        }
+      },
+      "severity": "Critical",
+      "resolution": "ERoT will try to recover AP by a reset/reboot. If there is still a problem, collect ERoT logs and reflash AP firmware with recovery flow.",
+      "trigger_count": 1,
+      "event_counter_reset": {
+        "type": "",
+        "metadata": ""
+      },
+      "redfish": {
+        "message_id": "ResourceEvent.1.0.ResourceErrorsDetected",
+        "origin_of_condition": "/redfish/v1/UpdateService/FirmwareInventory/HGX_FW_GPU_SXM_[0|1-8]",
+        "message_args": {
+          "patterns": [
+            "GPU_SXM_[0|1-8] Firmware",
+            "Secure Boot Failure"
+          ],
+          "parameters": []
+        }
+      },
+      "telemetries": [],
+      "action": "",
+      "value_as_count": false
+    }
+  ]
+ }
+)" ;
+
+    auto sfFailedJson = R"(
+    {
+        "type": "CMDLINE",
+        "executable": "mctp-vdm-util-wrapper",
+        "arguments": "active_auth_status GPU_SXM_4"
+    }
+)";
+
+    event_info::EventMap eventMap;
+    event_info::PropertyFilterSet propertyFilterSet;
+
+    event_info::loadFromJson(
+        eventMap, propertyFilterSet,
+        event_detection::eventTriggerView, event_detection::eventAccessorView,
+        event_detection::eventRecoveryView, nlohmann::json::parse(eventInfoRaw));
+
+    data_accessor::DataAccessor
+        tpFailedAccessor(nlohmann::json::parse(sfFailedJson));
+
+    tpFailedAccessor.setDevice(std::string{"GPU_SXM_4"});
+    auto eventsSent =
+        event_detection::EventDetection::eventDiscovery(tpFailedAccessor, true);
+    EXPECT_EQ(eventsSent, 0);
+}
+

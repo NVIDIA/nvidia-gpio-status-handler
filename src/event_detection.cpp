@@ -91,7 +91,7 @@ void EventDetection::workerThreadProcessEvents()
                     event.trigger = assertedDevice.trigger;
                     event.accessor = assertedDevice.accessor;
                     event.setDeviceIndexTuple(assertedDevice.deviceIndexTuple);
-                    
+
                     if (isRecovery)
                     {
                         logs_err(
@@ -305,7 +305,7 @@ void pushToQueue(const data_accessor::DataAccessor& pcTrigger,
     }
 }
 
-void EventDetection::eventDiscovery(const data_accessor::DataAccessor& accessor,
+int EventDetection::eventDiscovery(const data_accessor::DataAccessor& accessor,
                                     const bool& bootup)
 {
     std::vector<std::shared_ptr<event_info::EventNode>> eventPtrs;
@@ -313,41 +313,56 @@ void EventDetection::eventDiscovery(const data_accessor::DataAccessor& accessor,
     accessor.print(ss);
     if (!bootup)
     {
-        logs_dbg("In Event Discovery phase for pc Trigger %s\n",
+        logs_dbg("In Event Discovery phase pc Trigger acc=%s",
                  ss.str().c_str());
         auto itr = eventTriggerView.equal_range(accessor);
         if (itr.first == itr.second)
         {
-            logs_dbg("PC Trigger %s not found in eventTriggerView\n",
+            logs_dbg("PC Trigger not found in eventTriggerView acc=%s",
                      ss.str().c_str());
-            return;
         }
-        for (auto it = itr.first; it != itr.second; it++)
+        else
         {
-            logs_dbg("Discovered event with matching trigger: %s\n",
-                     it->second->event.c_str());
-            eventPtrs.push_back(it->second);
+            for (auto it = itr.first; it != itr.second; it++)
+            {
+                logs_dbg("Discovered event with matching trigger: %s\n",
+                         it->second->event.c_str());
+                eventPtrs.push_back(it->second);
+            }
         }
     }
     else
     {
-        logs_err("In Bootup Event Detection phase for accessor!!! %s\n",
-                 ss.str().c_str());
-        auto itr = eventAccessorView.equal_range(accessor);
-        if (itr.first == itr.second)
+        logs_err("In Bootup Event Detection phase Accessor data='%s' acc=%s",
+                 accessor.getDataValue().getString().c_str(), ss.str().c_str());
+
+        // Accessors comming from Seltest must have data, avoiding TP failed
+        if (false == accessor.getDataValue().empty())
         {
-            logs_err("Accessor %s not found in eventAccessorView\n",
-                     ss.str().c_str());
-            return;
-        }
-        for (auto it = itr.first; it != itr.second; it++)
-        {
-            logs_err("Discovered bootup event with matching accessor: %s\n",
-                     it->second->event.c_str());
-            eventPtrs.push_back(it->second);
+            auto itr = eventAccessorView.equal_range(accessor);
+            if (itr.first == itr.second)
+            {
+                logs_err("Accessor not found in eventAccessorView acc=%s",
+                         ss.str().c_str());
+            }
+            else
+            {
+                for (auto it = itr.first; it != itr.second; it++)
+                {
+                    logs_err("Discovered bootup event with matching accessor: %s\n",
+                             it->second->event.c_str());
+                    eventPtrs.push_back(it->second);
+                }
+            }
         }
     }
-    pushToQueue(accessor, eventPtrs);
+    auto pushed =  eventPtrs.size();
+    if (pushed > 0)
+    {
+        pushToQueue(accessor, eventPtrs);
+    }
+    logs_dbg("[bootup] = %d [events pushed] = %u\n", bootup, pushed);
+    return pushed;
 }
 
 bool EventDetection::getIsAccessorInteresting(
@@ -385,49 +400,5 @@ bool EventDetection::getIsAccessorInteresting(
         return false;
     }
 }
-
-#if 0
-void EventDetection::identifyEventCandidate(const std::string& objPath,
-                                            const std::string& signature,
-                                            const std::string& property)
-{
-    logs_info("dbus([%s]/[%s]/[%s]).\n", objPath.c_str(), signature.c_str(), property.c_str());
-    std::regex rgx("obj=\"(.+?)\"");
-    std::smatch match;
-
-    for (const auto& dev : event_detection::EventDetection::eventMap)
-    {
-        // std::cerr << dev.first << " events:\n";
-
-        for (const auto& event : dev.second)
-        {
-            // std::cerr << event.event << "\n";
-            if (std::regex_search(event.accessor.metadata.begin(),
-                                  event.accessor.metadata.end(),
-                                  match, rgx))
-            {
-                std::string eventPath = match[1];
-
-                if (objPath.find(eventPath) != std::string::npos)
-                {
-                    log_dbg("Matched event: %s %s\n", objPath.c_str(), eventPath.c_str());
-                    goto exit;
-                }
-            }
-            else
-            {
-                log_err("Regex Issue\n");
-                goto exit;
-            }
-        }
-    }
-exit:
-
-    log_err("Exit\n");
-}
-#endif
-// void EventDetection::~EventDetection()
-// {
-// }
 
 } // namespace event_detection

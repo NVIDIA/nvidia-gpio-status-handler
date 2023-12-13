@@ -642,11 +642,14 @@ class EventDetection : public object::Object
      * @brief Return trigger and vector of possible events
      *
      * @param  accessor the trigger/accessor which came from pc signal or
-     * selftest
+     * selftest, if selftest it must have had successful DataAccessor::read()
+
      * @param  bootup whether or not we are generating events from bootup
-     * selftest
+     * selftest,  selftest
+     *
+     * @return number of events pushed into the queue
      */
-    static void eventDiscovery(const data_accessor::DataAccessor& accessor,
+    static int eventDiscovery(const data_accessor::DataAccessor& accessor,
                                const bool& bootup = false);
 
   private:

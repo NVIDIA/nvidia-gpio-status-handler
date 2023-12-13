@@ -615,3 +615,63 @@ TEST(DataAccessor, CompareDeviceId)
     EXPECT_EQ(accNvFailOverTemp == accGoodNvOverTemp, true);
     EXPECT_EQ(accGoodNvOverTemp == accNvFailOverTemp, true);
 }
+
+/**
+ * @brief This test makes sure a CMDLINE accessor without range such as
+ *        below @a selfTestAccJson which uses the device 'GPU_SXM_4' will NOT GO
+ *        to normal loop for devices as normal propertyChange on a trigger does.
+ */
+TEST(DataAccessor, CmdLineAccessorWithDeviceShouldNotPerformLoop)
+{
+    auto eventAccJson =
+      R"(
+      {
+        "type": "CMDLINE",
+        "executable": "/bin/sh",
+        "arguments": "-c \"echo `echo GPU_SXM_[1-8] | grep -E '2|3'`\"",
+        "check": {
+          "not_equal": ""
+        }
+      }
+    )";
+    nlohmann::json eventJson = nlohmann::json::parse(eventAccJson);
+    data_accessor::DataAccessor eventAccRange(eventJson);
+
+    auto selfTestAccJson =
+     R"(
+      {
+        "type": "CMDLINE",
+        "executable": "/bin/sh",
+        "arguments": "-c \"echo `echo GPU_SXM_4 | grep -E '2|3'`\"",
+        "check": {
+          "not_equal": ""
+        }
+      }
+    )";
+
+    // if CMDLINE loop would be performed 2 events were created for devices:
+    //    GPU_SXM_2 and GPU_SXM_3
+    nlohmann::json selftestJson = nlohmann::json::parse(selfTestAccJson);
+    data_accessor::DataAccessor selftestAcc(selftestJson);
+
+    // no event is expected on GPU_4
+    CheckAccessor accCheckNoEvent("GPU_SXM_[1-8]");
+    EXPECT_NE(accCheckNoEvent.check(eventAccRange, selftestAcc), true);
+
+    auto selfTestAccJsonGpu2 =
+      R"(
+      {
+        "type": "CMDLINE",
+        "executable": "/bin/sh",
+        "arguments": "-c \"echo `echo GPU_SXM_2 | grep -E '2|3'`\"",
+        "check": {
+          "not_equal": ""
+        }
+      }
+    )";
+
+    nlohmann::json selftestJsonGpu2 = nlohmann::json::parse(selfTestAccJsonGpu2);
+    data_accessor::DataAccessor selftestAccGpu2(selftestJsonGpu2);
+    CheckAccessor accCheckEvent("GPU_SXM_[1-8]");
+    EXPECT_EQ(accCheckEvent.check(eventAccRange, selftestAccGpu2), true);
+}

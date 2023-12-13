@@ -163,6 +163,14 @@ class CheckAccessor
     bool buildSingleAssertedDeviceName(const DataAccessor& dataAcc,
                                        const std::string& realDevice,
                                        const int deviceId);
+
+    /**
+     *  @returns the current device (if present) being handled in the check
+     *
+     *  It uses _devIdData that is supposed to be already populated
+     */
+    std::string getCurrentDevice();
+
   private:
     /**  @brief keep the status of the last performed check */
     CheckStatus _lastStatus;
