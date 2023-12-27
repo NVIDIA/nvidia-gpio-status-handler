@@ -313,22 +313,37 @@ int EventDetection::eventDiscovery(const data_accessor::DataAccessor& accessor,
     accessor.print(ss);
     if (!bootup)
     {
-        logs_dbg("In Event Discovery phase pc Trigger acc=%s",
+        /** used to make sure the same event is not being sent more than once
+            both Trigger and Recovery views are managed here */
+        std::unordered_set<event_info::EventNode*> uniqueEvents;
+        logs_dbg("In Event Discovery phase for pc Trigger %s\n",
                  ss.str().c_str());
+        // manage Trigger View first
         auto itr = eventTriggerView.equal_range(accessor);
-        if (itr.first == itr.second)
+        for (auto it = itr.first; it != itr.second; it++)
         {
-            logs_dbg("PC Trigger not found in eventTriggerView acc=%s",
-                     ss.str().c_str());
+            logs_dbg("Discovered event with matching trigger: %s\n",
+                     it->second->event.c_str());
+            eventPtrs.push_back(it->second);
+            // later recovery events will check this set
+            uniqueEvents.insert(it->second.get());
         }
-        else
+        // manage Recovery view
+        auto recvTr = eventRecoveryView.equal_range(accessor);
+        for (auto recvIt = recvTr.first; recvIt != recvTr.second; recvIt++)
         {
-            for (auto it = itr.first; it != itr.second; it++)
+            // do not allow a single event going more than once
+            if (uniqueEvents.count(recvIt->second.get()) == 0)
             {
-                logs_dbg("Discovered event with matching trigger: %s\n",
-                         it->second->event.c_str());
-                eventPtrs.push_back(it->second);
+                 logs_dbg("Discovered event with matching recovery: %s\n",
+                          recvIt->second->event.c_str());
+                 eventPtrs.push_back(recvIt->second);
             }
+        }
+        if (eventPtrs.empty())
+        {
+            logs_dbg("Not found neither in eventTriggerView nor in "
+                     "eventRecoveryView PC Trigger %s", ss.str().c_str());
         }
     }
     else
