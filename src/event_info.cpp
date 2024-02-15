@@ -811,16 +811,17 @@ std::string EventCategory::get()
 
 void EventCategory::set(const std::string& category)
 {
+    // disabled the code below to allow any Category be used (it is free)
+#if 0
     if (std::find(valuesAllowed.cbegin(), valuesAllowed.cend(), category) ==
         valuesAllowed.cend())
     {
         // Object 'category' not found in 'valuesAllowed'
         throw std::runtime_error("Invalid event category: '" + category + "'");
     }
-    else
-    {
-        this->category = category;
-    }
+#endif
+
+    this->category = category;
 }
 
 EventCategory::operator std::string() const

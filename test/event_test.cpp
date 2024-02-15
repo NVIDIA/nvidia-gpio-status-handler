@@ -73,8 +73,12 @@ TEST(MsgCompTest, MakeCall)
     j["value_as_count"] = false;
     event_info::EventNode event("test event");
     event.loadFrom(j);
+#ifdef EVENTING_FEATURE_ONLY
+    message_composer::MessageComposer mc("Test Msg Composer");
+#else
     std::map<std::string, dat_traverse::Device> dat;
     message_composer::MessageComposer mc(dat, "Test Msg Composer");
+#endif
     EXPECT_EQ(mc.getName(), "Test Msg Composer");
 }
 
@@ -325,8 +329,11 @@ TEST(EventInfoTest, EventCategory_constructor)
     {
         EXPECT_NO_THROW({ event_info::EventCategory obj(elem); });
     }
+    // disabled the code below to allow any Category be used (it is free)
+#if 0
     EXPECT_ANY_THROW(event_info::EventCategory("junk"));
     EXPECT_ANY_THROW(event_info::EventCategory(""));
+#endif
 }
 
 TEST(EventInfoTest, EventCategory_get)
@@ -345,8 +352,11 @@ TEST(EventInfoTest, EventCategory_from_json)
         EXPECT_EQ(nlohmann::json(elem).get<event_info::EventCategory>().get(),
                   elem);
     }
+    // disabled the code below to allow any Category be used (it is free)
+#if 0
     EXPECT_ANY_THROW(nlohmann::json("junk").get<event_info::EventCategory>());
     EXPECT_ANY_THROW(nlohmann::json("").get<event_info::EventCategory>());
+#endif
 }
 
 TEST(EventInfoTest, EventInfo_loadFrom)

@@ -1111,6 +1111,7 @@ TEST(rootCauseTraceTest, test1)
     EXPECT_EQ(persistentEvent.getOriginOfCondition(), std::nullopt);
 }
 
+#ifndef EVENTING_FEATURE_ONLY
 TEST(OOCDeterminationTest, test1)
 {
     std::map<std::string, dat_traverse::Device> dat;
@@ -1200,3 +1201,4 @@ TEST(OOCDeterminationTest, test1)
     EXPECT_EQ(mc.getOriginOfCondition<DummyObjectMapper>(event),
         "/xyz/openbmc_project/inventory/system/chassis/HGX_PCIeRetimer_3");
 }
+#endif
