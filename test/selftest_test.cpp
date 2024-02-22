@@ -1021,6 +1021,7 @@ TEST(rootCauseTraceTest, test1)
     
     nlohmann::json j;
     j["event"] = "Event0";
+    j["error_id"] = "Event0-Error";
     j["device_type"] = "GPU0";
     j["sub_type"] = "";
     j["severity"] = "Critical";
@@ -1144,6 +1145,7 @@ TEST(OOCDeterminationTest, test1)
 
     nlohmann::json j;
     j["event"] = "Event0";
+    j["error_id"] = "Event0-Error";
     j["device_type"] = "GPU_SXM_[1-8]";
     j["sub_type"] = "";
     j["severity"] = "Critical";

@@ -12,6 +12,7 @@ static  void create_event_by_device_type(event_info::EventNode& ev,
 {
     nlohmann::json j;
     j["event"] = "Event0";
+    j["error_id"] = "Event0-Error";
     j["device_type"] = deviceType;
     j["sub_type"] = "";
     j["severity"] = "Critical";
@@ -38,6 +39,7 @@ static bool setup_event_cnt_test(event_info::EventNode& ev,
 {
     nlohmann::json j;
     j["event"] = "Event0";
+    j["error_id"] = "Event0-Error";
     j["device_type"] = "GPU";
     j["sub_type"] = "";
     j["severity"] = "Critical";
@@ -67,6 +69,7 @@ TEST(EventLookupTest, TriggerAccessor)
     event_info::EventNode ev("Sample Event");
     nlohmann::json j;
     j["event"] = "Event0";
+    j["error_id"] = "Event0-Error";
     j["device_type"] = "GPU";
     j["sub_type"] = "";
     j["severity"] = "Critical";
@@ -89,6 +92,7 @@ TEST(EventLookupTest, TriggerAccessor)
     event_info::EventNode ev2("Sample Event2");
     nlohmann::json j2;
     j2["event"] = "Event0";
+    j2["error_id"] = "Event0-Error";
     j2["device_type"] = "GPU";
     j2["sub_type"] = "";
     j2["severity"] = "Critical";
@@ -245,6 +249,7 @@ TEST(EventDetectionTest, PropertyFilterMap)
 {
     nlohmann::json j;
     j["event"] = "Event0";
+    j["error_id"] = "Event0-Error";
     j["device_type"] = "GPU";
     j["sub_type"] = "";
     j["severity"] = "Critical";
@@ -955,6 +960,7 @@ TEST(BootupSelfTestDiscovery, IgnoreDbusTriggerIfThereisAccessor)
   "NVSwitch": [
    {
       "event": "Boot completed failure",
+      "error_id": "NVSW_BOOT_COMPLETE_FAILURE-Error",
       "device_type": "NVSwitch_[0-3]",
       "category": [
         "firmware_status"
@@ -1044,6 +1050,7 @@ TEST(BootupSelfTestDiscovery, IgnoreCmdLineAccessorWithoutData)
   "GPU": [
    {
       "event": "Secure boot failure",
+      "error_id": "GPU_SECURE_BOOT_FAILURE-ERROR",
       "device_type": "GPU_SXM_[1-8]",
       "category": [
         "firmware_status"

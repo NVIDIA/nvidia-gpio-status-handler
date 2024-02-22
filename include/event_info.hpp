@@ -367,6 +367,9 @@ class EventNode : public object::Object
     /** @brief Name of the event **/
     std::string event;
 
+    /** @brief Error ID of the event **/
+    std::string errorId;
+
     /** @brief Type of device subtype **/
     std::string subType;
 

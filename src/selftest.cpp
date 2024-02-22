@@ -127,9 +127,12 @@ void Selftest::resolveLogEntry(
     }
 }
 
-void Selftest::updateDeviceHealth(const std::string& device,
-                                  const std::string& health) const
+void Selftest::updateDeviceHealth([[maybe_unused]] const std::string& device,
+                                  [[maybe_unused]] const std::string& health) const
 {
+#ifdef EVENTING_SERVICE_NO_DEVICE_HEALTH
+    log_err("not setting device Health: Device Health service is enabled\n");
+#else
     if (_dat.at(device).canSetHealthOnDbus())
     {
 
@@ -175,15 +178,20 @@ void Selftest::updateDeviceHealth(const std::string& device,
                             entry("SDBUSERR=%s", e.what()));
         }
     }
+#endif  // EVENTING_SERVICE_NO_DEVICE_HEALTH
 }
 
-void Selftest::updateHealthBasedOnResults(const ReportResult& reportRes)
+void Selftest::updateHealthBasedOnResults([[maybe_unused]] const ReportResult& reportRes)
 {
+#ifdef EVENTING_SERVICE_NO_DEVICE_HEALTH
+    log_err("not setting device Health: Device Health service is enabled\n");
+#else
     for (auto& dev : reportRes)
     {
         auto severity = getDeviceTestResult(dev.second);
         updateDeviceHealth(dev.first, severity);
     }
+#endif  // EVENTING_SERVICE_NO_DEVICE_HEALTH
 }
 
 bool Selftest::evaluateDevice(const DeviceResult& deviceResult)

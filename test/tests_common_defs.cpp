@@ -1308,6 +1308,7 @@ json event_GPU_VRFailure()
 {
     return json{
         {"event", "VR Failure"},
+        {"error_id", "GPU_VR_FAILURE-Error"},
         {"device_type", "GPU_SXM_[1-8]"},
         {"category", {"power_rail"}},
         {"event_trigger",
@@ -1346,6 +1347,7 @@ json event_GPU_SpiFlashError()
 {
     return json{
         {"event", "SPI flash error"},
+        {"error_id", "GPU_SPI_FLASH_ERROR-Error"},
         {"device_type", "GPU_SXM_[1-8]"},
         {"event_trigger",
          {{"type", "DBUS"},

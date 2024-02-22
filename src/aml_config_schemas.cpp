@@ -108,12 +108,13 @@ std::shared_ptr<json_schema::JsonSchema> eventNodeJsonSchema()
         requiredProperties("action", "value_as_count", "redfish",
                            "event_counter_reset", "trigger_count", "resolution",
                            "severity", "accessor", "event_trigger",
-                           "device_type", "event"),
+                           "device_type", "event", "error_id"),
         properties(
             literal(false), // Requirement for all the properties not listed
                             // here (cannot be met, which means only the listed
                             // are allowed)
             property("event", types(json::value_t::string)),
+            property("error_id", types(json::value_t::string)),
             property("device_type", types(json::value_t::string)),
             property(
                 "category",

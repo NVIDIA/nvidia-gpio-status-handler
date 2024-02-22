@@ -27,6 +27,7 @@ TEST(EventTest, LoadJson)
 {
     nlohmann::json j;
     j["event"] = "Event0";
+    j["error_id"] = "Event0-Error";
     j["device_type"] = "GPU";
     j["sub_type"] = "";
     j["severity"] = "Critical";
@@ -55,6 +56,7 @@ TEST(MsgCompTest, MakeCall)
 {
     nlohmann::json j;
     j["event"] = "Event0";
+    j["error_id"] = "Event0-Error";
     j["device_type"] = "GPU";
     j["sub_type"] = "";
     j["severity"] = "Critical";
@@ -95,6 +97,7 @@ TEST(EventTelemtries, MakeCall)
 {
     nlohmann::json j;
     j["event"] = "Event0";
+    j["error_id"] = "Event0-Error";
     j["device_type"] = "GPU";
     j["sub_type"] = "";
     j["severity"] = "Critical";
@@ -145,6 +148,7 @@ TEST(EventTelemtries, TestPatternOOC)
 {
     nlohmann::json j;
     j["event"] = "Event0";
+    j["error_id"] = "Event0-Error";
     j["device_type"] = "GPU";
     j["sub_type"] = "";
     j["severity"] = "Critical";

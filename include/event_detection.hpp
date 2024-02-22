@@ -138,8 +138,11 @@ class EventDetection : public object::Object
      *
      * @param devId
      */
-    static void resetDeviceHealth(const std::string& devId)
+    static void resetDeviceHealth([[maybe_unused]] const std::string& devId)
     {
+#ifdef EVENTING_SERVICE_NO_DEVICE_HEALTH
+        logs_err("not setting device Health: Device Health service is enabled\n");
+#else
         dbus::DirectObjectMapper om;
         const std::string healthInterface(
             "xyz.openbmc_project.State.Decorator.Health");
@@ -162,6 +165,7 @@ class EventDetection : public object::Object
                 }
             }
         }
+#endif  // EVENTING_SERVICE_NO_DEVICE_HEALTH
     }
 
     /**

@@ -45,6 +45,17 @@ if get_option('eventing_feature_only').enabled()
     add_project_arguments('-DEVENTING_FEATURE_ONLY', language : lang)
 endif
 
+if(get_option('device_health_service').enabled())
+    add_project_arguments('-DEVENTING_SERVICE_NO_DEVICE_HEALTH', language : lang)
+endif
+
+
+# Device Health Service options
+if get_option('device_health_service').enabled()
+    # TODO: flag in eventing service to disable Health updates
+endif
+
+
 # Get the options and enable the respective features
 ## create a MAP of  "options : feature_flag"
 
@@ -245,3 +256,6 @@ if(get_option('tests').enabled())
 endif
 
 subdir('gpio-status-handler')
+if(get_option('device_health_service').enabled())
+    subdir('device-health-service')
+endif

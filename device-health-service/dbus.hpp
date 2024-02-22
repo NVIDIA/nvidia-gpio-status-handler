@@ -1,77 +1,52 @@
-/*
- Copyright (c) 2021, NVIDIA CORPORATION.  All rights reserved.
-
- NVIDIA CORPORATION and its licensors retain all intellectual property
- and proprietary rights in and to this software, related documentation
- and any modifications thereto.  Any use, reproduction, disclosure or
- distribution of this software and related documentation without an express
- license agreement from NVIDIA CORPORATION is strictly prohibited.
-*
-*/
+/**
+ * Copyright (c) 2024, NVIDIA CORPORATION.  All rights reserved.
+ *
+ * NVIDIA CORPORATION and its licensors retain all intellectual property
+ * and proprietary rights in and to this software, related documentation
+ * and any modifications thereto.  Any use, reproduction, disclosure or
+ * distribution of this software and related documentation without an express
+ * license agreement from NVIDIA CORPORATION is strictly prohibited.
+ */
 
 #pragma once
 
-#include "log.hpp"
-#include "property_accessor.hpp"
+#include <utility>
 
 #include <boost/algorithm/string.hpp>
-#include <nlohmann/json.hpp>
-#include <sdbusplus/asio/object_server.hpp>
 #include <sdbusplus/bus.hpp>
 
-#include <cassert>
-#include <functional>
-#include <iostream>
-#include <map>
-#include <memory>
-#include <mutex>
-#include <regex>
-#include <sstream>
-#include <string>
-#include <tuple>
-#include <vector>
 
+// copied from develop, commit d139e40b0cc0c65dd17875aff9167de4ff903d47
 namespace dbus
 {
-
 constexpr auto freeDesktopInterface = "org.freedesktop.DBus.Properties";
 constexpr auto getCall = "Get";
 constexpr auto setCall = "Set";
 
-using DbusPropertyChangedHandler = std::unique_ptr<sdbusplus::bus::match_t>;
-using CallbackFunction = sdbusplus::bus::match::match::callback_t;
-using DbusAsioConnection = std::shared_ptr<sdbusplus::asio::connection>;
+/**
+ * It is a common type used in openbmc DBus services
+ */
+using Association = std::tuple<std::string, std::string, std::string>;
 
 /**
- * @brief register for receiving signals from Dbus PropertyChanged
+ *     This strange type just replaces std::monostate which should be a class
+ *     and due that it is not supported by sdbusplus functions that requires
+ *     std::variant as parameter
  *
- * @param conn        connection std::shared_ptr<sdbusplus::asio::connection>
- * @param objectPath  Dbus object path
- * @param interface   Dbus interface
- * @param callback    the callback function
- * @return the match_t register information which cannot be destroyed
- *         while receiving these Dbus signals
- */
-DbusPropertyChangedHandler registerServicePropertyChanged(
-    DbusAsioConnection conn, const std::string& objectPath,
-    const std::string& interface, CallbackFunction callback);
+ *     It is not expected to use a variable of this type
+ **/
+using InvalidMonoState =
+         std::map<uint16_t, std::map<uint16_t, std::map<uint16_t, uint16_t>>>;
 
 /**
- * @brief overloaded function
- * @param bus       the bus type sdbusplus::bus::bus&
- * @param objectPath
- * @param interface
- * @param callback
- * @return
+ *  Variant type used for Dbus properties
+ *  (only types needed for /xyz/openbmc_project/logging/entry/<id> interfaces)
  */
-DbusPropertyChangedHandler registerServicePropertyChanged(
-    sdbusplus::bus::bus& bus, const std::string& objectPath,
-    const std::string& interface, CallbackFunction callback);
+using PropertyVariant =
+    std::variant<InvalidMonoState, bool, uint32_t,
+                 uint64_t, std::string, std::vector<std::string>,
+                 std::vector<Association>>;
 
-/**
- *  @brief this is the return type for @sa deviceGetCoreAPI()
- */
-using RetCoreApi = std::tuple<int, std::string, uint64_t>; // int = return code
 
 /**
  * @brief returns the service assigned with objectPath and interface
@@ -81,33 +56,6 @@ using RetCoreApi = std::tuple<int, std::string, uint64_t>; // int = return code
  */
 std::string getService(const std::string& objectPath,
                        const std::string& interface);
-
-/**
- * @brief Performs a DBus call in GpuMgr service calling DeviceGetData method
- * @param devId
- * @param property  the name of the property which defines which data to get
- * @return RetCoreApi with the information
- */
-RetCoreApi deviceGetCoreAPI(const int devId, const std::string& property);
-
-/**
- * @brief clear information present GpuMgr service DeviceGetData method
- * @param devId
- * @param property
- * @return 0 meaning success or other value to indicate an error
- */
-int deviceClearCoreAPI(const int devId, const std::string& property);
-
-/**
- * @brief getDbusProperty() gets the value from a property in DBUS
- * @param objPath
- * @param interface
- * @param property
- * @return the value based on std::variant
- */
-PropertyVariant readDbusProperty(const std::string& objPath,
-                                 const std::string& interface,
-                                 const std::string& property);
 
 /**
  * @brief setDbusProperty() sets a value for a Dbus property
@@ -133,22 +81,6 @@ bool setDbusProperty(const std::string& service, const std::string& objPath,
  */
 bool setDbusProperty(const std::string& objPath, const std::string& interface,
                      const std::string& property, const PropertyVariant& val);
-
-/**
- * @brief Class implementing the ObjectMapper interface of the ObjectMapper
- * service
- *
- * @code
- * xyz.openbmc_project.ObjectMapper    interface -         -            -
- * .GetAncestors                       method    sas       a{sa{sas}}   -
- * .GetObject                          method    sas       a{sas}       -
- * .GetSubTree                         method    sias      a{sa{sas}}   -
- * .GetSubTreePaths                    method    sias      as           -
- * @endcode
- *
- * Of the 4 methods only 'GetObject' and 'GetSubTreePaths' proved to be useful,
- * so the rest is not supported atm.
- */
 
 template <typename T>
 class ObjectMapper
@@ -396,6 +328,7 @@ class ObjectMapper
      *
      * Simplified version of @c getObject.
      */
+    /*
     std::string getManager(const std::string& objectPath,
                            const std::string& interface)
     {
@@ -438,6 +371,7 @@ class ObjectMapper
             this->getManager(objectPath, managerInterface), objectPath,
             callInterface, method);
     }
+    */
 
   private:
     std::vector<std::string> getDevIdPaths(
@@ -534,208 +468,18 @@ class DirectObjectMapper : public ObjectMapper<DirectObjectMapper>
                        const std::vector<std::string>& interfaces) const;
 };
 
-class CachingObjectMapper : public ObjectMapper<CachingObjectMapper>
-{
-
-  public:
-    CachingObjectMapper() : ObjectMapper(), isInitialized(false)
-    {}
-
-    CachingObjectMapper(sdbusplus::bus::bus&& bus) :
-        ObjectMapper(std::move(bus)), isInitialized(false)
-    {}
-
-    ValueType getObjectImpl(sdbusplus::bus::bus& bus,
-                            const std::string& objectPath,
-                            const std::vector<std::string>& interfaces);
-
-    std::vector<std::string>
-        getSubTreePathsImpl(sdbusplus::bus::bus& bus,
-                            const std::string& subtree, int depth,
-                            const std::vector<std::string>& interfaces);
-    std::vector<std::string>
-        getSubTreePathsImpl(sdbusplus::bus::bus& bus,
-                            const std::vector<std::string>& interfaces);
-
-    // Not implemented for now
-    FullTreeType getSubtreeImpl(sdbusplus::bus::bus& bus,
-                                const std::string& subtree, int depth,
-                                const std::vector<std::string>& interfaces);
-
-    /** @brief Synchronize the internal mirror data (@c
-     * objectsServicesMapping) with dbus **/
-    void refresh();
-    // void refresh(sdbusplus::bus::bus& bus);
-
-    /**
-     * @brief Given one of the values from the main dictionary return the set of
-     * managers implementing a given interfaces (disjunction).
-     */
-    static ValueType scopeManagers(const ValueType& implementations,
-                                   const std::vector<std::string>& interfaces);
-
-  private:
-    bool isInitialized;
-    FullTreeType objectsServicesMapping;
-
-    void ensureIsInitialized();
-};
-
-// DbusDelayer ////////////////////////////////////////////////////////////////
-
 /**
- * @brief
+ * @brief Makes D-Bus calls to set the device Health to the specified value ("OK"/"Warning"/"Critical")
  *
- * +---------------------+
- * |        idle         | <+
- * +---------------------+  |
- *   |                      |
- *   | callStartAttempt()   |
- *   v                      |
- * +---------------------+  |
- * |       waiting       |  | callFinished()
- * +---------------------+  |
- *   |                      |
- *   | callStartActual()    |
- *   v                      |
- * +---------------------+  |
- * |       calling       | -+
- * +---------------------+
+ * Updating the device Health requires 3 steps:
+ * 1. Finding the object path(s) corresponding to the device with a Health property
+ * 2. Finding the D-Bus service that created each path
+ * 3. Actually writing to the service and object path found in steps 1 and 2
+ * (The Health interface is fixed: xyz.openbmc_project.State.Decorator.Health)
+ *
+ * @return @c true if the device Health was successfully updated, @c false otherwise
+ * (D-Bus exception, object path does not exist, write failed, etc.)
  */
+bool setDeviceHealth(const std::string& device, const std::string& health);
 
-class DbusDelayer
-{
-  public:
-    enum State
-    {
-        idle,
-        waiting,
-        calling
-    };
-
-    static const char* stateToStr(State state);
-
-    DbusDelayer() : mutex(), state(State::idle)
-    {}
-    virtual ~DbusDelayer() = default;
-
-    std::chrono::milliseconds callStartAttempt(const std::string& signature);
-    void callStartActual(const std::string& signature);
-    void callFinished(const std::string& signature);
-
-    State getState() const
-    {
-        return this->state;
-    }
-
-    std::mutex mutex;
-
-  protected:
-    virtual std::chrono::milliseconds callStartAttemptImpl(
-        const std::string& signature,
-        const std::chrono::time_point<std::chrono::steady_clock>& now);
-    virtual void callStartActualImpl(
-        const std::string& signature,
-        const std::chrono::time_point<std::chrono::steady_clock>& now);
-    virtual void callFinishedImpl(
-        const std::string& signature,
-        const std::chrono::time_point<std::chrono::steady_clock>& now);
-
-  private:
-    State state;
-};
-
-class DbusDelayerConstLowerBound : public DbusDelayer
-{
-  public:
-    DbusDelayerConstLowerBound() :
-        _waitTimeLowerBound(std::chrono::milliseconds(0)),
-        _lastCallFinish(std::chrono::steady_clock::now())
-    {}
-    DbusDelayerConstLowerBound(
-        const std::chrono::milliseconds& waitTimeLowerBound) :
-        _waitTimeLowerBound(waitTimeLowerBound),
-        _lastCallFinish(std::chrono::steady_clock::now())
-    {}
-
-    void setDelayTime(const std::chrono::milliseconds& waitTimeLowerBound);
-
-  protected:
-    std::chrono::milliseconds callStartAttemptImpl(
-        const std::string& signature,
-        const std::chrono::time_point<std::chrono::steady_clock>& now);
-    void callFinishedImpl(
-        const std::string& signature,
-        const std::chrono::time_point<std::chrono::steady_clock>& now);
-
-  private:
-    std::chrono::milliseconds _waitTimeLowerBound;
-    std::chrono::time_point<std::chrono::steady_clock> _lastCallFinish;
-};
-
-extern DbusDelayerConstLowerBound defaultDbusDelayer;
-
-/**
- * @brief Makes sure the underlying DbusDelayer object is in proper state
- */
-
-class DbusDelayerStateGuard
-{
-  public:
-    DbusDelayerStateGuard(DbusDelayer* dbusDelayer, const std::string& repr) :
-        _dbusDelayer(dbusDelayer), _repr(repr)
-    {}
-
-    ~DbusDelayerStateGuard();
-
-  private:
-    DbusDelayer* _dbusDelayer;
-    const std::string& _repr;
-};
-
-class DelayedMethod
-{
-
-  public:
-    DelayedMethod(DbusDelayer* dbusDelayer, sdbusplus::bus::bus& bus,
-                  const std::string& service, const std::string& object,
-                  const std::string& interface, const std::string& method) :
-        _dbusDelayer(dbusDelayer),
-        _repr(service + " " + object + " " + interface + " " + method),
-        _bus(bus),
-        _method(bus.new_method_call(service.c_str(), object.c_str(),
-                                    interface.c_str(), method.c_str()))
-    {
-        if (dbusDelayer == nullptr)
-        {
-            throw std::runtime_error("'dbusDelayer' argument must be non-null");
-        }
-    }
-
-    DelayedMethod(sdbusplus::bus::bus& bus, const std::string& service,
-                  const std::string& object, const std::string& interface,
-                  const std::string& method) :
-        _dbusDelayer(&defaultDbusDelayer),
-        _repr(service + " " + object + " " + interface + " " + method),
-        _bus(bus),
-        _method(bus.new_method_call(service.c_str(), object.c_str(),
-                                    interface.c_str(), method.c_str()))
-    {}
-
-    template <typename T>
-    void append(const T& arg)
-    {
-        _method.append(arg);
-    }
-
-    sdbusplus::message::message
-        call(std::optional<sdbusplus::SdBusDuration> timeout = std::nullopt);
-
-  private:
-    DbusDelayer* _dbusDelayer;
-    std::string _repr;
-    sdbusplus::bus::bus& _bus;
-    sdbusplus::message::message _method;
-};
-
-} // namespace dbus
+}  // namespace dbus

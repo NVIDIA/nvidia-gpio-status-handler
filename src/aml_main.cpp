@@ -275,6 +275,11 @@ int main(int argc, char* argv[])
     logs_err("Eventing only feature is on\n");
 #endif // EVENTING_FEATURE_ONLY
 
+#ifdef EVENTING_SERVICE_NO_DEVICE_HEALTH
+    logs_err("Device Health will be managed by Device Health service " \
+        "instead of eventing service\n");
+#endif  // EVENTING_SERVICE_NO_DEVICE_HEALTH
+
     try
     {
         cmd_line::CmdLine cmdLine(argc, argv, aml::cmdLineArgs);
