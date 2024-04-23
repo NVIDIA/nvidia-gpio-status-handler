@@ -63,7 +63,6 @@ class MessageComposer : public event_handler::EventHandler
         return aml::RcCode::error;
     }
 
-#ifndef EVENTING_FEATURE_ONLY
     /**
      * @brief Return an object path from @c xyz.openbmc_project.ObjectMapper
      * service which corresponds to the given @c deviceId.
@@ -80,11 +79,13 @@ class MessageComposer : public event_handler::EventHandler
     template <typename ObjectMapperType = dbus::DirectObjectMapper>
     std::string getOriginOfConditionObjectPath(const std::string& deviceId) const
     {
+#ifndef EVENTING_FEATURE_ONLY
         if (this->dat.at(deviceId).hasDbusObjectOocSpecificExplicit())
         {
             return *(this->dat.at(deviceId).getDbusObjectOocSpecificExplicit());
         }
         else
+#endif
         {
             // If no ooc object path was provided in dat.json explicitly then try to
             // obtain it by looking what is available on dbus and seems to
@@ -153,7 +154,6 @@ class MessageComposer : public event_handler::EventHandler
                 event.getName().c_str(), event.device.c_str());
         return event.device;
     }
-#endif // EVENTING_FEATURE_ONLY
 
     /**
      * @brief Return phosphor logging Namespace to be used for log

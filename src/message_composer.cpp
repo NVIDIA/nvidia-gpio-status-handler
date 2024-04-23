@@ -53,10 +53,6 @@ bool MessageComposer::createLog(event_info::EventNode& event)
     auto messageArgs = event.getStringMessageArgs();
     auto telemetries = collectDiagData(event);
 
-#ifdef EVENTING_FEATURE_ONLY
-    std::string originOfCondition{"Not supported"};
-#else
-
     std::string originOfCondition = getOriginOfCondition(event);
     if (originOfCondition.empty())
     {
@@ -66,7 +62,6 @@ bool MessageComposer::createLog(event_info::EventNode& event)
     }
 
     log_dbg("originOfCondition = '%s'\n", originOfCondition.c_str());
-#endif // EVENTING_FEATURE_ONLY
 
     auto pNamespace = getPhosphorLoggingNamespace(event);
 
