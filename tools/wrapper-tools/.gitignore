@@ -1,7 +1,0 @@
-data/*
-wrapper-mockups-deploy-pkg/*
-wrapper-mockups-deploy-pkg.tgz
-wrappers-mockup-definition-template.tsv
-performance-test-deploy-pkg/testpoint-commands.list
-performance-test-deploy-pkg/run.sh
-performance-test-deploy-pkg.tgz

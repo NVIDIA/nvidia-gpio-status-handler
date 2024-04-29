@@ -1,4 +1,4 @@
-project('c++ nvidia-oobaml', 'cpp',
+project('c++ nvidia-gpio-status-handler', 'cpp',
   version : '0.1',
   license : 'MIT',
   meson_version: '>=0.58.0',
@@ -7,14 +7,15 @@ project('c++ nvidia-oobaml', 'cpp',
 
 # Project related links
 
-project_pretty_name = 'nvidia-oobaml'
-project_url = 'https://gitlab-master.nvidia.com/dgx/nvidia-oobaml'
+project_pretty_name = 'nvidia-gpio-status-handler'
+project_url = 'https://gitlab-master.nvidia.com/dgx/bmc/nvidia-gpio-status-handler'
 project_issues_url = project_url + '/issues/new'
 lang = 'cpp'
 
 #summary('Issues',project_issues_url, section: 'Report Issues')
 
 cxx = meson.get_compiler(lang)
+bindir = get_option('prefix') + '/' + get_option('bindir')
 
 ## Set global arguments
 add_global_arguments('-DSOME_TOKEN=value', language : lang)
@@ -35,24 +36,6 @@ endif
 
 if get_option('log_elapsed_time').enabled()
     add_project_arguments('-DLOG_ELAPSED_TIME', language : lang)
-endif
-
-if get_option('profile_selftest_and_recovery').enabled()
-    add_project_arguments('-DPROFILING_SELFTEST_AND_RECOVERY_FLOW', language : lang)
-endif
-
-if get_option('eventing_feature_only').enabled()
-    add_project_arguments('-DEVENTING_FEATURE_ONLY', language : lang)
-endif
-
-if(get_option('device_health_service').enabled())
-    add_project_arguments('-DEVENTING_SERVICE_NO_DEVICE_HEALTH', language : lang)
-endif
-
-
-# Device Health Service options
-if get_option('device_health_service').enabled()
-    # TODO: flag in eventing service to disable Health updates
 endif
 
 
@@ -92,170 +75,31 @@ else
     sdbuspp_gen_meson_prog = find_program('sdbus++-gen-meson', native: true)
 endif
 
-sdeventplus_dep = dependency(
-    'sdeventplus',
-    fallback: ['sdeventplus', 'sdeventplus_dep' ],
-)
 
 phosphor_logging_dep = dependency(
     'phosphor-logging',
     fallback: ['phosphor-logging', 'phosphor_logging_dep'],
 )
 
-# Add all the dependencies
-aml_dependencies = []
+sdbusplus = dependency(
+    'sdbusplus',
+    fallback: ['sdbusplus', 'sdbusplus_dep'],
+)
 
-aml_dependencies += sdbusplus_dep
-aml_dependencies += phosphor_logging_dep
-#aml_dependencies += dependency('glib-2.0')
-aml_dependencies += dependency('threads')
-aml_dependencies += meson.get_compiler('cpp').find_library('pthread')
-aml_dependencies += meson.get_compiler('cpp').find_library('rt')
+gpio_device = dependency('libgpiod')
+threads = dependency('threads')
 
-if cxx.has_header('nlohmann/json.hpp')
-    aml_dependencies += declare_dependency()
-endif
-
-# Add Include Directory
-inc = include_directories('include')
-
-# subdir for meson project
-subdir('include')
-subdir('src')
-subdir('tools')
-#subdir('test')
-
-# Pkg-config
-pkg_mod = import('pkgconfig')
-pkg_mod.generate(libraries : amllib,
-                 version : '0.1',
-                 name : 'oobaml',
-                 filebase : 'oobaml',
-                 description : 'nvidia-oobaml')
-
-pkg_mod.generate(libraries : selftestlib,
-                 version : '0.1',
-                 name : 'selftest',
-                 filebase : 'selftest',
-                 description : 'nvidia-oobaml-selftest')
-
-if get_option('tests').enabled()
-  gtest_dep = dependency('gtest', main: true, disabler: true, required: false)
-  gmock_dep = dependency('gmock', disabler: true, required: false)
-  if not gtest_dep.found() or not gmock_dep.found()
-      gtest_proj = import('cmake').subproject('googletest', required: false)
-      if gtest_proj.found()
-          gtest_dep = declare_dependency(
-              dependencies: [
-                  dependency('threads'),
-                  gtest_proj.dependency('gtest'),
-                  gtest_proj.dependency('gtest_main'),
-              ]
-          )
-          gmock_dep = gtest_proj.dependency('gmock')
-      else
-          assert(
-              not get_option('tests').enabled(),
-              'Googletest is required if tests are enabled'
-          )
-      endif
-  endif
-endif
-
-srcfiles_unittest = [
-    'test/accessor_test.cpp',
-    'test/dat_test.cpp',
-    'test/dat_to_dbus_test.cpp',
-    'test/dat_traverse_test.cpp',
-    'test/dbus_accessor_test.cpp',
-    'test/device_id_test.cpp',
-    'test/event_detection_test.cpp',
-    'test/event_test.cpp',
-    'test/tests_common_defs.cpp',
-    'test/json_proc_test.cpp',
-    'test/propertyvalue_string_test.cpp',
-    'test/propertyvalue_variant_test.cpp',
-    'test/selftest_test.cpp',
-    'test/util_test.cpp']
-
-amllib_sources = [
-    'src/aml_config_schemas.cpp',
-    'src/check_accessor.cpp',
-    'src/config_parser.cpp',
-    'src/dat_traverse.cpp',
-    'src/data_accessor.cpp',
-    'src/dbus_accessor.cpp',
-    'src/device_id.cpp',
-    'src/device_util.cpp',
-    'src/diagnostics.cpp',
-    'src/event_detection.cpp',
-    'src/event_handler.cpp',
-    'src/event_info.cpp',
-    'src/json_proc.cpp',
-    'src/json_schema.cpp',
-    'src/log.cpp',
-    'src/message_composer.cpp',
-    'src/message_dispatcher.cpp',
-    'src/oobaml_api.cpp',
-    'src/property_accessor.cpp',
-    'src/util.cpp']
-
-selftestlib_sources = ['src/selftest.cpp']
-
-bindir = get_option('prefix') + '/' + get_option('bindir')
-
-## install mctp wrapper
-install_data('tools/mctp-vdm-util-wrapper',
-             install_dir : bindir)
-
-## install xid wrapper
-install_data('tools/xid-event-util-wrapper',
-             install_dir : bindir)
-
-## install mctp-error-detection tool
-install_data('tools/mctp-error-detection',
-             install_dir : bindir)
-
-## install fpga wrapper
-install_data('tools/wrapper_fpga_register_table/fpga_regtbl_wrapper',
-             install_dir : bindir)
-
-## install pcie wrapper
-install_data('tools/wrapper_pcie_status/pcie_wrapper',
-             install_dir : bindir)
-
-## install i2c wrapper
-install_data('tools/wrapper_i2c_status/i2c_wrapper',
-             install_dir : bindir)
-
-## install nvlink / write protected status wrapper
-install_data('tools/wrapper_nvlink_wp_status/nvlink-wp-status-wrapper',
-             install_dir : bindir)
-
-## install device ID resolving script
-install_data('tools/device_id_mapping/device-id-norm.sh',
-             install_dir : bindir)
-
-## install AML memory watcher service
-install_data('aml-memory-watcher/aml-memory-watcher',
-             install_dir : bindir)
-
-if(get_option('tests').enabled())
-    # generate the test executable
-    ut_bin = executable(
-      'oobaml_unit_test',
-      srcfiles_unittest + amllib_sources + selftestlib_sources,
-      include_directories : inc,
-      install_dir: bindir,
-      dependencies: aml_dependencies + [
-        gtest_dep,
-        gmock_dep,
-      ]
-    )
-    test('oobaml_unit_test', ut_bin)
-endif
-
-subdir('gpio-status-handler')
-if(get_option('device_health_service').enabled())
-    subdir('device-health-service')
-endif
+gpio_status_handlerd = executable(
+    'gpio-status-handlerd',
+    'gpio_status_handler.cpp',
+    'gpio_chips.cpp',
+    'gpio_lines.cpp',
+    'gpio_json_config.cpp',
+    'gpio_utils.cpp',
+    implicit_include_directories: true,
+    dependencies: [sdbusplus,
+                   gpio_device,
+                   phosphor_logging_dep,
+                   threads],
+    install_dir: bindir,
+    install : true)
