@@ -1,14 +1,14 @@
-# nvidia-oobaml
+# nvidia-gpio-status-handler
 
-NVIDIA OOB Active Monitoring and Logging
+NVIDIA GPIO Status Handler
 
 ## Build
 ### Environment Setup
  
 OS | Build Tool Package | Code Support Package
 --- | --- | ---
-Ubuntu 18.04 | g++<br>autoconf<br>autoconf-archive<br>pkg-config<br>libtool-bin<br>doxygen<br>graphviz | OpenBMC SDK<br>libgpu (NVIDIA Firmware OOB Module)
-Cygwin | g++<br>autoconf<br>autoconf-archive<br>pkg-config<br>libtool-bin<br>doxygen<br>graphviz | OpenBMC SDK<br>libgpu (NVIDIA Firmware OOB Module)
+Ubuntu 20.04 | g++<br>autoconf<br>autoconf-archive<br>pkg-config<br>libtool-bin<br>doxygen<br>graphviz | OpenBMC SDK
+Cygwin | g++<br>autoconf<br>autoconf-archive<br>pkg-config<br>libtool-bin<br>doxygen<br>graphviz | OpenBMC SDK
 |
  
 OpenBMC SDK Installation Instructions: [link](https://github.com/openbmc/docs/blob/master/development/dev-environment.md#download-and-install-sdk)
@@ -110,7 +110,7 @@ debug | 3
 info | 4
 |
  
-By default, the logging level is 1 - error. To change the default log level before building, e.g. to 3 - debug, in openbmc repo, modify meta-nvidia/recipes-nvidia/oobaml/nvidia-oobaml_git.bb by changing the following line,
+By default, the logging level is 1 - error. To change the default log level before building, e.g. to 3 - debug, in openbmc repo, modify the recipe by changing the following line,
 ``` markdown
 EXTRA_OEMESON += "-Ddebug_log=1"
 ```
@@ -120,37 +120,6 @@ To change the logging level during runtime, e.g. to 3 - debug, we need to pass f
 -l <level> 0 - None; 1 - +Error; 2 - +Warning; 3 - +Info
 ```
 
-To change the target for log output during runtime, e.g. to /tmp/aml_debug.log, we need to pass following command line argument.
+To change the target for log output during runtime, e.g. to /tmp/gsh_debug.log, we need to pass following command line argument.
 ``` markdown
 -L <log_file> where to output the log. Output to screen if the arg not present.
-```
-
-### Docker Image for Building & Debugging
-:warning: **Not maintained!** May need extensive work to work as described. 
-
-A docker image is used for code building and debugging. It needs to be created for the first time by,
-``` shell
-$ ./buildenv create
-```
-It creates an image named "bldenv:module" with all build support packages for this module.
- 
-After that, everytime to build code just start it by (*current folder* will be mounted into the container),
-``` shell
-$ ./buildenv
-```
-Or,
-``` shell
-$ ./buildenv start [src_dir] # src_dir is where you want to mount into the container, default is current folder.
-```
-It will start a container based on the image for code building by following the same steps listed [above](#how-to-build).
-In this container, user could do '**ninja -C builddir install**' to install the code packages just like in real production environment, without messing up the OS.
-By default, the container will keep it last states after exit. Do this to get a clean one,
-``` shell
-$ ./buildenv clean
-$ ./buildenv
-```
-Or,
-``` shell
-$ ./buildenv clean
-$ ./buildenv start [src_dir] # src_dir is where you want to mount into the container, default is current folder.
-```
