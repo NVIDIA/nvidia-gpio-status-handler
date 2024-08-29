@@ -12,6 +12,7 @@
 #include <mutex>
 #include <sstream>
 #include <thread>
+#include <stdexcept>
 
 using namespace std;
 using json = nlohmann::json;
@@ -89,6 +90,30 @@ bool setDBusProperty(shared_ptr<sdbusplus::asio::dbus_interface> dbusInterface,
                                     pinNum);
     }
     return success;
+}
+
+int getGpioValue(gpiod_line_t* line, const string& pinName)
+{
+    if (!line)
+    {
+        throw std::runtime_error("getGpioValue::line is NULL!");
+    }
+
+    // EINJ mode enabled when this file appears.
+    std::ifstream ifs("/tmp/devices/gpio/" + pinName);
+    if (ifs)
+    {
+        int value = 0;
+        ifs >> value;
+        log<level::ERR>("EINJ",
+            entry("PINNAME=%s", pinName.c_str()),
+            entry("PINVALUE=%d", value)
+            );
+        return value;
+    }
+
+    // Read from HW.
+    return gpiod_line_get_value(line);
 }
 
 /**
@@ -184,7 +209,7 @@ void syncAlertGpioPin(
             // Start a new period, no matter if triggered by the
             // last one or an event
             ticks = 0;
-            lineGetResult = gpiod_line_get_value(line);
+            lineGetResult = getGpioValue(line, pinName);
             if (lineGetResult >= 0)
             {
                 setDBusPropOk =
