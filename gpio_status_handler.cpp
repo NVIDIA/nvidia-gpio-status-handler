@@ -11,8 +11,8 @@
 #include <fstream>
 #include <mutex>
 #include <sstream>
-#include <thread>
 #include <stdexcept>
+#include <thread>
 
 using namespace std;
 using json = nlohmann::json;
@@ -105,10 +105,8 @@ int getGpioValue(gpiod_line_t* line, const string& pinName)
     {
         int value = 0;
         ifs >> value;
-        log<level::ERR>("EINJ",
-            entry("PINNAME=%s", pinName.c_str()),
-            entry("PINVALUE=%d", value)
-            );
+        log<level::ERR>("EINJ", entry("PINNAME=%s", pinName.c_str()),
+                        entry("PINVALUE=%d", value));
         return value;
     }
 
@@ -212,9 +210,9 @@ void syncAlertGpioPin(
             lineGetResult = getGpioValue(line, pinName);
             if (lineGetResult >= 0)
             {
-                setDBusPropOk =
-                    setDBusProperty(dbusInterface, pinName, chipName, pinNum,
-                                    lineGetResult != 0);
+                setDBusPropOk = setDBusProperty(dbusInterface, pinName,
+                                                chipName, pinNum,
+                                                lineGetResult != 0);
             }
             else
             {
@@ -369,8 +367,8 @@ shared_ptr<sdbusplus::asio::dbus_interface>
 #endif
     conn->request_name(dbusServiceName);
     auto server = sdbusplus::asio::object_server(conn);
-    auto dbusInterface =
-        server.add_interface(dbusObjectPath, dbusInterfaceName);
+    auto dbusInterface = server.add_interface(dbusObjectPath,
+                                              dbusInterfaceName);
     for (auto it = gpioConfig.getConfig().cbegin();
          it != gpioConfig.getConfig().cend(); ++it)
     {

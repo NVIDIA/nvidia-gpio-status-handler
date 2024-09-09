@@ -32,7 +32,6 @@ namespace gpio_handler
  */
 class GpioJsonConfig
 {
-
   public:
     /** @brief Name of the property in a gpio pin configuration entry specifying
      * the gpio chip **/

@@ -173,8 +173,8 @@ static bool isGpioNameGood(const string& name)
     bool isNameGood = isSizeGood;
     for (auto i = 0u; i < name.size() && isNameGood; ++i)
     {
-        bool isCharGood =
-            std::isalnum(name[i], std::locale::classic()) || name[i] == '_';
+        bool isCharGood = std::isalnum(name[i], std::locale::classic()) ||
+                          name[i] == '_';
         if (!isCharGood)
         {
             stringstream ss;
