@@ -181,10 +181,8 @@ void syncAlertGpioPin(
     uint64_t readPeriodTicks // [nanoseconds / lineEventWaitTimeoutNs]
 )
 {
-    struct timespec timeout
-    {
-        lineEventWaitTimeoutNs / 1000000000, lineEventWaitTimeoutNs % 1000000000
-    };
+    struct timespec timeout{lineEventWaitTimeoutNs / 1000000000,
+                            lineEventWaitTimeoutNs % 1000000000};
 
     struct gpiod_line_event event;
 

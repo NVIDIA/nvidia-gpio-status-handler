@@ -1,9 +1,11 @@
-project('c++ nvidia-gpio-status-handler', 'cpp',
-  version : '0.1',
-  license : 'MIT',
-  meson_version: '>=1.1.1',
-  default_options: [
-            'cpp_std=c++23'])
+project(
+    'c++ nvidia-gpio-status-handler',
+    'cpp',
+    version: '0.1',
+    license: 'MIT',
+    meson_version: '>=1.1.1',
+    default_options: ['cpp_std=c++23'],
+)
 
 # Project related links
 
@@ -18,41 +20,43 @@ cxx = meson.get_compiler(lang)
 bindir = get_option('prefix') + '/' + get_option('bindir')
 
 ## Set global arguments
-add_global_arguments('-DSOME_TOKEN=value', language : lang)
+add_global_arguments('-DSOME_TOKEN=value', language: lang)
 
 # Validate the c++ Standard
 if get_option('cpp_std') != 'c++23'
-    error('This project requires c++20 support '+ get_option('cpp_std'))
+    error('This project requires c++20 support ' + get_option('cpp_std'))
 endif
 
 ## Fetch all the project options and set the project arguments
 debug_log_level = get_option('debug_log')
 if debug_log_level != 0
-    add_project_arguments('-DDEF_DBG_LEVEL=' + debug_log_level.to_string(), language : lang)
+    add_project_arguments(
+        '-DDEF_DBG_LEVEL=' + debug_log_level.to_string(),
+        language: lang,
+    )
 endif
 if get_option('sandbox_mode').enabled()
-    add_project_arguments('-DSANDBOX_MODE', language : lang)
+    add_project_arguments('-DSANDBOX_MODE', language: lang)
 endif
 
 if get_option('log_elapsed_time').enabled()
-    add_project_arguments('-DLOG_ELAPSED_TIME', language : lang)
+    add_project_arguments('-DLOG_ELAPSED_TIME', language: lang)
 endif
 
 
 # Get the options and enable the respective features
 ## create a MAP of  "options : feature_flag"
 
-feature_map = {
-}
+feature_map = {}
 
 # Get the options status and build a project summary to show which flags are
 # being enabled during the configuration time.
 
-foreach option_key,option_value : feature_map
-  if(get_option(option_key).enabled())
-      summary(option_key,option_value, section : 'Enabled Features')
-      add_global_arguments(option_value,language : lang)
-  endif
+foreach option_key, option_value : feature_map
+    if (get_option(option_key).enabled())
+        summary(option_key, option_value, section: 'Enabled Features')
+        add_global_arguments(option_value, language: lang)
+    endif
 endforeach
 
 systemd_dep = dependency('systemd')
@@ -69,7 +73,8 @@ endif
 if sdbusplus_proj.found()
     sdbusplusplus_prog = sdbusplus_proj.get_variable('sdbusplusplus_prog')
     sdbuspp_gen_meson_prog = sdbusplus_proj.get_variable(
-        'sdbuspp_gen_meson_prog')
+        'sdbuspp_gen_meson_prog',
+    )
 else
     sdbusplusplus_prog = find_program('sdbus++', native: true)
     sdbuspp_gen_meson_prog = find_program('sdbus++-gen-meson', native: true)
@@ -81,10 +86,7 @@ phosphor_logging_dep = dependency(
     fallback: ['phosphor-logging', 'phosphor_logging_dep'],
 )
 
-sdbusplus = dependency(
-    'sdbusplus',
-    fallback: ['sdbusplus', 'sdbusplus_dep'],
-)
+sdbusplus = dependency('sdbusplus', fallback: ['sdbusplus', 'sdbusplus_dep'])
 
 gpio_device = dependency('libgpiod')
 threads = dependency('threads')
@@ -97,9 +99,7 @@ gpio_status_handlerd = executable(
     'gpio_json_config.cpp',
     'gpio_utils.cpp',
     implicit_include_directories: true,
-    dependencies: [sdbusplus,
-                   gpio_device,
-                   phosphor_logging_dep,
-                   threads],
+    dependencies: [sdbusplus, gpio_device, phosphor_logging_dep, threads],
     install_dir: bindir,
-    install : true)
+    install: true,
+)
